@@ -90,3 +90,18 @@ test('exactly one orange primary button on the page', () => {
 test('hero image has alt text', () => {
   assert.match(html, /class="em-hero__media"[\s\S]{0,300}?alt="[^"]+"/);
 });
+
+test('process has five steps in order', () => {
+  const steps = ['Define the problem', 'Conduct research', 'Craft policy solution',
+                 'Advocate for change', 'Policy implementation'];
+  let cursor = -1;
+  for (const s of steps) {
+    const at = html.indexOf(s);
+    assert.ok(at > cursor, `step out of order or missing: ${s}`);
+    cursor = at;
+  }
+});
+
+test('process detail is in the DOM, not hover-only content', () => {
+  assert.match(html, /class="em-process__detail"[\s\S]{0,400}?Learn more/);
+});

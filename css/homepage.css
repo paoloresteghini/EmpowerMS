@@ -29,6 +29,49 @@
 .em-header__search:hover{background:var(--blue-100);border-color:var(--blue-400)}
 .em-header__search svg{width:17px;height:17px}
 
+/* ---------- Header mobile menu toggle ---------- */
+/* Hidden at desktop widths; the 960px breakpoint below reveals it once
+   .em-header__nav is hidden. Lives inside .em-header__actions so it
+   inherits the same right-aligned flex group as search + Donate. */
+.em-header__toggle{display:none;width:38px;height:38px;flex:0 0 auto;
+  align-items:center;justify-content:center;flex-direction:column;gap:4px;
+  padding:0;border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:none;cursor:pointer;
+  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
+.em-header__toggle:hover{background:var(--blue-100);border-color:var(--blue-400)}
+.em-header__toggle-bar{display:block;width:16px;height:2px;border-radius:1px;
+  background:var(--em-blue);transition:transform var(--dur) var(--ease-out),opacity var(--dur) var(--ease-out)}
+.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(2){opacity:0}
+.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+/* ---------- Header mobile menu panel ---------- */
+/* Inline dropdown, not an overlay: it is a normal-flow sibling of the
+   header bar, so opening it pushes <main> down rather than covering it.
+   No scroll-lock and no focus trap — deliberate, matches the simplicity
+   of an inline panel. Ships expanded-by-default in the markup (see
+   00-header.html) for progressive enhancement; js/nav.js collapses it
+   once it loads. The [hidden] overrides use an extra attribute selector
+   to out-rank the plain-class display rule regardless of cascade order. */
+.em-mobilenav{display:none;border-top:1px solid var(--border-subtle);background:var(--surface-page)}
+.em-mobilenav__list{list-style:none;margin:0;padding:var(--space-3) 0}
+.em-mobilenav__item{border-bottom:1px solid var(--border-subtle)}
+.em-mobilenav__item:last-child{border-bottom:0}
+.em-mobilenav__link,.em-mobilenav__trigger{display:flex;align-items:center;justify-content:space-between;
+  width:100%;gap:var(--space-3);padding:var(--space-4) var(--gutter);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none;background:none;border:0;cursor:pointer;text-align:left}
+.em-mobilenav__link:hover,.em-mobilenav__trigger:hover{color:var(--blue-800)}
+.em-mobilenav__caret{width:9px;height:9px;flex:0 0 auto;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+  transform:rotate(45deg);transition:transform var(--dur) var(--ease-out)}
+.em-mobilenav__trigger[aria-expanded="true"] .em-mobilenav__caret{transform:rotate(-135deg)}
+.em-mobilenav__sublist{list-style:none;margin:0;
+  padding:0 var(--gutter) var(--space-3) calc(var(--gutter) + var(--space-4))}
+.em-mobilenav__sublink{display:block;padding:var(--space-2) 0;font-size:var(--fs-caption);
+  color:var(--text-body);text-decoration:none}
+.em-mobilenav__sublink:hover{color:var(--em-orange)}
+
 /* ---------- Hero ---------- */
 .em-hero{display:grid;grid-template-columns:minmax(0,680px) 1fr;align-items:stretch;
   background:var(--surface-page)}
@@ -276,9 +319,18 @@
 /* The header bar (logo + six nav links + search + Donate) never wraps and
    has an intrinsic min-content width of ~940px — measured, not assumed —
    so it overflows before the general 900px stacking breakpoint gets a
-   chance to help. Hide the nav a step earlier than that, with margin. */
+   chance to help. Hide the nav a step earlier than that, with margin.
+   The mobile toggle + panel come on at the same breakpoint so the nav
+   is never unreachable: .em-header__actions picks up the margin-left:auto
+   that .em-header__nav used to provide, since nav no longer participates
+   in the flex row to push it right. */
 @media (max-width:960px){
   .em-header__nav{display:none}
+  .em-header__toggle{display:flex}
+  .em-header__actions{margin-left:auto}
+  .em-mobilenav{display:block}
+  .em-mobilenav[hidden]{display:none}
+  .em-mobilenav__sublist[hidden]{display:none}
 }
 
 @media (max-width:900px){
@@ -316,14 +368,20 @@
 }
 
 /* Below ~324px, .em-header__bar's non-wrapping, non-shrinking children
-   (logo 111.5px + gap 40px + actions 148px = 299.5px) overflow the
-   272px available inside a 320px viewport — measured, not assumed.
-   .em-header__nav is already hidden by the 960px rule above, so the
-   remaining overflow is entirely logo + bar gap + actions gap + Donate.
-   Tightening the two gaps buys back 20px, clearing the 320px floor with
-   margin, without shrinking the logo or the Donate button itself — both
-   stay full size and legible. */
+   overflow the ~257px available inside a 320px viewport — measured, not
+   assumed. .em-header__nav is already hidden by the 960px rule above, so
+   the remaining overflow is logo + bar gap + actions gap + actions
+   contents. Originally that was just search + Donate (299.5px needed);
+   the mobile menu toggle adds a third action, pushing the measured
+   min-content width to 326px. Search is the one action with no unique
+   destination yet (the mobile menu now covers real navigation), so it
+   drops below 400px; the toggle and both gaps are trimmed a little
+   further on top. That clears the 320px floor with margin, without
+   shrinking the logo or the Donate button themselves — both stay full
+   size and legible. */
 @media (max-width:400px){
-  .em-header__bar{gap:var(--space-6)}
-  .em-header__actions{gap:var(--space-2)}
+  .em-header__bar{gap:var(--space-2)}
+  .em-header__actions{gap:var(--space-1)}
+  .em-header__search{display:none}
+  .em-header__toggle{width:32px;height:32px}
 }

@@ -268,3 +268,49 @@ test('header bar tightens its gaps before the 320px floor can overflow', () => {
   assert.match(block, /em-header__bar\{gap:/, 'bar gap not tightened at 400px');
   assert.match(block, /em-header__actions\{gap:/, 'actions gap not tightened at 400px');
 });
+
+test('mobile menu toggle has an accessible name and aria-controls matching the panel id', () => {
+  const toggleMatch = html.match(/<button class="em-header__toggle"[^>]*>/);
+  assert.ok(toggleMatch, 'no mobile menu toggle button in output');
+  const toggle = toggleMatch[0];
+  assert.match(toggle, /aria-expanded="(true|false)"/, 'toggle missing aria-expanded');
+  assert.match(toggle, /aria-label="[^"]+"/, 'toggle missing an accessible name');
+
+  const controlsMatch = toggle.match(/aria-controls="([^"]+)"/);
+  assert.ok(controlsMatch, 'toggle missing aria-controls');
+  const panelIdMatch = html.match(/<nav class="em-mobilenav" id="([^"]+)"/);
+  assert.ok(panelIdMatch, 'mobile nav panel missing an id');
+  assert.equal(controlsMatch[1], panelIdMatch[1], 'aria-controls does not match the panel id');
+});
+
+test('mobile menu carries all six top-level items and a sample of sub-items', () => {
+  const panelMatch = html.match(/<nav class="em-mobilenav"[\s\S]*?<\/nav>/);
+  assert.ok(panelMatch, 'mobile nav panel not found in output');
+  const panel = panelMatch[0];
+
+  for (const label of ['Home', 'About', 'Solutions', 'All Content', 'Podcast', 'Join Us']) {
+    assert.ok(panel.includes(`>${label}<`) || panel.includes(`>${label} `),
+      `mobile menu missing top-level item ${label}`);
+  }
+  for (const sub of ['Who We Are', 'Solutions Center', 'Quality Education', 'Research (EPIC)',
+                      'Articles', 'The Empower Podcast', 'Newsletter', 'Ambassador Program']) {
+    assert.ok(panel.includes(sub), `mobile menu missing sub-item ${sub}`);
+  }
+
+  // Each group with children exposes it as a real <ul>, not a styled div.
+  const sublists = panel.match(/<ul class="em-mobilenav__sublist"/g) || [];
+  assert.equal(sublists.length, 5, `expected 5 expandable sub-groups, found ${sublists.length}`);
+});
+
+test('mobile nav panel markup lives in the header partial, not injected by JS', () => {
+  const partial = readFileSync('src/sections/00-header.html', 'utf8');
+  assert.match(partial, /<nav class="em-mobilenav" id="mobile-nav" aria-label="Mobile">/);
+  assert.match(partial, /Who We Are/, 'sub-item copy missing from the static partial');
+
+  for (const jsFile of ['js/nav.js', 'js/controls.js']) {
+    if (!existsSync(jsFile)) continue;
+    const js = readFileSync(jsFile, 'utf8');
+    assert.ok(!js.includes('innerHTML') && !js.includes('createElement'),
+      `${jsFile} builds markup at runtime instead of progressively enhancing static markup`);
+  }
+});

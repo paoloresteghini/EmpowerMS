@@ -144,3 +144,14 @@ test('stories attributes Jodi Berry with city', () => {
 test('carousel controls are inert and marked as such', () => {
   assert.match(html, /class="em-stories__nav"[^>]*disabled/);
 });
+
+test('insights lists three content rows', () => {
+  const rows = html.match(/class="em-insights__row"/g) || [];
+  assert.equal(rows.length, 3);
+});
+
+test('insights preserves CMS placeholder copy verbatim', () => {
+  assert.match(html, /Article headline — auto-populated from the blog/);
+  assert.match(html, /Research title — auto-populated from EPIC/);
+  assert.match(html, /Community story title — auto-populated/);
+});

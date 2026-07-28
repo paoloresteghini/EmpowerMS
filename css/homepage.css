@@ -156,7 +156,9 @@
   object-fit:cover}
 .em-stories__mini p{margin:0 0 var(--space-3);font-size:var(--fs-small);line-height:1.5;
   color:var(--text-body)}
-.em-stories__mini .em-stories__attr{margin:0}
+/* Beats .em-stories__mini p specificity to restore orange colour and caption size */
+.em-stories__mini .em-stories__attr{margin:0;color:var(--em-orange);font-size:var(--fs-caption)}
+.em-stories__mini .em-stories__attr--sm{font-size:11px}
 
 .em-stories__carousel{display:grid;grid-template-columns:auto 1fr auto;gap:var(--space-6);
   align-items:center}

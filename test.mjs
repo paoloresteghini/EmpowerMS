@@ -167,3 +167,19 @@ test('join us actions are navy, not orange', () => {
   assert.ok(!s.includes('em-btn--primary'), 'orange button outside the hero');
   assert.ok(s.includes('em-btn--secondary'), 'expected navy actions in join us');
 });
+
+test('footer is a landmark with four social links', () => {
+  assert.match(html, /<footer class="em-footer">/);
+  const socials = html.match(/class="em-footer__social"[\s\S]*?<\/div>/);
+  assert.ok(socials, 'no social block');
+  assert.equal((socials[0].match(/<a /g) || []).length, 4);
+});
+
+test('footer carries the registered address', () => {
+  assert.match(html, /741 Avignon Dr\., Suite C/);
+  assert.match(html, /Ridgeland, MS 39157/);
+});
+
+test('footer newsletter input is labelled', () => {
+  assert.match(html, /<label[^>]*for="footer-email"/);
+});

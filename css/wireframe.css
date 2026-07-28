@@ -12,6 +12,7 @@
   --surface-tint:#f6f6f5;
   --surface-navy:#2c2f31;
   --surface-card:#fff;
+  --surface-accent:#2c2f31;
   --border-subtle:#e2e2e2;
   --border-default:#cfcfcf;
   --border-inverse:#6b6f71;
@@ -56,14 +57,18 @@
   background-image:linear-gradient(to top right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px)),
                    linear-gradient(to bottom right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px))}
 
-/* Illustration marks become empty outlined squares. */
+/* Illustration marks become empty outlined squares.
+   visibility:hidden keeps the layout box; opacity:0 would composite away the
+   border/background below along with the image. */
 [data-skin="wire"] .em-solution__icon,
-[data-skin="wire"] .em-process__mark{
-  opacity:0;
-  border:1px solid #e0e0e0;
-  border-radius:10px;
-  background-color:#f4f4f4}
-[data-skin="wire"] .em-process__mark{border-color:rgba(255,255,255,.45)}
+[data-skin="wire"] .em-process__mark{visibility:hidden}
+[data-skin="wire"] .em-solution,
+[data-skin="wire"] .em-process__inner{position:relative}
+[data-skin="wire"] .em-solution__icon::after,
+[data-skin="wire"] .em-process__mark::after{
+  content:"";position:absolute;inset:0;visibility:visible;
+  border:1px solid #e0e0e0;border-radius:10px;background-color:#f4f4f4}
+[data-skin="wire"] .em-process__mark::after{border-color:rgba(255,255,255,.45)}
 
 /* Logos become LOGO outline boxes. */
 [data-skin="wire"] .em-header__logo img,

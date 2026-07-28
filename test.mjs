@@ -73,3 +73,20 @@ test('header is a landmark with a nav and six links', () => {
 test('header Donate is navy, not the orange primary', () => {
   assert.match(html, /class="em-btn em-btn--secondary em-btn--sm"[^>]*>[\s\S]{0,40}Donate/);
 });
+
+test('hero holds the single h1', () => {
+  const h1s = html.match(/<h1[\s>]/g) || [];
+  assert.equal(h1s.length, 1, `expected exactly one h1, found ${h1s.length}`);
+  assert.match(html, /Your American Dream starts here\./);
+});
+
+test('exactly one orange primary button on the page', () => {
+  const primaries = html.match(/em-btn--primary/g) || [];
+  assert.equal(primaries.length, 1, `brand rule: one orange action per view, found ${primaries.length}`);
+  const at = html.indexOf('em-btn--primary');
+  assert.match(html.slice(at, at + 200), /Explore Our Work/);
+});
+
+test('hero image has alt text', () => {
+  assert.match(html, /class="em-hero__media"[\s\S]{0,300}?alt="[^"]+"/);
+});

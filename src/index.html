@@ -1,10 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" data-skin="brand">
+<html lang="en" data-skin="brand" data-annotations="off" data-foundations="bento" data-stories="feature">
 <head>
 <meta charset="utf-8">
-<title>Empower Mississippi</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empower Mississippi — Your American Dream starts here.</title>
+<meta name="description" content="We work to expand opportunity so every Mississippian has the chance to achieve the American Dream right here at home.">
+<link rel="stylesheet" href="../tokens/fonts.css">
+<link rel="stylesheet" href="../tokens/colors.css">
+<link rel="stylesheet" href="../tokens/typography.css">
+<link rel="stylesheet" href="../tokens/spacing.css">
+<link rel="stylesheet" href="../tokens/radius.css">
+<link rel="stylesheet" href="../tokens/elevation.css">
+<link rel="stylesheet" href="../tokens/motion.css">
+<link rel="stylesheet" href="../tokens/base.css">
+<link rel="stylesheet" href="../components/components.css">
+<link rel="stylesheet" href="../css/homepage.css">
+<link rel="stylesheet" href="../css/wireframe.css">
 </head>
 <body>
+
+<div id="controls" class="ctl">
+  <span class="ctl__brand">Homepage</span>
+  <label class="ctl__f">Skin
+    <select data-ctl="skin"><option value="brand">Branded</option><option value="wire">Wireframe</option></select>
+  </label>
+  <label class="ctl__f">Foundations
+    <select data-ctl="foundations"><option value="bento">Bento</option><option value="equal">Three equal</option></select>
+  </label>
+  <label class="ctl__f">Stories
+    <select data-ctl="stories"><option value="feature">Feature + stacked</option><option value="carousel">Carousel</option></select>
+  </label>
+  <label class="ctl__f ctl__f--check">
+    <input type="checkbox" data-ctl="annotations"> Funnel notes
+  </label>
+</div>
+
 <!--@include sections/00-header.html-->
+<main>
+<!--@include sections/01-hero.html-->
+<!--@include sections/02-solutions.html-->
+<!--@include sections/03-foundations.html-->
+<!--@include sections/04-stories.html-->
+<!--@include sections/05-insights.html-->
+<!--@include sections/06-joinus.html-->
+</main>
+<!--@include sections/07-footer.html-->
+
+<script type="module" src="../js/controls.js"></script>
 </body>
 </html>

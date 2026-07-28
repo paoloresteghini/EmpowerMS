@@ -1,0 +1,22 @@
+/* Empower Mississippi homepage — layout wrappers.
+   Upstream tokens/ and components/ are never edited; local layout lives here. */
+
+/* ---------- Preview control bar (never ships to WordPress) ---------- */
+.ctl{position:sticky;top:0;z-index:100;display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-5);
+  padding:10px var(--space-6);background:var(--blue-900);color:var(--white);
+  font-family:var(--font-display);font-size:var(--fs-caption);font-weight:var(--fw-semibold)}
+.ctl__brand{letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--orange-300);margin-right:auto}
+.ctl__f{display:flex;align-items:center;gap:var(--space-2);text-transform:uppercase;letter-spacing:var(--ls-caps)}
+.ctl__f select{font:inherit;padding:5px 9px;border-radius:var(--radius-sm);
+  border:1px solid var(--border-inverse);background:var(--blue-800);color:var(--white)}
+.ctl__f--check{gap:var(--space-2)}
+
+/* ---------- Funnel annotations ---------- */
+.em-annotate{display:none}
+[data-annotations="on"] .em-annotate{display:inline-block;margin:0 0 var(--space-5);
+  padding:5px 13px;border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:11px;
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+[data-annotations="on"] .em-annotate--light{border-color:var(--border-inverse);color:var(--text-inverse-muted)}
+[data-annotations="on"] .em-annotate--note{display:block;margin:var(--space-5) 0 0;border:0;padding:0;
+  text-transform:none;letter-spacing:0;font-size:var(--fs-small);font-weight:var(--fw-regular)}

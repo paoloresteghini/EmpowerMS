@@ -37,3 +37,27 @@ test('imported binaries are not empty or HTML error pages', () => {
     assert.ok(statSync(f).size > 1000, `${f} looks truncated`);
   }
 });
+
+test('shell declares default skin and variant state', () => {
+  assert.match(html, /<html lang="en"[^>]*data-skin="brand"/);
+  assert.match(html, /data-annotations="off"/);
+  assert.match(html, /data-foundations="bento"/);
+  assert.match(html, /data-stories="feature"/);
+});
+
+test('shell links stylesheets in cascade order', () => {
+  const order = ['tokens/fonts.css', 'tokens/colors.css', 'tokens/base.css',
+                 'components/components.css', 'css/homepage.css', 'css/wireframe.css'];
+  let cursor = -1;
+  for (const href of order) {
+    const at = html.indexOf(href);
+    assert.ok(at > cursor, `${href} out of cascade order`);
+    cursor = at;
+  }
+});
+
+test('control bar exists in the shell only', () => {
+  assert.match(html, /id="controls"/);
+  const partial = readFileSync('src/sections/00-header.html', 'utf8');
+  assert.ok(!partial.includes('id="controls"'), 'control bar leaked into a partial');
+});

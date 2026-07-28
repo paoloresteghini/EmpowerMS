@@ -186,6 +186,13 @@ test('footer newsletter input is labelled', () => {
 
 const wire = readFileSync('css/wireframe.css', 'utf8');
 
+// Both tests below split wire on '}' and treat each chunk as one rule. That
+// only works because wireframe.css is flat, single-level CSS today — it has
+// no @media block. If a future edit wraps any wireframe.css rule in
+// @media(...){ ... }, the extra '}' at the end of the media block will chop
+// the split in a way that desyncs selector/body pairing for the rest of the
+// file. Anyone adding an @media block here needs to rewrite this parsing,
+// not just add a rule.
 test('wire skin scopes every rule under data-skin="wire"', () => {
   const selectors = wire
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -201,13 +208,31 @@ test('wire skin keeps the focus ring orange', () => {
   assert.match(wire, /--focus-ring:\s*#E65A28/i);
 });
 
+// Rules exempted from the geometry ban below, by exact selector, with why:
+//  - .em-footer — the documented rounded inset panel; a real, intentional
+//    geometry difference between skins (README "The wireframe skin's
+//    contract").
+//  - .em-header__logo::after / .em-footer__logo::after — each sets
+//    position:absolute;inset:0. That anchors the LOGO placeholder overlay to
+//    an already-sized ancestor: the real <img> is visibility:hidden (not
+//    display:none), so it still occupies the box and fixes its size: the
+//    overlay only fills that existing box and cannot move it. Listed
+//    individually, not matched by a substring check, so grouping either
+//    selector into an unrelated rule can't smuggle that rule past the test.
+const GEOMETRY_EXEMPT_SELECTORS = new Set([
+  '[data-skin="wire"] .em-footer',
+  '[data-skin="wire"] .em-header__logo::after',
+  '[data-skin="wire"] .em-footer__logo::after',
+]);
+
 test('wire skin does not touch layout geometry', () => {
-  const banned = /(^|[;{\s])(width|height|padding|margin|gap|grid-template|flex)\s*:/;
+  const banned = /(^|[;{\s])(width|height|padding|margin|gap|grid|flex|inset|top|right|bottom|left|border-width|min-|max-|aspect-ratio|transform|translate|scale)[-a-z]*\s*:/;
   const blocks = wire.replace(/\/\*[\s\S]*?\*\//g, '').split('}');
   for (const b of blocks) {
     const body = b.split('{')[1];
     if (!body) continue;
-    if (b.includes('em-footer')) continue; // documented exception
+    const selectors = b.split('{')[0].split(',').map(s => s.trim()).filter(Boolean);
+    if (selectors.length && selectors.every(s => GEOMETRY_EXEMPT_SELECTORS.has(s))) continue;
     assert.ok(!banned.test(body), `geometry in wireframe.css: ${b.trim().slice(0, 80)}`);
   }
 });

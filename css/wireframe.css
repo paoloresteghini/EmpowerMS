@@ -79,12 +79,21 @@
 [data-skin="wire"] .em-footer__logo img{visibility:hidden}
 [data-skin="wire"] .em-header__logo,
 [data-skin="wire"] .em-footer__logo{position:relative}
-[data-skin="wire"] .em-header__logo::after,
-[data-skin="wire"] .em-footer__logo::after{
+/* Two separate rules, not one grouped selector: the geometry test exempts
+   these individually (see test.mjs) because inset:0 here anchors the
+   overlay to an already-sized ancestor — the real <img> is visibility:hidden,
+   not display:none, so it still occupies the box and fixes its size; the
+   overlay just fills that existing box, it cannot move it. Grouping the
+   header and footer selectors under one rule made that reasoning apply to
+   both without stating it for both, which is why they were split. */
+[data-skin="wire"] .em-header__logo::after{
   content:"LOGO";position:absolute;inset:0;display:grid;place-items:center;
   border:1px solid #d2d2d2;border-radius:8px;
   font-family:var(--font-display);font-weight:600;font-size:11px;letter-spacing:.18em;color:#9a9a9a}
-[data-skin="wire"] .em-footer__logo::after{border-color:#4e5254;color:#8a8a8a}
+[data-skin="wire"] .em-footer__logo::after{
+  content:"LOGO";position:absolute;inset:0;display:grid;place-items:center;
+  border:1px solid #4e5254;border-radius:8px;
+  font-family:var(--font-display);font-weight:600;font-size:11px;letter-spacing:.18em;color:#8a8a8a}
 
 /* The wireframe presents the footer as a rounded inset panel.
    Documented geometry exception — ornament, not layout. */

@@ -120,8 +120,11 @@
 .em-process__step:hover .em-process__num,
 .em-process__step:focus-within .em-process__num{opacity:1}
 .em-process__title{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-h5);line-height:1.22;letter-spacing:var(--ls-caps);text-transform:uppercase;
+  font-size:var(--fs-h5);line-height:1.22;letter-spacing:.02em;text-transform:uppercase;
   color:var(--white);overflow-wrap:break-word}
+/* letter-spacing reduced from --ls-caps so "IMPLEMENTATION" fits the 158px an
+   unhovered step is pinned to at min-width:238px (see :101) without a
+   mid-word break — see task-16/final-review report for the measurement. */
 /* No width: left+right constrain this. A fixed width clips once the container goes
    fluid below ~1248px. */
 .em-process__detail{position:absolute;left:var(--space-8);right:var(--space-8);bottom:var(--space-7);
@@ -156,7 +159,7 @@
 .em-bento{display:grid;grid-template-columns:1fr 1.06fr;gap:var(--space-6);align-items:stretch}
 .em-bento__col{display:grid;grid-template-rows:1fr 1fr;gap:var(--space-6)}
 .em-bento__tall{padding-bottom:0;overflow:hidden}
-.em-bento__media{width:calc(100% + var(--space-8) * 2);max-width:none;margin:var(--space-7) calc(var(--space-8) * -1) 0;
+.em-bento__media{width:calc(100% + var(--space-8) * 2);max-width:none;margin:auto calc(var(--space-8) * -1) 0;
   height:236px;object-fit:cover}
 .em-bento .em-btn{align-self:flex-start;margin-top:var(--space-2)}
 
@@ -357,7 +360,11 @@
 @media (max-width:600px){
   .em-hero h1{font-size:var(--fs-h1)}
   .em-stories__lead-card{grid-template-columns:1fr}
-  .em-stories__lead-card>img{min-height:220px}
+  /* height must stay definite here: with the column collapsed to 1fr, a bare
+     min-height lets the wireframe skin's 1x1 GIF content-swap resolve the
+     box to its own intrinsic aspect ratio instead of the photo's, breaking
+     the two-skin pixel-identity guarantee (see css/wireframe.css:50-53). */
+  .em-stories__lead-card>img{height:220px;min-height:0}
   .em-stories__mini{flex-direction:column;align-items:flex-start}
   .em-stories__carousel{grid-template-columns:1fr}
   .em-stories__nav{display:none}

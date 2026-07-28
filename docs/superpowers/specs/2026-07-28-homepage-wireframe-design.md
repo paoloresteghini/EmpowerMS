@@ -56,6 +56,12 @@ theme, and every class name survives into Elementor.
 
 ```
 EmpowerMS/
+├── tokens/*.css                imported verbatim, unmodified
+├── components/components.css   imported verbatim, unmodified
+├── assets/                     fonts, logos, photography, patterns, illustrations
+├── css/
+│   ├── homepage.css            NEW — layout wrappers
+│   └── wireframe.css           NEW — wire skin, token overrides
 ├── src/
 │   ├── index.html              shell: <head>, control bar, include markers
 │   └── sections/
@@ -67,20 +73,22 @@ EmpowerMS/
 │       ├── 05-insights.html    5 · Authority
 │       ├── 06-joinus.html      6 · Action
 │       └── 07-footer.html
-├── css/
-│   ├── tokens/*.css            imported verbatim, unmodified
-│   ├── components.css          imported verbatim, unmodified
-│   ├── homepage.css            NEW — layout wrappers
-│   └── wireframe.css           NEW — wire skin, token overrides
-├── assets/                     fonts, logos, photography, patterns, illustrations
 ├── js/controls.js              toggle bar, ~40 lines
 ├── build.mjs                   Node stdlib, zero deps
 └── dist/index.html             generated
 ```
 
-`tokens/` and `components.css` are copied down **unmodified**. They are upstream
-files; all local additions go in `homepage.css` and `wireframe.css`. This keeps
-re-syncing from the design project a straight overwrite.
+`tokens/` and `components/` are copied down **unmodified**. They are upstream files;
+all local additions go in `homepage.css` and `wireframe.css`. This keeps re-syncing
+from the design project a straight overwrite.
+
+**`tokens/`, `components/` and `assets/` must sit at repo root, as siblings — not
+nested under `css/`.** `tokens/fonts.css` resolves its eight woff2 files through
+`url('../assets/fonts/…')`, and `tokens/base.css` reaches the hexagon patterns through
+`url('../assets/pattern-blue.png')`. CSS `url()` resolves relative to the stylesheet,
+so any other arrangement breaks files we have committed to keeping verbatim. This
+mirrors the design project's own root layout, which is why re-syncing stays a
+straight overwrite.
 
 ### Build
 

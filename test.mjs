@@ -459,3 +459,19 @@ test('page entrance is scoped to above-the-fold content only', () => {
   assert.equal(scopes.length, 1,
     'more than one entrance scope — everything below the fold should reveal on scroll');
 });
+
+test('process steps cascade as one group', () => {
+  const list = html.match(/<ol class="em-process"[^>]*>[\s\S]*?<\/ol>/)[0];
+  assert.match(list, /<ol class="em-process" data-reveal-group>/);
+  const revealed = list.match(/<li class="em-process__step" data-reveal="rise">/g) || [];
+  assert.equal(revealed.length, 5, `expected 5 revealing steps, found ${revealed.length}`);
+});
+
+test('both foundations layouts reveal, so the variant switcher never breaks', () => {
+  assert.match(html, /<div class="em-bento" data-reveal-group>/);
+  assert.match(html, /<div class="em-equal" data-reveal-group>/);
+  assert.match(html, /<img class="em-bento__media"[^>]*data-reveal="clip">/,
+    'bento feature photo does not use the clip reveal');
+  const cards = html.match(/<article class="em-solution"[^>]*data-reveal="rise">/g) || [];
+  assert.equal(cards.length, 5, `expected 2 bento + 3 equal cards revealing, found ${cards.length}`);
+});

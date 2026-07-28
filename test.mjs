@@ -397,3 +397,50 @@ test('every aria-controls in the built page points at an id that exists', () => 
     assert.match(html, new RegExp(`\\bid="${id}"`), `aria-controls="${id}" has no matching id`);
   }
 });
+
+/* ---------- motion layer ---------- */
+
+const motion = readFileSync('css/motion.css', 'utf8');
+const revealJs = readFileSync('js/reveal.js', 'utf8');
+
+test('motion layer ships as its own stylesheet and module', () => {
+  assert.ok(existsSync('css/motion.css'), 'missing css/motion.css');
+  assert.ok(existsSync('js/reveal.js'), 'missing js/reveal.js');
+  assert.match(html, /<link rel="stylesheet" href="\.\.\/css\/motion\.css">/);
+  assert.match(html, /<script type="module" src="\.\.\/js\/reveal\.js"><\/script>/);
+});
+
+test('every hidden reveal start-state is gated behind [data-reveal="on"]', () => {
+  // The gate attribute is set by js/reveal.js itself. Any opacity:0 rule
+  // outside it would hide content permanently when the script fails to load.
+  for (const rule of motion.split('}')) {
+    if (!/opacity:\s*0\b/.test(rule)) continue;
+    assert.match(rule, /\[data-reveal="on"\]/,
+      `ungated start-state would hide content without JS: ${rule.trim().slice(0, 80)}`);
+  }
+});
+
+test('reveal script sets its own gate attribute before anything else', () => {
+  const gateAt = revealJs.indexOf(`setAttribute('data-reveal', 'on')`);
+  assert.ok(gateAt > -1, 'js/reveal.js never sets the [data-reveal="on"] gate');
+  const observeAt = revealJs.indexOf('IntersectionObserver');
+  assert.ok(observeAt === -1 || gateAt < observeAt, 'gate set after the observer is built');
+});
+
+test('motion layer honours prefers-reduced-motion', () => {
+  assert.match(motion, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(revealJs, /prefers-reduced-motion:\s*reduce/,
+    'reveal.js does not check reduced motion');
+});
+
+test('reveal observer uses threshold 0, not a fraction', () => {
+  // An element taller than the viewport never reaches a fractional
+  // threshold, and would stay hidden forever. The negative bottom
+  // rootMargin is what delays the reveal instead.
+  assert.match(revealJs, /threshold:\s*0\b/);
+  assert.match(revealJs, /rootMargin:\s*'0px 0px -12% 0px'/);
+});
+
+test('reveal observer is one-shot', () => {
+  assert.match(revealJs, /unobserve/, 'elements are never unobserved; observer leaks work');
+});

@@ -1,0 +1,34 @@
+/* Empower Mississippi homepage — motion layer.
+   Scroll reveals and page entrance. Consumes tokens/motion.css only; adds
+   no new tokens and edits no upstream file.
+
+   Progressive enhancement contract (same as js/nav.js): every start-state
+   below is nested under [data-reveal="on"], which js/reveal.js sets as its
+   first statement. If that script never loads, nothing is ever hidden and
+   the page renders exactly as it did before this layer existed. */
+
+[data-reveal="on"] [data-reveal]{
+  opacity:0;
+  transition:opacity var(--dur-reveal) var(--ease-entrance),
+             transform var(--dur-reveal) var(--ease-entrance),
+             clip-path var(--dur-reveal) var(--ease-entrance);
+  transition-delay:calc(var(--reveal-i, 0) * 70ms);
+}
+
+[data-reveal="on"] [data-reveal="rise"]{transform:translateY(20px)}
+[data-reveal="on"] [data-reveal="slide-l"]{transform:translateX(-24px)}
+[data-reveal="on"] [data-reveal="slide-r"]{transform:translateX(24px)}
+/* clip-path is applied to the photo variant only — an inset(0) on every
+   revealed element would also clip card shadows to the border box. */
+[data-reveal="on"] [data-reveal="clip"]{clip-path:inset(0 0 14% 0);transform:scale(1.04)}
+
+[data-reveal="on"] [data-reveal].is-revealed{opacity:1;transform:none}
+[data-reveal="on"] [data-reveal="clip"].is-revealed{clip-path:inset(0 0 0 0)}
+
+@media (prefers-reduced-motion: reduce){
+  [data-reveal="on"] [data-reveal],
+  [data-reveal="on"] [data-reveal].is-revealed{
+    opacity:1;transform:none;clip-path:none;
+    transition:none;transition-delay:0s;
+  }
+}

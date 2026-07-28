@@ -1388,9 +1388,13 @@ test('join us newsletter is a real form with a labelled input', () => {
 });
 
 test('join us actions are navy, not orange', () => {
-  const at = html.indexOf('id="join-title"');
-  const section = html.slice(at, html.indexOf('07-footer') > -1 ? html.length : html.length);
-  assert.ok(!section.slice(0, 4000).includes('em-btn--primary'), 'orange button outside the hero');
+  const start = html.indexOf('id="join-title"');
+  assert.ok(start > -1, 'join us section missing');
+  const end = html.indexOf('<footer', start);
+  assert.ok(end > start, 'footer should follow join us');
+  const section = html.slice(start, end);
+  assert.ok(!section.includes('em-btn--primary'), 'orange button outside the hero');
+  assert.ok(section.includes('em-btn--secondary'), 'expected navy actions in join us');
 });
 ```
 

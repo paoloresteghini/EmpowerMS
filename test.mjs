@@ -335,3 +335,40 @@ test('mobile nav panel markup lives in the header partial, not injected by JS', 
       `${jsFile} builds markup at runtime instead of progressively enhancing static markup`);
   }
 });
+
+test('heading order never skips a level', () => {
+  const levels = [...html.matchAll(/<h([1-5])[\s>]/g)].map(m => Number(m[1]));
+  for (let i = 1; i < levels.length; i++) {
+    assert.ok(levels[i] <= levels[i - 1] + 1,
+      `heading jumps from h${levels[i - 1]} to h${levels[i]} at index ${i}`);
+  }
+});
+
+test('every content image has an alt attribute', () => {
+  for (const tag of html.match(/<img\b[^>]*>/g) || []) {
+    assert.match(tag, /\salt="/, `img without alt: ${tag.slice(0, 90)}`);
+  }
+});
+
+test('section partials carry no page chrome', () => {
+  for (const f of readdirSync('src/sections')) {
+    const s = readFileSync(`src/sections/${f}`, 'utf8');
+    // Tag-boundary matches only — a bare substring check on '<head' would
+    // also flag the legitimate <header class="em-header"> landmark.
+    for (const bad of [/<html[\s>]/, /<head[\s>]/, /<body[\s>]/, /id="controls"/]) {
+      assert.ok(!bad.test(s), `${f} contains page chrome matching ${bad}`);
+    }
+  }
+});
+
+test('no inline style attributes — Elementor hand-off hygiene', () => {
+  assert.ok(!/\sstyle="/.test(html), 'inline style attribute found; move it to CSS');
+});
+
+test('every aria-controls in the built page points at an id that exists', () => {
+  const controlled = [...html.matchAll(/\baria-controls="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(controlled.length > 0, 'no aria-controls attributes found to check');
+  for (const id of controlled) {
+    assert.match(html, new RegExp(`\\bid="${id}"`), `aria-controls="${id}" has no matching id`);
+  }
+});

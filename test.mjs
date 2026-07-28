@@ -130,3 +130,17 @@ test('section copy uses curly apostrophes, not ASCII', () => {
       `${f} has ${bad.length} straight apostrophe(s): ${bad.join(', ')} — brand copy requires U+2019`);
   }
 });
+
+test('both stories layouts ship in the markup', () => {
+  assert.match(html, /class="em-stories__feature"/);
+  assert.match(html, /class="em-stories__carousel"/);
+});
+
+test('stories attributes Jodi Berry with city', () => {
+  assert.match(html, /Jodi Berry/);
+  assert.match(html, /Sumrall, MS/);
+});
+
+test('carousel controls are inert and marked as such', () => {
+  assert.match(html, /class="em-stories__nav"[^>]*disabled/);
+});

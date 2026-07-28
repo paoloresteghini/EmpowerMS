@@ -1,0 +1,42 @@
+:root{
+/* --- Brand primaries (Brand & Style Guide p.14) --- */
+--em-blue:#003C50;/* Empower Blue */
+--em-orange:#E65A28;/* Empower Orange */
+
+/* --- Blue ramp (Light Blue #64A0B4 is the guide's secondary) --- */
+--blue-900:#002935;--blue-800:#003C50;--blue-700:#0A4F66;--blue-600:#17657E;
+--blue-400:#64A0B4;--blue-300:#8FBDCC;--blue-200:#C4DCE4;--blue-100:#E8F2F5;
+
+/* --- Orange ramp --- */
+--orange-700:#B4441E;--orange-600:#CE4E22;--orange-500:#E65A28;--orange-300:#F09A75;--orange-100:#FCEBE3;
+
+/* --- Neutrals (Dark Grey #6E6E6E, Light Grey #E6E6E6 from the guide) --- */
+--grey-900:#1E2427;--grey-700:#4A4A4A;--grey-600:#6E6E6E;--grey-500:#9A9A9A;
+--grey-400:#B4B4B4;--grey-300:#E6E6E6;--grey-200:#EFF1F2;--grey-100:#F6F7F8;--white:#FFFFFF;
+
+/* --- Text --- */
+--text-strong:var(--blue-800);--text-body:var(--grey-700);--text-muted:var(--grey-600);
+--text-inverse:var(--white);--text-inverse-muted:rgba(255,255,255,.76);
+--text-accent:var(--orange-500);--text-on-accent:var(--white);
+--text-link:var(--orange-600);--text-link-hover:var(--blue-800);--text-link-inverse:var(--orange-300);
+
+/* --- Surfaces --- */
+--surface-page:var(--white);--surface-subtle:var(--grey-100);--surface-muted:var(--grey-200);
+--surface-card:var(--white);--surface-tint:var(--blue-100);
+--surface-navy:var(--blue-800);--surface-navy-deep:var(--blue-900);--surface-accent:var(--orange-500);
+--surface-overlay:rgba(0,41,53,.62);
+
+/* --- Borders --- */
+--border-subtle:#E1E5E7;--border-default:var(--grey-300);--border-strong:var(--blue-800);
+--border-accent:var(--orange-500);--border-inverse:rgba(255,255,255,.28);
+
+/* --- Interaction --- */
+--focus-ring:var(--orange-500);--focus-ring-inverse:var(--white);
+
+/* --- Status (kept deliberately narrow; brand green was retired) --- */
+--status-info:var(--blue-600);--status-info-bg:var(--blue-100);
+--status-warning:#B07208;--status-warning-bg:#FBF2E0;
+--status-danger:#B3271B;--status-danger-bg:#FBEAE7;
+
+/* --- Retired: Brand Green #6E9632 is no longer part of the palette --- */
+}

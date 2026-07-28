@@ -1,0 +1,24 @@
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);background:var(--surface-page);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,h5{font-family:var(--font-display);color:var(--text-strong);margin:0 0 var(--space-4);letter-spacing:var(--ls-heading);line-height:var(--lh-heading);font-weight:var(--fw-bold)}
+h1{font-size:var(--fs-h1);letter-spacing:var(--ls-hero);line-height:var(--lh-hero)}
+h2{font-size:var(--fs-h2)}h3{font-size:var(--fs-h3)}h4{font-size:var(--fs-h4)}h5{font-size:var(--fs-h5)}
+p{margin:0 0 var(--space-4);text-wrap:pretty}
+a{color:var(--text-link);text-decoration-color:color-mix(in oklab,var(--text-link) 40%,transparent);text-underline-offset:.18em;transition:color var(--dur) var(--ease-out)}
+a:hover{color:var(--text-link-hover);text-decoration-color:currentColor}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+strong{font-weight:var(--fw-semibold);color:var(--text-strong)}
+img{max-width:100%;display:block}
+::selection{background:var(--orange-100);color:var(--blue-800)}
+
+/* --- Brand motifs --- */
+.em-rule{display:block;width:88px;height:6px;background:var(--em-orange);border-radius:var(--radius-pill);margin:var(--space-4) 0 var(--space-6)}
+.em-eyebrow{font-family:var(--type-eyebrow-family);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange);margin:0 0 var(--space-3)}
+.em-container{width:100%;max-width:var(--container-max);margin:0 auto;padding:0 var(--gutter)}
+.em-container-narrow{width:100%;max-width:var(--container-narrow);margin:0 auto;padding:0 var(--gutter)}
+.em-section{padding:var(--section-y) 0}
+.em-lead{font-size:var(--fs-lead);line-height:1.45;color:var(--text-body)}
+.em-pattern-blue{background:var(--surface-navy) url('../assets/pattern-blue.png') repeat;background-size:340px}
+.em-pattern-orange{background:var(--surface-accent) url('../assets/pattern-orange.png') repeat;background-size:340px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}

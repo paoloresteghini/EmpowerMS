@@ -155,3 +155,19 @@ test('insights preserves CMS placeholder copy verbatim', () => {
   assert.match(html, /Research title — auto-populated from EPIC/);
   assert.match(html, /Community story title — auto-populated/);
 });
+
+test('join us newsletter is a real form with a labelled input', () => {
+  assert.match(html, /<form class="em-newsletter__form"/);
+  assert.match(html, /<label[^>]*for="join-email"/);
+  assert.match(html, /id="join-email"[^>]*type="email"/);
+});
+
+test('join us actions are navy, not orange', () => {
+  const start = html.indexOf('id="join-title"');
+  assert.ok(start > -1, 'join us section missing');
+  const end = html.indexOf('<footer', start);
+  assert.ok(end > start, 'footer should follow join us');
+  const section = html.slice(start, end);
+  assert.ok(!section.includes('em-btn--primary'), 'orange button outside the hero');
+  assert.ok(section.includes('em-btn--secondary'), 'expected navy actions in join us');
+});

@@ -5,3 +5,4 @@ docs/Empower Mississippi Design System/
 .playwright-mcp/
 *.png
 !assets/**/*.png
+.sfdx/

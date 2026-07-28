@@ -37,15 +37,26 @@
 [data-skin="wire"] .em-rule,
 [data-skin="wire"] .em-heading__rule{visibility:hidden}
 
-/* Photography becomes diagonal-cross placeholder boxes. */
+/* Photography becomes diagonal-cross placeholder boxes.
+   .em-hero__media>img and .em-process__bg sit in a dedicated wrapper, so the
+   photo can go opacity:0 while the cross paints on the wrapper behind it. */
 [data-skin="wire"] .em-hero__media>img,
-[data-skin="wire"] .em-process__bg,
-[data-skin="wire"] .em-bento__media,
+[data-skin="wire"] .em-process__bg{
+  opacity:0}
+/* The other five have no such wrapper — their parent is a whole card/row, so
+   a background there would paint behind text. opacity:0 on the <img> itself
+   would composite away its own background too. Instead, swap the replaced
+   content for a transparent 1x1 GIF: the element paints no photo but still
+   paints its own border/background. Safe here only because all five have
+   both dimensions pinned in homepage.css, so the content swap can't change
+   their intrinsic size and move the box (unlike the illustration icons,
+   which are auto-width and had to be grayscaled instead). */
 [data-skin="wire"] .em-stories__lead-card>img,
 [data-skin="wire"] .em-stories__mini>img,
 [data-skin="wire"] .em-stories__slide>img,
-[data-skin="wire"] .em-insights__row>img{
-  opacity:0}
+[data-skin="wire"] .em-insights__row>img,
+[data-skin="wire"] .em-bento__media{
+  content:url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")}
 [data-skin="wire"] .em-hero__media,
 [data-skin="wire"] .em-process__step,
 [data-skin="wire"] .em-stories__lead-card>img,

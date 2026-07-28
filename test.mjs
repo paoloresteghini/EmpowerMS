@@ -105,3 +105,19 @@ test('process has five steps in order', () => {
 test('process detail is in the DOM, not hover-only content', () => {
   assert.match(html, /class="em-process__detail"[\s\S]{0,400}?Learn more/);
 });
+
+test('both foundations layouts ship in the markup', () => {
+  assert.match(html, /class="em-bento"/);
+  assert.match(html, /class="em-equal"/);
+});
+
+test('foundations names all three pillars in both layouts', () => {
+  for (const pillar of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+    const hits = html.split(pillar).length - 1;
+    assert.ok(hits >= 2, `${pillar} should appear in both layouts, found ${hits}`);
+  }
+});
+
+test('foundations uses the house Real solution: label', () => {
+  assert.match(html, /<strong>Real solution:<\/strong>/);
+});

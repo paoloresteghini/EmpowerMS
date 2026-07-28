@@ -102,3 +102,23 @@
   color:var(--em-orange);margin:0 0 var(--space-3)}
 .em-hero__northstar p{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-h5);line-height:1.4;letter-spacing:var(--ls-heading);color:var(--text-strong)}
+
+/* ---------- Foundations ---------- */
+.em-foundations__head{display:grid;grid-template-columns:1fr minmax(0,380px);gap:var(--space-11);
+  align-items:end;margin-bottom:var(--space-9)}
+.em-foundations__head h2{margin:0}
+.em-foundations__head .em-rule{margin:var(--space-5) 0 0}
+
+.em-bento{display:grid;grid-template-columns:1fr 1.06fr;gap:var(--space-6);align-items:stretch}
+.em-bento__col{display:grid;grid-template-rows:1fr 1fr;gap:var(--space-6)}
+.em-bento__tall{padding-bottom:0;overflow:hidden}
+.em-bento__media{width:calc(100% + var(--space-8) * 2);max-width:none;margin:var(--space-7) calc(var(--space-8) * -1) 0;
+  height:236px;object-fit:cover}
+.em-bento .em-btn{align-self:flex-start;margin-top:var(--space-2)}
+
+.em-equal{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-6);align-items:start}
+.em-equal .em-solution__more{text-decoration:none}
+
+/* Variant switching — both layouts ship, CSS reveals one */
+[data-foundations="bento"] .em-equal{display:none}
+[data-foundations="equal"] .em-bento{display:none}

@@ -105,7 +105,7 @@ nothing depends on animation completion.
 
 | Section | Treatment |
 | --- | --- |
-| Header + hero | Page-entrance on load: header bar → `em-eyebrow` → h1 → `em-hero__lede` → `em-hero__actions`, 70ms apart. `em-hero__media` uses `clip`, `em-hero__northstar` `rise` behind it. |
+| Hero | Page-entrance on load: `em-eyebrow` → h1 → `em-hero__lede` → `em-hero__actions`, 70ms apart. `em-hero__media` uses `clip`, `em-hero__northstar` `rise` behind it. |
 | Solutions (`em-process`) | `em-process__bg` / `__scrim` fade first, then `em-process__step` items cascade left→right at 80ms. |
 | Foundations | `em-foundations__head` rises; bento or equal cards cascade; `em-bento__media` uses `clip`. |
 | Stories | Feature card `slide-l`; stacked quotes cascade. Carousel variant cascades horizontally. **Both** layout variants are wired, so the `data-stories` preview switcher keeps working. |

@@ -73,8 +73,9 @@
 .em-mobilenav__sublink:hover{color:var(--em-orange)}
 
 /* ---------- Hero ---------- */
-.em-hero{display:grid;grid-template-columns:minmax(0,680px) 1fr;align-items:stretch;
-  background:var(--surface-page)}
+.em-hero{display:grid;
+  grid-template-columns:minmax(0,calc(max(0px,(100vw - var(--container-max)) / 2) + 680px)) 1fr;
+  align-items:stretch;background:var(--surface-page)}
 .em-hero__copy{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
   padding:var(--section-y-lg) var(--space-11) var(--section-y-lg) max(var(--gutter),calc((100vw - var(--container-max)) / 2 + var(--gutter)))}
 .em-hero__copy .em-annotate{align-self:flex-start}

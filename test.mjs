@@ -214,6 +214,27 @@ test('wire skin does not touch layout geometry', () => {
 
 const homepage = readFileSync('css/homepage.css', 'utf8');
 
+test('hero copy column grows with the viewport instead of a bare cap', () => {
+  // .em-hero__copy's left padding scales with (100vw - --container-max)/2 to
+  // keep the copy aligned with the page container above the 1200px
+  // breakpoint. If .em-hero's grid-template-columns is a bare "680px" cap,
+  // that alignment padding eats directly into the copy's content width —
+  // shrinking it as the viewport grows — instead of the column widening to
+  // absorb it. The column must reference the same viewport-relative term so
+  // content width stays constant. See task-16 report for the regression.
+  const at = homepage.indexOf('.em-hero{');
+  assert.ok(at > -1, 'no .em-hero rule found');
+  const end = homepage.indexOf('}', at);
+  const rule = homepage.slice(at, end + 1);
+  const gtcMatch = rule.match(/grid-template-columns:([^;]+);/);
+  assert.ok(gtcMatch, 'no grid-template-columns in .em-hero');
+  const gtc = gtcMatch[1];
+  assert.ok(!/minmax\(0,\s*680px\)/.test(gtc),
+    'hero column is a bare 680px cap — copy content width will shrink as the viewport widens past 1200px');
+  assert.match(gtc, /100vw/, 'hero column does not reference 100vw');
+  assert.match(gtc, /var\(--container-max\)/, 'hero column does not reference --container-max');
+});
+
 test('responsive rules exist at the documented breakpoints', () => {
   for (const bp of ['1200px', '1150px', '960px', '900px', '600px', '400px']) {
     assert.ok(homepage.includes(`max-width:${bp}`), `no breakpoint at ${bp}`);

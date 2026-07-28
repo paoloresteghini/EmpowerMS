@@ -11,7 +11,7 @@ test('build resolves every include marker', () => {
 });
 
 test('build inlines section content', () => {
-  assert.match(html, /data-section="header"/);
+  assert.match(html, /<header class="em-header">/);
 });
 
 test('design system files imported at root level', () => {
@@ -60,4 +60,16 @@ test('control bar exists in the shell only', () => {
   assert.match(html, /id="controls"/);
   const partial = readFileSync('src/sections/00-header.html', 'utf8');
   assert.ok(!partial.includes('id="controls"'), 'control bar leaked into a partial');
+});
+
+test('header is a landmark with a nav and six links', () => {
+  assert.match(html, /<header class="em-header">/);
+  assert.match(html, /<nav class="em-header__nav" aria-label="Primary">/);
+  for (const label of ['Home', 'About', 'Solutions', 'All Content', 'Podcast', 'Join Us']) {
+    assert.ok(html.includes(`>${label}<`) || html.includes(`>${label} `), `nav missing ${label}`);
+  }
+});
+
+test('header Donate is navy, not the orange primary', () => {
+  assert.match(html, /class="em-btn em-btn--secondary em-btn--sm"[^>]*>[\s\S]{0,40}Donate/);
 });

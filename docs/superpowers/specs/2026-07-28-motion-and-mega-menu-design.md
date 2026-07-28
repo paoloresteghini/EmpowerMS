@@ -73,22 +73,25 @@ JS that reveals it.
 | | `fade` | opacity only |
 | | `slide-l` / `slide-r` | opacity + translateX(±24px) |
 | | `clip` | `clip-path` wipe + 1.04→1 scale settle, for photography |
-| | `count` | integer count-up to the element's final text content |
 | `data-reveal-group` | (boolean) | JS stamps `--reveal-i` (0-based) on each child carrying `data-reveal`; CSS applies `transition-delay: calc(var(--reveal-i) * 70ms)` |
 | `data-reveal-entrance` | (boolean) | Reveals on load instead of on intersection — above-the-fold elements |
 
 ### Behaviour
 
-- One shared `IntersectionObserver`, `threshold: 0.15`,
-  `rootMargin: '0px 0px -10% 0px'`.
+- One shared `IntersectionObserver`, `threshold: 0`,
+  `rootMargin: '0px 0px -12% 0px'`. Threshold 0 rather than a fraction: an element
+  taller than the viewport can never reach a 15% threshold, so a fractional
+  threshold would leave tall blocks permanently hidden. The negative bottom margin
+  is what supplies the "reveal slightly before it's fully in view" feel.
 - On intersect: add `.is-revealed`, then `unobserve` the element. One-shot, no
-  re-hide on scroll-up, no scroll event listener anywhere.
+  re-hide on scroll-up.
 - Only `transform` and `opacity` animate (plus `clip-path` for the `clip` variant).
 - Timings come from `tokens/motion.css` (`--dur-reveal`, `--ease-entrance`). No new
   motion tokens — the design system files stay untouched, per README rules.
-- `count`: reads the element's rendered integer, animates from 0 over `--dur-reveal`
-  via `requestAnimationFrame`, restores the exact original string at the end (so
-  formatting like a trailing `%` or `+` survives).
+
+**Dropped from the earlier draft:** a `count` variant. The homepage has no numeric
+statistic anywhere — `em-hero__northstar` is a prose figure with no number — so a
+count-up variant would ship with zero consumers. YAGNI.
 
 ### Reduced motion
 
@@ -102,7 +105,7 @@ nothing depends on animation completion.
 
 | Section | Treatment |
 | --- | --- |
-| Header + hero | Page-entrance on load: header bar → `em-eyebrow` → h1 → `em-hero__lede` → `em-hero__actions`, 70ms apart. `em-hero__media` uses `clip`. `em-hero__northstar` number uses `count`. |
+| Header + hero | Page-entrance on load: header bar → `em-eyebrow` → h1 → `em-hero__lede` → `em-hero__actions`, 70ms apart. `em-hero__media` uses `clip`, `em-hero__northstar` `rise` behind it. |
 | Solutions (`em-process`) | `em-process__bg` / `__scrim` fade first, then `em-process__step` items cascade left→right at 80ms. |
 | Foundations | `em-foundations__head` rises; bento or equal cards cascade; `em-bento__media` uses `clip`. |
 | Stories | Feature card `slide-l`; stacked quotes cascade. Carousel variant cascades horizontally. **Both** layout variants are wired, so the `data-stories` preview switcher keeps working. |
@@ -119,9 +122,14 @@ preview control breaks.
 - `js/reveal.js` owns the scroll flag (it is already the page-lifecycle script):
   past 80px it sets `<html data-scrolled>`, using a passive scroll listener with an
   `rAF` guard.
-- CSS transitions header vertical padding down and adds `--elevation` shadow while
-  `[data-scrolled]` is set.
+- CSS transitions `.em-header__bar` `min-height` down (92px → 68px) and adds
+  `--shadow-md` while `[data-scrolled]` is set.
 - The open mega-menu panel is anchored to the header, so it travels with it.
+- **Preview-bar consequence:** `.ctl` is currently `position: sticky; top: 0;
+  z-index: 100`. With a sticky header at `top: 0` the two would occupy the same
+  strip and the higher-z preview bar would cover the header. `.ctl` therefore
+  becomes `position: static` and scrolls away. It is preview-only chrome that never
+  ships, so this costs nothing in the hand-off; README notes it.
 
 ## Layer 3 — mega menu
 
@@ -169,6 +177,8 @@ Each trigger gains `aria-controls="mega-<name>"`; each panel gains
 - Disabled entirely below 960px (matched via `matchMedia`, kept in sync on resize) —
   the mobile nav owns that range. Panels are `hidden` there.
 - `aria-expanded` on each trigger is driven for real.
+- Open state reuses `.em-header__item--open`, which `components/components.css`
+  already styles (nav pill background + caret flip). No new open-state styling.
 
 ### Motion
 
@@ -193,8 +203,8 @@ using the same `--reveal-i` mechanism. Both are no-ops under
 - Desktop mega link set matches the mobile nav link set (labels and hrefs), guarding
   against drift.
 - `css/motion.css` contains a `prefers-reduced-motion: reduce` block.
-- Every `data-reveal-group` has at least one child carrying `data-reveal`.
-- Every `data-reveal` value is one of the six documented variants.
+- Every `data-reveal-group` has at least one descendant carrying `data-reveal`.
+- Every `data-reveal` value is one of the five documented variants.
 - `src/index.html` links both new stylesheets and both new scripts.
 
 ## Documentation (`README.md`)

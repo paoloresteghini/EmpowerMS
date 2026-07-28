@@ -243,3 +243,74 @@
   border-radius:var(--radius-pill);color:var(--white);padding:14px 22px}
 .em-footer__form .em-input::placeholder{color:var(--text-inverse-muted)}
 .em-footer__bottom p{margin:0}
+
+/* ---------- Responsive ---------- */
+/* Breakpoints are an assumption — the source design is desktop-1440-only.
+   .em-process is the exception: its five steps carry min-width:238px and
+   -34px overlaps, so the strip needs ~1054px to render horizontally
+   (5*238 - 4*34). The container (--container-max 1200px minus two
+   --gutter of 24px) only clears that floor once the viewport is >=~1102px,
+   so the chevron gets its own, higher stacking breakpoint of 1150px —
+   comfortably above the measured overflow threshold — while every other
+   section keeps the 1200/900/600 set. */
+@media (max-width:1200px){
+  .em-hero{grid-template-columns:1fr 1fr}
+  .em-hero__copy{padding:var(--section-y) var(--space-8)}
+  .em-hero__northstar{left:auto;right:var(--space-6);bottom:var(--space-6);width:280px}
+  .em-insights{grid-template-columns:minmax(0,300px) 1fr;gap:var(--space-11)}
+}
+
+@media (max-width:1150px){
+  /* Five-across chevrons cannot survive here. Deliberate substitution:
+     a vertical numbered stack with the detail always visible. */
+  .em-process{flex-direction:column;height:auto}
+  .em-process__step,.em-process__step:first-child{clip-path:none;min-height:200px;min-width:0}
+  .em-process__step + .em-process__step{margin-left:0;margin-top:var(--space-3)}
+  .em-process__step:hover,.em-process__step:focus-within{flex:1 1 auto}
+  .em-process__inner{padding:var(--space-6) var(--space-6) var(--space-6)}
+  .em-process__detail{position:static;width:auto;opacity:1;transform:none;pointer-events:auto;
+    margin-top:var(--space-4)}
+  .em-process__num{opacity:1}
+}
+
+/* The header bar (logo + six nav links + search + Donate) never wraps and
+   has an intrinsic min-content width of ~940px — measured, not assumed —
+   so it overflows before the general 900px stacking breakpoint gets a
+   chance to help. Hide the nav a step earlier than that, with margin. */
+@media (max-width:960px){
+  .em-header__nav{display:none}
+}
+
+@media (max-width:900px){
+  .em-solutions__head,.em-foundations__head,.em-stories__head,.em-join__head{
+    grid-template-columns:1fr;gap:var(--space-6)}
+  .em-join__head .em-lead{max-width:none}
+
+  .em-hero{grid-template-columns:1fr}
+  .em-hero__copy{padding:var(--section-y) var(--gutter);order:1}
+  .em-hero__media{order:2;min-height:380px}
+  .em-hero__northstar{position:static;width:auto;margin:var(--space-6) var(--gutter) 0}
+
+  .em-bento{grid-template-columns:1fr}
+  .em-bento__col{grid-template-rows:auto auto}
+  .em-equal{grid-template-columns:1fr}
+  .em-stories__feature{grid-template-columns:1fr}
+  .em-stories__col{grid-template-rows:auto auto}
+  .em-insights{grid-template-columns:1fr;gap:var(--space-9)}
+  .em-join{grid-template-columns:1fr}
+  .em-footer__top{grid-template-columns:1fr 1fr}
+}
+
+@media (max-width:600px){
+  .em-hero h1{font-size:var(--fs-h1)}
+  .em-stories__lead-card{grid-template-columns:1fr}
+  .em-stories__lead-card>img{min-height:220px}
+  .em-stories__mini{flex-direction:column;align-items:flex-start}
+  .em-stories__carousel{grid-template-columns:1fr}
+  .em-stories__nav{display:none}
+  .em-stories__slide{grid-template-columns:1fr;gap:var(--space-6);padding:var(--space-8)}
+  .em-insights__row{grid-template-columns:1fr;gap:var(--space-5)}
+  .em-insights__row>img{width:100%}
+  .em-footer__top{grid-template-columns:1fr}
+  .em-footer__form{flex-direction:column}
+}

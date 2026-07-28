@@ -211,3 +211,46 @@ test('wire skin does not touch layout geometry', () => {
     assert.ok(!banned.test(body), `geometry in wireframe.css: ${b.trim().slice(0, 80)}`);
   }
 });
+
+const homepage = readFileSync('css/homepage.css', 'utf8');
+
+test('responsive rules exist at the documented breakpoints', () => {
+  for (const bp of ['1200px', '1150px', '960px', '900px', '600px']) {
+    assert.ok(homepage.includes(`max-width:${bp}`), `no breakpoint at ${bp}`);
+  }
+});
+
+test('chevron becomes a vertical stack before the strip can overflow', () => {
+  // .em-process needs ~1054px (5*238 - 4*34) to render horizontally, which
+  // the --container-max:1200px container only clears above a ~1102px
+  // viewport — so the chevron must stack at a breakpoint higher than 900px,
+  // not at it. See css/homepage.css for the full derivation.
+  const at = homepage.indexOf('max-width:1150px');
+  assert.ok(at > -1);
+  assert.match(homepage.slice(at), /em-process\{[^}]*flex-direction:column/);
+
+  // and the 900px block — for sections that DO fit horizontally that low —
+  // must not be the one carrying the chevron stack rule
+  const at900 = homepage.indexOf('max-width:900px');
+  const end900 = homepage.indexOf('\n}', at900);
+  assert.ok(at900 > -1 && end900 > -1);
+  assert.ok(!/em-process\{/.test(homepage.slice(at900, end900)),
+    'chevron stack rule found in the 900px block instead of the 1150px block');
+});
+
+test('header nav hides before its own min-content width can overflow', () => {
+  // .em-header__bar never wraps (logo + six nav links + search + Donate),
+  // measured with an intrinsic min-content width of ~940px, so the nav
+  // must be hidden above the general 900px stacking breakpoint, not at
+  // the 600px one previously used for it — that left a real overflow
+  // window from ~600-940px, confirmed by measurement.
+  const at = homepage.indexOf('max-width:960px');
+  assert.ok(at > -1, 'no 960px breakpoint for the header nav');
+  assert.match(homepage.slice(at), /em-header__nav\{[^}]*display:none/);
+
+  const at600 = homepage.indexOf('max-width:600px');
+  const end600 = homepage.indexOf('\n}', at600);
+  assert.ok(at600 > -1 && end600 > -1);
+  assert.ok(!/em-header__nav\{/.test(homepage.slice(at600, end600)),
+    'header nav hide rule duplicated in the 600px block');
+});

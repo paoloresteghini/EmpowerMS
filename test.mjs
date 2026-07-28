@@ -183,3 +183,31 @@ test('footer carries the registered address', () => {
 test('footer newsletter input is labelled', () => {
   assert.match(html, /<label[^>]*for="footer-email"/);
 });
+
+const wire = readFileSync('css/wireframe.css', 'utf8');
+
+test('wire skin scopes every rule under data-skin="wire"', () => {
+  const selectors = wire
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('}')
+    .map(b => b.split('{')[0].trim())
+    .filter(Boolean);
+  for (const sel of selectors) {
+    assert.ok(sel.includes('[data-skin="wire"]'), `unscoped wireframe rule: ${sel}`);
+  }
+});
+
+test('wire skin keeps the focus ring orange', () => {
+  assert.match(wire, /--focus-ring:\s*#E65A28/i);
+});
+
+test('wire skin does not touch layout geometry', () => {
+  const banned = /(^|[;{\s])(width|height|padding|margin|gap|grid-template|flex)\s*:/;
+  const blocks = wire.replace(/\/\*[\s\S]*?\*\//g, '').split('}');
+  for (const b of blocks) {
+    const body = b.split('{')[1];
+    if (!body) continue;
+    if (b.includes('em-footer')) continue; // documented exception
+    assert.ok(!banned.test(body), `geometry in wireframe.css: ${b.trim().slice(0, 80)}`);
+  }
+});

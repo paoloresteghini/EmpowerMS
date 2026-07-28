@@ -1,2 +1,90 @@
 /* Wireframe skin. Colour, imagery and ornament ONLY — never layout geometry.
-   Anything that moves a box belongs in homepage.css. */
+   Anything that moves a box belongs in homepage.css.
+   Exception: the footer's rounded inset panel, which the wireframe explicitly shows. */
+
+[data-skin="wire"]{
+  --text-strong:#1f2427;
+  --text-body:#7a7a7a;
+  --text-muted:#a8a8a8;
+  --text-inverse-muted:rgba(255,255,255,.8);
+  --surface-page:#fff;
+  --surface-subtle:#f6f6f5;
+  --surface-tint:#f6f6f5;
+  --surface-navy:#2c2f31;
+  --surface-card:#fff;
+  --border-subtle:#e2e2e2;
+  --border-default:#cfcfcf;
+  --border-inverse:#6b6f71;
+  --em-blue:#2c2f31;
+  --em-orange:#2c2f31;
+  --blue-100:#f4f4f4;
+  --orange-300:#a8a8a8;
+  /* --em-orange is a primitive driving eleven component rules. Neutralising it
+     greys the filled buttons as intended, but would also grey the focus ring —
+     an accessibility regression for a cosmetic toggle. Re-assert it. */
+  --focus-ring:#E65A28;
+  --shadow-focus:0 0 0 3px rgba(230,90,40,.38);
+}
+
+/* Eyebrows: the blanket --em-orange override would render these near-black.
+   The wireframe shows them mid-grey. */
+[data-skin="wire"] .em-eyebrow,
+[data-skin="wire"] .em-heading__eyebrow,
+[data-skin="wire"] .em-podcast__show{color:#9a9a9a}
+
+/* The 88x6 orange rule has no wireframe equivalent. */
+[data-skin="wire"] .em-rule,
+[data-skin="wire"] .em-heading__rule{visibility:hidden}
+
+/* Photography becomes diagonal-cross placeholder boxes. */
+[data-skin="wire"] .em-hero__media>img,
+[data-skin="wire"] .em-process__bg,
+[data-skin="wire"] .em-bento__media,
+[data-skin="wire"] .em-stories__lead-card>img,
+[data-skin="wire"] .em-stories__mini>img,
+[data-skin="wire"] .em-stories__slide>img,
+[data-skin="wire"] .em-insights__row>img{
+  opacity:0}
+[data-skin="wire"] .em-hero__media,
+[data-skin="wire"] .em-process__step,
+[data-skin="wire"] .em-stories__lead-card>img,
+[data-skin="wire"] .em-stories__mini>img,
+[data-skin="wire"] .em-stories__slide>img,
+[data-skin="wire"] .em-insights__row>img,
+[data-skin="wire"] .em-bento__media{
+  background-color:#f4f4f4;
+  background-image:linear-gradient(to top right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px)),
+                   linear-gradient(to bottom right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px))}
+
+/* Illustration marks become empty outlined squares. */
+[data-skin="wire"] .em-solution__icon,
+[data-skin="wire"] .em-process__mark{
+  opacity:0;
+  border:1px solid #e0e0e0;
+  border-radius:10px;
+  background-color:#f4f4f4}
+[data-skin="wire"] .em-process__mark{border-color:rgba(255,255,255,.45)}
+
+/* Logos become LOGO outline boxes. */
+[data-skin="wire"] .em-header__logo img,
+[data-skin="wire"] .em-footer__logo img{visibility:hidden}
+[data-skin="wire"] .em-header__logo,
+[data-skin="wire"] .em-footer__logo{position:relative}
+[data-skin="wire"] .em-header__logo::after,
+[data-skin="wire"] .em-footer__logo::after{
+  content:"LOGO";position:absolute;inset:0;display:grid;place-items:center;
+  border:1px solid #d2d2d2;border-radius:8px;
+  font-family:var(--font-display);font-weight:600;font-size:11px;letter-spacing:.18em;color:#9a9a9a}
+[data-skin="wire"] .em-footer__logo::after{border-color:#4e5254;color:#8a8a8a}
+
+/* The wireframe presents the footer as a rounded inset panel.
+   Documented geometry exception — ornament, not layout. */
+[data-skin="wire"] .em-footer{border-radius:24px;margin:30px;border:1px solid #2f3538}
+
+/* Card corners are tighter in the wireframe. */
+[data-skin="wire"]{--radius-card:14px;--radius-panel:16px;--radius-media:10px}
+
+/* Process scrims are neutral, not navy. */
+[data-skin="wire"] .em-process__scrim{background:rgba(31,36,39,.74)}
+[data-skin="wire"] .em-process__step:hover .em-process__scrim,
+[data-skin="wire"] .em-process__step:focus-within .em-process__scrim{background:rgba(31,36,39,.5)}

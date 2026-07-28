@@ -131,6 +131,24 @@ test('section copy uses curly apostrophes, not ASCII', () => {
   }
 });
 
+test('section copy uses curly quotes in prose, not straight ASCII quotes', () => {
+  for (const f of readdirSync('src/sections')) {
+    const s = readFileSync(`src/sections/${f}`, 'utf8');
+    // Strip HTML tags to check only text content, not attribute delimiters
+    const textOnly = s.replace(/<[^>]+>/g, '');
+    // Look for straight double quotes in text (not preceded/followed by < or >)
+    // This catches quotes in prose but not in HTML attributes
+    const badLines = [];
+    for (const line of textOnly.split('\n')) {
+      if (line.includes('"') && line.trim()) {
+        badLines.push(line.trim());
+      }
+    }
+    assert.equal(badLines.length, 0,
+      `${f} has straight double quotes in prose; must use curly quotes (U+201C/U+201D): ${badLines.slice(0, 2).join(' | ')}`);
+  }
+});
+
 test('both stories layouts ship in the markup', () => {
   assert.match(html, /class="em-stories__feature"/);
   assert.match(html, /class="em-stories__carousel"/);

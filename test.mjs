@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync, readdirSync } from 'node:fs';
 
 execFileSync('node', ['build.mjs'], { stdio: 'inherit' });
 const html = readFileSync('dist/index.html', 'utf8');
@@ -120,4 +120,13 @@ test('foundations names all three pillars in both layouts', () => {
 
 test('foundations uses the house Real solution: label', () => {
   assert.match(html, /<strong>Real solution:<\/strong>/);
+});
+
+test('section copy uses curly apostrophes, not ASCII', () => {
+  for (const f of readdirSync('src/sections')) {
+    const s = readFileSync(`src/sections/${f}`, 'utf8');
+    const bad = s.match(/[A-Za-z]'[A-Za-z]/g) || [];
+    assert.equal(bad.length, 0,
+      `${f} has ${bad.length} straight apostrophe(s): ${bad.join(', ')} — brand copy requires U+2019`);
+  }
 });

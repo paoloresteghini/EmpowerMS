@@ -475,3 +475,38 @@ test('both foundations layouts reveal, so the variant switcher never breaks', ()
   const cards = html.match(/<article class="em-solution"[^>]*data-reveal="rise">/g) || [];
   assert.equal(cards.length, 5, `expected 2 bento + 3 equal cards revealing, found ${cards.length}`);
 });
+
+test('both stories layouts reveal, so the variant switcher never breaks', () => {
+  assert.match(html, /<div class="em-stories__feature" data-reveal-group>/);
+  assert.match(html, /<div class="em-stories__carousel" data-reveal-group>/);
+  assert.match(html, /<article class="em-stories__lead-card" data-reveal="slide-l">/);
+});
+
+test('insights rows cascade as one group', () => {
+  assert.match(html, /<div class="em-insights__rows" data-reveal-group>/);
+  const revealed = html.match(/<article class="em-insights__row" data-reveal="rise">/g) || [];
+  assert.equal(revealed.length, 3, `expected 3 revealing rows, found ${revealed.length}`);
+});
+
+test('join us and footer participate in the reveal layer', () => {
+  assert.match(html, /<div class="em-join" data-reveal-group>/);
+  assert.match(html, /<div class="em-footer__top" data-reveal-group>/);
+});
+
+test('every data-reveal value is one of the five documented variants', () => {
+  const allowed = new Set(['rise', 'fade', 'slide-l', 'slide-r', 'clip']);
+  for (const m of html.matchAll(/data-reveal="([^"]*)"/g)) {
+    assert.ok(allowed.has(m[1]), `undocumented reveal variant: ${m[1]}`);
+  }
+});
+
+test('every reveal group actually contains something to reveal', () => {
+  // A group with no revealing descendants is dead markup — usually a
+  // sign the attributes were added to the wrong element.
+  for (const m of html.matchAll(/<(\w+)([^>]*\sdata-reveal-group[^>]*)>/g)) {
+    const from = m.index + m[0].length;
+    const window = html.slice(from, from + 3000);
+    assert.match(window, /data-reveal="/,
+      `data-reveal-group with no revealing children near: ${m[0].slice(0, 70)}`);
+  }
+});

@@ -78,8 +78,10 @@
 .em-process__title{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-h5);line-height:1.22;letter-spacing:var(--ls-caps);text-transform:uppercase;
   color:var(--white);overflow-wrap:break-word}
+/* No width: left+right constrain this. A fixed width clips once the container goes
+   fluid below ~1248px. */
 .em-process__detail{position:absolute;left:var(--space-8);right:var(--space-8);bottom:var(--space-7);
-  width:290px;opacity:0;transform:translateY(10px);pointer-events:none;
+  opacity:0;transform:translateY(10px);pointer-events:none;
   transition:opacity var(--dur-slow) var(--ease-out) 80ms,transform var(--dur-slow) var(--ease-out) 80ms}
 .em-process__step:hover .em-process__detail,
 .em-process__step:focus-within .em-process__detail{opacity:1;transform:none;pointer-events:auto}

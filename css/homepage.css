@@ -314,3 +314,16 @@
   .em-footer__top{grid-template-columns:1fr}
   .em-footer__form{flex-direction:column}
 }
+
+/* Below ~324px, .em-header__bar's non-wrapping, non-shrinking children
+   (logo 111.5px + gap 40px + actions 148px = 299.5px) overflow the
+   272px available inside a 320px viewport — measured, not assumed.
+   .em-header__nav is already hidden by the 960px rule above, so the
+   remaining overflow is entirely logo + bar gap + actions gap + Donate.
+   Tightening the two gaps buys back 20px, clearing the 320px floor with
+   margin, without shrinking the logo or the Donate button itself — both
+   stay full size and legible. */
+@media (max-width:400px){
+  .em-header__bar{gap:var(--space-6)}
+  .em-header__actions{gap:var(--space-2)}
+}

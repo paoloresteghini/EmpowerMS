@@ -215,7 +215,7 @@ test('wire skin does not touch layout geometry', () => {
 const homepage = readFileSync('css/homepage.css', 'utf8');
 
 test('responsive rules exist at the documented breakpoints', () => {
-  for (const bp of ['1200px', '1150px', '960px', '900px', '600px']) {
+  for (const bp of ['1200px', '1150px', '960px', '900px', '600px', '400px']) {
     assert.ok(homepage.includes(`max-width:${bp}`), `no breakpoint at ${bp}`);
   }
 });
@@ -253,4 +253,18 @@ test('header nav hides before its own min-content width can overflow', () => {
   assert.ok(at600 > -1 && end600 > -1);
   assert.ok(!/em-header__nav\{/.test(homepage.slice(at600, end600)),
     'header nav hide rule duplicated in the 600px block');
+});
+
+test('header bar tightens its gaps before the 320px floor can overflow', () => {
+  // .em-header__bar's non-wrapping, non-shrinking children (logo + gap +
+  // actions, with .em-header__nav already hidden by the 960px rule) need
+  // 299.5px but only 272px is available inside a 320px viewport —
+  // measured, not assumed. A max-width:400px rule tightens both the bar
+  // gap and the actions gap to buy back the missing width without
+  // shrinking the logo or the Donate button itself.
+  const at = homepage.indexOf('max-width:400px');
+  assert.ok(at > -1, 'no 400px breakpoint for the small header bar fix');
+  const block = homepage.slice(at, homepage.indexOf('}', homepage.indexOf('}', at) + 1) + 1);
+  assert.match(block, /em-header__bar\{gap:/, 'bar gap not tightened at 400px');
+  assert.match(block, /em-header__actions\{gap:/, 'actions gap not tightened at 400px');
 });

@@ -444,3 +444,18 @@ test('reveal observer uses threshold 0, not a fraction', () => {
 test('reveal observer is one-shot', () => {
   assert.match(revealJs, /unobserve/, 'elements are never unobserved; observer leaks work');
 });
+
+test('hero is the page entrance scope and staggers its own copy', () => {
+  const hero = html.match(/<section class="em-hero"[\s\S]*?<\/section>/)[0];
+  assert.match(hero, /data-reveal-entrance/, 'hero is not an entrance scope');
+  assert.match(hero, /data-reveal-group/, 'hero copy is not staggered');
+  assert.match(hero, /<h1 id="hero-title" data-reveal="rise">/);
+  assert.match(hero, /class="em-hero__media"[^>]*data-reveal-group/);
+  assert.ok(/<img[^>]*data-reveal="clip"/.test(hero), 'hero photo does not use the clip reveal');
+});
+
+test('page entrance is scoped to above-the-fold content only', () => {
+  const scopes = html.match(/data-reveal-entrance/g) || [];
+  assert.equal(scopes.length, 1,
+    'more than one entrance scope — everything below the fold should reveal on scroll');
+});

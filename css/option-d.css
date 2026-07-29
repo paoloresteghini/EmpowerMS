@@ -1,0 +1,385 @@
+/* ============================================================================
+   Option D — "The Throughline"
+   ----------------------------------------------------------------------------
+   Spatial idea: the page as a route. An orange line threads the solutions
+   model, and the three foundations are full-height photographic slabs that
+   stick and slide over one another as you scroll — the page's one cinematic
+   moment, done with position:sticky and no script at all.
+
+   The closest of the four to the roadmap's own framing: a homepage where each
+   section builds on the one before it.
+
+   Loads after css/site.css, which owns the header, mobile nav and footer.
+   ========================================================================= */
+
+:root{
+  --tl-step:clamp(var(--space-11),7vw,var(--space-14));
+  --tl-radius:clamp(var(--radius-lg),2vw,var(--radius-panel));
+  /* The sticky header is 92px and condenses to 68px. Slabs stick under it. */
+  --tl-head:92px;
+}
+
+.tl-lede{margin:0;font-size:clamp(1.0625rem,.98rem + .4vw,1.25rem);line-height:1.65;
+  color:var(--text-body);max-width:62ch}
+.tl-label{margin:0 0 var(--space-8);padding-bottom:var(--space-4);
+  border-bottom:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+
+/* ============================ 1 · Hero =================================== */
+/* Copy on navy, photograph full-bleed to the right edge. The two halves meet
+   on the container's centre line, so the fold is a split rather than a band. */
+.tl-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:stretch;background:var(--surface-navy-deep);--pattern-ink:var(--blue-600)}
+
+.tl-hero__copy{position:relative;isolation:isolate;overflow:hidden;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:clamp(var(--space-11),7vw,var(--space-15)) clamp(var(--space-8),4vw,var(--space-12))
+          clamp(var(--space-11),7vw,var(--space-15)) var(--gutter)}
+/* Brand honeycomb, graduated so it is texture in the empty corner and gone
+   before it reaches the headline. Mask, not background image, so one file
+   serves every colour. */
+.tl-hero__copy::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,var(--pattern-ink) 0%,var(--pattern-ink) 12%,transparent 58%);
+  opacity:.7;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:80px;mask-size:80px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+/* Keeps the copy on the container's own measure instead of letting it run to
+   the full half-viewport on a wide display. */
+.tl-hero__copy-inner{width:100%;max-width:calc(var(--container-max) / 2)}
+
+.tl-hero__tag{margin:0 0 var(--space-6);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:.02em;color:var(--orange-300)}
+.tl-hero__tag::before{content:"";width:34px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+.tl-hero h1{margin:0 0 var(--space-7);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.3rem,1.1rem + 3.6vw,4.25rem);line-height:1;letter-spacing:-.035em;
+  color:var(--white)}
+.tl-hero__lede{margin:0 0 var(--space-8);font-size:clamp(1.0625rem,.95rem + .45vw,1.3125rem);
+  line-height:1.65;color:var(--text-inverse-muted);max-width:46ch}
+.tl-hero__actions{display:flex;gap:var(--space-5);flex-wrap:wrap}
+
+.tl-hero__media{position:relative;margin:0;min-height:min(84vh,760px)}
+.tl-hero__media img{width:100%;height:100%;object-fit:cover;object-position:center 28%}
+.tl-hero__media figcaption{position:absolute;left:0;right:0;bottom:0;
+  padding:clamp(var(--space-12),9vw,var(--space-14)) clamp(var(--space-6),3vw,var(--space-9))
+          clamp(var(--space-6),2.5vw,var(--space-9));
+  background:linear-gradient(180deg,rgba(0,41,53,0) 0%,rgba(0,41,53,.5) 40%,rgba(0,41,53,.9) 100%)}
+.tl-hero__ns-label{display:block;margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.tl-hero__ns-text{display:block;max-width:42ch;font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:clamp(1rem,.92rem + .5vw,1.375rem);line-height:1.35;
+  letter-spacing:var(--ls-heading);color:var(--white)}
+
+/* ==================== 2 · How Change Happens ============================= */
+/* The throughline made literal: five nodes threaded on one orange line, sides
+   alternating so the section reads as a route rather than as a list. */
+.tl-change{padding:var(--tl-step) 0;background:var(--surface-page)}
+.tl-change__head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-13));align-items:end;
+  margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+.tl-change h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue)}
+
+.tl-line{list-style:none;margin:0;padding:0;position:relative}
+/* The line itself. Drawn behind the nodes, from the first dot to the last. */
+.tl-line::before{content:"";position:absolute;top:var(--space-6);bottom:var(--space-6);
+  left:calc(var(--space-6) - 1px);width:2px;background:var(--orange-300);border-radius:1px}
+
+.tl-node{position:relative;padding:0 0 clamp(var(--space-8),3.5vw,var(--space-11))
+  0;padding-left:clamp(var(--space-11),6vw,var(--space-13));min-height:var(--space-12)}
+.tl-node:last-child{padding-bottom:0}
+.tl-node__dot{position:absolute;left:calc(var(--space-6) - 9px);top:var(--space-2);
+  width:18px;height:18px;border-radius:var(--radius-pill);
+  background:var(--em-orange);box-shadow:0 0 0 5px var(--surface-page)}
+.tl-node__num{display:block;margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  color:var(--em-orange-ink);font-variant-numeric:tabular-nums lining-nums}
+.tl-node h3{margin:0 0 var(--space-3);font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.125rem,1rem + .6vw,1.625rem);line-height:1.2;letter-spacing:-.02em;
+  color:var(--em-blue)}
+.tl-node p{margin:0;font-size:var(--fs-small);line-height:1.65;color:var(--text-body);
+  max-width:52ch}
+
+@media (min-width:901px){
+  /* Alternating sides. The line moves to the centre and each node takes half
+     the width, which is what turns a vertical list into a route. */
+  .tl-line::before{left:calc(50% - 1px)}
+  .tl-node{width:50%;padding-left:0;padding-right:clamp(var(--space-9),4vw,var(--space-12))}
+  .tl-node__body{text-align:right}
+  .tl-node__num{text-align:right}
+  .tl-node p{margin-left:auto}
+  .tl-node__dot{left:auto;right:-9px}
+  .tl-node:nth-child(even){margin-left:50%;
+    padding-right:0;padding-left:clamp(var(--space-9),4vw,var(--space-12))}
+  .tl-node:nth-child(even) .tl-node__body,
+  .tl-node:nth-child(even) .tl-node__num{text-align:left}
+  .tl-node:nth-child(even) p{margin-left:0}
+  .tl-node:nth-child(even) .tl-node__dot{right:auto;left:-9px}
+  /* Each node is pulled up into the previous one's trailing space so the
+     zig-zag closes up instead of leaving a ladder of gaps. */
+  .tl-node + .tl-node{margin-top:calc(-1 * clamp(var(--space-6),2.5vw,var(--space-9)))}
+}
+
+/* ==================== 3 · Three Foundations ============================== */
+/* The signature. Three full-height photographic slabs, each position:sticky at
+   the same offset, so scrolling slides each one up over the last. The stack's
+   own height is what provides the scroll distance — no script, no scroll
+   listener, no measured pixel value.
+
+   Each slab is opaque and covers the whole viewport width, which is what makes
+   the overlap read as a deck of cards rather than as a bug. */
+.tl-foundations{background:var(--surface-navy-deep)}
+.tl-foundations__head{padding:var(--tl-step) 0 clamp(var(--space-9),4vw,var(--space-12));
+  display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-13));align-items:end}
+.tl-foundations h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--white)}
+.tl-foundations .tl-lede{color:var(--text-inverse-muted);line-height:1.7}
+
+/* Centred, not bottom-aligned. Each slab is covered from the bottom up as the
+   next one rises, so copy sitting at the bottom edge gets cut through
+   mid-sentence while it is still the slab being read. Centring puts the copy
+   where it is covered last, and the top padding keeps it clear of the sticky
+   header, which sits over the slab's own top edge. */
+.tl-slab{position:sticky;top:0;isolation:isolate;overflow:hidden;
+  min-height:min(100svh,860px);
+  display:flex;align-items:center;
+  padding:calc(var(--tl-head) + clamp(var(--space-8),4vw,var(--space-12))) 0
+          clamp(var(--space-9),5vw,var(--space-13));
+  background:var(--surface-navy-deep)}
+.tl-slab__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+/* Measured at the darkest stop: --white on rgba(0,41,53,.92) composited over
+   any source pixel is >= 12:1, and --text-inverse-muted is >= 8:1, so no
+   photograph can put a slab's copy under AA. */
+.tl-slab::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(0,41,53,.35) 0%,rgba(0,41,53,.7) 45%,rgba(0,41,53,.94) 100%)}
+.tl-slab__inner{position:relative;width:100%}
+
+.tl-slab__count{margin:0 0 var(--space-6);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  color:var(--text-inverse-muted);font-variant-numeric:tabular-nums lining-nums}
+.tl-slab__count span{color:var(--orange-300);font-size:var(--fs-h4);font-weight:var(--fw-black);
+  letter-spacing:-.02em}
+.tl-slab h3{margin:0 0 var(--space-5);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.2rem + 3vw,4rem);line-height:1;letter-spacing:-.035em;
+  text-transform:uppercase}
+.tl-slab h3 a{color:var(--white);text-decoration:none}
+/* The slab is the target, anchored to the heading link so it exposes exactly
+   one destination and one accessible name. */
+.tl-slab h3 a::after{content:"";position:absolute;inset:0;z-index:1}
+.tl-slab:hover h3 a,.tl-slab h3 a:focus-visible{color:var(--orange-300)}
+.tl-slab__promise{margin:0 0 var(--space-5);font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:clamp(1.125rem,1rem + .6vw,1.625rem);line-height:1.35;
+  color:var(--white);max-width:24ch}
+.tl-slab__text{margin:0 0 var(--space-7);font-size:var(--fs-body);line-height:1.65;
+  color:var(--text-inverse-muted);max-width:52ch}
+.tl-slab__text b{color:var(--white);font-weight:var(--fw-bold)}
+.tl-slab__cue{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--orange-300)}
+.tl-slab__cue svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.tl-slab:hover .tl-slab__cue svg{transform:translateX(4px)}
+
+/* ==================== 4 · Mississippi Stories ============================ */
+/* One photograph at full bleed carrying the headline and the featured quote,
+   then a band beneath that overlaps its bottom edge. */
+.tl-stories{position:relative;background:var(--surface-page);
+  padding-bottom:var(--tl-step)}
+.tl-stories__stage{position:relative;margin:0;isolation:isolate;
+  min-height:min(78vh,720px);display:flex;align-items:flex-end;
+  padding-bottom:clamp(var(--space-12),9vw,var(--space-15))}
+.tl-stories__stage>img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;
+  object-fit:cover;object-position:center 20%}
+.tl-stories__stage::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(0,41,53,.3) 0%,rgba(0,41,53,.66) 44%,rgba(0,41,53,.92) 100%)}
+.tl-stories__stage figcaption{position:relative;width:100%}
+.tl-stories h2{margin:0 0 var(--space-7);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;
+  letter-spacing:-.03em;color:var(--white);max-width:18ch}
+.tl-stories__stage blockquote{margin:0 0 var(--space-6)}
+.tl-stories__stage blockquote p{margin:0;font-family:var(--font-display);
+  font-weight:var(--fw-medium);font-size:clamp(1.25rem,1rem + 1.2vw,2.125rem);line-height:1.3;
+  letter-spacing:-.02em;color:var(--white);max-width:24ch;text-wrap:balance}
+.tl-stories__attr{margin:0;font-size:var(--fs-small);color:var(--text-inverse-muted)}
+.tl-stories__attr b{display:block;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--orange-300)}
+
+/* The overlap: the band is pulled up over the photograph's bottom edge, which
+   is what stops the section reading as photo-then-content. */
+.tl-stories__band{position:relative;z-index:2;
+  margin-top:calc(-1 * clamp(var(--space-9),6vw,var(--space-13)));
+  background:var(--surface-page);border-radius:var(--tl-radius);
+  padding:clamp(var(--space-8),3.5vw,var(--space-12));
+  box-shadow:var(--shadow-lg)}
+/* The container is already the band's own box here, so the padding it applies
+   would double up. */
+.tl-stories__band.em-container{max-width:calc(var(--container-max) - var(--gutter) * 2)}
+.tl-stories__lede{margin:0 0 clamp(var(--space-7),3vw,var(--space-10));
+  font-size:clamp(1.0625rem,.98rem + .45vw,1.3125rem);line-height:1.6;color:var(--text-body);
+  max-width:62ch}
+.tl-stories__more{list-style:none;margin:0 0 clamp(var(--space-7),3vw,var(--space-10));padding:0;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(var(--space-6),3vw,var(--space-10))}
+.tl-stories__more li{padding-top:var(--space-6);border-top:2px solid var(--em-orange)}
+.tl-stories__more blockquote{margin:0 0 var(--space-5)}
+.tl-stories__more blockquote p{margin:0;font-family:var(--font-display);
+  font-weight:var(--fw-medium);font-size:var(--fs-h5);line-height:1.4;color:var(--text-strong)}
+.tl-stories__attr--sm{color:var(--text-muted);font-size:var(--fs-caption)}
+.tl-stories__attr--sm b{color:var(--em-orange-ink)}
+
+/* ==================== 5 · Latest Insights ================================ */
+.tl-insights{padding:var(--tl-step) 0 0;background:var(--surface-subtle)}
+.tl-insights__head{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:clamp(var(--space-6),3vw,var(--space-10));align-items:end;
+  padding-bottom:var(--space-7);border-bottom:2px solid var(--em-blue);
+  margin-bottom:clamp(var(--space-8),3.5vw,var(--space-11))}
+.tl-insights h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.05rem + 1.7vw,2.375rem);line-height:1.1;letter-spacing:-.03em;
+  color:var(--em-blue);max-width:26ch}
+.tl-all{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  white-space:nowrap;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink);text-decoration:none}
+.tl-all svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.tl-all:hover{color:var(--em-blue)}
+.tl-all:hover svg{transform:translateX(4px)}
+
+.tl-feed{display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(var(--space-5),2.2vw,var(--space-8));
+  padding-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+/* The lead post is taller and wider than its two neighbours, so the block is a
+   composition rather than three equal cards. */
+.tl-post--lead{grid-column:1 / 3;grid-row:1 / 3}
+.tl-post{display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.tl-post__media{display:block;overflow:hidden;border-radius:var(--tl-radius);
+  margin-bottom:var(--space-5);background:var(--blue-100)}
+.tl-post--lead .tl-post__media{aspect-ratio:2/1}
+.tl-post:not(.tl-post--lead) .tl-post__media{aspect-ratio:4/3}
+.tl-post__media img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.tl-post:hover .tl-post__media img{transform:scale(1.05)}
+.tl-post__kind{margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.tl-post__title{font-family:var(--font-display);font-weight:var(--fw-bold);line-height:1.22;
+  letter-spacing:var(--ls-heading);color:var(--em-blue);
+  transition:color var(--dur) var(--ease-out)}
+.tl-post--lead .tl-post__title{font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem)}
+.tl-post:not(.tl-post--lead) .tl-post__title{font-size:var(--fs-h5)}
+.tl-post:hover .tl-post__title{color:var(--em-orange-ink)}
+.tl-post__excerpt{margin-top:var(--space-3);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:56ch}
+
+/* Full-bleed navy bar, so the section ends on the brand rather than on a card. */
+.tl-pod{display:block;background:var(--surface-navy);text-decoration:none;
+  transition:background var(--dur) var(--ease-out)}
+.tl-pod:hover{background:var(--surface-navy-deep)}
+.tl-pod__inner{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;
+  gap:clamp(var(--space-5),2vw,var(--space-8));
+  padding-top:clamp(var(--space-6),2.5vw,var(--space-9));
+  padding-bottom:clamp(var(--space-6),2.5vw,var(--space-9))}
+.tl-pod__play{width:56px;height:56px;border-radius:var(--radius-pill);background:var(--em-orange);
+  color:var(--white);display:grid;place-items:center;
+  transition:transform var(--dur) var(--ease-out)}
+.tl-pod:hover .tl-pod__play{transform:scale(1.08)}
+.tl-pod__play svg{width:22px;height:22px;margin-left:2px}
+.tl-pod__show{display:block;margin-bottom:2px;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.tl-pod__title{display:block;margin-bottom:var(--space-2);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-h4);line-height:1.2;color:var(--white)}
+.tl-pod__meta{display:block;font-size:var(--fs-small);line-height:1.55;
+  color:var(--text-inverse-muted);max-width:58ch}
+.tl-pod__cue{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--white);white-space:nowrap}
+
+/* ========================== 6 · Join Us ================================== */
+.tl-join{padding:var(--tl-step) 0;background:var(--surface-tint)}
+.tl-join__inner{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  gap:clamp(var(--space-8),4vw,var(--space-13));align-items:start}
+.tl-join h2{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.2rem + 2vw,2.75rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue)}
+.tl-join__lede{margin:0 0 var(--space-7);font-size:var(--fs-lead);line-height:1.6;
+  color:var(--text-body);max-width:42ch}
+.tl-join__form{display:flex;gap:var(--space-3);flex-wrap:wrap;max-width:520px}
+.tl-join__form .em-input{flex:1 1 220px}
+/* The Join form sits on the tint, so the inverse button from components.css
+   would be white-on-tint. Restated as the navy secondary. */
+.tl-join__form .em-btn--inverse{background:var(--em-blue);color:var(--white)}
+.tl-join__form .em-btn--inverse:hover{background:var(--blue-700);color:var(--white)}
+.tl-join__note{margin:var(--space-4) 0 0;font-size:var(--fs-caption);color:var(--text-muted)}
+
+.tl-join__ways{list-style:none;margin:0;padding:0;display:grid;
+  gap:clamp(var(--space-6),2.5vw,var(--space-8))}
+.tl-join__ways li{position:relative;padding-top:clamp(var(--space-5),2vw,var(--space-7));
+  border-top:2px solid var(--em-blue)}
+.tl-join__ways h3{margin:0 0 var(--space-3);font-size:clamp(1.25rem,1.05rem + .7vw,1.75rem);
+  font-weight:var(--fw-black);letter-spacing:-.02em;line-height:1.15}
+.tl-join__ways h3 a{color:var(--em-blue);text-decoration:none}
+.tl-join__ways h3 a::after{content:"";position:absolute;inset:0}
+.tl-join__ways li:hover h3 a{color:var(--em-orange-ink)}
+.tl-join__ways p{margin:0 0 var(--space-5);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:46ch}
+.tl-join__cue{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+.tl-join__cue svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.tl-join__ways li:hover .tl-join__cue svg{transform:translateX(4px)}
+
+/* ========================== Responsive =================================== */
+@media (max-width:1000px){
+  .tl-change__head,.tl-foundations__head,.tl-insights__head{
+    grid-template-columns:1fr;gap:var(--space-6);align-items:start}
+  .tl-feed{grid-template-columns:repeat(2,1fr)}
+  .tl-post--lead{grid-column:1 / -1;grid-row:auto}
+  .tl-join__inner{grid-template-columns:1fr;gap:var(--space-10)}
+}
+
+@media (max-width:900px){
+  /* The hero's split needs two columns to be a split. */
+  .tl-hero{grid-template-columns:1fr}
+  .tl-hero__copy{justify-content:flex-start;
+    padding:clamp(var(--space-10),9vw,var(--space-13)) var(--gutter)}
+  .tl-hero__copy-inner{max-width:none}
+  .tl-hero__media{min-height:0;aspect-ratio:4/3}
+
+  /* The route folds back to one side. The dots stay on the line so the
+     section keeps reading as a route, it just stops alternating. */
+  .tl-stories__more{grid-template-columns:1fr}
+  .tl-pod__inner{grid-template-columns:auto minmax(0,1fr);row-gap:var(--space-4)}
+  .tl-pod__cue{grid-column:2}
+}
+
+@media (max-width:700px){
+  .tl-feed{grid-template-columns:1fr}
+  .tl-post--lead{grid-column:auto}
+  .tl-join__form .em-input{flex:1 1 100%}
+  /* A slab that is taller than the viewport cannot stick without hiding its
+     own copy, and three of them stacked on a phone is a scroll trap. They
+     become ordinary sequential panels. */
+  .tl-slab{position:static;min-height:0;
+    padding:clamp(var(--space-10),14vw,var(--space-13)) 0}
+  .tl-slab h3{font-size:clamp(1.75rem,1.2rem + 3vw,2.5rem)}
+}
+
+@media (max-width:420px){
+  .tl-hero__copy::before{-webkit-mask-size:60px;mask-size:60px}
+}
+
+/* ========================== Reduced motion =============================== */
+/* The sticky stack is not an animation — it is layout, and it stays. What
+   stands down are the hover transforms and the image scales. */
+@media (prefers-reduced-motion:reduce){
+  .tl-post:hover .tl-post__media img,
+  .tl-pod:hover .tl-pod__play,
+  .tl-all:hover svg,
+  .tl-slab:hover .tl-slab__cue svg,
+  .tl-join__ways li:hover .tl-join__cue svg{transform:none}
+}

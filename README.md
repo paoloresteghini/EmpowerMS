@@ -2,26 +2,42 @@
 
 Static HTML + CSS builds of the Empower Mississippi homepage: **four complete
 alternative designs for the client to choose from**, plus the original
-reference build kept for comparison.
+reference build kept for comparison and one variation of it.
 
 Content is the **Homepage** section of the *Empower Mississippi Website Refresh
 Roadmap* (Google Doc). Every headline, subhead, section intro, solution promise
-and Join Us block is that copy, used verbatim, on all five pages. What differs
+and Join Us block is that copy, used verbatim, on all six pages. What differs
 between them is the composition.
 
 This is a **reference implementation for hand-off to WordPress + Elementor**,
 not a production runtime.
 
-## The five pages
+## The six pages
 
 | Page | What it is |
 | --- | --- |
-| `dist/index.html` | Chooser — opens all five side by side. Review tool, never ships. |
+| `dist/index.html` | Chooser — opens all six side by side. Review tool, never ships. |
 | `dist/option-a.html` | **Front Porch** — interlocking mosaic, warm and photographic |
 | `dist/option-b.html` | **The Index** — persistent sticky rail, typographic, credible |
 | `dist/option-c.html` | **The Atlas** — horizontal rails and expanding panels |
 | `dist/option-d.html` | **The Throughline** — a route, with a sticky photographic stack |
 | `dist/current.html` | The original build from the wireframe, toggles stripped |
+| `dist/current-2.html` | The current build with a new header and banner fitted |
+
+`dist/current-2.html` is the current build with three parts replaced: a navy
+utility strip above a centred nav using **simple dropdowns instead of the mega
+menus** (same six top-level items, same sitemap); a centred banner whose three
+photographs straddle the edge of a tinted band; and **Three Foundations as
+Option C's expanding photographic panels, restated for a white section** rather
+than the bento grid. Everything else — the solutions model, stories, insights,
+Join Us, the footer — is the reference build's own. It is the only page that
+loads `css/current-2.css` and `js/dropdown.js` and the only one that loads
+neither `css/megamenu.css` nor `js/megamenu.js`.
+
+The foundations panels are `c2-*`, not `at-*`: this page never loads
+`css/option-c.css`, and a shared prefix across two stylesheets that never meet
+would imply a dependency that does not exist. If Empower picks Option C, that
+section then exists twice and one copy should go.
 
 Each option's design rationale is in `docs/homepage-options-brief.md`. Each
 stylesheet opens with a comment stating that option's spatial idea and its
@@ -52,19 +68,25 @@ css/option-a.css          ← Front Porch
 css/option-b.css          ← The Index
 css/option-c.css          ← The Atlas
 css/option-d.css          ← The Throughline
+css/current-2.css         ← the new header + banner fitted to the current build
 css/chooser.css           ← the review chooser — never ships
 
 src/_shared/header.html   ← ONE header + five mega menus + mobile nav,
-src/_shared/footer.html     shared by every page. Change once, changes all.
+src/_shared/header-2.html   the same nav items as simple dropdowns.
+src/_shared/footer.html     Shared. Change one, changes every page using it.
 src/index.html            ← page shell for the original build
 src/sections/0*.html        and its sections
 src/option-a/index.html   ← page shell per option
 src/option-a/sections/      and that option's own sections
+src/current-2/index.html  ← the current build with header-2, its own banner and
+src/current-2/sections/     its own foundations; 02, 04–06 are the reference
+                            build's own partials, included unchanged
 src/chooser.html          ← the review chooser — never ships
 
 js/nav.js                 ← mobile menu behaviour — shippable
 js/reveal.js              ← reveal engine + sticky header flag — shippable
 js/megamenu.js            ← desktop mega menu behaviour — shippable
+js/dropdown.js            ← simple dropdown behaviour — shippable
 
 build.mjs                 ← PAGES manifest; resolves <!--@include--> markers
 dev.mjs                   ← watch + live-reload dev server — never ships
@@ -90,7 +112,7 @@ node dev.mjs
 ```
 
 Then open `http://localhost:8000/dist/index.html` — the chooser, which links
-to all five. Editing anything in `src/` rebuilds every page and reloads the
+to all six. Editing anything in `src/` rebuilds every page and reloads the
 tab; editing `css/`, `js/`, `tokens/`, `components/` or `assets/` just reloads
 it. `--port 9000` moves it.
 
@@ -136,14 +158,14 @@ Requires Node ≥18. No dependencies, no install step.
 node --test test.mjs
 ```
 
-108 tests. They come in two halves.
+116 tests. They come in two halves.
 
 Everything up to the divider comment near the end of `test.mjs` is about the
 **original reference build** specifically — it names `.em-*` section classes
 that only that page has.
 
 Below the divider is the **cross-page contract**, asserted for every page in
-`PAGES`. That is what stops five presentations of one brand drifting into five
+`PAGES`. That is what stops six presentations of one brand drifting into six
 different brands:
 
 - every line of the roadmap's approved copy appears verbatim on all four options
@@ -273,6 +295,28 @@ titles, and the feature images are stand-ins written for this build and need
 Empower’s real content. Feature images carry `alt=""` deliberately — they are
 decorative beside a titled link, and the stand-in photo filenames do not describe
 their contents.
+
+## Simple dropdowns (`dist/current-2.html` only)
+
+The same six top-level items and the same sitemap as the mega menus, rendered as
+one narrow panel per trigger: label plus a one-line description, no feature card,
+no columns. Markup is `src/_shared/header-2.html`, styles are in
+`css/current-2.css`, behaviour is `js/dropdown.js`.
+
+`js/dropdown.js` is `js/megamenu.js`'s contract at a smaller surface, and the
+interaction is deliberately identical — hover intent at 120ms/200ms on a fine
+pointer only, click to toggle and pin, Escape back to the trigger, ArrowDown into
+the panel, ArrowLeft/ArrowRight along the nav, outside click and focus-leave both
+close, one panel open at a time, stands down below 960px. The gate attribute is
+`<html data-dropdown="on">` rather than `data-mega`.
+
+One thing this page has to undo that the mega menus do not:
+`components/components.css` ships `.em-header__menu` already `position:absolute`.
+Left alone, a no-JS visitor would get five panels stacked on top of one another
+under the bar. `css/current-2.css` therefore returns the panel to normal flow and
+only the `[data-dropdown="on"]` gate makes it an overlay — same
+progressive-enhancement contract as everything else here, but it costs an
+explicit override of an upstream component rather than a plain addition.
 
 ## Responsive breakpoints
 

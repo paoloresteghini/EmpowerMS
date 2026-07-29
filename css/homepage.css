@@ -4,6 +4,74 @@
    overrides live in css/site.css, which every homepage option loads first.
    This file holds only the sections of THIS homepage. */
 
+/* ---------- Local tokens ----------
+   --scrim-step and --scrim-step-open were REFERENCED by .em-process__scrim
+   and defined nowhere in this repo — not in tokens/, not in components/, not
+   here. An undefined custom property with no fallback resolves to nothing, so
+   the scrim painted fully transparent and every step title in the solutions
+   chevron was white text sitting directly on a photograph. Over the first
+   step's sunset grass that is unreadable, and over any bright source it fails
+   SC 1.4.3 outright.
+
+   The audit's contrast sweep could not have caught it: that pass composites a
+   text node against its computed background, and there is no computed
+   background behind text sitting over an <img>. Same structural blind spot
+   that hid the ::placeholder failure.
+
+   Defined here rather than in tokens/, which is upstream and never edited.
+   rgba(0,41,53,…) is --em-blue at a measured alpha; CSS cannot express that
+   through a colour token without color-mix support this build does not assume,
+   which is the same exception css/option-*.css already relies on.
+
+   Gradients, not flat washes, because the copy sits in the bottom third of a
+   440px step — a flat scrim heavy enough to carry the title would grey out the
+   whole photograph.
+
+   Measured, not estimated, and measured AT THE COPY rather than at the darkest
+   stop — the title band sits around 65% down, where the base gradient is at
+   alpha .65, not the .88 it reaches at the very bottom. Each of the five
+   sources was sampled for its BRIGHTEST pixel inside the title's own box
+   (worst case for white text), composited through the scrim at that height:
+
+     Define the problem      5.36:1     Advocate for change    5.06:1
+     Conduct research        6.00:1     Policy implementation  5.13:1
+     Craft policy solution   8.69:1
+
+   Worst case 5.06:1 against AA's 4.5:1 for normal text — and these titles are
+   large bold, where the bar is 3:1, so there is real headroom. The open state
+   adds the second layer over the same pixels: the Real Solution paragraph
+   lands on 13.8–14.1:1 for white and 8.6–8.7:1 for --text-inverse-muted.
+
+   If the stand-in photography is ever replaced, re-run that sampling. A
+   brighter source under the title is the one change that can put this back
+   under AA, and no test in this repo can see it. */
+:root{
+  /* The 44% midpoint left the step NUMBER stranded. It sits at 51% of the
+     step, just above the title, where that ramp was only at alpha .59 — and
+     over the brightest pixel in these sources no text colour at any opacity,
+     including solid white, could reach 4.5:1 there. Solved by darkening the
+     band the copy actually occupies rather than by chasing the text colour:
+     the ramp now reaches .72 by 58%, so everything from the number down sits
+     on the same footing as the title. The top half is untouched, so the
+     photograph still opens light. */
+  --scrim-step:linear-gradient(180deg,
+    rgba(0,41,53,.10) 0%,
+    rgba(0,41,53,.42) 32%,
+    rgba(0,41,53,.72) 58%,
+    rgba(0,41,53,.88) 100%);
+  /* The open layer sits ON TOP of --scrim-step, so the two alphas compound:
+     1-(1-a_base)(1-a_open). At .74 over .55 that reached .93 combined at the
+     title and .99 at the foot — the photograph went almost black the moment
+     you hovered it, which is the opposite of what expanding a step is for.
+     These values are chosen so the COMBINED result lands around .79 at the
+     title and .86 behind the Real Solution paragraph: enough to carry the
+     copy, little enough that the picture is still the reason to look. */
+  --scrim-step-open:linear-gradient(180deg,
+    rgba(0,41,53,.06) 0%,
+    rgba(0,41,53,.26) 40%,
+    rgba(0,41,53,.56) 100%);
+}
+
 .em-hero__copy{min-width:0}
 
 /* SC 2.5.8: standalone links need a 24x24 target. */
@@ -35,13 +103,19 @@
 
 .em-process{display:flex;align-items:stretch;height:440px;margin:0;padding:0;list-style:none}
 /* min-width is a TEXT floor, not a taste value: "IMPLEMENTATION" is a single
-   unbreakable 153px word, and with .em-process__inner's 30px gutters that
-   makes 213px the narrowest a step can be without breaking it mid-word. 218px
-   is that floor plus clearance. It was 238px against 40px gutters, which left
+   unbreakable 153px word, and it has to fit between the step's two gutters
+   without breaking mid-word. Those gutters are no longer symmetric — see the
+   note on .em-process__inner below — so the floor is 40 + 153 + 30 = 223px,
+   and 224px is that floor plus clearance.
+
+   It was 218px against symmetric 30px gutters, which clipped the copy against
+   the chevron notch, and 238px before that against symmetric 40px, which left
    the strip only 98px of total slack to redistribute on hover — so the panel
    grew by ~20px and the movement read as a twitch rather than an expansion.
-   At 218px the slack is 198px and the hovered panel travels ~50px. */
-.em-process__step{position:relative;flex:1 1 0;min-width:218px;overflow:hidden;
+   At 224px the slack is 168px and the hovered panel travels ~42px: a little
+   less than the 218px version's ~50px, and the price of copy that is not
+   sliced down its left edge. */
+.em-process__step{position:relative;flex:1 1 0;min-width:224px;overflow:hidden;
   clip-path:polygon(0 0,calc(100% - 34px) 0,100% 50%,calc(100% - 34px) 100%,0 100%,34px 50%)}
 .em-process__step:first-child{clip-path:polygon(0 0,calc(100% - 34px) 0,100% 50%,calc(100% - 34px) 100%,0 100%,0 100%)}
 .em-process__step + .em-process__step{margin-left:-34px}
@@ -76,22 +150,50 @@
 .em-process__step{transition:flex-grow var(--dur-slow) var(--ease-out)}
 
 .em-process__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.em-process__scrim{position:absolute;inset:0;background:var(--scrim-step);
-  transition:background var(--dur-slow) var(--ease-out)}
-.em-process__step:hover .em-process__scrim,
-.em-process__step:focus-within .em-process__scrim{background:var(--scrim-step-open)}
 
-/* 30px gutters, not --space-8's 40px: the extra 20px would push the text
-   floor back to 233px and take the strip's hover slack with it. See the
-   min-width note above. */
+/* See the local-tokens block at the top of this file for why these two exist
+   and how the values were measured. */
+.em-process__scrim{position:absolute;inset:0;background:var(--scrim-step)}
+/* background-image does not interpolate, so the open state cannot be a second
+   `background` declaration — it would snap mid-expansion while the panel is
+   still moving. It is a second layer whose OPACITY animates instead. */
+.em-process__scrim::after{content:"";position:absolute;inset:0;
+  background:var(--scrim-step-open);
+  opacity:0;transition:opacity var(--dur-slow) var(--ease-out)}
+.em-process__step:hover .em-process__scrim::after,
+.em-process__step:focus-within .em-process__scrim::after{opacity:1}
+
+/* ASYMMETRIC gutters — 40px left, 30px right — and the asymmetry is geometry,
+   not taste. The step is clipped to a chevron whose LEFT edge notches inward
+   to a point 34px in at half height:
+
+     polygon(0 0, 100%-34px 0, 100% 50%, 100%-34px 100%, 0 100%, 34px 50%)
+                                                          ^^^^^^^^^^^^^^^
+
+   so the left boundary at any height y is 34 * (1 - |y - h/2| / (h/2)). The
+   copy sits just below the middle, which is exactly where that notch is at its
+   deepest: the step number lands at y=214–234 of 440, where the boundary is
+   31.8–33.1px. Against a 30px gutter the leading digit was being sliced off —
+   visible on steps 2–5 and not step 1, which is the one step whose clip-path
+   has a flat left edge. 40px clears the notch by 6–8px everywhere the copy
+   goes.
+
+   The right gutter stays 30px because the right edge bulges the other way —
+   it reaches 100% at half height — so there is nothing to clear there, and
+   spending 10px on it would push the text floor up for no reason. */
 .em-process__inner{position:relative;height:100%;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:var(--space-7) 30px 152px}
+  justify-content:flex-end;padding:var(--space-7) 30px 152px 40px}
 .em-process__mark{width:46px;height:46px;object-fit:contain;margin-bottom:auto}
+/* opacity:1, not the .55 this shipped with. White at .55 over the step's own
+   background measured 2.38:1 — a straightforward SC 1.4.3 failure on text that
+   carries the step order, and it was invisible for the same reason the missing
+   scrim was: no computed background behind text over an <img>. Solving for the
+   minimum that clears 4.5:1 against the brightest pixel in each source gives
+   .95, so there is no dimmed resting state to be had here. The hover cue it
+   used to provide is carried by the photograph returning to colour, the rule
+   above the title, and the Real Solution paragraph opening. */
 .em-process__num{margin:0 0 var(--space-3);font-family:var(--font-display);font-weight:var(--fw-semibold);
-  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);color:var(--white);opacity:.55;
-  transition:opacity var(--dur-slow) var(--ease-out)}
-.em-process__step:hover .em-process__num,
-.em-process__step:focus-within .em-process__num{opacity:1}
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);color:var(--white);opacity:1}
 .em-process__title{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-h5);line-height:1.22;letter-spacing:.02em;text-transform:uppercase;
   color:var(--white);overflow-wrap:break-word}
@@ -105,7 +207,11 @@
    read as one movement rather than as a resize followed by a fade. An 80ms
    delay on a full --dur-slow fade overshot the panel and was part of what
    made the interaction feel disjointed. */
-.em-process__detail{position:absolute;left:30px;right:30px;bottom:var(--space-7);
+/* left:40px matches .em-process__inner's left gutter. The detail sits low
+   enough that the chevron notch is only ~5–11px deep there, so 30px would not
+   have clipped it — but it would have set the paragraph 10px to the left of
+   the title it belongs to, which reads as a mistake either way. */
+.em-process__detail{position:absolute;left:40px;right:30px;bottom:var(--space-7);
   opacity:0;transform:translateY(10px);pointer-events:none;
   transition:opacity 300ms var(--ease-out) 100ms,transform 300ms var(--ease-out) 100ms}
 .em-process__step:hover .em-process__detail,
@@ -212,7 +318,32 @@
    page's last beat is a single stacked composition instead: one navy slab
    carrying the whole ask, then two quiet, un-carded ways in beneath it. The
    h2 lives inside the slab, so this section has no separate heading block. */
-.em-join-wrap{background:var(--surface-tint)}
+/* The tint starts a quarter of the way DOWN the slab, so the slab's top edge
+   overhangs onto the white section above it instead of floating inside a
+   coloured box. Same straddle the banner band and the solutions chevron use.
+
+   Done with a margin pair rather than a gradient, because the line has to
+   track the slab's own height and CSS cannot read that:
+
+     wrap  margin-top   =  --section-y + overlap   (pushes the tint edge down)
+     slab  margin-top   =  -overlap                (pulls the slab back up)
+
+   The two cancel exactly. The slab lands where it always did, the row's outer
+   height shrinks by the same overlap it was pulled up by, so the ways beneath
+   it and every following section keep their spacing and the page height does
+   not change. Only the colour edge moves. padding-top goes to 0 because the
+   margin now carries that gap.
+
+   The overlap is capped rather than a literal 25%: the slab is 299px at 1440
+   but 583px once it stacks at 390px, and a true quarter there would be 146px
+   of navy climbing into the section above. clamp() keeps it at a quarter where
+   the composition was designed and lets it become a smaller lip on narrow
+   screens, which is the proportion that still looks deliberate. */
+.em-join-wrap{--join-overlap:clamp(40px,5.2vw,76px);
+  background:var(--surface-tint);
+  padding-top:0;
+  margin-top:calc(var(--section-y) + var(--join-overlap))}
+.em-join__slab{margin-top:calc(var(--join-overlap) * -1)}
 .em-join{display:grid;gap:clamp(var(--space-9),4.5vw,var(--space-12))}
 
 /* --surface-navy-deep, not the --surface-navy the Stories band and the footer

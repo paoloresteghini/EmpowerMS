@@ -702,6 +702,85 @@ test('close() and show() keep is-open and hidden in sync', () => {
     'show() no longer unhides the panel');
 });
 
+/* ---------- simple dropdowns (dist/current-2.html) ---------- */
+
+const current2 = readFileSync('dist/current-2.html', 'utf8');
+const header2 = readFileSync('src/_shared/header-2.html', 'utf8');
+const dropCss = readFileSync('css/current-2.css', 'utf8');
+const dropJs = readFileSync('js/dropdown.js', 'utf8');
+
+test('the dropdown header carries the same six top-level items as the mega header', () => {
+  // Two renderings of one nav. The labels are the contract; how they open is not.
+  const labels = (partial) =>
+    [...partial.matchAll(/<(?:a|button) class="em-header__link"[^>]*>([^<]+)/g)]
+      .map(m => m[1].trim()).sort();
+  assert.deepEqual(labels(header2), labels(readFileSync('src/_shared/header.html', 'utf8')),
+    'header-2.html and header.html no longer offer the same top-level nav');
+});
+
+test('the dropdowns and their own mobile nav stay in sync', () => {
+  const panel = header2.match(/<nav class="em-mobilenav"[\s\S]*?<\/nav>/)[0];
+  const mobile = [...panel.matchAll(/<a class="em-mobilenav__sublink" href="([^"]+)">([^<]+)<\/a>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  const desktop = [...header2.matchAll(/<a href="([^"]+)">([^<]*?)<span>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  assert.deepEqual(desktop, mobile, 'dropdown links and mobile nav links have drifted');
+});
+
+test('every dropdown trigger controls a real panel labelled by that trigger', () => {
+  for (const m of header2.matchAll(/id="(drop-trigger-[^"]+)" aria-controls="([^"]+)"/g)) {
+    const panel = header2.match(new RegExp(`<div class="em-header__menu" id="${m[2]}"[^>]*>`));
+    assert.ok(panel, `no panel markup for ${m[2]}`);
+    assert.match(panel[0], new RegExp(`aria-labelledby="${m[1]}"`),
+      `${m[2]} is not labelled by its own trigger`);
+  }
+});
+
+test('dropdown panels are only hidden once JS has claimed them', () => {
+  // components.css ships .em-header__menu already positioned, so current-2.css
+  // has to put it BACK into normal flow and re-position it behind the gate —
+  // otherwise a no-JS visitor gets five panels stacked on one another.
+  assert.match(dropCss, /\.em-header__menu\{[^}]*position:static/,
+    'the ungated panel is not returned to normal flow');
+  for (const rule of dropCss.split('}')) {
+    if (!/\bdisplay:\s*none|\bvisibility:\s*hidden/.test(rule)) continue;
+    assert.match(rule, /\[data-dropdown="on"\]|@media/,
+      `ungated hide rule would lose links without JS: ${rule.trim().slice(0, 80)}`);
+  }
+});
+
+test('dropdown panels stand down below the mobile nav breakpoint', () => {
+  // Same boundary in the stylesheet and the script, for the same reason as
+  // the mega menus: a mismatch leaves a sliver of viewport width where the
+  // desktop nav is hidden and the triggers are inert.
+  const at = dropCss.indexOf('max-width:960px');
+  assert.ok(at > -1, 'no 960px rule — panels would overlap the mobile nav');
+  assert.match(dropCss.slice(at), /\.em-header__menu\{[^}]*display:none/);
+  assert.match(dropJs, /max-width:\s*960px/);
+});
+
+test('dropdown motion is disabled under reduced motion, and the gate still hides', () => {
+  assert.match(dropCss, /@media \(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(dropCss, /\[data-dropdown="on"\] \.em-header__menu\[hidden\]\{display:none\}/,
+    'reduced-motion users would get every panel permanently in the layout');
+});
+
+test('the dropdown script keeps the mega menu behaviour contract', () => {
+  assert.match(dropJs, /setAttribute\('data-dropdown', 'on'\)/);
+  assert.match(dropJs, /\(hover: hover\) and \(pointer: fine\)/);
+  for (const key of ['Escape', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) {
+    assert.ok(dropJs.includes(`'${key}'`), `keyboard map missing ${key}`);
+  }
+  assert.match(dropJs, /setAttribute\('aria-expanded', 'true'\)/);
+  assert.match(dropJs, /setAttribute\('aria-expanded', 'false'\)/);
+});
+
+test('the dropdown page carries neither mega menu layer', () => {
+  assert.ok(!current2.includes('css/megamenu.css'), 'current-2 still links megamenu.css');
+  assert.ok(!current2.includes('js/megamenu.js'), 'current-2 still loads megamenu.js');
+  assert.ok(!current2.includes('em-mega'), 'current-2 still carries mega markup');
+});
+
 test('README documents both new layers for the Elementor hand-off', () => {
   const readme = readFileSync('README.md', 'utf8');
   for (const needle of ['## Motion', '## Mega menus', 'data-reveal', 'data-reveal-group',
@@ -806,12 +885,18 @@ test('dev server never leaks into the built page', () => {
 
    Everything above this line is about the reference build specifically. What
    follows has to hold for EVERY homepage this repo produces, because these
-   are five presentations of one brand and one approved copy deck — not five
+   are presentations of one brand and one approved copy deck — not
    independent pages. A new option added to build.mjs picks all of this up
    automatically.
    ======================================================================== */
 
-const OPTIONS = HOMEPAGES.filter(p => p.out !== 'dist/current.html');
+/* The four alternative designs. current-2.html is excluded alongside
+   current.html: it is the reference build with a new header and banner
+   fitted, so it inherits the reference build's copy — including the
+   sentence-case headline the four options restore to the roadmap's
+   capitalisation — and is not one of the four Empower is choosing between. */
+const REFERENCE = ['dist/current.html', 'dist/current-2.html'];
+const OPTIONS = HOMEPAGES.filter(p => !REFERENCE.includes(p.out));
 
 test('every page in the manifest actually built', () => {
   for (const page of PAGES) {
@@ -980,16 +1065,29 @@ test('every page loads the shared chrome before its own stylesheet', () => {
       `${out} loads site.css before components.css`);
     assert.ok(html.indexOf(own) > siteAt, `${out} loads ${own} before css/site.css`);
     // megamenu.css overrides .em-mega's base layout and has to come last.
-    assert.ok(html.indexOf('css/megamenu.css') > html.indexOf(own),
-      `${out} loads megamenu.css before its own stylesheet`);
+    // current-2.html has no mega menus and does not load it — its dropdown
+    // rules live in its own stylesheet instead.
+    if (html.includes('css/megamenu.css')) {
+      assert.ok(html.indexOf('css/megamenu.css') > html.indexOf(own),
+        `${out} loads megamenu.css before its own stylesheet`);
+    } else {
+      assert.ok(!html.includes('em-mega'), `${out} uses mega markup without loading megamenu.css`);
+    }
   }
 });
 
 test('every page ships the three behaviour modules and no preview-only script', () => {
   for (const { out, html } of HOMEPAGES) {
-    for (const js of ['js/nav.js', 'js/reveal.js', 'js/megamenu.js']) {
+    for (const js of ['js/nav.js', 'js/reveal.js']) {
       assert.ok(html.includes(js), `${out} does not load ${js}`);
     }
+    // Every page carries exactly one desktop-nav module. It is megamenu.js
+    // everywhere except current-2.html, whose header uses simple dropdowns
+    // — but a page with neither has an inert desktop nav, and a page with
+    // both would have two scripts fighting over the same triggers.
+    const desktopNav = ['js/megamenu.js', 'js/dropdown.js'].filter(js => html.includes(js));
+    assert.equal(desktopNav.length, 1,
+      `${out} loads ${desktopNav.length} desktop nav modules: ${desktopNav.join(', ') || 'none'}`);
     assert.ok(!html.includes('controls.js'), `${out} still loads the deleted preview switcher`);
     assert.ok(!html.includes('wireframe.css'), `${out} still links the deleted wireframe skin`);
   }
@@ -1059,12 +1157,14 @@ test('copy in every option uses curly apostrophes and quotes, not ASCII', () => 
 });
 
 test('the shared header and footer are shared, not copied per option', () => {
-  // Five divergent copies of the nav is the failure mode this structure
-  // exists to prevent. Every page shell must pull the same two partials.
+  // Divergent copies of the nav is the failure mode this structure exists to
+  // prevent. Every page shell must pull its header from _shared/, never carry
+  // its own. There are two headers, both shared: header.html (mega menus) and
+  // header-2.html (simple dropdowns), which current-2.html uses.
   for (const page of PAGES) {
     if (page.out === 'dist/index.html') continue;
     const shell = readFileSync(`src/${page.src}`, 'utf8');
-    assert.match(shell, /<!--@include _shared\/header\.html-->/, `${page.src} does not include the shared header`);
+    assert.match(shell, /<!--@include _shared\/header(-2)?\.html-->/, `${page.src} does not include a shared header`);
     assert.match(shell, /<!--@include _shared\/footer\.html-->/, `${page.src} does not include the shared footer`);
   }
   assert.ok(!existsSync('src/sections/00-header.html'), 'a stale per-page header partial is back');

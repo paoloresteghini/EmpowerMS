@@ -1,0 +1,454 @@
+/* Empower Mississippi homepage — current build, variation 2.
+
+   Same page as css/homepage.css builds, with two parts replaced:
+
+     1. A NEW HEADER — navy utility strip above a white bar whose nav sits
+        centred between the logo and a pill Donate action. Simple
+        single-column dropdowns instead of the five mega panels; this page
+        therefore loads js/dropdown.js and NOT js/megamenu.js or
+        css/megamenu.css.
+     2. A NEW BANNER — a centred column (social row, eyebrow, headline,
+        lede, one orange action) sitting above a three-photograph gallery
+        that straddles the edge of a tinted band.
+
+   Loaded after css/homepage.css, so everything below the banner is the
+   reference build unchanged. Nothing here edits tokens/ or components/;
+   the overrides of .em-header__* are local to .em-header--flat wherever a
+   shared component would otherwise be affected. */
+
+/* ---------- Utility strip ---------- */
+/* White on --surface-navy measures 12.6:1. No borders on the navy — see the
+   open --border-inverse question in the repo's todo. */
+.em-utility{background:var(--surface-navy);color:var(--text-inverse)}
+.em-utility__bar{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--space-3) var(--space-6);flex-wrap:wrap;min-height:44px;
+  padding:var(--space-2) 0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-caption)}
+.em-utility__note{margin:0}
+/* SC 2.5.8: standalone link, so it carries its own 24x24 target. */
+.em-utility__link{display:inline-flex;align-items:center;min-height:24px;min-width:24px;
+  color:var(--white);text-decoration:none}
+.em-utility__link:hover{text-decoration:underline}
+
+/* ---------- Header bar ---------- */
+/* components.css pushes .em-header__nav right with margin-left:auto. Here the
+   nav is the centre of a three-part row instead: logo and actions each take an
+   equal share of the leftover space, so the nav stays optically centred no
+   matter how wide the logo or the actions group gets. */
+.em-header--flat .em-header__bar{gap:var(--space-6)}
+.em-header--flat .em-header__logo{flex:1 1 0;min-width:0}
+.em-header--flat .em-header__nav{flex:0 1 auto;margin:0;gap:var(--space-1);justify-content:center}
+.em-header--flat .em-header__actions{flex:1 1 0;justify-content:flex-end}
+.em-header--flat .em-header__actions .em-btn{border-radius:var(--radius-pill)}
+
+/* ---------- Dropdown panels ---------- */
+/* Progressive enhancement contract, same as css/megamenu.css: components.css
+   ships .em-header__menu already positioned, which without JS would stack five
+   panels on top of one another under the bar. So the panel is returned to
+   normal flow here, and only the [data-dropdown="on"] gate that js/dropdown.js
+   sets makes it an overlay that starts closed. No JS → five plain link lists
+   inside the nav, every destination reachable. */
+.em-header__menu{position:static;min-width:0;padding:0;border:0;box-shadow:none;
+  background:none;border-radius:0}
+.em-header__menu a span{max-width:32ch}
+
+[data-dropdown="on"] .em-header__menu{position:absolute;top:calc(100% + 10px);left:0;
+  z-index:39;min-width:268px;padding:var(--space-3);
+  background:var(--white);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateY(-8px);
+  transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+[data-dropdown="on"] .em-header__menu[hidden]{display:none}
+[data-dropdown="on"] .em-header__menu.is-open{opacity:1;transform:none}
+/* The nav is centred, so the last panel is the only one close enough to the
+   right edge to overflow it on a narrow desktop window. */
+[data-dropdown="on"] .em-header__item:last-child .em-header__menu{left:auto;right:0}
+
+@media (prefers-reduced-motion: reduce){
+  [data-dropdown="on"] .em-header__menu,
+  [data-dropdown="on"] .em-header__menu.is-open{opacity:1;transform:none;transition:none}
+  /* The panels still open — that is content, and gating it would leave a
+     reduced-motion user with less of the page. They open INSTANTLY instead:
+     a 200px box sliding under the pointer is exactly the movement this query
+     exists to stop, and the state change loses nothing by being immediate.
+     The photograph stops zooming with it. */
+  .c2-panel,
+  [data-reveal="on"] .c2-panel[data-reveal],
+  [data-reveal="on"] .c2-panel[data-reveal].is-revealed,
+  .c2-panel__bg,
+  .c2-panel__more,
+  .c2-panel:hover .c2-panel__more,.c2-panel:focus-within .c2-panel__more{
+    transition:none;transition-delay:0s}
+  .c2-panel:hover .c2-panel__bg,.c2-panel:focus-within .c2-panel__bg{transform:none}
+}
+
+/* Below the nav breakpoint js/nav.js's mobile panel owns navigation and
+   .em-header__nav is already display:none (css/site.css). This keeps the
+   panels out of the way even if the nav is ever shown at that width. */
+@media (max-width:960px){
+  .em-header__menu{display:none}
+}
+
+/* ---------- Banner ---------- */
+.em-banner{background:var(--surface-page);padding-top:var(--section-y)}
+.em-banner__intro{display:flex;flex-direction:column;align-items:center;text-align:center;
+  max-width:900px;margin:0 auto}
+
+.em-banner__social{display:flex;align-items:center;gap:2px;list-style:none;
+  margin:0 0 var(--space-6);padding:5px;
+  background:var(--surface-muted);border-radius:var(--radius-pill)}
+.em-banner__social li{margin:0}
+.em-banner__social a{display:grid;place-items:center;width:34px;height:34px;
+  border-radius:var(--radius-pill);color:var(--em-blue);
+  transition:background var(--dur) var(--ease-out)}
+.em-banner__social a:hover{background:var(--white)}
+.em-banner__social svg{width:16px;height:16px}
+
+.em-banner h1{margin:0 0 var(--space-5);font-size:var(--fs-hero)}
+.em-banner .em-eyebrow{margin:0 0 var(--space-4)}
+.em-banner__lede{max-width:60ch;margin:0 0 var(--space-8);
+  font-size:var(--fs-lead);line-height:1.5;color:var(--text-body)}
+.em-banner__actions{display:flex;align-items:center;justify-content:center;
+  gap:var(--space-7);flex-wrap:wrap}
+.em-banner__actions .em-btn{border-radius:var(--radius-pill)}
+.em-banner__arrow{font-size:1.1em;line-height:1}
+.em-banner__link{display:inline-flex;align-items:center;min-height:24px;min-width:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.em-banner__link:hover{color:var(--em-orange-ink)}
+
+/* ---------- Banner gallery and tinted band ---------- */
+/* The band is a full-bleed tint; its first 200px are painted back to the page
+   colour so the photographs cross the edge instead of sitting inside a box.
+   A gradient would band on wide screens, and two stacked sections would put a
+   seam through the middle of the photographs.
+
+   The band ends on the same --surface-tint the solutions section starts on,
+   deliberately: there is nothing between the photographs and that section's
+   head any more, so the two surfaces reading as one continuous field is the
+   point. The photographs are the transition. padding-bottom is --space-11
+   rather than a full --section-y because the solutions section brings its own
+   80px of padding-top — the gap the eye sees is the sum of the two. */
+.em-banner__band{position:relative;margin-top:var(--space-10);
+  padding-bottom:var(--space-11);background:var(--surface-tint)}
+.em-banner__band::before{content:"";position:absolute;left:0;right:0;top:0;height:200px;
+  background:var(--surface-page)}
+.em-banner__inner{position:relative}
+
+.em-banner__gallery{display:grid;grid-template-columns:1.3fr 1fr .92fr;
+  gap:var(--space-6);align-items:start}
+.em-banner__shot{margin:0;overflow:hidden;border-radius:var(--radius-card)}
+.em-banner__shot img{display:block;width:100%;height:100%;object-fit:cover}
+/* Three heights and one offset, so the row reads as a stagger rather than a
+   strip of thumbnails. The tallest is the left-hand one, which is also the
+   one that reaches furthest into the tint. */
+.em-banner__shot--1{height:460px}
+.em-banner__shot--2{height:360px;margin-top:var(--space-6)}
+.em-banner__shot--3{height:250px}
+
+/* ---------- Shared sections, adjusted for this page ---------- */
+/* The solutions head is css/homepage.css's, and dist/current.html loads that
+   file too — so this cannot be edited at source without moving the reference
+   build as well. Declared here instead: current-2.css is the last stylesheet
+   this page loads and no other page loads it, so the override reaches exactly
+   one page.
+
+   Same change and same reason as .c2-foundations__head above: homepage.css
+   bottom-aligns the two columns, and with a two-line heading against a
+   six-line lede the heading ends up hanging at the foot of a tall row. The
+   left column here is label + heading + rule, so it is the whole stack that
+   centres, not just the heading. */
+/* The tint stops 150px above the section's bottom edge, so the chevron strip
+   crosses it: the strip is 440px tall and ends 80px above that edge, which
+   leaves its bottom ~71px overhanging onto white. Same device as the banner
+   band above — a photographic block straddling a colour edge rather than
+   sitting inside a box — so the two ends of the page rhyme.
+
+   A hard-stop gradient, not the ::before the banner band uses. There the cap
+   had to sit ON TOP of a plain background; here the section's own background
+   is the only thing being redrawn, and a two-stop gradient with both stops at
+   the same position has nothing to interpolate, so it cannot band the way a
+   soft gradient across a wide viewport would. */
+.em-solutions{background:linear-gradient(
+  var(--surface-tint) 0 calc(100% - 150px),
+  var(--surface-page) calc(100% - 150px) 100%)}
+
+/* ---------- Chevron: warm the hovered step, mute the rest ----------
+   Scoped to this page like everything else in this block — css/homepage.css is
+   shared with dist/current.html, and this is a taste change rather than the
+   defect repair the scrim was.
+
+   Two signals, because neither carries it alone. Greyscale mutes the four the
+   pointer is NOT on, but three of the five sources are already black-and-white
+   stand-ins, so for those steps desaturation says nothing. The orange does the
+   work there: the step number and a rule above the title. Together the hovered
+   step reads as chosen whichever photograph it happens to hold.
+
+   Nothing here touches the scrim. An orange wash over the copy would lighten
+   the composite the step titles were just measured against, and this is a
+   flourish — it does not get to spend the contrast headroom the scrim fix
+   bought. The title stays white on the same gradient, unchanged. */
+/* The mark desaturates with the photograph, not just the photograph. Each step
+   carries a coloured illo — blue quote, green tick, orange Work — and leaving
+   those lit while the photo behind them greys out makes the muted steps read
+   as broken rather than as quiet. */
+.em-process__bg,.em-process__mark{transition:filter var(--dur-slow) var(--ease-out)}
+.em-process:hover .em-process__bg,.em-process:hover .em-process__mark,
+.em-process:focus-within .em-process__bg,.em-process:focus-within .em-process__mark{
+  filter:grayscale(1)}
+.em-process__step:hover .em-process__bg,.em-process__step:hover .em-process__mark,
+.em-process__step:focus-within .em-process__bg,.em-process__step:focus-within .em-process__mark{
+  filter:none}
+
+/* The number was briefly --orange-300 on hover. Measured, that came out at
+   2.86:1 against its own background: --orange-300 is a LIGHT token and the
+   number band is the lightest part of the scrim, so the two sat on nearly the
+   same luminance. It brightens to solid white instead — homepage.css already
+   takes it to opacity 1 on hover — and the orange signal is carried by the
+   rule below and by the Learn more link, both of which sit lower down where
+   the scrim is dark enough to hold a light orange. */
+
+/* The step contents are bottom-aligned (.em-process__inner is flex-end), so a
+   one-line title and a two-line title share a baseline at the bottom and
+   diverge at the top — which drags the step NUMBER up or down with them. Two
+   of the five titles are one line, so the row of numbers sat at two different
+   heights, 20px apart, and the titles started at two different heights too.
+
+   Reserving two lines on every title fixes both at once: the box bottom stays
+   where flex-end put it, a one-line title renders at the TOP of its reserved
+   box, and so every number and every first line lands on one horizontal.
+   2.44em is two lines at the .em-process__title line-height of 1.22. */
+.em-process__title{min-height:2.44em}
+
+/* --orange-300, not --em-orange: the brand value is too dark against this
+   scrim to read as a highlight, and --orange-300 is the same token the
+   detail's Learn more link already uses two lines below. A rule rather than
+   recolouring the title, which has to stay white — see above. */
+.em-process__title{position:relative}
+.em-process__title::before{content:"";position:absolute;left:0;top:-14px;
+  width:0;height:3px;border-radius:2px;background:var(--orange-300);
+  transition:width var(--dur-slow) var(--ease-out)}
+.em-process__step:hover .em-process__title::before,
+.em-process__step:focus-within .em-process__title::before{width:32px}
+
+@media (prefers-reduced-motion: reduce){
+  .em-process__bg,.em-process__mark,.em-process__title::before{transition:none}
+}
+
+.em-solutions__head{align-items:center}
+/* .em-lead inherits a 16px bottom margin, and a centred grid item is centred
+   by its MARGIN box — so that margin sits inside the row and lifts the visible
+   text 8px above the heading it is supposed to line up with. It is the last
+   thing in its cell and the margin buys nothing there. (.c2-foundations__lede
+   above sets margin:0 for the same reason, which is why that head measured
+   dead level first time.) */
+.em-solutions__head .em-lead{margin-bottom:0}
+
+/* ---------- Three foundations ---------- */
+/* Option C's expanding photographic panels, restated for a LIGHT section.
+   Option C runs them on --surface-navy-deep; here the section is white and
+   only the panels are dark, so they read as three plates on the page rather
+   than as windows cut into a dark slab. The panels themselves are unchanged
+   in substance — same gradient, same measured contrast, same expansion — so
+   the only thing this version re-decides is the surface around them and the
+   colour of the head.
+
+   Classes are c2-*, not at-*: this page does not load css/option-c.css, and
+   sharing a prefix across two stylesheets that never meet would suggest a
+   dependency that does not exist. If Empower picks Option C, this section
+   and that one are then the same idea in two places, and one should go.
+
+   The collapsed panel still carries its title and its promise. Expanding adds
+   the Real Solution paragraph and the link cue — it never gates the section. */
+.c2-foundations{padding:var(--section-y) 0;background:var(--surface-page);
+  /* One clock for the whole open/close gesture. --dur-slow (400ms) is the
+     token for a panel-sized move, but these panels travel ~200px AND change
+     what is inside them, and at 400ms the copy is still settling when the box
+     has stopped. 520ms is that token stretched to cover both halves; every
+     rule in this section that participates in the gesture reads it, so the
+     photograph, the box and the copy cannot drift apart again. */
+  --c2-open:520ms}
+/* align-items:center, not Option C's `end`. C bottom-aligns the two columns
+   so they share a baseline against the dark slab. Here the heading is two
+   lines and the lede is four — restoring the closing sentence the reference
+   build dropped made it four — so a shared bottom edge leaves the heading
+   hanging well below the top of the paragraph with nothing to hold it. Centred
+   against the taller column, the two read as one block. */
+.c2-foundations__head{display:grid;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-13));align-items:center;
+  margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+.c2-foundations h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue)}
+/* --text-body, not --text-inverse-muted: the head is on white here. */
+.c2-foundations__lede{margin:0;font-size:clamp(1.0625rem,.98rem + .4vw,1.25rem);
+  line-height:1.7;color:var(--text-body);max-width:60ch}
+
+.c2-panels{display:flex;gap:clamp(var(--space-3),1vw,var(--space-5));align-items:stretch}
+.c2-panel{position:relative;isolation:isolate;overflow:hidden;
+  flex:1 1 0;min-width:0;min-height:clamp(420px,46vw,600px);
+  border-radius:clamp(var(--radius-lg),2vw,var(--radius-panel));
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:clamp(var(--space-6),2.4vw,var(--space-9));
+  transition:flex-grow var(--c2-open) var(--ease-out)}
+/* flex-grow only — the panels keep their flex-basis, so the row never reflows
+   and no text re-wraps in the panels that are shrinking. */
+.c2-panel:hover,.c2-panel:focus-within{flex-grow:1.9}
+
+/* ---------- Why the panel transition is restated here ----------
+   css/motion.css declares
+
+     [data-reveal="on"] [data-reveal]{transition:opacity,transform,clip-path}
+
+   and every panel carries data-reveal="rise". That selector is (0,2,0) against
+   .c2-panel's (0,1,0), so it wins on SPECIFICITY no matter which stylesheet
+   loads last — and because `transition` is a shorthand, it replaced the whole
+   declaration rather than adding to it. flex-grow was left with no transition
+   at all, which is why the panels snapped instead of expanding. The panels
+   also inherited the reveal group's
+   `transition-delay:calc(var(--reveal-i) * 70ms)`, so the third one sat still
+   for 140ms and then snapped — that pause is what read as the worst of it.
+
+   Identical defect and identical fix to .em-process__step in css/homepage.css;
+   see the long note there. Both rules below match motion.css's own shape so
+   they win on specificity rather than on !important. The first keeps the
+   entrance reveal intact and adds flex-grow; the second takes over once the
+   panel has been revealed, when the entrance stagger must not apply to a
+   hover. */
+[data-reveal="on"] .c2-panel[data-reveal]{
+  transition:opacity var(--dur-reveal) var(--ease-entrance),
+             transform var(--dur-reveal) var(--ease-entrance),
+             flex-grow var(--c2-open) var(--ease-out)}
+[data-reveal="on"] .c2-panel[data-reveal].is-revealed{
+  transition:flex-grow var(--c2-open) var(--ease-out);
+  transition-delay:0s}
+
+.c2-panel__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  transition:transform var(--c2-open) var(--ease-out)}
+.c2-panel:hover .c2-panel__bg,.c2-panel:focus-within .c2-panel__bg{transform:scale(1.06)}
+/* NEUTRAL ink, not the navy Option C uses — rgba(30,36,39) is --grey-900 at a
+   measured alpha, the same "token at an alpha CSS cannot express without
+   color-mix" exception the navy scrims rely on.
+
+   The reason is the section above. The solutions chevron is also a photograph
+   under a dark wash carrying a white uppercase title, it sits 144px higher,
+   and in Empower Blue the two read as one component repeated rather than two
+   sections. Measured, the page was already spending about half its height on
+   solid navy and roughly three quarters on the brand blue at some strength;
+   these 600px were the most redundant of it, being navy-on-navy directly
+   under a navy block.
+
+   Neutral keeps the composition exactly as approved — same shapes, same
+   rhythm, same interaction — and only changes what the dark is made of, so
+   the chevron above stays unmistakably the branded one. */
+.c2-panel::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,
+    rgba(30,36,39,.18) 0%,
+    rgba(30,36,39,.68) 48%,
+    rgba(30,36,39,.93) 100%);
+  transition:opacity var(--dur-slow) var(--ease-out)}
+
+.c2-panel__body{position:relative}
+.c2-panel h3{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .7vw,1.75rem);line-height:1.1;letter-spacing:-.02em;
+  text-transform:uppercase}
+.c2-panel h3 a{color:var(--white);text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+/* The whole panel is the target, anchored to the heading link so the panel
+   exposes exactly one destination and one accessible name. */
+.c2-panel h3 a::after{content:"";position:absolute;inset:0;z-index:1}
+/* --orange-300 on the neutral scrim measures 3.57–3.90:1 against the brightest
+   pixel under the heading. That clears the 3:1 that applies here — the heading
+   is --fw-black at 20–28px, well over the 18.66px large-text threshold at every
+   width — but it does NOT have normal-text headroom, so this token must not be
+   reused for anything smaller inside these panels. The Real Solution paragraph
+   and the cue below stay on white and --text-inverse-muted for that reason. */
+.c2-panel:hover h3 a,.c2-panel h3 a:focus-visible{color:var(--orange-300)}
+.c2-panel__promise{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.45;color:var(--white);max-width:26ch}
+
+/* grid-template-rows 0fr → 1fr animates a real auto height with no measured
+   pixel value and no script. The inner element clips rather than spilling.
+
+   Timed AGAINST the panel, not independently of it. Opening at the same
+   instant as the width means the copy re-wraps while the box is still moving,
+   and two things moving to different clocks is what reads as churn even once
+   the snap is gone. The copy starts 140ms in and lands on 520ms — the same
+   moment the panel stops — so the gesture reads as one movement.
+
+   Closing has no delay: a panel the pointer has left should get out of the
+   way immediately, and 140ms of a stale open panel on the way out is the
+   other half of what felt jumpy when moving along the row. */
+.c2-panel__more{display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows var(--dur-slow) var(--ease-out),
+             opacity var(--dur) var(--ease-out)}
+.c2-panel__more>*{min-height:0;overflow:hidden}
+.c2-panel:hover .c2-panel__more,.c2-panel:focus-within .c2-panel__more{
+  grid-template-rows:1fr;opacity:1;
+  transition:grid-template-rows 380ms var(--ease-out) 140ms,
+             opacity 300ms var(--ease-out) 140ms}
+.c2-panel__more p{margin:var(--space-5) 0 var(--space-6);font-size:var(--fs-small);
+  line-height:1.6;color:var(--text-inverse-muted);max-width:44ch}
+.c2-panel__more p b{color:var(--white);font-weight:var(--fw-bold)}
+.c2-panel__cue{display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--orange-300)}
+.c2-panel__cue svg{width:16px;height:16px}
+
+/* ---------- Responsive ---------- */
+/* css/homepage.css turns the five-step chevron into a vertical stack at
+   1150px. Once it does, the strip is several times taller and no longer ends
+   80px above the section edge, so a 150px straddle would cut an arbitrary line
+   through the last step instead of across a single block. The tint goes back
+   to filling the section from here down. Same boundary value as the chevron's
+   own breakpoint, so the two cannot disagree about which side they are on. */
+@media (max-width:1150px){
+  .em-solutions{background:var(--surface-tint)}
+}
+
+@media (max-width:1000px){
+  .c2-foundations__head{grid-template-columns:1fr;gap:var(--space-6);align-items:start}
+}
+
+@media (max-width:860px){
+  /* Three panels at a third of a small viewport have no room to say anything,
+     and expansion on touch has no hover to trigger it. The row becomes a
+     snapped rail instead: same photographic language, same content, an
+     interaction that works by finger. .c2-panel__more opens permanently, so
+     nothing stays behind a state touch cannot reach. */
+  .c2-panels{overflow-x:auto;overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;padding-bottom:var(--space-6)}
+  .c2-panel{flex:0 0 min(78vw,340px);scroll-snap-align:start;min-height:440px}
+  .c2-panel:hover,.c2-panel:focus-within{flex-grow:0}
+  .c2-panel__more{grid-template-rows:1fr;opacity:1}
+}
+
+@media (max-width:900px){
+  /* Three columns put the shortest photograph below 200px tall here, which is
+     under the height the band's white cap already covers — the stagger stops
+     reading. Two columns, with the third photograph spanning both. */
+  .em-banner__gallery{grid-template-columns:1fr 1fr}
+  .em-banner__shot--1{height:380px}
+  .em-banner__shot--2{height:320px;margin-top:var(--space-5)}
+  .em-banner__shot--3{grid-column:1 / -1;height:260px}
+  .em-banner__band::before{height:140px}
+}
+
+@media (max-width:600px){
+  .em-banner{padding-top:var(--section-y-sm)}
+  .em-banner__gallery{grid-template-columns:1fr}
+  .em-banner__shot--1{height:300px}
+  .em-banner__shot--2{height:240px;margin-top:0}
+  .em-banner__shot--3{height:220px}
+  .em-banner__band::before{height:90px}
+  .em-utility__bar{justify-content:center;text-align:center}
+}
+
+@media (max-width:420px){
+  /* Same floor as css/site.css: at 200% text nothing may keep an unbreakable
+     intrinsic width. The social row is 4 × 34px + padding = 152px and fits,
+     but the actions row has to be allowed to stack. */
+  .em-banner__actions{flex-direction:column;gap:var(--space-5)}
+  .em-banner__actions .em-btn{width:100%}
+}

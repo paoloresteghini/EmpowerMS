@@ -154,6 +154,29 @@
    never reflows and no text re-wraps in the panels that are shrinking. */
 .at-panel:hover,.at-panel:focus-within{flex-grow:1.9}
 
+/* ---------- Why the transition is restated ----------
+   css/motion.css declares
+     [data-reveal="on"] [data-reveal]{transition:opacity,transform,clip-path}
+   and every panel carries data-reveal="rise". That selector is (0,2,0) against
+   .at-panel's (0,1,0), so it wins on specificity whichever stylesheet loads
+   last, and being a shorthand it replaced the declaration rather than adding
+   to it — leaving flex-grow with no transition, so the panels snapped. They
+   also inherited the group's `transition-delay:calc(var(--reveal-i) * 70ms)`,
+   so the third panel paused 140ms before snapping.
+
+   Same defect and same fix as .em-process__step in css/homepage.css. Both
+   rules match motion.css's own shape so they win on specificity, not on
+   !important: the first keeps the entrance reveal and adds flex-grow, the
+   second takes over after the reveal, when the stagger must not apply to a
+   hover. */
+[data-reveal="on"] .at-panel[data-reveal]{
+  transition:opacity var(--dur-reveal) var(--ease-entrance),
+             transform var(--dur-reveal) var(--ease-entrance),
+             flex-grow var(--dur-slow) var(--ease-out)}
+[data-reveal="on"] .at-panel[data-reveal].is-revealed{
+  transition:flex-grow var(--dur-slow) var(--ease-out);
+  transition-delay:0s}
+
 .at-panel__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
   transition:transform var(--dur-slow) var(--ease-out)}
 .at-panel:hover .at-panel__bg,.at-panel:focus-within .at-panel__bg{transform:scale(1.06)}

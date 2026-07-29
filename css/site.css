@@ -216,6 +216,15 @@ body{overflow-wrap:break-word}
 .em-article__more,
 .em-podcast__show{color:var(--em-orange-ink)}
 
+/* Third instance of the same open orange question, and the only one where the
+   failing pair is white ON orange rather than orange on white. components.css
+   ships .em-badge--accent as --white on --em-orange, which measures 3.59:1 —
+   under 4.5:1, and the badge label is 11px so the large-text exemption cannot
+   apply. --orange-700 is already in the ramp and measures 5.55:1 against
+   white. Fills elsewhere keep the exact brand value; this is a small-text
+   surface, which is the same distinction --em-orange-ink draws above. */
+.em-badge--accent{background:var(--orange-700)}
+
 /* components.css sets ::placeholder to --grey-500, which measures 2.85:1 on
    the input's white background — under the 4.5:1 that placeholder text needs,
    same as any other text. --text-muted is 5.29:1 and is the same token the

@@ -782,3 +782,11 @@ test('the section eyebrow is not one repeated treatment on every section', () =>
   assert.match(rule, /text-transform:none/);
   assert.match(rule, /letter-spacing:normal/);
 });
+
+test('dev server never leaks into the built page', () => {
+  // dev.mjs injects its reload client into the HTTP response, not the file.
+  // If this ever fails, a dev-only <script> is about to ship to WordPress.
+  assert.ok(!html.includes('__dev/reload'), 'dev reload client written into dist/index.html');
+  const shell = readFileSync('src/index.html', 'utf8');
+  assert.ok(!shell.includes('dev.mjs'), 'dev server referenced from the page shell');
+});

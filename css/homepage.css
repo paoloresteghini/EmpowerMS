@@ -34,12 +34,46 @@
   color:var(--text-muted);margin:0 0 var(--space-5)}
 
 .em-process{display:flex;align-items:stretch;height:440px;margin:0;padding:0;list-style:none}
-.em-process__step{position:relative;flex:1 1 0;min-width:238px;overflow:hidden;
-  clip-path:polygon(0 0,calc(100% - 34px) 0,100% 50%,calc(100% - 34px) 100%,0 100%,34px 50%);
-  transition:flex var(--dur-slow) var(--ease-out)}
+/* min-width is a TEXT floor, not a taste value: "IMPLEMENTATION" is a single
+   unbreakable 153px word, and with .em-process__inner's 30px gutters that
+   makes 213px the narrowest a step can be without breaking it mid-word. 218px
+   is that floor plus clearance. It was 238px against 40px gutters, which left
+   the strip only 98px of total slack to redistribute on hover — so the panel
+   grew by ~20px and the movement read as a twitch rather than an expansion.
+   At 218px the slack is 198px and the hovered panel travels ~50px. */
+.em-process__step{position:relative;flex:1 1 0;min-width:218px;overflow:hidden;
+  clip-path:polygon(0 0,calc(100% - 34px) 0,100% 50%,calc(100% - 34px) 100%,0 100%,34px 50%)}
 .em-process__step:first-child{clip-path:polygon(0 0,calc(100% - 34px) 0,100% 50%,calc(100% - 34px) 100%,0 100%,0 100%)}
 .em-process__step + .em-process__step{margin-left:-34px}
-.em-process__step:hover,.em-process__step:focus-within{flex:2.7 1 0}
+/* flex-grow alone, not the `flex` shorthand — only one value needs to
+   interpolate, and animating flex-basis alongside it is what makes the strip
+   feel like it is settling rather than moving. */
+.em-process__step:hover,.em-process__step:focus-within{flex-grow:3.4}
+
+/* ---------- Why this transition is restated here ----------
+   css/motion.css declares
+     [data-reveal="on"] [data-reveal]{transition:opacity,transform,clip-path}
+   and every step carries data-reveal="rise". That selector is BOTH more
+   specific than .em-process__step and later in the cascade, so it replaced the
+   whole shorthand and the chevron's width change lost its transition
+   altogether — the panels snapped. It also inherited the reveal group's
+   `transition-delay:calc(var(--reveal-i) * 70ms)`, so the fifth step waited
+   280ms before snapping. That combination is what read as jumpy.
+
+   Both rules below match motion.css's own shape so they win on specificity,
+   not on !important. The first keeps the entrance reveal intact and adds
+   flex-grow; the second takes over once the step has been revealed, when the
+   stagger delay must not apply to a hover. */
+[data-reveal="on"] .em-process__step[data-reveal]{
+  transition:opacity var(--dur-reveal) var(--ease-entrance),
+             transform var(--dur-reveal) var(--ease-entrance),
+             flex-grow var(--dur-slow) var(--ease-out)}
+[data-reveal="on"] .em-process__step[data-reveal].is-revealed{
+  transition:flex-grow var(--dur-slow) var(--ease-out);
+  transition-delay:0s}
+/* Without JS the reveal layer never engages, so the plain rule has to carry
+   the transition on its own. */
+.em-process__step{transition:flex-grow var(--dur-slow) var(--ease-out)}
 
 .em-process__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .em-process__scrim{position:absolute;inset:0;background:var(--scrim-step);
@@ -47,8 +81,11 @@
 .em-process__step:hover .em-process__scrim,
 .em-process__step:focus-within .em-process__scrim{background:var(--scrim-step-open)}
 
+/* 30px gutters, not --space-8's 40px: the extra 20px would push the text
+   floor back to 233px and take the strip's hover slack with it. See the
+   min-width note above. */
 .em-process__inner{position:relative;height:100%;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:var(--space-7) var(--space-8) 152px}
+  justify-content:flex-end;padding:var(--space-7) 30px 152px}
 .em-process__mark{width:46px;height:46px;object-fit:contain;margin-bottom:auto}
 .em-process__num{margin:0 0 var(--space-3);font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);color:var(--white);opacity:.55;
@@ -58,14 +95,19 @@
 .em-process__title{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-h5);line-height:1.22;letter-spacing:.02em;text-transform:uppercase;
   color:var(--white);overflow-wrap:break-word}
-/* letter-spacing reduced from --ls-caps so "IMPLEMENTATION" fits the 158px an
-   unhovered step is pinned to at min-width:238px (see :101) without a
-   mid-word break — see task-16/final-review report for the measurement. */
+/* letter-spacing reduced from --ls-caps so "IMPLEMENTATION" — a single
+   unbreakable 153px word — fits the 158px of text column an unhovered step
+   leaves at min-width:218px with 30px gutters, without a mid-word break. */
 /* No width: left+right constrain this. A fixed width clips once the container goes
    fluid below ~1248px. */
-.em-process__detail{position:absolute;left:var(--space-8);right:var(--space-8);bottom:var(--space-7);
+/* Timed against the width, not independently of it. The panel widens over
+   --dur-slow; the copy starts a beat later and finishes with it, so the two
+   read as one movement rather than as a resize followed by a fade. An 80ms
+   delay on a full --dur-slow fade overshot the panel and was part of what
+   made the interaction feel disjointed. */
+.em-process__detail{position:absolute;left:30px;right:30px;bottom:var(--space-7);
   opacity:0;transform:translateY(10px);pointer-events:none;
-  transition:opacity var(--dur-slow) var(--ease-out) 80ms,transform var(--dur-slow) var(--ease-out) 80ms}
+  transition:opacity 300ms var(--ease-out) 100ms,transform 300ms var(--ease-out) 100ms}
 .em-process__step:hover .em-process__detail,
 .em-process__step:focus-within .em-process__detail{opacity:1;transform:none;pointer-events:auto}
 .em-process__detail p{margin:0 0 var(--space-4);font-size:var(--fs-small);line-height:1.55;
@@ -300,11 +342,11 @@
 
 /* ---------- Responsive ---------- */
 /* Breakpoints are an assumption — the source design is desktop-1440-only.
-   .em-process is the exception: its five steps carry min-width:238px and
-   -34px overlaps, so the strip needs ~1054px to render horizontally
-   (5*238 - 4*34). The container (--container-max 1200px minus two
-   --gutter of 24px) only clears that floor once the viewport is >=~1102px,
-   so the chevron gets its own, higher stacking breakpoint of 1150px —
+   .em-process is the exception: its five steps carry min-width:218px and
+   -34px overlaps, so the strip needs ~954px to render horizontally
+   (5*218 - 4*34). The container (--container-max 1200px minus two
+   --gutter of 24px) only clears that floor once the viewport is >=~1002px,
+   so the chevron keeps its own, higher stacking breakpoint of 1150px —
    comfortably above the measured overflow threshold — while every other
    section keeps the 1200/900/600 set. */
 @media (max-width:1200px){

@@ -280,11 +280,13 @@ their contents.
 400px`. Most are the obvious content-reflow steps; two are not:
 
 - **1150px** — the five-step solutions chevron switches to a vertical stack here,
-  not at the more obvious 900px. Its steps have `min-width:238px` and overlap by
-  34px each, so the strip needs roughly `5*238 - 4*34 = 1054px` to render
+  not at the more obvious 900px. Its steps have `min-width:218px` and overlap by
+  34px each, so the strip needs roughly `5*218 - 4*34 = 954px` to render
   horizontally. Inside the 1200px container (minus gutters) that only clears once
-  the viewport is above ~1102px — so the chevron needs its own breakpoint higher
-  than 900px, or there's a real overflow window between 900px and ~1102px.
+  the viewport is above ~1002px — so the chevron needs its own breakpoint higher
+  than 900px, or there's a real overflow window between 900px and ~1002px.
+  `min-width` is a text floor: "IMPLEMENTATION" is a single unbreakable 153px
+  word, and 218px is that plus the panel's 30px gutters and clearance.
 - **960px** — the desktop nav hides here, not at 900px, because `.em-header__bar`
   (logo + six nav links + search + Donate, none of which wrap or shrink) has a
   measured intrinsic min-content width of roughly 940px. The mobile toggle and

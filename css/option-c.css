@@ -208,21 +208,28 @@
 
 .at-rail--quotes{scrollbar-color:var(--blue-400) var(--white)}
 .at-rail--quotes::-webkit-scrollbar-track{background:var(--white)}
-.at-story{flex:0 0 clamp(280px,32vw,420px);display:flex;flex-direction:column;
-  padding:clamp(var(--space-6),2.4vw,var(--space-8));
+/* The photograph runs to the card's edges, so the card carries no padding and
+   the copy below it supplies its own. --at-pad keeps the two in step. */
+.at-story{--at-pad:clamp(var(--space-6),2.4vw,var(--space-8));
+  flex:0 0 clamp(280px,32vw,420px);display:flex;flex-direction:column;
+  padding:0;overflow:hidden;
   background:var(--surface-card);border-radius:var(--at-radius);box-shadow:var(--shadow-sm)}
-.at-story{padding:0;overflow:hidden}
-.at-story img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:center 24%;
-  margin-bottom:0}
-.at-story blockquote{margin:clamp(var(--space-6),2.4vw,var(--space-8))
-  clamp(var(--space-6),2.4vw,var(--space-8)) var(--space-6)}
-.at-story__attr{margin:0 clamp(var(--space-6),2.4vw,var(--space-8))
-  clamp(var(--space-6),2.4vw,var(--space-8))}
-.at-story blockquote{margin:0 0 var(--space-6);flex:1 1 auto}
+
+/* height:auto is load-bearing, not tidiness. Every <img> here carries width
+   and height attributes for layout stability, and the height attribute is a
+   presentational hint that sets a definite CSS height. aspect-ratio only
+   resolves when the cross dimension is auto, so without this the card renders
+   the photograph at its intrinsic 1580px and the ratio is silently ignored.
+   The other media rules in this file set height:100% and so never hit it. */
+.at-story img{width:100%;height:auto;aspect-ratio:16/10;
+  object-fit:cover;object-position:center 24%}
+
+.at-story blockquote{margin:var(--at-pad) var(--at-pad) var(--space-6);flex:1 1 auto}
 .at-story blockquote p{margin:0;font-family:var(--font-display);font-weight:var(--fw-medium);
   font-size:clamp(1.0625rem,.98rem + .5vw,1.375rem);line-height:1.4;letter-spacing:-.01em;
   color:var(--text-strong)}
-.at-story__attr{margin:0;font-size:var(--fs-caption);color:var(--text-muted)}
+.at-story__attr{margin:0 var(--at-pad) var(--at-pad);font-size:var(--fs-caption);
+  color:var(--text-muted)}
 .at-story__attr b{display:block;font-family:var(--font-display);font-weight:var(--fw-bold);
   letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
 

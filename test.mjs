@@ -38,28 +38,15 @@ test('imported binaries are not empty or HTML error pages', () => {
   }
 });
 
-test('shell declares default skin and variant state', () => {
-  assert.match(html, /<html lang="en"[^>]*data-skin="brand"/);
-  assert.match(html, /data-annotations="off"/);
-  assert.match(html, /data-foundations="bento"/);
-  assert.match(html, /data-stories="feature"/);
-});
-
 test('shell links stylesheets in cascade order', () => {
   const order = ['tokens/fonts.css', 'tokens/colors.css', 'tokens/base.css',
-                 'components/components.css', 'css/homepage.css', 'css/wireframe.css'];
+                 'components/components.css', 'css/homepage.css'];
   let cursor = -1;
   for (const href of order) {
     const at = html.indexOf(href);
     assert.ok(at > cursor, `${href} out of cascade order`);
     cursor = at;
   }
-});
-
-test('control bar exists in the shell only', () => {
-  assert.match(html, /id="controls"/);
-  const partial = readFileSync('src/sections/00-header.html', 'utf8');
-  assert.ok(!partial.includes('id="controls"'), 'control bar leaked into a partial');
 });
 
 test('header is a landmark with a nav and six links', () => {
@@ -106,18 +93,6 @@ test('process detail is in the DOM, not hover-only content', () => {
   assert.match(html, /class="em-process__detail"[\s\S]{0,400}?Learn more/);
 });
 
-test('both foundations layouts ship in the markup', () => {
-  assert.match(html, /class="em-bento"/);
-  assert.match(html, /class="em-equal"/);
-});
-
-test('foundations names all three pillars in both layouts', () => {
-  for (const pillar of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
-    const hits = html.split(pillar).length - 1;
-    assert.ok(hits >= 2, `${pillar} should appear in both layouts, found ${hits}`);
-  }
-});
-
 test('foundations uses the house Real solution: label', () => {
   assert.match(html, /<strong>Real solution:<\/strong>/);
 });
@@ -149,18 +124,9 @@ test('section copy uses curly quotes in prose, not straight ASCII quotes', () =>
   }
 });
 
-test('both stories layouts ship in the markup', () => {
-  assert.match(html, /class="em-stories__feature"/);
-  assert.match(html, /class="em-stories__carousel"/);
-});
-
 test('stories attributes Jodi Berry with city', () => {
   assert.match(html, /Jodi Berry/);
   assert.match(html, /Sumrall, MS/);
-});
-
-test('carousel controls are inert and marked as such', () => {
-  assert.match(html, /class="em-stories__nav"[^>]*disabled/);
 });
 
 test('insights lists three content rows', () => {
@@ -301,59 +267,6 @@ test('footer keeps mission, social and links after losing the subscribe form', (
   assert.match(html, /class="em-footer__social"/);
 });
 
-const wire = readFileSync('css/wireframe.css', 'utf8');
-
-// Both tests below split wire on '}' and treat each chunk as one rule. That
-// only works because wireframe.css is flat, single-level CSS today — it has
-// no @media block. If a future edit wraps any wireframe.css rule in
-// @media(...){ ... }, the extra '}' at the end of the media block will chop
-// the split in a way that desyncs selector/body pairing for the rest of the
-// file. Anyone adding an @media block here needs to rewrite this parsing,
-// not just add a rule.
-test('wire skin scopes every rule under data-skin="wire"', () => {
-  const selectors = wire
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('}')
-    .map(b => b.split('{')[0].trim())
-    .filter(Boolean);
-  for (const sel of selectors) {
-    assert.ok(sel.includes('[data-skin="wire"]'), `unscoped wireframe rule: ${sel}`);
-  }
-});
-
-test('wire skin keeps the focus ring orange', () => {
-  assert.match(wire, /--focus-ring:\s*#E65A28/i);
-});
-
-// Rules exempted from the geometry ban below, by exact selector, with why:
-//  - .em-footer — the documented rounded inset panel; a real, intentional
-//    geometry difference between skins (README "The wireframe skin's
-//    contract").
-//  - .em-header__logo::after / .em-footer__logo::after — each sets
-//    position:absolute;inset:0. That anchors the LOGO placeholder overlay to
-//    an already-sized ancestor: the real <img> is visibility:hidden (not
-//    display:none), so it still occupies the box and fixes its size: the
-//    overlay only fills that existing box and cannot move it. Listed
-//    individually, not matched by a substring check, so grouping either
-//    selector into an unrelated rule can't smuggle that rule past the test.
-const GEOMETRY_EXEMPT_SELECTORS = new Set([
-  '[data-skin="wire"] .em-footer',
-  '[data-skin="wire"] .em-header__logo::after',
-  '[data-skin="wire"] .em-footer__logo::after',
-]);
-
-test('wire skin does not touch layout geometry', () => {
-  const banned = /(^|[;{\s])(width|height|padding|margin|gap|grid|flex|inset|top|right|bottom|left|border-width|min-|max-|aspect-ratio|transform|translate|scale)[-a-z]*\s*:/;
-  const blocks = wire.replace(/\/\*[\s\S]*?\*\//g, '').split('}');
-  for (const b of blocks) {
-    const body = b.split('{')[1];
-    if (!body) continue;
-    const selectors = b.split('{')[0].split(',').map(s => s.trim()).filter(Boolean);
-    if (selectors.length && selectors.every(s => GEOMETRY_EXEMPT_SELECTORS.has(s))) continue;
-    assert.ok(!banned.test(body), `geometry in wireframe.css: ${b.trim().slice(0, 80)}`);
-  }
-});
-
 const homepage = readFileSync('css/homepage.css', 'utf8');
 
 test('hero copy column grows with the viewport instead of a bare cap', () => {
@@ -470,8 +383,7 @@ test('mobile nav panel markup lives in the header partial, not injected by JS', 
   assert.match(partial, /<nav class="em-mobilenav" id="mobile-nav" aria-label="Mobile">/);
   assert.match(partial, /Who We Are/, 'sub-item copy missing from the static partial');
 
-  for (const jsFile of ['js/nav.js', 'js/controls.js']) {
-    if (!existsSync(jsFile)) continue;
+  for (const jsFile of ['js/nav.js']) {
     const js = readFileSync(jsFile, 'utf8');
     assert.ok(!js.includes('innerHTML') && !js.includes('createElement'),
       `${jsFile} builds markup at runtime instead of progressively enhancing static markup`);
@@ -584,24 +496,6 @@ test('process steps cascade as one group', () => {
   assert.equal(revealed.length, 5, `expected 5 revealing steps, found ${revealed.length}`);
 });
 
-test('both foundations layouts reveal, so the variant switcher never breaks', () => {
-  assert.match(html, /<div class="em-bento" data-reveal-group>/);
-  assert.match(html, /<div class="em-equal" data-reveal-group>/);
-  // Attribute-order-independent: loading/width/height were added to every
-  // <img> later, so an assertion anchored on data-reveal being the LAST
-  // attribute would fail on a change that has nothing to do with reveals.
-  assert.match(html, /<img class="em-bento__media"[^>]*data-reveal="clip"[^>]*>/,
-    'bento feature photo does not use the clip reveal');
-  const cards = html.match(/<article class="em-solution"[^>]*data-reveal="rise">/g) || [];
-  assert.equal(cards.length, 5, `expected 2 bento + 3 equal cards revealing, found ${cards.length}`);
-});
-
-test('both stories layouts reveal, so the variant switcher never breaks', () => {
-  assert.match(html, /<div class="em-stories__feature" data-reveal-group>/);
-  assert.match(html, /<div class="em-stories__carousel" data-reveal-group>/);
-  assert.match(html, /<article class="em-stories__lead-card" data-reveal="slide-l">/);
-});
-
 test('insights rows cascade as one group', () => {
   assert.match(html, /<div class="em-insights__rows" data-reveal-group>/);
   const revealed = html.match(/<article class="em-insights__row" data-reveal="rise">/g) || [];
@@ -634,14 +528,6 @@ test('every reveal group actually contains something to reveal', () => {
 test('header sticks and condenses on scroll', () => {
   assert.match(homepage, /\.em-header\{[^}]*position:sticky/);
   assert.match(homepage, /\[data-scrolled\][^{]*\.em-header__bar\{[^}]*min-height/);
-});
-
-test('preview bar gives up sticky so it cannot cover the sticky header', () => {
-  // .ctl used to be position:sticky;top:0;z-index:100. A sticky header at
-  // top:0 would sit underneath it. .ctl is preview-only chrome and never
-  // ships, so it scrolls away instead.
-  const rule = homepage.slice(homepage.indexOf('.ctl{'), homepage.indexOf('}', homepage.indexOf('.ctl{')));
-  assert.ok(!/position:sticky/.test(rule), '.ctl is still sticky and will cover the header');
 });
 
 test('scroll flag is passive and frame-guarded', () => {
@@ -714,7 +600,6 @@ const mega = readFileSync('css/megamenu.css', 'utf8');
 test('mega menu stylesheet is linked in cascade order', () => {
   assert.match(html, /<link rel="stylesheet" href="\.\.\/css\/megamenu\.css">/);
   assert.ok(html.indexOf('css/homepage.css') < html.indexOf('css/megamenu.css'));
-  assert.ok(html.indexOf('css/megamenu.css') < html.indexOf('css/wireframe.css'));
 });
 
 test('mega panels are only hidden once JS has claimed them', () => {

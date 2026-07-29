@@ -18,15 +18,13 @@ patterns/hex-lattice.svg  ← seamless brand honeycomb tile — shippable
 patterns/hex-lattice.mjs  ← the script that generates it — never ships
 docs/pattern-lab.html     ← pattern review page — never ships
 
-css/homepage.css          ← this build's layout, brand skin, responsive rules
-css/wireframe.css         ← optional grayscale review skin (never ships)
+css/homepage.css          ← this build's layout, brand styling, responsive rules
 css/motion.css            ← scroll + entrance reveals — shippable
 css/megamenu.css          ← desktop mega menu panels — shippable
 
-src/index.html            ← page shell: <head>, skin/variant defaults, includes
+src/index.html            ← page shell: <head>, stylesheet links, includes
 src/sections/00..07-*.html ← one fragment per section, plain HTML, no page chrome
 
-js/controls.js            ← preview-only skin/layout switcher — never ships
 js/nav.js                 ← mobile menu behaviour — shippable
 js/reveal.js              ← reveal engine + sticky header flag — shippable
 js/megamenu.js            ← desktop mega menu behaviour — shippable
@@ -71,8 +69,8 @@ runs `build.mjs` itself, so tests always see fresh markup.
 
 **Do not open `dist/index.html` directly as a `file://` URL.** Chrome blocks
 `<script type="module">` and cross-origin `@font-face` over `file://`, so opening
-the file directly gets you fallback system fonts, no skin switcher, and no mobile
-menu — the two things this build exists to demonstrate — and it fails silently,
+the file directly gets you fallback system fonts and no mobile
+menu, and it fails silently,
 with no console error pointing at the cause.
 
 Requires Node ≥18. No dependencies, no install step.
@@ -82,27 +80,6 @@ Requires Node ≥18. No dependencies, no install step.
 ```bash
 node --test test.mjs
 ```
-
-## Preview controls
-
-The dark bar at the top of the page is a preview tool and never ships. It toggles
-`data-*` attributes on `<html>`:
-
-| Control | Attribute | Values |
-| --- | --- | --- |
-| Skin | `data-skin` | `brand`, `wire` |
-| Foundations | `data-foundations` | `bento`, `equal` |
-| Stories | `data-stories` | `feature`, `carousel` |
-| Funnel notes | `data-annotations` | `on`, `off` |
-
-Both layout variants ship in the markup; CSS reveals one. Pick the one you want and
-delete the other when building in Elementor.
-
-`js/controls.js` persists each control's selection to `localStorage`, so the page
-reopens in whatever skin/variant you last left it in — if you left it in `wire`,
-reloading will show grayscale placeholders again, not a broken branded build.
-Reset by picking `Branded` from the Skin dropdown, or clear `localStorage` keys
-prefixed `em:`.
 
 ## Mobile navigation
 
@@ -282,7 +259,7 @@ they are not oversights for the WordPress developer to quietly fix.
    `components/components.css`, then `css/homepage.css`, then `css/motion.css`
    and `css/megamenu.css`. `css/megamenu.css` must load **after**
    `css/homepage.css` — it overrides `.em-mega`’s base layout rules for the
-   enhanced state. Do **not** enqueue `css/wireframe.css` — it is a review aid.
+   enhanced state.
 3. Each file in `src/sections/` is a standalone fragment. Paste one into an Elementor
    HTML widget, or use it as the reference for a native Elementor section.
 4. Fix up asset paths: partials use `../assets/…` relative to `dist/`. In WordPress
@@ -293,8 +270,6 @@ they are not oversights for the WordPress developer to quietly fix.
    by Elementor’s own responsive nav, entrance-animation and dropdown-menu
    behaviour) — they drive the real mobile menu, the scroll/entrance reveals
    plus the sticky-header condense, and the desktop mega menus, respectively.
-   `js/controls.js` and the `#controls` preview bar must **not** ship; they
-   exist only for reviewing this reference build.
 
 ## Known substitutions
 
@@ -316,8 +291,7 @@ they are not oversights for the WordPress developer to quietly fix.
 ## Deliberate deviations from the source wireframe
 
 - Header is 92px, per `components.css`, not the wireframe's 88px placeholder metric.
-- Footer is full-bleed navy in the branded skin; the wireframe's rounded inset panel
-  appears only in the wireframe skin.
+- Footer is full-bleed navy; the wireframe drew a rounded inset panel.
 - The 88×6 orange rule is added under section headings — a brand motif the grayscale
   wireframe could not express.
 - Exactly one orange filled button on the page (hero "Explore Our Work"), per the
@@ -325,15 +299,6 @@ they are not oversights for the WordPress developer to quietly fix.
 - The chevron becomes a vertical numbered stack below the 1150px breakpoint (see
   "Responsive breakpoints" above). The source specifies no responsive behaviour;
   see the spec's Open Questions.
-- Illustration icons (`.em-solution__icon`, `.em-process__mark`) are greyscaled in
-  the wireframe skin (`filter:grayscale(1)`) rather than shown as outlined
-  placeholder boxes. They are `<img>` elements, which cannot host `::after`
-  content, and swapping their `src` would change their aspect-derived width and
-  break the skin's pixel-identical layout guarantee.
-- Photography placeholders (`.em-process__bg` and similar) use a `content:`
-  swap to a transparent 1×1 GIF in the wireframe skin, so each image paints its
-  own diagonal-cross placeholder background instead of the photograph. This is
-  geometry-safe only because those images have both dimensions pinned in CSS.
 - **Join Us is rebuilt as a stacked composition** (`src/sections/06-joinus.html`),
   not the wireframe's panel-plus-two-cards. Foundations, Stories and the original
   Join Us layout were all "one dominant panel left, two stacked cards right"
@@ -350,9 +315,7 @@ they are not oversights for the WordPress developer to quietly fix.
     photographs already appear earlier in the page, so they cost no extra
     request. Opacity is capped at `.26`; the contrast measurement behind that
     number is in the CSS comment, and a test enforces the cap.
-  - Unlike Foundations and Stories, Join Us ships **one** layout — there is no
-    `data-join` variant switch.
-- The footer newsletter form was removed. The page asked for an email address
+  - The footer newsletter form was removed. The page asked for an email address
   twice within one scroll; Join Us now owns the single subscribe field, and a
   test enforces that there is exactly one `type="email"` input on the page.
 
@@ -376,8 +339,8 @@ pattern — the Join Us slab:
   clipped by the SVG viewport, so the lattice continues across repeats on both
   axes at any `mask-size`.
 - **Applied as a mask, not a background image.** The paint is `--pattern-ink`,
-  so one 950-byte file serves navy, orange, tint and the wireframe skin's grey.
-  Retinting for a skin is a one-token override, not a second export.
+  so one 950-byte file serves navy, orange and tint alike.
+  Retinting is a one-token override, not a second export.
 - **Graduated in the paint.** The ::before's background is a `to top left`
   linear gradient of `--pattern-ink` showing through the tile mask: densest in
   the slab's empty bottom-right corner, gone before it reaches the headline.
@@ -402,23 +365,7 @@ For Elementor: the slab pattern is one `::before` rule in `css/homepage.css`. If
 the section is rebuilt with native widgets, apply it as a background overlay on
 the container and keep `patterns/hex-lattice.svg` next to `css/`.
 
-## The wireframe skin's contract
-
-`css/wireframe.css` may change colour, imagery and ornament only — **never layout
-geometry**. Both skins must stay pixel-identical in box position and size, so a
-reviewer can toggle skins without anything shifting. Tests enforce: every rule in
-the file is scoped under `[data-skin="wire"]`, the focus ring stays the brand
-orange (`#E65A28`), and no rule declares any box- or position-affecting property
-(`width`, `height`, `padding`, `margin`, `gap`, any `grid*`/`flex*`, `inset`,
-`top`/`right`/`bottom`/`left`, `border-width`, `min-*`/`max-*`, `aspect-ratio`,
-`transform`/`translate`/`scale`) — with three individually-listed exemptions in
-`test.mjs`: `.em-footer` (the documented rounded inset panel) and the header/footer
-LOGO placeholder overlays (`position:absolute;inset:0` anchored to an
-already-sized, `visibility:hidden` ancestor, so it cannot move a box). The
-exemptions are matched by exact selector, not by a substring check, so a rule
-can't be exempted just by sharing a `}`-split block with an exempt one.
-
 ## Not built
 
 The four other pages in the design project's `ui_kits/website/` (Solutions Center,
-Quality Education, The Latest, Join Us), and working carousel motion.
+Quality Education, The Latest, Join Us).

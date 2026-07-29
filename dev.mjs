@@ -1,4 +1,4 @@
-// Dev server with live reload. Never ships — like js/controls.js, this exists
+// Dev server with live reload. Never ships — this exists
 // only to review the reference build locally.
 //
 //   node dev.mjs            → http://localhost:8000/dist/index.html

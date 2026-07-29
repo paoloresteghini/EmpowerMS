@@ -117,6 +117,13 @@ hidden start-state in `css/motion.css` is nested under that attribute. If the
 script fails to load, nothing is hidden — the page just renders without motion.
 Never write an ungated `opacity:0`; `test.mjs` fails the build if you do.
 
+The `data-reveal-group` stagger is a custom property, not CSS alone: `js/reveal.js`
+walks each group’s `[data-reveal]` children in document order and sets
+`--reveal-i` on each one to its position within that group (0, 1, 2, …);
+`css/motion.css` reads it back as `transition-delay:calc(var(--reveal-i, 0) * 70ms)`.
+Porting the CSS without the script gets you no `--reveal-i` and so no stagger,
+with nothing in the stylesheet to explain why.
+
 Reveals are one-shot: an element animates the first time it enters view and is
 then unobserved. It does not re-hide on scroll-up.
 
@@ -130,6 +137,12 @@ closest equivalents are `fadeInUp` for `rise`, `fadeIn` for `fade`, and
 `fadeInLeft`/`fadeInRight` for the slides; there is no built-in equivalent of
 `clip`, and Elementor’s per-widget animation delay is what reproduces
 `data-reveal-group`.
+
+**Warning:** `js/reveal.js` isn’t only entrance animation — it’s also what sets
+`<html data-scrolled>` for the sticky header (see below). Dropping the script in
+favour of Elementor’s built-in presets silently loses the header condense too,
+not just the reveals; keep the script (or reimplement the scroll listener) even
+if you replace every `data-reveal` attribute with an Elementor animation.
 
 The header is `position: sticky` and condenses from 92px to 68px past 80px of
 scroll, driven by `<html data-scrolled>` from the same script. The preview
@@ -149,6 +162,12 @@ toggles and pins; Escape closes and returns focus to the trigger; ArrowDown move
 into the panel; ArrowLeft/ArrowRight move along the nav; outside click and focus
 leaving the header both close. Exactly one panel is open at a time. Below 960px
 the whole feature stands down and the mobile menu takes over.
+
+Plain Tab order does not route into an open panel next: the panel markup sits
+after `.em-header__actions` in the DOM, so with a panel open, its links come
+after the toggle/search/Donate actions in tab order, not right after the
+trigger. ArrowDown is the intended route in — it opens the panel (if not
+already open) and moves focus straight to its first link.
 
 Same progressive-enhancement contract as the motion layer: `js/megamenu.js` sets
 `<html data-mega="on">`, and only then does `css/megamenu.css` position the panels
@@ -230,17 +249,22 @@ they are not oversights for the WordPress developer to quietly fix.
 1. Copy `tokens/`, `components/` and `assets/` into the child theme. **Keep them as
    siblings** — `tokens/*.css` references `url('../assets/…')`.
 2. Enqueue in this order: the eight `tokens/*.css` files, then
-   `components/components.css`, then `css/homepage.css`.
-   Do **not** enqueue `css/wireframe.css` — it is a review aid.
+   `components/components.css`, then `css/homepage.css`, then `css/motion.css`
+   and `css/megamenu.css`. `css/megamenu.css` must load **after**
+   `css/homepage.css` — it overrides `.em-mega`’s base layout rules for the
+   enhanced state. Do **not** enqueue `css/wireframe.css` — it is a review aid.
 3. Each file in `src/sections/` is a standalone fragment. Paste one into an Elementor
    HTML widget, or use it as the reference for a native Elementor section.
 4. Fix up asset paths: partials use `../assets/…` relative to `dist/`. In WordPress
    these become theme URLs.
 5. Replace the "auto-populated" placeholder strings with dynamic content —
    they mark CMS slots (blog posts, EPIC research, Community Stories).
-6. `js/nav.js` should ship (or be replaced by Elementor's own responsive nav
-   behaviour) — it drives the real mobile menu. `js/controls.js` and the `#controls`
-   preview bar must **not** ship; they exist only for reviewing this reference build.
+6. `js/nav.js`, `js/reveal.js`, and `js/megamenu.js` should ship (or be replaced
+   by Elementor’s own responsive nav, entrance-animation and dropdown-menu
+   behaviour) — they drive the real mobile menu, the scroll/entrance reveals
+   plus the sticky-header condense, and the desktop mega menus, respectively.
+   `js/controls.js` and the `#controls` preview bar must **not** ship; they
+   exist only for reviewing this reference build.
 
 ## Known substitutions
 
@@ -300,7 +324,4 @@ can't be exempted just by sharing a `}`-split block with an exempt one.
 ## Not built
 
 The four other pages in the design project's `ui_kits/website/` (Solutions Center,
-Quality Education, The Latest, Join Us), working carousel motion, and header
-dropdown menu contents (desktop `About`/`Solutions`/etc. buttons render
-`aria-expanded="false"` but have no attached panel — only the mobile accordion
-menu is functional).
+Quality Education, The Latest, Join Us), and working carousel motion.

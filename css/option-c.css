@@ -1,0 +1,397 @@
+/* ============================================================================
+   Option C — "The Atlas"
+   ----------------------------------------------------------------------------
+   Spatial idea: horizontal motion inside a vertical page. Two sections are
+   scroll-snapped rails that run past the right edge of the container, and the
+   three foundations are full-height photographic panels that expand under the
+   pointer or the keyboard. The page has an x-axis, which is what stops it
+   reading as a stack.
+
+   The most overtly interactive of the four, and the one that rewards a visitor
+   who came to look around rather than to read.
+
+   Everything here is CSS. No panel hides content that isn't already visible —
+   the expanding panels reveal a second paragraph, they don't gate the section.
+
+   Loads after css/site.css, which owns the header, mobile nav and footer.
+   ========================================================================= */
+
+:root{
+  --at-step:clamp(var(--space-11),7vw,var(--space-14));
+  --at-radius:clamp(var(--radius-lg),2vw,var(--radius-panel));
+  /* The distance from the viewport edge to the container's content edge. The
+     rails start on that line and then run past the opposite edge. */
+  --at-inset:max(var(--gutter),calc((100vw - var(--container-max)) / 2 + var(--gutter)));
+}
+
+.at-lede{margin:0;font-size:clamp(1.0625rem,.98rem + .4vw,1.25rem);line-height:1.65;
+  color:var(--text-body);max-width:60ch}
+
+/* ============================ 1 · Hero =================================== */
+/* Photographic and full-bleed. The copy sits in the lower-left on a scrim that
+   is measured, not eyeballed. */
+.at-hero{position:relative;isolation:isolate;display:flex;flex-direction:column;
+  justify-content:flex-end;
+  min-height:min(86vh,780px);
+  padding:clamp(var(--space-12),10vw,var(--space-15)) 0 0}
+.at-hero__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  object-position:center 26%}
+/* Worst case, measured against the brightest pixel in the source: --white over
+   rgba(0,41,53,.82) is 12.4:1 and --orange-300 is 5.9:1, so the hero copy
+   cannot fall under AA whatever photograph is swapped in behind it. The
+   left-weighted second layer keeps the copy side darker than the face side. */
+.at-hero::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:
+    linear-gradient(100deg,rgba(0,41,53,.88) 0%,rgba(0,41,53,.62) 46%,rgba(0,41,53,.28) 100%),
+    linear-gradient(180deg,rgba(0,41,53,.5) 0%,rgba(0,41,53,.2) 35%,rgba(0,41,53,.75) 100%)}
+
+.at-hero__inner{padding-bottom:clamp(var(--space-8),4vw,var(--space-11))}
+.at-hero__tag{margin:0 0 var(--space-6);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:.02em;color:var(--orange-300)}
+.at-hero__tag::before{content:"";width:34px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+.at-hero h1{margin:0 0 var(--space-6);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.4rem,1rem + 4.8vw,5rem);line-height:.98;letter-spacing:-.04em;
+  color:var(--white);max-width:15ch}
+.at-hero__lede{margin:0 0 var(--space-8);font-size:clamp(1.0625rem,.95rem + .45vw,1.3125rem);
+  line-height:1.65;color:var(--text-inverse-muted);max-width:52ch}
+.at-hero__actions{display:flex;gap:var(--space-5);flex-wrap:wrap}
+
+/* A ruled band across the foot of the hero rather than a floating card: it
+   reads as the base the headline stands on. */
+.at-hero__ns{margin:0 auto;padding-top:clamp(var(--space-6),2.5vw,var(--space-8));
+  padding-bottom:clamp(var(--space-6),2.5vw,var(--space-8));
+  border-top:1px solid rgba(255,255,255,.28);
+  display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:clamp(var(--space-5),3vw,var(--space-10));align-items:baseline}
+.at-hero__ns figcaption{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--orange-300);white-space:nowrap}
+.at-hero__ns blockquote{margin:0}
+.at-hero__ns p{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1rem,.92rem + .5vw,1.375rem);line-height:1.4;letter-spacing:var(--ls-heading);
+  color:var(--white)}
+
+/* ==================== 2 · How Change Happens ============================= */
+.at-change{padding:var(--at-step) 0;background:var(--surface-page);overflow:hidden}
+.at-change__head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-13));align-items:end;
+  margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+.at-change h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue)}
+.at-change .em-rule{margin:var(--space-6) 0 0}
+
+.at-rail__label{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-4);
+  margin:0 auto var(--space-6);font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--text-muted)}
+.at-rail__hint{font-weight:var(--fw-semibold);letter-spacing:var(--ls-caps);
+  color:var(--em-orange-ink)}
+
+/* ---------- The rail ----------
+   Starts on the container's content edge and runs past the right edge of the
+   viewport, so the section announces that there is more to the right without
+   needing an arrow control. scroll-padding-inline-start keeps a snapped card
+   on the same line the headings use.
+
+   tabindex + role=region is not decoration: a scroll container that a mouse
+   user can drag has to be reachable and scrollable by keyboard too, and a
+   focusable region with an accessible name is how that is done. */
+.at-rail{list-style:none;margin:0;padding:var(--space-2) var(--at-inset) var(--space-8);
+  display:flex;gap:clamp(var(--space-4),1.6vw,var(--space-6));
+  overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;scroll-padding-inline-start:var(--at-inset)}
+.at-rail>*{scroll-snap-align:start}
+.at-rail:focus-visible{outline:2px solid var(--focus-ring);outline-offset:-2px}
+
+/* A visible, styled scrollbar. The default one is the tell that a rail was
+   made by accident; a designed one says the horizontal axis is intentional. */
+.at-rail{scrollbar-width:thin;scrollbar-color:var(--blue-400) var(--grey-200)}
+.at-rail::-webkit-scrollbar{height:8px}
+.at-rail::-webkit-scrollbar-track{background:var(--grey-200);border-radius:var(--radius-pill)}
+.at-rail::-webkit-scrollbar-thumb{background:var(--blue-400);border-radius:var(--radius-pill)}
+.at-rail::-webkit-scrollbar-thumb:hover{background:var(--em-blue)}
+
+.at-card{flex:0 0 clamp(240px,26vw,320px);
+  padding:clamp(var(--space-6),2.2vw,var(--space-8));
+  background:var(--surface-tint);border-radius:var(--at-radius);
+  border-top:4px solid var(--em-orange);
+  transition:background var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.at-card:hover{background:var(--blue-200);transform:translateY(-4px)}
+.at-card__num{display:block;margin-bottom:var(--space-6);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(1.75rem,1.3rem + 1.4vw,2.5rem);line-height:1;
+  letter-spacing:-.03em;color:var(--em-blue);font-variant-numeric:tabular-nums lining-nums}
+.at-card h3{margin:0 0 var(--space-4);font-size:var(--fs-h4);font-weight:var(--fw-bold);
+  line-height:1.2;color:var(--em-blue)}
+.at-card p{margin:0;font-size:var(--fs-small);line-height:1.6;color:var(--text-body)}
+
+/* ==================== 3 · Three Foundations ============================== */
+/* Full-height photographic panels that expand under the pointer or the
+   keyboard. The collapsed state still carries the title and the promise, so
+   nothing the section needs to say is behind an interaction — expanding adds
+   the Real Solution paragraph and the link cue. */
+.at-foundations{padding:var(--at-step) 0;background:var(--surface-navy-deep)}
+.at-foundations__head{margin-bottom:clamp(var(--space-9),4vw,var(--space-12));
+  display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-13));align-items:end}
+.at-foundations h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--white)}
+.at-foundations .at-lede{color:var(--text-inverse-muted);line-height:1.7}
+
+.at-panels{display:flex;gap:clamp(var(--space-3),1vw,var(--space-5));
+  padding:0 var(--at-inset);align-items:stretch}
+.at-panel{position:relative;isolation:isolate;overflow:hidden;
+  flex:1 1 0;min-width:0;
+  min-height:clamp(420px,46vw,600px);
+  border-radius:var(--at-radius);
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:clamp(var(--space-6),2.4vw,var(--space-9));
+  transition:flex-grow var(--dur-slow) var(--ease-out)}
+/* The expansion. flex-grow only — the panels keep their flex-basis, so the row
+   never reflows and no text re-wraps in the panels that are shrinking. */
+.at-panel:hover,.at-panel:focus-within{flex-grow:1.9}
+
+.at-panel__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.at-panel:hover .at-panel__bg,.at-panel:focus-within .at-panel__bg{transform:scale(1.06)}
+/* Measured at the darkest stop: --white on rgba(0,41,53,.9) composited over
+   any source pixel is >= 12:1, and --text-inverse-muted is >= 8:1. */
+.at-panel::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(0,41,53,.18) 0%,rgba(0,41,53,.68) 48%,rgba(0,41,53,.93) 100%);
+  transition:opacity var(--dur-slow) var(--ease-out)}
+
+.at-panel__body{position:relative}
+.at-panel h3{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .7vw,1.75rem);line-height:1.1;letter-spacing:-.02em;
+  text-transform:uppercase}
+.at-panel h3 a{color:var(--white);text-decoration:none}
+/* The whole panel is the target, anchored to the heading link so the panel
+   exposes exactly one destination and one accessible name. */
+.at-panel h3 a::after{content:"";position:absolute;inset:0;z-index:1}
+.at-panel:hover h3 a,.at-panel h3 a:focus-visible{color:var(--orange-300)}
+.at-panel__promise{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.45;color:var(--white);max-width:26ch}
+
+/* grid-template-rows 0fr → 1fr is the modern height transition: it animates a
+   real auto height with no measured pixel value and no script. The inner
+   element carries overflow:hidden so the copy clips rather than spilling. */
+.at-panel__more{display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows var(--dur-slow) var(--ease-out),
+             opacity var(--dur-slow) var(--ease-out);
+  opacity:0}
+.at-panel__more>*{min-height:0;overflow:hidden}
+.at-panel:hover .at-panel__more,.at-panel:focus-within .at-panel__more{
+  grid-template-rows:1fr;opacity:1}
+.at-panel__more p{margin:var(--space-5) 0 var(--space-6);font-size:var(--fs-small);
+  line-height:1.6;color:var(--text-inverse-muted);max-width:44ch}
+.at-panel__more p b{color:var(--white);font-weight:var(--fw-bold)}
+.at-panel__cue{display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--orange-300)}
+.at-panel__cue svg{width:16px;height:16px}
+
+/* ==================== 4 · Mississippi Stories ============================ */
+.at-stories{padding:var(--at-step) 0;background:var(--surface-tint);overflow:hidden}
+.at-stories__head{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:clamp(var(--space-6),3vw,var(--space-10));align-items:end;
+  margin-bottom:clamp(var(--space-8),3.5vw,var(--space-11))}
+.at-stories h2{margin:0 0 var(--space-5);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.04;
+  letter-spacing:-.03em;color:var(--em-blue)}
+/* The Stories CTA is on a light surface here, so the inverse-outline button
+   from components.css would be white-on-tint. Restated as a navy outline. */
+.at-stories .em-btn--inverse-outline{color:var(--em-blue);border-color:var(--em-blue)}
+.at-stories .em-btn--inverse-outline:hover{background:var(--em-blue);color:var(--white)}
+
+.at-rail--quotes{scrollbar-color:var(--blue-400) var(--white)}
+.at-rail--quotes::-webkit-scrollbar-track{background:var(--white)}
+.at-story{flex:0 0 clamp(280px,32vw,420px);display:flex;flex-direction:column;
+  padding:clamp(var(--space-6),2.4vw,var(--space-8));
+  background:var(--surface-card);border-radius:var(--at-radius);box-shadow:var(--shadow-sm)}
+.at-story{padding:0;overflow:hidden}
+.at-story img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:center 24%;
+  margin-bottom:0}
+.at-story blockquote{margin:clamp(var(--space-6),2.4vw,var(--space-8))
+  clamp(var(--space-6),2.4vw,var(--space-8)) var(--space-6)}
+.at-story__attr{margin:0 clamp(var(--space-6),2.4vw,var(--space-8))
+  clamp(var(--space-6),2.4vw,var(--space-8))}
+.at-story blockquote{margin:0 0 var(--space-6);flex:1 1 auto}
+.at-story blockquote p{margin:0;font-family:var(--font-display);font-weight:var(--fw-medium);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.375rem);line-height:1.4;letter-spacing:-.01em;
+  color:var(--text-strong)}
+.at-story__attr{margin:0;font-size:var(--fs-caption);color:var(--text-muted)}
+.at-story__attr b{display:block;font-family:var(--font-display);font-weight:var(--fw-bold);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+
+/* ==================== 5 · Latest Insights ================================ */
+/* Deliberately NOT a rail. Two rails plus a third would make the horizontal
+   axis a tic rather than a system, so the page returns to a vertical grid
+   here and lets the section breathe. */
+.at-insights{padding:var(--at-step) 0;background:var(--surface-page)}
+.at-insights__head{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:clamp(var(--space-6),3vw,var(--space-10));align-items:end;
+  padding-bottom:var(--space-7);border-bottom:2px solid var(--em-blue);
+  margin-bottom:clamp(var(--space-8),3.5vw,var(--space-11))}
+.at-insights h2{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.05rem + 1.7vw,2.375rem);line-height:1.1;letter-spacing:-.03em;
+  color:var(--em-blue);max-width:26ch}
+.at-all{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  white-space:nowrap;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink);text-decoration:none}
+.at-all svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.at-all:hover{color:var(--em-blue)}
+.at-all:hover svg{transform:translateX(4px)}
+
+/* Explicit placement, not spans: with `span 2` on the lead the third item was
+   pushed to a new row and left a dead cell beside it. The lead occupies both
+   rows of the first two columns, the two secondary items stack in the third,
+   and the podcast closes the block across all three. */
+.at-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:auto auto;
+  gap:clamp(var(--space-5),2.2vw,var(--space-8))}
+.at-item--lead{grid-column:1 / 3;grid-row:1 / 3}
+.at-grid>.at-item:not(.at-item--lead):nth-of-type(2){grid-column:3;grid-row:1}
+.at-grid>.at-item:not(.at-item--lead):nth-of-type(3){grid-column:3;grid-row:2}
+.at-pod{grid-column:1 / -1}
+
+.at-item{display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.at-item__media{display:block;overflow:hidden;border-radius:var(--at-radius);
+  margin-bottom:var(--space-5);background:var(--blue-100)}
+.at-item--lead .at-item__media{aspect-ratio:2/1}
+.at-item:not(.at-item--lead) .at-item__media{aspect-ratio:4/3}
+.at-item__media img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.at-item:hover .at-item__media img{transform:scale(1.05)}
+.at-item__kind{margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.at-item__title{font-family:var(--font-display);font-weight:var(--fw-bold);line-height:1.22;
+  letter-spacing:var(--ls-heading);color:var(--em-blue);
+  transition:color var(--dur) var(--ease-out)}
+.at-item--lead .at-item__title{font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem)}
+.at-item:not(.at-item--lead) .at-item__title{font-size:var(--fs-h5)}
+.at-item:hover .at-item__title{color:var(--em-orange-ink)}
+.at-item__excerpt{margin-top:var(--space-3);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:56ch}
+
+.at-pod{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+  gap:clamp(var(--space-5),2vw,var(--space-8));
+  padding:clamp(var(--space-6),2.2vw,var(--space-8));
+  background:var(--surface-navy);border-radius:var(--at-radius);text-decoration:none;
+  transition:background var(--dur) var(--ease-out)}
+.at-pod:hover{background:var(--surface-navy-deep)}
+.at-pod__play{width:56px;height:56px;border-radius:var(--radius-pill);background:var(--em-orange);
+  color:var(--white);display:grid;place-items:center;
+  transition:transform var(--dur) var(--ease-out)}
+.at-pod:hover .at-pod__play{transform:scale(1.08)}
+.at-pod__play svg{width:22px;height:22px;margin-left:2px}
+.at-pod__show{display:block;margin-bottom:2px;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.at-pod__title{display:block;margin-bottom:var(--space-2);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-h4);line-height:1.2;color:var(--white)}
+.at-pod__meta{display:block;font-size:var(--fs-small);line-height:1.55;
+  color:var(--text-inverse-muted);max-width:60ch}
+
+/* ========================== 6 · Join Us ================================== */
+.at-join{padding:var(--at-step) 0;background:var(--surface-subtle)}
+.at-join__grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);
+  gap:clamp(var(--space-5),2vw,var(--space-7))}
+.at-join__main{grid-row:span 2;position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(var(--space-8),3.5vw,var(--space-12));
+  background:var(--surface-navy-deep);border-radius:var(--at-radius);
+  display:flex;flex-direction:column;justify-content:center;
+  --pattern-ink:var(--blue-600)}
+.at-join__main::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 66%);
+  opacity:.7;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:75px;mask-size:75px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.at-join h2{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.2rem + 2vw,2.75rem);line-height:1.04;letter-spacing:-.03em;
+  color:var(--white)}
+.at-join__lede{margin:0 0 var(--space-7);font-size:var(--fs-lead);line-height:1.6;
+  color:var(--text-inverse-muted);max-width:40ch}
+.at-join__form{display:flex;gap:var(--space-3);flex-wrap:wrap;max-width:520px}
+.at-join__form .em-input{flex:1 1 220px}
+.at-join__note{margin:var(--space-4) 0 0;font-size:var(--fs-caption);
+  color:var(--text-inverse-muted)}
+
+.at-join__way{display:flex;flex-direction:column;align-items:flex-start;
+  padding:clamp(var(--space-6),2.5vw,var(--space-9));
+  background:var(--surface-card);border-radius:var(--at-radius);text-decoration:none;
+  transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.at-join__way:hover,.at-join__way:focus-visible{transform:translateY(-4px);
+  box-shadow:var(--shadow-lg)}
+.at-join__way h3{margin:0 0 var(--space-4);font-size:var(--fs-h3);font-weight:var(--fw-bold);
+  color:var(--em-blue)}
+.at-join__way p{margin:0 0 var(--space-7);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:42ch}
+.at-join__cue{margin-top:auto;display:inline-flex;align-items:center;gap:var(--space-3);
+  min-height:24px;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink)}
+.at-join__cue svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.at-join__way:hover .at-join__cue svg{transform:translateX(4px)}
+
+/* ========================== Responsive =================================== */
+@media (max-width:1000px){
+  .at-change__head,.at-foundations__head,.at-stories__head,.at-insights__head{
+    grid-template-columns:1fr;gap:var(--space-6);align-items:start}
+  .at-hero__ns{grid-template-columns:1fr;gap:var(--space-4)}
+  .at-grid{grid-template-columns:repeat(2,1fr)}
+  .at-item--lead{grid-column:span 2}
+  .at-pod{grid-column:span 2;grid-template-columns:auto minmax(0,1fr)}
+  .at-join__grid{grid-template-columns:1fr}
+  .at-join__main{grid-row:auto}
+}
+
+@media (max-width:860px){
+  /* The expanding row cannot survive at this width — three panels at 1/3 of a
+     small viewport have no room to say anything, and expansion on touch has
+     no hover to trigger it. The panels become a snapped rail instead: same
+     photographic language, same content, an interaction that works by finger.
+     .at-panel__more opens permanently, so nothing stays behind a state that
+     touch cannot reach. */
+  .at-panels{display:flex;overflow-x:auto;overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;scroll-padding-inline-start:var(--at-inset);
+    padding-bottom:var(--space-6)}
+  .at-panel{flex:0 0 min(78vw,340px);scroll-snap-align:start;min-height:440px}
+  .at-panel:hover,.at-panel:focus-within{flex-grow:0}
+  .at-panel__more{grid-template-rows:1fr;opacity:1}
+}
+
+@media (max-width:700px){
+  .at-hero{min-height:0;padding-top:clamp(var(--space-11),16vw,var(--space-13))}
+  .at-grid{grid-template-columns:1fr}
+  .at-item--lead,.at-pod{grid-column:auto}
+  .at-pod{grid-template-columns:auto minmax(0,1fr)}
+  .at-stories__head{grid-template-columns:1fr}
+  .at-join__form .em-input{flex:1 1 100%}
+}
+
+@media (max-width:420px){
+  .at-join__main::before{-webkit-mask-size:56px;mask-size:56px}
+}
+
+/* ========================== Reduced motion =============================== */
+/* The rails keep working — they are scroll containers, not animations — but
+   the smooth-scroll and every hover transform stand down. */
+@media (prefers-reduced-motion:reduce){
+  .at-rail{scroll-behavior:auto}
+  .at-card:hover,
+  .at-join__way:hover,.at-join__way:focus-visible{transform:none}
+  .at-panel:hover .at-panel__bg,.at-panel:focus-within .at-panel__bg,
+  .at-item:hover .at-item__media img{transform:none}
+  .at-pod:hover .at-pod__play,
+  .at-all:hover svg,
+  .at-join__way:hover .at-join__cue svg{transform:none}
+  /* An instant width jump is worse than no expansion at all; the panels hold
+     their size and the copy simply appears. */
+  .at-panel:hover,.at-panel:focus-within{flex-grow:1}
+  .at-panel__more{transition:opacity 1ms linear}
+}

@@ -1,6 +1,98 @@
 /* Empower Mississippi homepage — layout wrappers.
    Upstream tokens/ and components/ are never edited; local layout lives here. */
 
+/* ---------- Accessibility overrides (local, reversible) ----------
+   Every rule in this block exists to clear a measured WCAG 2.2 AA failure.
+   They live here, not in tokens/, so Empower can revert any of them with a
+   single deletion once the brand decisions below are settled.
+
+   1. --em-orange (#E65A28) measures 3.59:1 on white and 3.15:1 on the tinted
+      surface, both under AA's 4.5:1 for normal-size text. --em-orange-ink is
+      the same hue at 80% lightness: 5.17:1 on white, 4.54:1 on the tint. It is
+      used ONLY where orange is small text on a light surface. Orange fills,
+      orange-on-navy (--orange-300, 5.44:1) and the focus ring keep the exact
+      brand value.
+   2. The hero's primary button keeps the brand fill untouched; its label goes
+      to 19px, which clears 18.66px and so is "large text" under SC 1.4.3,
+      where the 3:1 bar applies and the measured 3.59:1 passes.
+   3. Fluid display scale + word breaking so 200% text zoom at 320px no longer
+      forces horizontal scrolling (SC 1.4.4 / 1.4.10).
+   4. 24x24 minimum target size on standalone links (SC 2.5.8). */
+
+:root{
+  /* #BA4920 is the brand orange at 80% lightness. It has to clear 4.5:1 on
+     BOTH white (5.17:1) and --surface-tint / --blue-100 (4.54:1), since the
+     same roles appear on tinted section backgrounds. */
+  --em-orange-ink:#BA4920;
+  /* Fluid replacements for the fixed rem display steps. Max values are the
+     original token values, so nothing shrinks at desktop widths. */
+  --fs-hero:clamp(2rem,1.15rem + 3.4vw,4rem);
+  --fs-h1:clamp(1.85rem,1.3rem + 2.2vw,3rem);
+  --fs-h2:clamp(1.5rem,1.2rem + 1.3vw,2.25rem);
+  --fs-h3:clamp(1.25rem,1.15rem + .5vw,1.625rem);
+  /* Step scrims, previously hard-coded twice below. */
+  --scrim-step:rgba(0,41,53,.74);
+  --scrim-step-open:rgba(0,41,53,.5);
+}
+
+/* Long single words (Mississippians, opportunity) must wrap rather than push
+   the line box wider than the viewport once text is scaled up. */
+h1,h2,h3,.em-hero h1{overflow-wrap:break-word;text-wrap:balance}
+p,.em-hero__lede,.em-lead{text-wrap:pretty}
+
+/* Brand fill untouched; the label crosses the large-text threshold instead.
+   components.css sets .em-btn{white-space:nowrap}, so a 19px label makes the
+   button 282px of unbreakable min-content. Inside .em-hero__copy's 24px
+   gutters that is a 330px minimum against a 320px viewport, which is exactly
+   the horizontal scroll this block exists to remove. Below 420px the label is
+   allowed to wrap; min-width:0 stops the grid track inheriting the old
+   automatic minimum. */
+.em-btn--primary.em-btn--lg{font-size:19px}
+.em-hero__copy{min-width:0}
+/* Long words (Mississippians, opportunity) break rather than widen the line
+   box. h1-h3 get this above; body copy needs it too once text is scaled.
+   Declared BEFORE the narrow-viewport block below, which upgrades it to
+   `anywhere` — source order decides, and `anywhere` has to win there. */
+body{overflow-wrap:break-word}
+
+@media (max-width:420px){
+  /* SC 1.4.4 asks for 200% text with no loss of content. At 320px that means
+     nothing may keep an unbreakable intrinsic width: every .em-btn is
+     white-space:nowrap upstream, and the card paddings are rem-based, so both
+     grow with the user's text size and push the layout past the viewport.
+     Buttons wrap here, and the card gutters switch to px so they stay put
+     while the text inside them scales. */
+  .em-btn{white-space:normal;text-align:center}
+  /* Redefine the space token ON the card rather than hard-setting padding:
+     .em-bento__media full-bleeds itself with width:calc(100% + --space-8 * 2)
+     and a matching negative margin, so a raw padding override desyncs the two
+     and the photo overhangs the card. */
+  .em-solution,.em-card--pad-md{--space-8:16px}
+  .em-mobilenav__link,.em-mobilenav__trigger{padding-left:16px;padding-right:16px}
+  /* The header bar's children are flex:0 0 auto, so at 200% text the Donate
+     button cannot give any width back. Let the actions group shrink. */
+  .em-header__bar>*,.em-header__actions{min-width:0}
+  .em-header__actions .em-btn{flex:0 1 auto}
+  /* break-word does NOT reduce an element's min-content width, so a long word
+     still forces the grid track wider than the viewport once text is scaled.
+     `anywhere` does reduce it. Scoped to this breakpoint because it is an
+     aggressive break and only matters where the viewport is this narrow. */
+  body{overflow-wrap:anywhere}
+}
+
+
+/* SC 2.5.8: standalone links need a 24x24 target. These are card and list
+   links, not links inside a sentence, so the inline exception does not apply. */
+.em-article__more,
+.em-solution__more,
+.em-process__detail a,
+.em-footer__links a{display:inline-flex;align-items:center;min-height:24px;min-width:24px}
+.em-footer__links li{margin:0}
+
+/* The colour half of this block lives at the END of this file — several
+   later rules here set --em-orange on the same selectors, and an override
+   at the top would lose the cascade to them. */
+
 /* ---------- Preview control bar (never ships to WordPress) ---------- */
 /* Not sticky: the header below is, and this preview-only bar (z-index 100)
    would otherwise sit on top of it at the same offset. It never ships. */
@@ -100,7 +192,7 @@
 
 /* ---------- Solutions model ---------- */
 .em-solutions{background:var(--surface-tint)}
-.em-solutions__head{display:grid;grid-template-columns:1fr minmax(0,400px);gap:var(--space-11);
+.em-solutions__head{display:grid;grid-template-columns:1fr minmax(0,460px);gap:var(--space-11);
   align-items:end;margin-bottom:var(--space-9)}
 .em-solutions__head h2{margin:0}
 .em-solutions__head .em-rule{margin:var(--space-5) 0 0}
@@ -117,10 +209,10 @@
 .em-process__step:hover,.em-process__step:focus-within{flex:2.7 1 0}
 
 .em-process__bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.em-process__scrim{position:absolute;inset:0;background:rgba(0,41,53,.74);
+.em-process__scrim{position:absolute;inset:0;background:var(--scrim-step);
   transition:background var(--dur-slow) var(--ease-out)}
 .em-process__step:hover .em-process__scrim,
-.em-process__step:focus-within .em-process__scrim{background:rgba(0,41,53,.5)}
+.em-process__step:focus-within .em-process__scrim{background:var(--scrim-step-open)}
 
 .em-process__inner{position:relative;height:100%;display:flex;flex-direction:column;
   justify-content:flex-end;padding:var(--space-7) var(--space-8) 152px}
@@ -404,3 +496,41 @@
   .em-header__search{display:none}
   .em-header__toggle{width:32px;height:32px}
 }
+
+/* ---------- Accessibility overrides, colour half ----------
+   Placed last on purpose: several rules above set --em-orange on these same
+   selectors, so this has to win on source order. See the block at the top of
+   this file for the measurements and the rationale.
+
+   --em-orange-ink is the brand orange at 80% lightness: 5.17:1 on white and
+   4.54:1 on --surface-tint, against 3.59:1 and 3.15:1 for the original.
+   Applied ONLY to small orange text on light surfaces. Orange fills,
+   orange-on-navy (--orange-300) and the focus ring keep the exact brand
+   value. */
+.em-eyebrow,
+.em-heading__eyebrow,
+.em-hero__northstar-label,
+.em-solution__more,
+.em-article__more,
+.em-podcast__show,
+.em-insights__podcast .em-podcast__show,
+.em-stories__mini .em-stories__attr,
+.em-stories__lead-body .em-stories__attr,
+.em-stories__slide .em-stories__attr{color:var(--em-orange-ink)}
+.em-hero__link:hover,
+.em-mobilenav__sublink:hover{color:var(--em-orange-ink)}
+/* On navy, the original orange ramp already passes (5.44:1) — keep it. */
+.em-stories__head .em-eyebrow{color:var(--orange-300)}
+
+/* ---------- Section eyebrow rhythm ----------
+   All six sections shipped the same 13px uppercase tracked orange kicker,
+   which is the saturated landing-page tell regardless of the copy being real.
+   The hero keeps it as the brand kicker; the stories section keeps it on navy.
+   The four remaining sections become a quieter sentence-case lead-in, so the
+   pattern reads as deliberate rather than as scaffolding. Every string from
+   the roadmap copy deck is preserved. */
+.em-solutions__head .em-eyebrow,
+.em-foundations__head .em-eyebrow,
+.em-insights__aside .em-eyebrow,
+.em-join__panel .em-eyebrow{font-family:var(--font-body);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);letter-spacing:normal;text-transform:none;color:var(--text-body)}

@@ -488,7 +488,10 @@ test('process steps cascade as one group', () => {
 test('both foundations layouts reveal, so the variant switcher never breaks', () => {
   assert.match(html, /<div class="em-bento" data-reveal-group>/);
   assert.match(html, /<div class="em-equal" data-reveal-group>/);
-  assert.match(html, /<img class="em-bento__media"[^>]*data-reveal="clip">/,
+  // Attribute-order-independent: loading/width/height were added to every
+  // <img> later, so an assertion anchored on data-reveal being the LAST
+  // attribute would fail on a change that has nothing to do with reveals.
+  assert.match(html, /<img class="em-bento__media"[^>]*data-reveal="clip"[^>]*>/,
     'bento feature photo does not use the clip reveal');
   const cards = html.match(/<article class="em-solution"[^>]*data-reveal="rise">/g) || [];
   assert.equal(cards.length, 5, `expected 2 bento + 3 equal cards revealing, found ${cards.length}`);
@@ -705,4 +708,77 @@ test('README documents both new layers for the Elementor hand-off', () => {
                         'js/reveal.js', 'css/megamenu.css', 'js/megamenu.js']) {
     assert.ok(readme.includes(needle), `README does not document ${needle}`);
   }
+});
+
+/* ---------- accessibility + performance fixes (impeccable audit) ---------- */
+
+test('every image declares intrinsic dimensions and a loading strategy', () => {
+  // Undimensioned images shift the layout as they land; eager-loading all 32
+  // blocks the mobile first paint. Hero + logo stay eager on purpose.
+  const imgs = html.match(/<img\b[^>]*>/g) || [];
+  assert.ok(imgs.length >= 30, `expected the full image set, found ${imgs.length}`);
+  for (const tag of imgs) {
+    assert.match(tag, /\swidth="\d+"/, `img without intrinsic width: ${tag.slice(0, 80)}`);
+    assert.match(tag, /\sheight="\d+"/, `img without intrinsic height: ${tag.slice(0, 80)}`);
+    assert.ok(/loading="lazy"/.test(tag) || /fetchpriority="high"/.test(tag),
+      `img with no loading strategy: ${tag.slice(0, 80)}`);
+  }
+  const eager = imgs.filter(t => /fetchpriority="high"/.test(t));
+  assert.equal(eager.length, 2, `only the hero photo and logo should be eager, found ${eager.length}`);
+});
+
+test('display faces are preloaded', () => {
+  assert.match(html, /<link rel="preload" as="font"[^>]*figtree-700\.woff2"/);
+  assert.match(html, /<link rel="preload" as="font"[^>]*source-sans-3-400\.woff2"/);
+});
+
+test('small orange text uses the darkened ink, not the 3.59:1 brand orange', () => {
+  // --em-orange on white is 3.59:1 and on --blue-100 is 3.15:1, both under
+  // AA's 4.5:1 for text at these sizes. --em-orange-ink is the same hue at
+  // 5.17:1 / 4.54:1. Fills, orange-on-navy and the focus ring keep the
+  // original value, so this only ever applies to small text on light.
+  assert.match(homepage, /--em-orange-ink:#BA4920/);
+  const at = homepage.lastIndexOf('--em-orange-ink)');
+  assert.ok(at > -1, 'the ink token is defined but never used');
+  for (const sel of ['.em-eyebrow', '.em-article__more', '.em-solution__more', '.em-podcast__show']) {
+    const re = new RegExp(`\\${sel}[,{][\\s\\S]{0,400}?var\\(--em-orange-ink\\)`);
+    assert.match(homepage, re, `${sel} still resolves to the failing brand orange`);
+  }
+});
+
+test('standalone links meet the 24px minimum target size', () => {
+  // SC 2.5.8. These are card and list links, not links inside a sentence,
+  // so the inline exception does not apply. The footer "X" link measured
+  // 8x22 before this.
+  const at = homepage.indexOf('.em-footer__links a{');
+  assert.ok(at > -1, 'no target-size rule for footer links');
+  const rule = homepage.slice(at, homepage.indexOf('}', at));
+  assert.match(rule, /min-height:24px/);
+  assert.match(rule, /min-width:24px/);
+});
+
+test('the display scale is fluid, not fixed rem', () => {
+  // Fixed rem display steps were the direct cause of a horizontal-scroll
+  // failure at 200% text zoom (SC 1.4.4).
+  for (const token of ['--fs-hero', '--fs-h1', '--fs-h2']) {
+    const re = new RegExp(`${token}:clamp\\(`);
+    assert.match(homepage, re, `${token} is not fluid`);
+  }
+});
+
+test('homepage.css holds no hard-coded colours outside the token block', () => {
+  const body = homepage.slice(homepage.indexOf('}', homepage.indexOf(':root{')));
+  const hits = (body.match(/rgba?\(\d|#[0-9a-fA-F]{3,6}\b/g) || []);
+  assert.equal(hits.length, 0, `hard-coded colour(s) outside :root: ${hits.join(', ')}`);
+});
+
+test('the section eyebrow is not one repeated treatment on every section', () => {
+  // Six identical uppercase tracked kickers is the saturated landing-page
+  // tell. The hero and stories keep the brand kicker; the rest are quiet
+  // sentence-case lead-ins. Every roadmap string is preserved either way.
+  const at = homepage.indexOf('.em-solutions__head .em-eyebrow');
+  assert.ok(at > -1, 'no differentiated eyebrow treatment');
+  const rule = homepage.slice(at, homepage.indexOf('}', at));
+  assert.match(rule, /text-transform:none/);
+  assert.match(rule, /letter-spacing:normal/);
 });

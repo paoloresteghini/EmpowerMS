@@ -1,0 +1,377 @@
+/* ============================================================================
+   Option B — "The Index"
+   ----------------------------------------------------------------------------
+   Spatial idea: a persistent armature. Every section below the hero is a
+   two-column composition — a sticky rail carrying the section's position in
+   the funnel, against a wide content column whose rhythm changes section to
+   section. Hairlines instead of card borders, tabular numerals, and real
+   negative space between the rail and the content.
+
+   The credibility option: aimed at the lawmaker, journalist and donor read
+   without going cold. Deliberately NOT editorial-magazine pastiche — no
+   display serif, no italic, no drop caps, no broadsheet columns. The grammar
+   is a well-set contents page.
+
+   Signature interaction: Foundations is an index, not a card grid. Hovering
+   or tabbing a row cross-fades that row's photographic plate into the column
+   beside it, in pure CSS.
+
+   Loads after css/site.css, which owns the header, mobile nav and footer.
+   ========================================================================= */
+
+:root{
+  --ix-rail:clamp(180px,17vw,268px);
+  --ix-gap:clamp(var(--space-8),5vw,var(--space-13));
+  --ix-step:clamp(var(--space-12),8vw,var(--space-15));
+  --ix-hair:1px solid var(--border-default);
+  --ix-hair-light:1px solid rgba(255,255,255,.22);
+}
+
+/* Numerals are the load-bearing detail in this option — a section number, a
+   step number, a reading time. Lining, tabular figures keep them on a common
+   baseline and a common width, which is the difference between "set" and
+   "typed". */
+.ix-rail__num,.ix-step__num,.ix-list__len{font-variant-numeric:tabular-nums lining-nums}
+
+/* ---------- The armature ----------
+   One rail per section rather than one fixed rail for the page: sections here
+   carry full-bleed backgrounds (Stories is navy), and a single fixed rail
+   crossing them would need JS to re-colour itself. Per-section rails also let
+   each one stick to its own section, which is the behaviour you actually
+   want when scanning. */
+.ix-sec{padding:var(--ix-step) 0}
+.ix-sec__grid{display:grid;grid-template-columns:var(--ix-rail) minmax(0,1fr);
+  gap:var(--ix-gap);align-items:start}
+.ix-sec__body{min-width:0}
+
+.ix-rail__inner{position:sticky;top:calc(92px + var(--space-9));
+  padding-top:var(--space-2);border-top:3px solid var(--em-orange)}
+
+/* The 01–06 sequence is the one numbered run on the page, and it is carrying
+   real information: the roadmap defines this homepage as an ordered funnel
+   where each section builds on the one before it. That is the case the
+   numbering has to earn, and it is why the numbers appear here and nowhere
+   else in the four options. */
+.ix-rail__num{margin:var(--space-5) 0 var(--space-4);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(2rem,1.3rem + 2.2vw,3.25rem);line-height:.9;
+  letter-spacing:-.04em;color:var(--em-blue)}
+.ix-rail__name{margin:0 0 var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-small);line-height:1.3;
+  letter-spacing:var(--ls-heading);color:var(--em-blue);text-wrap:balance}
+.ix-rail__stage{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--text-muted)}
+
+.ix-rail--light .ix-rail__num,.ix-rail--light .ix-rail__name{color:var(--white)}
+.ix-rail--light .ix-rail__stage{color:var(--text-inverse-muted)}
+
+/* ---------- Shared content-column type ---------- */
+.ix-sec__body h2{margin:0 0 var(--space-7);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(1.75rem,1.15rem + 2.2vw,3rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--em-blue);max-width:20ch}
+.ix-lede{margin:0 0 var(--space-11);font-size:clamp(1.0625rem,.98rem + .4vw,1.3125rem);
+  line-height:1.65;color:var(--text-body);max-width:66ch}
+.ix-label{margin:0 0 var(--space-6);padding-bottom:var(--space-4);
+  border-bottom:var(--ix-hair);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+
+/* ============================ 1 · Hero =================================== */
+/* The one section with no rail: the hero states the promise at full width,
+   then hands over to the armature. The plate below it runs to the right
+   viewport edge, so the page opens asymmetric rather than boxed. */
+.ix-hero{padding:clamp(var(--space-11),8vw,var(--space-15)) 0 0;background:var(--surface-page)}
+.ix-hero__inner{padding-bottom:clamp(var(--space-9),5vw,var(--space-12))}
+.ix-hero__body{min-width:0}
+
+.ix-hero__tag{margin:0 0 var(--space-8);padding-bottom:var(--space-5);
+  border-bottom:var(--ix-hair);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:.02em;color:var(--em-orange-ink)}
+
+.ix-hero h1{margin:0 0 clamp(var(--space-8),4vw,var(--space-11));
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.5rem,.95rem + 5.4vw,5.5rem);line-height:.98;letter-spacing:-.04em;
+  color:var(--em-blue);max-width:16ch}
+
+.ix-hero__foot{display:grid;grid-template-columns:minmax(0,54ch) auto;
+  justify-content:start;gap:clamp(var(--space-7),3vw,var(--space-11));align-items:end}
+.ix-hero__lede{margin:0;font-size:clamp(1.0625rem,.98rem + .4vw,1.25rem);line-height:1.65;
+  color:var(--text-body);max-width:60ch}
+
+/* Full-bleed to the right edge only. The left margin holds the container's
+   alignment, so the photograph reads as an extension of the text block
+   rather than as a separate banner. */
+.ix-hero__plate{position:relative;margin:0 0 0 max(var(--gutter),calc((100vw - var(--container-max)) / 2 + var(--gutter)));
+  aspect-ratio:21/9;overflow:hidden;
+  border-top-left-radius:var(--radius-panel);border-bottom-left-radius:var(--radius-panel)}
+.ix-hero__plate img{width:100%;height:100%;object-fit:cover;object-position:center 32%}
+/* The north star sits on the photograph as a caption, not as a floating card:
+   it belongs to the picture. The scrim is what carries its contrast. */
+.ix-hero__plate figcaption{position:absolute;left:0;right:0;bottom:0;
+  padding:clamp(var(--space-11),8vw,var(--space-14)) clamp(var(--space-6),3vw,var(--space-11))
+          clamp(var(--space-6),2.5vw,var(--space-9));
+  background:linear-gradient(180deg,rgba(0,41,53,0) 0%,rgba(0,41,53,.55) 42%,rgba(0,41,53,.9) 100%)}
+.ix-hero__ns-label{display:block;margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.ix-hero__ns-text{display:block;max-width:44ch;font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:clamp(1.0625rem,.95rem + .55vw,1.5rem);
+  line-height:1.35;letter-spacing:var(--ls-heading);color:var(--white)}
+
+/* ==================== 2 · How Change Happens ============================= */
+/* The five steps as a ruled table, not a row of cards. Cells are separated by
+   hairlines drawn with gap + background, which is what gives the block its
+   drawn-not-boxed quality. The sixth cell is a photograph, so the grid
+   resolves into an image rather than into an empty slot. */
+.ix-change{background:var(--surface-page)}
+.ix-steps{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border-default);
+  border:var(--ix-hair);border-radius:var(--radius-md);overflow:hidden}
+.ix-step{background:var(--surface-page);padding:clamp(var(--space-6),2.2vw,var(--space-8));
+  transition:background var(--dur) var(--ease-out)}
+.ix-step:hover{background:var(--blue-100)}
+.ix-step__num{margin:0 0 var(--space-5);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);color:var(--em-orange-ink)}
+.ix-step h3{margin:0 0 var(--space-3);font-size:var(--fs-h5);font-weight:var(--fw-bold);
+  line-height:1.25;color:var(--em-blue)}
+.ix-step__text{margin:0;font-size:var(--fs-small);line-height:1.6;color:var(--text-body)}
+.ix-step--plate{padding:0;position:relative;min-height:150px}
+.ix-step--plate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ix-step--plate:hover{background:var(--surface-page)}
+
+/* ==================== 3 · Three Foundations ============================== */
+/* The signature. Three index rows on the left, one photographic plate stage on
+   the right; the plates are stacked in the same cell and cross-faded by the
+   row that has the pointer or the focus.
+
+   Pure CSS. The default is "first plate visible"; the trick that makes it work
+   is that the LIST getting hover or focus-within zeroes every plate, and the
+   ROW getting it brings its own back. Without the list-level rule there is no
+   way to express "some other row is active" in CSS.
+
+   The plates are aria-hidden and the rows are real links, so nothing here is
+   hover-only: everything the interaction reveals is decoration on top of
+   content that is already readable and already reachable by keyboard. */
+.ix-foundations{background:var(--surface-subtle)}
+.ix-index{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-12));align-items:start}
+.ix-index__list{list-style:none;margin:0;padding:0;border-top:var(--ix-hair)}
+.ix-index__row{border-bottom:var(--ix-hair)}
+.ix-index__link{display:block;padding:clamp(var(--space-6),2.4vw,var(--space-8)) 0;
+  text-decoration:none;color:inherit}
+.ix-index__title{display:block;margin-bottom:var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-black);font-size:clamp(1.25rem,1.05rem + .8vw,1.875rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--em-blue);
+  transition:color var(--dur) var(--ease-out)}
+.ix-index__link:hover .ix-index__title,
+.ix-index__link:focus-visible .ix-index__title{color:var(--em-orange-ink)}
+.ix-index__promise{display:block;margin-bottom:var(--space-4);font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:var(--fs-body);line-height:1.45;color:var(--text-strong)}
+.ix-index__solution{display:block;margin-bottom:var(--space-5);font-size:var(--fs-small);
+  line-height:1.6;color:var(--text-body);max-width:58ch}
+.ix-index__solution b{font-weight:var(--fw-bold);color:var(--em-blue)}
+.ix-index__more{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+.ix-index__more svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.ix-index__link:hover .ix-index__more svg{transform:translateX(4px)}
+
+/* The stage. Sticky so it stays beside whichever row you are reading, and
+   grid-area-stacked so all three plates occupy one cell. */
+.ix-index__list{grid-column:1}
+.ix-index__row{position:static}
+/* span 3, not row 1: with display:contents the three links occupy rows 1-3 of
+   column 1, so a plate pinned to row 1 alone is only as tall as the first row
+   and sticky has no travel. Spanning the whole list is what lets the stage
+   stay beside whichever row is being read. align-self:start keeps the plate at
+   its own aspect ratio inside that tall area instead of stretching to it. */
+.ix-index__plate{grid-column:2;grid-row:1 / span 3;align-self:start;
+  position:sticky;top:calc(92px + var(--space-9));
+  display:block;width:100%;aspect-ratio:4/5;overflow:hidden;border-radius:var(--radius-panel);
+  opacity:0;transition:opacity var(--dur-slow) var(--ease-out)}
+.ix-index__plate img{width:100%;height:100%;object-fit:cover}
+/* Default: the first row's plate is the one showing. */
+.ix-index__row:first-child .ix-index__plate{opacity:1}
+/* Any row active → clear the default, then let the active row assert itself. */
+.ix-index__list:hover .ix-index__plate,
+.ix-index__list:focus-within .ix-index__plate{opacity:0}
+.ix-index__row:hover .ix-index__plate,
+.ix-index__row:focus-within .ix-index__plate{opacity:1}
+
+/* The plates are children of the rows, so they have to be lifted out of the
+   list's flow and into the second column of .ix-index. display:contents on
+   the list and the rows does exactly that without extra markup. */
+@media (min-width:901px){
+  .ix-index{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  .ix-index__list{display:contents}
+  .ix-index__row{display:contents}
+  /* With display:contents the list's own border-top is gone, so the rule is
+     redrawn on the links themselves. */
+  .ix-index__link{grid-column:1;border-top:var(--ix-hair)}
+  .ix-index__row:last-child .ix-index__link{border-bottom:var(--ix-hair)}
+}
+
+/* ==================== 4 · Mississippi Stories ============================ */
+.ix-stories{background:var(--surface-navy)}
+.ix-stories .ix-sec__body h2{color:var(--white)}
+/* Light type on dark reads a weight lighter and gets more leading. */
+.ix-stories .ix-lede{color:var(--text-inverse-muted);line-height:1.7;
+  margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+
+/* The featured quote is set over the photograph rather than beside it, which
+   is what stops this section becoming another two-up. */
+.ix-feature{position:relative;margin:0 0 clamp(var(--space-8),3.5vw,var(--space-11));
+  border-radius:var(--radius-panel);overflow:hidden;isolation:isolate;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  min-height:clamp(340px,42vw,520px);
+  padding:clamp(var(--space-7),3.5vw,var(--space-12))}
+.ix-feature img{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  object-position:center 22%}
+/* Measured worst case: --white on rgba(0,41,53,.9) composited over any source
+   pixel is >= 12:1, so no photograph can put this quote under AA. */
+.ix-feature::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,rgba(0,41,53,.25) 0%,rgba(0,41,53,.72) 52%,rgba(0,41,53,.92) 100%)}
+.ix-feature blockquote{margin:0 0 var(--space-6)}
+.ix-feature blockquote p{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.375rem,1rem + 1.6vw,2.5rem);line-height:1.24;letter-spacing:-.025em;
+  color:var(--white);max-width:22ch;text-wrap:balance}
+.ix-feature figcaption{font-size:var(--fs-small);color:var(--text-inverse-muted)}
+.ix-feature figcaption b{display:block;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--orange-300)}
+
+.ix-more{list-style:none;margin:0 0 clamp(var(--space-8),3.5vw,var(--space-11));padding:0;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(var(--space-6),3vw,var(--space-10))}
+.ix-more li{padding-top:var(--space-6);border-top:var(--ix-hair-light)}
+.ix-more blockquote{margin:0 0 var(--space-5)}
+.ix-more blockquote p{margin:0;font-family:var(--font-display);font-weight:var(--fw-medium);
+  font-size:var(--fs-h5);line-height:1.4;color:var(--white)}
+.ix-more__attr{margin:0;font-size:var(--fs-caption);color:var(--text-inverse-muted)}
+.ix-more__attr b{font-family:var(--font-display);font-weight:var(--fw-bold);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--orange-300);
+  margin-right:var(--space-3)}
+
+/* ==================== 5 · Latest Insights ================================ */
+/* A contents page: kind, title, excerpt, length, ruled. The lead row carries a
+   thumbnail so the block has one image in it and the rest stay as type. */
+.ix-insights{background:var(--surface-page)}
+.ix-insights .ix-sec__body h2{max-width:26ch;
+  font-size:clamp(1.5rem,1.05rem + 1.7vw,2.375rem);margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+
+.ix-list{list-style:none;margin:0 0 var(--space-9);padding:0;border-top:2px solid var(--em-blue)}
+.ix-list__row{border-bottom:var(--ix-hair);position:relative}
+.ix-list__link{display:grid;grid-template-columns:minmax(120px,150px) minmax(0,1fr) auto;
+  gap:clamp(var(--space-4),2vw,var(--space-8));align-items:baseline;
+  padding:clamp(var(--space-5),2.2vw,var(--space-7)) 0;text-decoration:none;color:inherit;
+  transition:padding-left var(--dur) var(--ease-out)}
+.ix-list__row:hover .ix-list__link{padding-left:var(--space-4)}
+.ix-list__kind{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+.ix-list__title{grid-column:2;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.5rem);line-height:1.25;letter-spacing:var(--ls-heading);
+  color:var(--em-blue);transition:color var(--dur) var(--ease-out)}
+.ix-list__row:hover .ix-list__title{color:var(--em-orange-ink)}
+.ix-list__excerpt{grid-column:2;margin-top:var(--space-3);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:62ch}
+.ix-list__len{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-caption);color:var(--text-muted);white-space:nowrap}
+.ix-list__row--pod .ix-list__len{width:34px;height:34px;border-radius:var(--radius-pill);
+  background:var(--em-orange);color:var(--white);display:grid;place-items:center;
+  align-self:center}
+.ix-list__row--pod .ix-list__len svg{width:14px;height:14px;margin-left:2px}
+.ix-list__thumb{display:none}
+
+@media (min-width:901px){
+  /* The lead row gains a thumbnail column; the rest of the list keeps its
+     three-column measure, so the rules still line up down the block. */
+  .ix-list__row--lead{display:grid;grid-template-columns:minmax(0,1fr) 172px;
+    gap:clamp(var(--space-5),2.5vw,var(--space-9));align-items:center}
+  .ix-list__thumb{display:block;aspect-ratio:4/3;overflow:hidden;border-radius:var(--radius-md);
+    margin:var(--space-5) 0}
+  .ix-list__thumb img{width:100%;height:100%;object-fit:cover;
+    transition:transform var(--dur-slow) var(--ease-out)}
+  .ix-list__row--lead:hover .ix-list__thumb img{transform:scale(1.05)}
+}
+
+.ix-all{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink);
+  text-decoration:none}
+.ix-all svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.ix-all:hover{color:var(--em-blue)}
+.ix-all:hover svg{transform:translateX(4px)}
+
+/* ========================== 6 · Join Us ================================== */
+.ix-join{background:var(--surface-tint)}
+.ix-join .ix-lede{margin-bottom:var(--space-8)}
+.ix-form{display:flex;gap:var(--space-3);flex-wrap:wrap;max-width:560px}
+.ix-form .em-input{flex:1 1 240px}
+.ix-form__note{margin:var(--space-4) 0 clamp(var(--space-10),5vw,var(--space-13));
+  font-size:var(--fs-caption);color:var(--text-muted)}
+
+.ix-ways{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);
+  gap:clamp(var(--space-7),3.5vw,var(--space-12));border-top:2px solid var(--em-blue);
+  padding-top:clamp(var(--space-7),3vw,var(--space-9))}
+.ix-ways li{position:relative}
+.ix-ways h3{margin:0 0 var(--space-4);font-size:clamp(1.25rem,1.05rem + .7vw,1.75rem);
+  font-weight:var(--fw-black);letter-spacing:-.02em;line-height:1.15}
+.ix-ways h3 a{color:var(--em-blue);text-decoration:none}
+.ix-ways h3 a::after{content:"";position:absolute;inset:0}
+.ix-ways li:hover h3 a{color:var(--em-orange-ink)}
+.ix-ways p{margin:0 0 var(--space-6);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:46ch}
+.ix-ways__cue{display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+.ix-ways__cue svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.ix-ways li:hover .ix-ways__cue svg{transform:translateX(4px)}
+
+/* ========================== Responsive =================================== */
+@media (max-width:1100px){
+  .ix-steps{grid-template-columns:repeat(2,1fr)}
+  .ix-hero__plate{aspect-ratio:16/9}
+}
+
+@media (max-width:900px){
+  /* The armature folds: the rail becomes a header line above its section
+     rather than a column beside it, so the numbering and the funnel stage
+     survive but the layout stops being two-up. */
+  .ix-sec__grid{grid-template-columns:1fr;gap:var(--space-8)}
+  .ix-rail__inner{position:static;display:flex;flex-wrap:wrap;align-items:baseline;
+    gap:var(--space-4);padding-top:var(--space-4)}
+  .ix-rail__num{margin:0;font-size:1.75rem}
+  .ix-rail__name{margin:0;font-size:var(--fs-body)}
+  .ix-rail__stage{margin-left:auto}
+
+  .ix-hero__foot{grid-template-columns:1fr;align-items:start}
+  .ix-hero__plate{margin-left:var(--gutter);aspect-ratio:3/2}
+
+  /* display:contents is what lifted the plates into the second column; at one
+     column there is no second column, so the plates go away entirely rather
+     than stacking a 4/5 photograph between every row. */
+  .ix-index{grid-template-columns:1fr}
+  .ix-index__plate{display:none}
+
+  .ix-more{grid-template-columns:1fr}
+  .ix-ways{grid-template-columns:1fr;gap:var(--space-8)}
+}
+
+@media (max-width:700px){
+  .ix-steps{grid-template-columns:1fr}
+  .ix-step--plate{min-height:180px}
+  .ix-list__link{grid-template-columns:1fr;gap:var(--space-2)}
+  .ix-list__title,.ix-list__excerpt{grid-column:1}
+  .ix-list__len{order:-1}
+  .ix-list__row--pod .ix-list__len{justify-self:start}
+  .ix-form .em-input{flex:1 1 100%}
+}
+
+/* ========================== Reduced motion =============================== */
+@media (prefers-reduced-motion:reduce){
+  .ix-index__link:hover .ix-index__more svg,
+  .ix-ways li:hover .ix-ways__cue svg,
+  .ix-all:hover svg,
+  .ix-list__row--lead:hover .ix-list__thumb img{transform:none}
+  .ix-list__row:hover .ix-list__link{padding-left:0}
+}

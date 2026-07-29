@@ -21,8 +21,13 @@ not a production runtime.
 | `dist/option-b.html` | **The Index** — persistent sticky rail, typographic, credible |
 | `dist/option-c.html` | **The Atlas** — horizontal rails and expanding panels |
 | `dist/option-d.html` | **The Throughline** — a route, with a sticky photographic stack |
-| `dist/current.html` | The original build from the wireframe, toggles stripped |
-| `dist/current-2.html` | The current build with a new header and banner fitted |
+| `dist/current-2.html` | **The Evolution** — the existing design moved forward, not replaced |
+| `dist/current.html` | **The Starting Point** — the original wireframe build, toggles stripped |
+
+The chooser leads with **The Evolution** and marks it *Paolo's pick*; **The
+Starting Point** sits last as the baseline the five designs are asking Empower
+to move away from, not as a proposal. The filenames stay `current-2` and
+`current` — renaming them would break the review URLs already shared.
 
 `dist/current-2.html` is the current build with three parts replaced: a navy
 utility strip above a centred nav using **simple dropdowns instead of the mega

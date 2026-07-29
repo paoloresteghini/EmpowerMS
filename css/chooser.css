@@ -23,7 +23,18 @@
   border-top:4px solid var(--em-orange);
   transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
 .ch__opt:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+/* The reference build is deliberately quieter than the proposals: a blue rule
+   instead of the orange one, on a grey card. It is a baseline, not an option. */
 .ch__opt--ref{border-top-color:var(--blue-400);background:var(--grey-100)}
+
+/* The recommendation reads as a recommendation without shouting: a thicker
+   orange rule, a ring in the same colour, and a resting shadow so it already
+   sits slightly proud of the grid the way the others only do on hover.
+   --em-orange-ink for the tag, not --em-orange — it is 11px uppercase text on
+   white, where the brand value measures 3.59:1. */
+.ch__opt--pick{border-top-width:8px;box-shadow:var(--shadow-md);
+  outline:2px solid var(--em-orange);outline-offset:-2px}
+.ch__opt--pick .ch__tag{color:var(--em-orange-ink)}
 
 .ch__tag{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;

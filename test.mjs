@@ -547,3 +547,62 @@ test('scroll flag is passive and frame-guarded', () => {
     'scroll listener is not passive');
   assert.match(revealJs, /data-scrolled/);
 });
+
+/* ---------- desktop mega menus ---------- */
+
+const MEGA = [
+  ['About', 'mega-about'],
+  ['Solutions', 'mega-solutions'],
+  ['All Content', 'mega-content'],
+  ['Podcast', 'mega-podcast'],
+  ['Join Us', 'mega-join'],
+];
+
+test('every desktop nav trigger controls a real panel', () => {
+  for (const [label, id] of MEGA) {
+    const trigger = html.match(new RegExp(`<button class="em-header__link"[^>]*>${label} `));
+    assert.ok(trigger, `no trigger button for ${label}`);
+    assert.match(html, new RegExp(`aria-controls="${id}"`), `${label} does not control ${id}`);
+    assert.match(html, new RegExp(`<div class="em-mega" id="${id}"`), `no panel markup for ${id}`);
+  }
+});
+
+test('every mega panel is labelled by its own trigger', () => {
+  for (const [, id] of MEGA) {
+    const panel = html.match(new RegExp(`<div class="em-mega" id="${id}"[^>]*>`))[0];
+    const labelled = panel.match(/aria-labelledby="([^"]+)"/);
+    assert.ok(labelled, `${id} has no aria-labelledby`);
+    assert.match(html, new RegExp(`id="${labelled[1]}"[^>]*aria-controls="${id}"`),
+      `${id} is labelled by something that is not its trigger`);
+  }
+});
+
+test('every mega link is a real link with a destination', () => {
+  const links = html.match(/<a class="em-mega__link"[^>]*>/g) || [];
+  assert.ok(links.length >= 15, `expected the full sitemap, found ${links.length} mega links`);
+  for (const a of links) {
+    assert.match(a, /href="\/[^"]*"/, `mega link without a destination: ${a}`);
+  }
+});
+
+test('desktop mega menus and the mobile nav stay in sync', () => {
+  // One sitemap, two renderings. If someone adds a link to one nav and
+  // not the other, the two navs disagree about what the site contains.
+  const panel = html.match(/<nav class="em-mobilenav"[\s\S]*?<\/nav>/)[0];
+  const mobile = [...panel.matchAll(/<a class="em-mobilenav__sublink" href="([^"]+)">([^<]+)<\/a>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  const desktop = [...html.matchAll(
+    /<a class="em-mega__link" href="([^"]+)">\s*<span class="em-mega__link-label">([^<]+)<\/span>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  assert.deepEqual(desktop, mobile, 'desktop mega links and mobile nav links have drifted');
+});
+
+test('mega panels ship in the partial, not injected at runtime', () => {
+  const partial = readFileSync('src/sections/00-header.html', 'utf8');
+  assert.match(partial, /<div class="em-mega" id="mega-about"/);
+  for (const f of readdirSync('js')) {
+    const js = readFileSync(`js/${f}`, 'utf8');
+    assert.ok(!js.includes('innerHTML') && !js.includes('createElement'),
+      `js/${f} builds markup at runtime instead of progressively enhancing static markup`);
+  }
+});

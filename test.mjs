@@ -606,3 +606,31 @@ test('mega panels ship in the partial, not injected at runtime', () => {
       `js/${f} builds markup at runtime instead of progressively enhancing static markup`);
   }
 });
+
+const mega = readFileSync('css/megamenu.css', 'utf8');
+
+test('mega menu stylesheet is linked in cascade order', () => {
+  assert.match(html, /<link rel="stylesheet" href="\.\.\/css\/megamenu\.css">/);
+  assert.ok(html.indexOf('css/homepage.css') < html.indexOf('css/megamenu.css'));
+  assert.ok(html.indexOf('css/megamenu.css') < html.indexOf('css/wireframe.css'));
+});
+
+test('mega panels are only hidden once JS has claimed them', () => {
+  // Same contract as the reveal layer: no rule may hide a panel unless it
+  // is nested under the [data-mega="on"] gate that js/megamenu.js sets.
+  for (const rule of mega.split('}')) {
+    if (!/\bdisplay:\s*none|\bvisibility:\s*hidden/.test(rule)) continue;
+    assert.match(rule, /\[data-mega="on"\]|@media/,
+      `ungated hide rule would lose links without JS: ${rule.trim().slice(0, 80)}`);
+  }
+});
+
+test('mega panels are suppressed below the mobile nav breakpoint', () => {
+  const at = mega.indexOf('max-width:960px');
+  assert.ok(at > -1, 'no 960px rule — panels would overlap the mobile nav');
+  assert.match(mega.slice(at), /\.em-mega\{[^}]*display:none/);
+});
+
+test('mega menu motion is disabled under reduced motion', () => {
+  assert.match(mega, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});

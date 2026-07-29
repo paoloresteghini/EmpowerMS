@@ -1,0 +1,79 @@
+/* Empower Mississippi homepage — desktop mega menus.
+
+   Progressive enhancement contract, same as css/motion.css: the five
+   panels ship in normal flow in src/sections/00-header.html. Only once
+   js/megamenu.js sets [data-mega="on"] do they become positioned overlays
+   that start closed. No JS → five plain stacked link lists under the
+   header bar, every link reachable.
+
+   Open state on the trigger reuses .em-header__item--open, which
+   components/components.css already styles. */
+
+.em-mega{border-top:1px solid var(--border-subtle);background:var(--surface-page)}
+.em-mega__inner{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr);
+  gap:var(--space-10);padding:var(--space-8) 0 var(--space-9)}
+.em-mega__links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--space-7) var(--space-8);align-content:start}
+
+.em-mega__group-title{margin:0 0 var(--space-3);font-family:var(--font-display);
+  font-size:var(--fs-eyebrow);font-weight:var(--fw-semibold);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+
+.em-mega__link{display:block;padding:var(--space-2) 0;text-decoration:none;
+  border-radius:var(--radius-sm)}
+.em-mega__link-label{display:block;font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:var(--fs-small);color:var(--em-blue)}
+.em-mega__link-desc{display:block;margin-top:3px;font-size:var(--fs-caption);
+  line-height:var(--lh-snug);color:var(--text-muted);max-width:34ch}
+.em-mega__link:hover .em-mega__link-label{color:var(--blue-800)}
+.em-mega__link:hover .em-mega__link-desc{color:var(--text-body)}
+
+/* Feature card. Body/muted text throughout — --em-orange on white is
+   3.59:1 and fails AA at these sizes (see the repo's open a11y todo). */
+.em-mega__feature{display:block;padding:var(--space-5);border-radius:var(--radius-card);
+  background:var(--blue-100);text-decoration:none}
+.em-mega__feature:hover{background:var(--blue-200)}
+.em-mega__feature-media{display:block;width:100%;height:132px;object-fit:cover;
+  border-radius:var(--radius-media);margin-bottom:var(--space-4)}
+.em-mega__feature-eyebrow{display:block;margin-bottom:var(--space-2);
+  font-family:var(--font-display);font-size:var(--fs-eyebrow);font-weight:var(--fw-semibold);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+.em-mega__feature-title{display:block;font-family:var(--font-display);
+  font-size:var(--fs-h5);font-weight:var(--fw-semibold);line-height:var(--lh-heading);
+  color:var(--em-blue)}
+.em-mega__feature-meta{display:block;margin-top:var(--space-3);
+  font-size:var(--fs-caption);font-weight:var(--fw-semibold);color:var(--text-link)}
+
+/* ---------- Enhanced state ---------- */
+/* Absolute, not fixed: the panel is anchored to the sticky header and
+   travels with it. width:100% of .em-header spans the viewport, so the
+   panel reads full-bleed while its content stays inside .em-container. */
+[data-mega="on"] .em-mega{position:absolute;left:0;right:0;top:100%;z-index:39;
+  box-shadow:var(--shadow-md);
+  opacity:0;transform:translateY(-8px);
+  transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+[data-mega="on"] .em-mega[hidden]{display:none}
+[data-mega="on"] .em-mega.is-open{opacity:1;transform:none}
+
+[data-mega="on"] .em-mega .em-mega__link,
+[data-mega="on"] .em-mega .em-mega__feature{
+  opacity:0;transform:translateY(6px);
+  transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+[data-mega="on"] .em-mega.is-open .em-mega__link,
+[data-mega="on"] .em-mega.is-open .em-mega__feature{opacity:1;transform:none}
+[data-mega="on"] .em-mega.is-open .em-mega__link{transition-delay:calc(var(--reveal-i, 0) * 30ms)}
+
+/* Below the desktop breakpoint the mobile nav owns navigation entirely.
+   Unconditional — this must hold whether or not the script loaded. */
+@media (max-width:960px){
+  .em-mega{display:none}
+}
+
+@media (prefers-reduced-motion: reduce){
+  [data-mega="on"] .em-mega,
+  [data-mega="on"] .em-mega.is-open,
+  [data-mega="on"] .em-mega .em-mega__link,
+  [data-mega="on"] .em-mega .em-mega__feature{
+    opacity:1;transform:none;transition:none;transition-delay:0s;
+  }
+}

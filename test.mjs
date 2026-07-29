@@ -131,6 +131,24 @@ test('section copy uses curly apostrophes, not ASCII', () => {
   }
 });
 
+test('section copy uses curly quotes in prose, not straight ASCII quotes', () => {
+  for (const f of readdirSync('src/sections')) {
+    const s = readFileSync(`src/sections/${f}`, 'utf8');
+    // Strip HTML tags to check only text content, not attribute delimiters
+    const textOnly = s.replace(/<[^>]+>/g, '');
+    // Look for straight double quotes in text (not preceded/followed by < or >)
+    // This catches quotes in prose but not in HTML attributes
+    const badLines = [];
+    for (const line of textOnly.split('\n')) {
+      if (line.includes('"') && line.trim()) {
+        badLines.push(line.trim());
+      }
+    }
+    assert.equal(badLines.length, 0,
+      `${f} has straight double quotes in prose; must use curly quotes (U+201C/U+201D): ${badLines.slice(0, 2).join(' | ')}`);
+  }
+});
+
 test('both stories layouts ship in the markup', () => {
   assert.match(html, /class="em-stories__feature"/);
   assert.match(html, /class="em-stories__carousel"/);
@@ -395,5 +413,296 @@ test('every aria-controls in the built page points at an id that exists', () => 
   assert.ok(controlled.length > 0, 'no aria-controls attributes found to check');
   for (const id of controlled) {
     assert.match(html, new RegExp(`\\bid="${id}"`), `aria-controls="${id}" has no matching id`);
+  }
+});
+
+/* ---------- motion layer ---------- */
+
+const motion = readFileSync('css/motion.css', 'utf8');
+const revealJs = readFileSync('js/reveal.js', 'utf8');
+
+test('motion layer ships as its own stylesheet and module', () => {
+  assert.ok(existsSync('css/motion.css'), 'missing css/motion.css');
+  assert.ok(existsSync('js/reveal.js'), 'missing js/reveal.js');
+  assert.match(html, /<link rel="stylesheet" href="\.\.\/css\/motion\.css">/);
+  assert.match(html, /<script type="module" src="\.\.\/js\/reveal\.js"><\/script>/);
+});
+
+test('every hidden reveal start-state is gated behind [data-reveal="on"]', () => {
+  // The gate attribute is set by js/reveal.js itself. Any opacity:0 rule
+  // outside it would hide content permanently when the script fails to load.
+  for (const rule of motion.split('}')) {
+    if (!/opacity:\s*0\b/.test(rule)) continue;
+    assert.match(rule, /\[data-reveal="on"\]/,
+      `ungated start-state would hide content without JS: ${rule.trim().slice(0, 80)}`);
+  }
+});
+
+test('reveal script sets its own gate attribute before anything else', () => {
+  const gateAt = revealJs.indexOf(`setAttribute('data-reveal', 'on')`);
+  assert.ok(gateAt > -1, 'js/reveal.js never sets the [data-reveal="on"] gate');
+  const observeAt = revealJs.indexOf('IntersectionObserver');
+  assert.ok(observeAt === -1 || gateAt < observeAt, 'gate set after the observer is built');
+});
+
+test('motion layer honours prefers-reduced-motion', () => {
+  assert.match(motion, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+  assert.match(revealJs, /prefers-reduced-motion:\s*reduce/,
+    'reveal.js does not check reduced motion');
+});
+
+test('reveal observer uses threshold 0, not a fraction', () => {
+  // An element taller than the viewport never reaches a fractional
+  // threshold, and would stay hidden forever. The negative bottom
+  // rootMargin is what delays the reveal instead.
+  assert.match(revealJs, /threshold:\s*0\b/);
+  assert.match(revealJs, /rootMargin:\s*'0px 0px -12% 0px'/);
+});
+
+test('reveal observer is one-shot', () => {
+  assert.match(revealJs, /unobserve/, 'elements are never unobserved; observer leaks work');
+});
+
+test('hero is the page entrance scope and staggers its own copy', () => {
+  const hero = html.match(/<section class="em-hero"[\s\S]*?<\/section>/)[0];
+  assert.match(hero, /data-reveal-entrance/, 'hero is not an entrance scope');
+  assert.match(hero, /data-reveal-group/, 'hero copy is not staggered');
+  assert.match(hero, /<h1 id="hero-title" data-reveal="rise">/);
+  assert.match(hero, /class="em-hero__media"[^>]*data-reveal-group/);
+  assert.ok(/<img[^>]*data-reveal="clip"/.test(hero), 'hero photo does not use the clip reveal');
+});
+
+test('page entrance is scoped to above-the-fold content only', () => {
+  const scopes = html.match(/data-reveal-entrance/g) || [];
+  assert.equal(scopes.length, 1,
+    'more than one entrance scope — everything below the fold should reveal on scroll');
+});
+
+test('process steps cascade as one group', () => {
+  const list = html.match(/<ol class="em-process"[^>]*>[\s\S]*?<\/ol>/)[0];
+  assert.match(list, /<ol class="em-process" data-reveal-group>/);
+  const revealed = list.match(/<li class="em-process__step" data-reveal="rise">/g) || [];
+  assert.equal(revealed.length, 5, `expected 5 revealing steps, found ${revealed.length}`);
+});
+
+test('both foundations layouts reveal, so the variant switcher never breaks', () => {
+  assert.match(html, /<div class="em-bento" data-reveal-group>/);
+  assert.match(html, /<div class="em-equal" data-reveal-group>/);
+  assert.match(html, /<img class="em-bento__media"[^>]*data-reveal="clip">/,
+    'bento feature photo does not use the clip reveal');
+  const cards = html.match(/<article class="em-solution"[^>]*data-reveal="rise">/g) || [];
+  assert.equal(cards.length, 5, `expected 2 bento + 3 equal cards revealing, found ${cards.length}`);
+});
+
+test('both stories layouts reveal, so the variant switcher never breaks', () => {
+  assert.match(html, /<div class="em-stories__feature" data-reveal-group>/);
+  assert.match(html, /<div class="em-stories__carousel" data-reveal-group>/);
+  assert.match(html, /<article class="em-stories__lead-card" data-reveal="slide-l">/);
+});
+
+test('insights rows cascade as one group', () => {
+  assert.match(html, /<div class="em-insights__rows" data-reveal-group>/);
+  const revealed = html.match(/<article class="em-insights__row" data-reveal="rise">/g) || [];
+  assert.equal(revealed.length, 3, `expected 3 revealing rows, found ${revealed.length}`);
+});
+
+test('join us and footer participate in the reveal layer', () => {
+  assert.match(html, /<div class="em-join" data-reveal-group>/);
+  assert.match(html, /<div class="em-footer__top" data-reveal-group>/);
+});
+
+test('every data-reveal value is one of the five documented variants', () => {
+  const allowed = new Set(['rise', 'fade', 'slide-l', 'slide-r', 'clip']);
+  for (const m of html.matchAll(/data-reveal="([^"]*)"/g)) {
+    assert.ok(allowed.has(m[1]), `undocumented reveal variant: ${m[1]}`);
+  }
+});
+
+test('every reveal group actually contains something to reveal', () => {
+  // A group with no revealing descendants is dead markup — usually a
+  // sign the attributes were added to the wrong element.
+  for (const m of html.matchAll(/<(\w+)([^>]*\sdata-reveal-group[^>]*)>/g)) {
+    const from = m.index + m[0].length;
+    const window = html.slice(from, from + 3000);
+    assert.match(window, /data-reveal="/,
+      `data-reveal-group with no revealing children near: ${m[0].slice(0, 70)}`);
+  }
+});
+
+test('header sticks and condenses on scroll', () => {
+  assert.match(homepage, /\.em-header\{[^}]*position:sticky/);
+  assert.match(homepage, /\[data-scrolled\][^{]*\.em-header__bar\{[^}]*min-height/);
+});
+
+test('preview bar gives up sticky so it cannot cover the sticky header', () => {
+  // .ctl used to be position:sticky;top:0;z-index:100. A sticky header at
+  // top:0 would sit underneath it. .ctl is preview-only chrome and never
+  // ships, so it scrolls away instead.
+  const rule = homepage.slice(homepage.indexOf('.ctl{'), homepage.indexOf('}', homepage.indexOf('.ctl{')));
+  assert.ok(!/position:sticky/.test(rule), '.ctl is still sticky and will cover the header');
+});
+
+test('scroll flag is passive and frame-guarded', () => {
+  assert.match(revealJs, /addEventListener\('scroll'[\s\S]{0,160}passive:\s*true/,
+    'scroll listener is not passive');
+  assert.match(revealJs, /data-scrolled/);
+});
+
+/* ---------- desktop mega menus ---------- */
+
+const MEGA = [
+  ['About', 'mega-about'],
+  ['Solutions', 'mega-solutions'],
+  ['All Content', 'mega-content'],
+  ['Podcast', 'mega-podcast'],
+  ['Join Us', 'mega-join'],
+];
+
+test('every desktop nav trigger controls a real panel', () => {
+  for (const [label, id] of MEGA) {
+    const trigger = html.match(new RegExp(`<button class="em-header__link"[^>]*>${label} `));
+    assert.ok(trigger, `no trigger button for ${label}`);
+    assert.match(html, new RegExp(`aria-controls="${id}"`), `${label} does not control ${id}`);
+    assert.match(html, new RegExp(`<div class="em-mega" id="${id}"`), `no panel markup for ${id}`);
+  }
+});
+
+test('every mega panel is labelled by its own trigger', () => {
+  for (const [, id] of MEGA) {
+    const panel = html.match(new RegExp(`<div class="em-mega" id="${id}"[^>]*>`))[0];
+    const labelled = panel.match(/aria-labelledby="([^"]+)"/);
+    assert.ok(labelled, `${id} has no aria-labelledby`);
+    assert.match(html, new RegExp(`id="${labelled[1]}"[^>]*aria-controls="${id}"`),
+      `${id} is labelled by something that is not its trigger`);
+  }
+});
+
+test('every mega link is a real link with a destination', () => {
+  const links = html.match(/<a class="em-mega__link"[^>]*>/g) || [];
+  assert.ok(links.length >= 15, `expected the full sitemap, found ${links.length} mega links`);
+  for (const a of links) {
+    assert.match(a, /href="\/[^"]*"/, `mega link without a destination: ${a}`);
+  }
+});
+
+test('desktop mega menus and the mobile nav stay in sync', () => {
+  // One sitemap, two renderings. If someone adds a link to one nav and
+  // not the other, the two navs disagree about what the site contains.
+  const panel = html.match(/<nav class="em-mobilenav"[\s\S]*?<\/nav>/)[0];
+  const mobile = [...panel.matchAll(/<a class="em-mobilenav__sublink" href="([^"]+)">([^<]+)<\/a>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  const desktop = [...html.matchAll(
+    /<a class="em-mega__link" href="([^"]+)">\s*<span class="em-mega__link-label">([^<]+)<\/span>/g)]
+    .map(m => `${m[2]}|${m[1]}`).sort();
+  assert.deepEqual(desktop, mobile, 'desktop mega links and mobile nav links have drifted');
+});
+
+test('mega panels ship in the partial, not injected at runtime', () => {
+  const partial = readFileSync('src/sections/00-header.html', 'utf8');
+  assert.match(partial, /<div class="em-mega" id="mega-about"/);
+  for (const f of readdirSync('js')) {
+    const js = readFileSync(`js/${f}`, 'utf8');
+    assert.ok(!js.includes('innerHTML') && !js.includes('createElement'),
+      `js/${f} builds markup at runtime instead of progressively enhancing static markup`);
+  }
+});
+
+const mega = readFileSync('css/megamenu.css', 'utf8');
+
+test('mega menu stylesheet is linked in cascade order', () => {
+  assert.match(html, /<link rel="stylesheet" href="\.\.\/css\/megamenu\.css">/);
+  assert.ok(html.indexOf('css/homepage.css') < html.indexOf('css/megamenu.css'));
+  assert.ok(html.indexOf('css/megamenu.css') < html.indexOf('css/wireframe.css'));
+});
+
+test('mega panels are only hidden once JS has claimed them', () => {
+  // Same contract as the reveal layer: no rule may hide a panel unless it
+  // is nested under the [data-mega="on"] gate that js/megamenu.js sets.
+  for (const rule of mega.split('}')) {
+    if (!/\bdisplay:\s*none|\bvisibility:\s*hidden/.test(rule)) continue;
+    assert.match(rule, /\[data-mega="on"\]|@media/,
+      `ungated hide rule would lose links without JS: ${rule.trim().slice(0, 80)}`);
+  }
+});
+
+test('mega panels are suppressed below the mobile nav breakpoint', () => {
+  const at = mega.indexOf('max-width:960px');
+  assert.ok(at > -1, 'no 960px rule — panels would overlap the mobile nav');
+  assert.match(mega.slice(at), /\.em-mega\{[^}]*display:none/);
+});
+
+test('mega menu motion is disabled under reduced motion', () => {
+  assert.match(mega, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+});
+
+const megaJs = readFileSync('js/megamenu.js', 'utf8');
+
+test('mega menu module is loaded by the shell', () => {
+  assert.match(html, /<script type="module" src="\.\.\/js\/megamenu\.js"><\/script>/);
+});
+
+test('mega menu script sets its own gate attribute', () => {
+  assert.match(megaJs, /setAttribute\('data-mega', 'on'\)/);
+});
+
+test('hover intent is gated on a fine pointer', () => {
+  // Touch and pen devices fire synthetic hover; opening a mega panel on
+  // a tap that was meant to activate the trigger is the classic bug.
+  assert.match(megaJs, /\(hover: hover\) and \(pointer: fine\)/);
+});
+
+test('mega menu is disabled below the mobile nav breakpoint', () => {
+  // Same boundary value as css/homepage.css's nav breakpoint and
+  // css/megamenu.css's panel breakpoint — both max-width:960px. A mismatched
+  // pair (e.g. min-width:961px here) leaves a sliver viewport width where
+  // the desktop nav is hidden, the mobile toggle is hidden, and the mega
+  // triggers are inert.
+  assert.match(megaJs, /max-width:\s*960px/,
+    'no matching mobile media query — panels would fight the mobile nav');
+});
+
+test('mega menu implements the documented keyboard map', () => {
+  for (const key of ['Escape', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) {
+    assert.ok(megaJs.includes(`'${key}'`), `keyboard map missing ${key}`);
+  }
+});
+
+test('mega menu drives aria-expanded on the trigger', () => {
+  assert.match(megaJs, /setAttribute\('aria-expanded', 'true'\)/);
+  assert.match(megaJs, /setAttribute\('aria-expanded', 'false'\)/);
+});
+
+test('close() and show() keep is-open and hidden in sync', () => {
+  // css/megamenu.css's reduced-motion block forces every panel opaque
+  // regardless of .is-open, so `hidden` is the ONLY thing keeping a closed
+  // panel out of the layout for reduced-motion users. If close() and show()
+  // ever get split so is-open and hidden come off in different code paths,
+  // reduced-motion users get five stacked, permanently-visible panels while
+  // this suite stays green — so this test parses the actual function
+  // bodies rather than grepping the whole file, and will fail if either
+  // half of the invariant is dropped from either function.
+  const closeStart = megaJs.indexOf('function close()');
+  const showStart = megaJs.indexOf('function show(menu)');
+  const afterStart = megaJs.indexOf('function after(');
+  assert.ok(closeStart > -1 && showStart > closeStart && afterStart > showStart,
+    'expected close(), then show(menu), then after() in js/megamenu.js — cannot isolate function bodies');
+
+  const closeBody = megaJs.slice(closeStart, showStart);
+  const showBody = megaJs.slice(showStart, afterStart);
+
+  assert.match(closeBody, /\.panel\.classList\.remove\('is-open'\)/,
+    'close() no longer removes is-open from the panel');
+  assert.match(closeBody, /\.panel\.hidden\s*=\s*true/,
+    'close() no longer hides the panel');
+  assert.match(showBody, /\.panel\.hidden\s*=\s*false/,
+    'show() no longer unhides the panel');
+});
+
+test('README documents both new layers for the Elementor hand-off', () => {
+  const readme = readFileSync('README.md', 'utf8');
+  for (const needle of ['## Motion', '## Mega menus', 'data-reveal', 'data-reveal-group',
+                        'data-reveal-entrance', 'prefers-reduced-motion', 'css/motion.css',
+                        'js/reveal.js', 'css/megamenu.css', 'js/megamenu.js']) {
+    assert.ok(readme.includes(needle), `README does not document ${needle}`);
   }
 });

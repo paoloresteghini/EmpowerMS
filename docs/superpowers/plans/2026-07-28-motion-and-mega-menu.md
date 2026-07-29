@@ -264,7 +264,7 @@ git commit -m "feat: add attribute-driven scroll reveal engine"
 
 ---
 
-### Task 2: Hero + header page entrance
+### Task 2: Hero page entrance
 
 **Files:**
 - Modify: `src/sections/01-hero.html`

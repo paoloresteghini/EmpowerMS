@@ -528,3 +528,22 @@ test('every reveal group actually contains something to reveal', () => {
       `data-reveal-group with no revealing children near: ${m[0].slice(0, 70)}`);
   }
 });
+
+test('header sticks and condenses on scroll', () => {
+  assert.match(homepage, /\.em-header\{[^}]*position:sticky/);
+  assert.match(homepage, /\[data-scrolled\][^{]*\.em-header__bar\{[^}]*min-height/);
+});
+
+test('preview bar gives up sticky so it cannot cover the sticky header', () => {
+  // .ctl used to be position:sticky;top:0;z-index:100. A sticky header at
+  // top:0 would sit underneath it. .ctl is preview-only chrome and never
+  // ships, so it scrolls away instead.
+  const rule = homepage.slice(homepage.indexOf('.ctl{'), homepage.indexOf('}', homepage.indexOf('.ctl{')));
+  assert.ok(!/position:sticky/.test(rule), '.ctl is still sticky and will cover the header');
+});
+
+test('scroll flag is passive and frame-guarded', () => {
+  assert.match(revealJs, /addEventListener\('scroll'[\s\S]{0,160}passive:\s*true/,
+    'scroll listener is not passive');
+  assert.match(revealJs, /data-scrolled/);
+});

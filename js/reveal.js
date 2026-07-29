@@ -69,3 +69,21 @@ if (reduced.matches) {
     observer.observe(el);
   }
 }
+
+// Sticky header state. Passive listener plus a frame guard: at most one
+// attribute flip per frame, and no layout reads inside the handler.
+const SCROLL_AT = 80;
+let ticking = false;
+
+function syncScrolled() {
+  ticking = false;
+  root.toggleAttribute('data-scrolled', window.scrollY > SCROLL_AT);
+}
+
+window.addEventListener('scroll', () => {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(syncScrolled);
+}, { passive: true });
+
+syncScrolled();

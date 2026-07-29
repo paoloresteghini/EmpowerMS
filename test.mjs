@@ -634,3 +634,35 @@ test('mega panels are suppressed below the mobile nav breakpoint', () => {
 test('mega menu motion is disabled under reduced motion', () => {
   assert.match(mega, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 });
+
+const megaJs = readFileSync('js/megamenu.js', 'utf8');
+
+test('mega menu module is loaded by the shell', () => {
+  assert.match(html, /<script type="module" src="\.\.\/js\/megamenu\.js"><\/script>/);
+});
+
+test('mega menu script sets its own gate attribute', () => {
+  assert.match(megaJs, /setAttribute\('data-mega', 'on'\)/);
+});
+
+test('hover intent is gated on a fine pointer', () => {
+  // Touch and pen devices fire synthetic hover; opening a mega panel on
+  // a tap that was meant to activate the trigger is the classic bug.
+  assert.match(megaJs, /\(hover: hover\) and \(pointer: fine\)/);
+});
+
+test('mega menu is disabled below the mobile nav breakpoint', () => {
+  assert.match(megaJs, /min-width:\s*961px/,
+    'no desktop media query — panels would fight the mobile nav');
+});
+
+test('mega menu implements the documented keyboard map', () => {
+  for (const key of ['Escape', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) {
+    assert.ok(megaJs.includes(`'${key}'`), `keyboard map missing ${key}`);
+  }
+});
+
+test('mega menu drives aria-expanded on the trigger', () => {
+  assert.match(megaJs, /setAttribute\('aria-expanded', 'true'\)/);
+  assert.match(megaJs, /setAttribute\('aria-expanded', 'false'\)/);
+});

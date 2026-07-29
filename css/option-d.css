@@ -261,7 +261,9 @@
   margin-bottom:var(--space-5);background:var(--blue-100)}
 .tl-post--lead .tl-post__media{aspect-ratio:2/1}
 .tl-post:not(.tl-post--lead) .tl-post__media{aspect-ratio:4/3}
-.tl-post__media img{width:100%;height:100%;object-fit:cover;
+/* The photography is tall and its subjects sit in the upper third, so a
+   centred crop in a wide frame lands on legs. */
+.tl-post__media img{width:100%;height:100%;object-fit:cover;object-position:center 22%;
   transition:transform var(--dur-slow) var(--ease-out)}
 .tl-post:hover .tl-post__media img{transform:scale(1.05)}
 .tl-post__kind{margin-bottom:var(--space-3);font-family:var(--font-display);

@@ -294,7 +294,9 @@
 .fp-feed__link{display:flex;flex-direction:column;height:100%;text-decoration:none;color:inherit}
 .fp-feed__media{display:block;overflow:hidden;border-radius:var(--fp-radius);
   margin-bottom:var(--space-5);background:var(--blue-100)}
-.fp-feed__media img{width:100%;height:100%;object-fit:cover;
+/* The photography is tall and its subjects sit in the upper third, so a
+   centred crop in a wide frame lands on legs. */
+.fp-feed__media img{width:100%;height:100%;object-fit:cover;object-position:center 22%;
   transition:transform var(--dur-slow) var(--ease-out)}
 .fp-feed__lead .fp-feed__media{aspect-ratio:16/11}
 .fp-feed__item .fp-feed__media{aspect-ratio:16/9}

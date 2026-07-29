@@ -1,0 +1,54 @@
+# Build the review site and publish it to GitHub Pages.
+#
+# The site is assembled by pages.mjs, not by pointing Pages at dist/ — see the
+# long note at the top of that file for why dist/ alone cannot work.
+#
+# The suite runs first and the job fails on a red test, so a broken build is
+# never what the client opens.
+name: Pages
+
+on:
+  push:
+    # feat/homepage-variations is here so the review link can be published
+    # before the branch merges. Drop it once this lands on master.
+    branches: [master, feat/homepage-variations]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a run finish rather than cancelling it mid-deploy, but never queue more
+# than one pending run behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # No dependencies, no install step — the whole build is node: builtins.
+      - name: Test
+        run: node --test test.mjs
+      - name: Assemble _site
+        run: node pages.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

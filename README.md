@@ -321,9 +321,24 @@ come back clean. Text sitting over photography is excluded from that sweep and
 measured analytically instead; the worst-case figure is in a comment beside
 each scrim.
 
-Every page also clears 320px with no horizontal scroll, and the horizontal
-rails in Option C are focusable regions with accessible names so a keyboard
-user can scroll them.
+Every page also clears 320px with no horizontal scroll **including at 200%
+text zoom** (SC 1.4.4), and the horizontal rails in Option C are focusable
+regions with accessible names so a keyboard user can scroll them.
+
+The 200% reflow failure that was open through the earlier builds is **closed**.
+Two things did it, both in `css/site.css`:
+
+- `h1,h2,h3{overflow-wrap:break-word}` at the top of the file was silently
+  beating the `body{overflow-wrap:anywhere}` in the ≤420px block, because an
+  element-level declaration out-specifies an inherited value. `break-word` does
+  not reduce min-content width; `anywhere` does. So headings alone kept their
+  long-word minimum and pushed a grid track 14px past a 320px viewport. The
+  narrow block now names `body,h1,h2,h3`.
+- `.em-header__bar` gains `flex-wrap:wrap` below 400px. The Donate label is
+  deliberately **not** capped in px — SC 1.4.4 asks for text to reflow at 200%,
+  not to stay small — so the actions group drops to its own line instead. At
+  320px with text at normal size the row is ~234px against 272px of bar and
+  stays on one line, so this only fires when it is genuinely needed.
 
 Three findings from that sweep are fixed in `css/site.css` and the option
 stylesheets, and are listed here because they are **reversible local overrides
@@ -354,7 +369,8 @@ not oversights for the WordPress developer to quietly fix.
   the exception.
 - **`--border-inverse` (`rgba(255,255,255,.28)`) on navy measures 2.28:1**, below
   the 3:1 minimum for UI component borders (WCAG SC 1.4.11). It affects the footer
-  social buttons and the footer divider. (It used to affect the footer newsletter
+  social buttons and the footer divider. This is the last of the original
+  accessibility findings still open. (It used to affect the footer newsletter
   input too; that form was removed when Join Us took over the page's single
   subscribe field, so the question is now narrower than it was.)
 

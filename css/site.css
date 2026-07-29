@@ -179,8 +179,13 @@ body{overflow-wrap:break-word}
   /* break-word does NOT reduce an element's min-content width, so a long word
      still forces the grid track wider than the viewport once text is scaled.
      `anywhere` does reduce it. Scoped to this breakpoint because it is an
-     aggressive break and only matters where the viewport is this narrow. */
-  body{overflow-wrap:anywhere}
+     aggressive break and only matters where the viewport is this narrow.
+     h1-h3 have to be named explicitly: the rule at the top of this file sets
+     them to break-word, and an element-level declaration out-specifies the
+     value they would otherwise inherit from body. Without this line the
+     headings alone keep their long-word min-content width and push a grid
+     track past the viewport at 200% text — measured at 320px, 14px over. */
+  body,h1,h2,h3{overflow-wrap:anywhere}
 }
 
 /* Below ~324px, .em-header__bar's non-wrapping, non-shrinking children
@@ -198,6 +203,15 @@ body{overflow-wrap:break-word}
   .em-header__actions{gap:var(--space-1)}
   .em-header__search{display:none}
   .em-header__toggle{width:32px;height:32px}
+  /* SC 1.4.4 wants text to reflow at 200%, not to stay small — so the Donate
+     label is NOT capped in px. Instead the bar is allowed to wrap, which it
+     only does once the row genuinely cannot fit: at 320px with text at its
+     normal size the row is ~234px against 272px of bar and stays on one line.
+     At 200% the Donate button alone is ~156px and the actions group drops to
+     its own line rather than pushing the page sideways. Measured, not
+     assumed. */
+  .em-header__bar{flex-wrap:wrap;row-gap:var(--space-3);
+    padding-top:var(--space-3);padding-bottom:var(--space-3)}
 }
 
 /* ---------- Accessibility overrides, colour half ----------

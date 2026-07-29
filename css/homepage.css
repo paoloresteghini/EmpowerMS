@@ -1,157 +1,13 @@
-/* Empower Mississippi homepage — layout wrappers.
-   Upstream tokens/ and components/ are never edited; local layout lives here. */
+/* Empower Mississippi homepage — reference build (the current direction).
 
-/* ---------- Accessibility overrides (local, reversible) ----------
-   Every rule in this block exists to clear a measured WCAG 2.2 AA failure.
-   They live here, not in tokens/, so Empower can revert any of them with a
-   single deletion once the brand decisions below are settled.
+   Site chrome (header, mobile nav, footer) and the shared accessibility
+   overrides live in css/site.css, which every homepage option loads first.
+   This file holds only the sections of THIS homepage. */
 
-   1. --em-orange (#E65A28) measures 3.59:1 on white and 3.15:1 on the tinted
-      surface, both under AA's 4.5:1 for normal-size text. --em-orange-ink is
-      the same hue at 80% lightness: 5.17:1 on white, 4.54:1 on the tint. It is
-      used ONLY where orange is small text on a light surface. Orange fills,
-      orange-on-navy (--orange-300, 5.44:1) and the focus ring keep the exact
-      brand value.
-   2. The hero's primary button keeps the brand fill untouched; its label goes
-      to 19px, which clears 18.66px and so is "large text" under SC 1.4.3,
-      where the 3:1 bar applies and the measured 3.59:1 passes.
-   3. Fluid display scale + word breaking so 200% text zoom at 320px no longer
-      forces horizontal scrolling (SC 1.4.4 / 1.4.10).
-   4. 24x24 minimum target size on standalone links (SC 2.5.8). */
-
-:root{
-  /* #BA4920 is the brand orange at 80% lightness. It has to clear 4.5:1 on
-     BOTH white (5.17:1) and --surface-tint / --blue-100 (4.54:1), since the
-     same roles appear on tinted section backgrounds. */
-  --em-orange-ink:#BA4920;
-  /* Fluid replacements for the fixed rem display steps. Max values are the
-     original token values, so nothing shrinks at desktop widths. */
-  --fs-hero:clamp(2rem,1.15rem + 3.4vw,4rem);
-  --fs-h1:clamp(1.85rem,1.3rem + 2.2vw,3rem);
-  --fs-h2:clamp(1.5rem,1.2rem + 1.3vw,2.25rem);
-  --fs-h3:clamp(1.25rem,1.15rem + .5vw,1.625rem);
-  /* Step scrims, previously hard-coded twice below. */
-  --scrim-step:rgba(0,41,53,.74);
-  --scrim-step-open:rgba(0,41,53,.5);
-}
-
-/* Long single words (Mississippians, opportunity) must wrap rather than push
-   the line box wider than the viewport once text is scaled up. */
-h1,h2,h3,.em-hero h1{overflow-wrap:break-word;text-wrap:balance}
-p,.em-hero__lede,.em-lead{text-wrap:pretty}
-
-/* Brand fill untouched; the label crosses the large-text threshold instead.
-   components.css sets .em-btn{white-space:nowrap}, so a 19px label makes the
-   button 282px of unbreakable min-content. Inside .em-hero__copy's 24px
-   gutters that is a 330px minimum against a 320px viewport, which is exactly
-   the horizontal scroll this block exists to remove. Below 420px the label is
-   allowed to wrap; min-width:0 stops the grid track inheriting the old
-   automatic minimum. */
-.em-btn--primary.em-btn--lg{font-size:19px}
 .em-hero__copy{min-width:0}
-/* Long words (Mississippians, opportunity) break rather than widen the line
-   box. h1-h3 get this above; body copy needs it too once text is scaled.
-   Declared BEFORE the narrow-viewport block below, which upgrades it to
-   `anywhere` — source order decides, and `anywhere` has to win there. */
-body{overflow-wrap:break-word}
 
-@media (max-width:420px){
-  /* SC 1.4.4 asks for 200% text with no loss of content. At 320px that means
-     nothing may keep an unbreakable intrinsic width: every .em-btn is
-     white-space:nowrap upstream, and the card paddings are rem-based, so both
-     grow with the user's text size and push the layout past the viewport.
-     Buttons wrap here, and the card gutters switch to px so they stay put
-     while the text inside them scales. */
-  .em-btn{white-space:normal;text-align:center}
-  /* Redefine the space token ON the card rather than hard-setting padding:
-     .em-bento__media full-bleeds itself with width:calc(100% + --space-8 * 2)
-     and a matching negative margin, so a raw padding override desyncs the two
-     and the photo overhangs the card. */
-  .em-solution,.em-card--pad-md{--space-8:16px}
-  .em-mobilenav__link,.em-mobilenav__trigger{padding-left:16px;padding-right:16px}
-  /* The header bar's children are flex:0 0 auto, so at 200% text the Donate
-     button cannot give any width back. Let the actions group shrink. */
-  .em-header__bar>*,.em-header__actions{min-width:0}
-  .em-header__actions .em-btn{flex:0 1 auto}
-  /* break-word does NOT reduce an element's min-content width, so a long word
-     still forces the grid track wider than the viewport once text is scaled.
-     `anywhere` does reduce it. Scoped to this breakpoint because it is an
-     aggressive break and only matters where the viewport is this narrow. */
-  body{overflow-wrap:anywhere}
-}
-
-
-/* SC 2.5.8: standalone links need a 24x24 target. These are card and list
-   links, not links inside a sentence, so the inline exception does not apply. */
-.em-article__more,
-.em-solution__more,
-.em-process__detail a,
-.em-footer__links a{display:inline-flex;align-items:center;min-height:24px;min-width:24px}
-.em-footer__links li{margin:0}
-
-/* The colour half of this block lives at the END of this file — several
-   later rules here set --em-orange on the same selectors, and an override
-   at the top would lose the cascade to them. */
-
-/* ---------- Sticky, condensing header ---------- */
-/* components.css sets .em-header{position:relative;z-index:40}; only the
-   positioning is overridden here so the upstream file stays untouched.
-   js/reveal.js sets [data-scrolled] on <html> past 80px. */
-.em-header{position:sticky;top:0;transition:box-shadow var(--dur) var(--ease-out)}
-.em-header__bar{transition:min-height var(--dur) var(--ease-out)}
-[data-scrolled] .em-header{box-shadow:var(--shadow-md)}
-[data-scrolled] .em-header__bar{min-height:68px}
-
-/* ---------- Header search ---------- */
-.em-header__search{width:38px;height:38px;flex:0 0 auto;display:grid;place-items:center;
-  padding:0;border:1px solid var(--border-default);border-radius:var(--radius-pill);
-  background:none;color:var(--em-blue);cursor:pointer;
-  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
-.em-header__search:hover{background:var(--blue-100);border-color:var(--blue-400)}
-.em-header__search svg{width:17px;height:17px}
-
-/* ---------- Header mobile menu toggle ---------- */
-/* Hidden at desktop widths; the 960px breakpoint below reveals it once
-   .em-header__nav is hidden. Lives inside .em-header__actions so it
-   inherits the same right-aligned flex group as search + Donate. */
-.em-header__toggle{display:none;width:38px;height:38px;flex:0 0 auto;
-  align-items:center;justify-content:center;flex-direction:column;gap:4px;
-  padding:0;border:1px solid var(--border-default);border-radius:var(--radius-pill);
-  background:none;cursor:pointer;
-  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
-.em-header__toggle:hover{background:var(--blue-100);border-color:var(--blue-400)}
-.em-header__toggle-bar{display:block;width:16px;height:2px;border-radius:1px;
-  background:var(--em-blue);transition:transform var(--dur) var(--ease-out),opacity var(--dur) var(--ease-out)}
-.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(1){transform:translateY(6px) rotate(45deg)}
-.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(2){opacity:0}
-.em-header__toggle[aria-expanded="true"] .em-header__toggle-bar:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-
-/* ---------- Header mobile menu panel ---------- */
-/* Inline dropdown, not an overlay: it is a normal-flow sibling of the
-   header bar, so opening it pushes <main> down rather than covering it.
-   No scroll-lock and no focus trap — deliberate, matches the simplicity
-   of an inline panel. Ships expanded-by-default in the markup (see
-   00-header.html) for progressive enhancement; js/nav.js collapses it
-   once it loads. The [hidden] overrides use an extra attribute selector
-   to out-rank the plain-class display rule regardless of cascade order. */
-.em-mobilenav{display:none;border-top:1px solid var(--border-subtle);background:var(--surface-page)}
-.em-mobilenav__list{list-style:none;margin:0;padding:var(--space-3) 0}
-.em-mobilenav__item{border-bottom:1px solid var(--border-subtle)}
-.em-mobilenav__item:last-child{border-bottom:0}
-.em-mobilenav__link,.em-mobilenav__trigger{display:flex;align-items:center;justify-content:space-between;
-  width:100%;gap:var(--space-3);padding:var(--space-4) var(--gutter);
-  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
-  color:var(--em-blue);text-decoration:none;background:none;border:0;cursor:pointer;text-align:left}
-.em-mobilenav__link:hover,.em-mobilenav__trigger:hover{color:var(--blue-800)}
-.em-mobilenav__caret{width:9px;height:9px;flex:0 0 auto;
-  border-right:2px solid currentColor;border-bottom:2px solid currentColor;
-  transform:rotate(45deg);transition:transform var(--dur) var(--ease-out)}
-.em-mobilenav__trigger[aria-expanded="true"] .em-mobilenav__caret{transform:rotate(-135deg)}
-.em-mobilenav__sublist{list-style:none;margin:0;
-  padding:0 var(--gutter) var(--space-3) calc(var(--gutter) + var(--space-4))}
-.em-mobilenav__sublink{display:block;padding:var(--space-2) 0;font-size:var(--fs-caption);
-  color:var(--text-body);text-decoration:none}
-.em-mobilenav__sublink:hover{color:var(--em-orange)}
+/* SC 2.5.8: standalone links need a 24x24 target. */
+.em-process__detail a{display:inline-flex;align-items:center;min-height:24px;min-width:24px}
 
 /* ---------- Hero ---------- */
 .em-hero{display:grid;
@@ -442,21 +298,6 @@ body{overflow-wrap:break-word}
   .em-join__action:hover .em-join__arrow{transform:none}
 }
 
-.em-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
-  clip:rect(0 0 0 0);white-space:nowrap;border:0}
-
-/* ---------- Footer ---------- */
-/* Shipped em-footer__top is 1.4fr repeat(3,1fr); the homepage has three groups. */
-.em-footer__top{grid-template-columns:1.5fr 1fr 1fr}
-.em-footer__mission{font-size:var(--fs-small);line-height:1.6;color:var(--text-inverse-muted);
-  max-width:40ch;margin:0 0 var(--space-6)}
-/* The footer newsletter form was removed when Join Us took ownership of the
-   single subscribe field on the page — two email inputs inside one scroll
-   asked the same question twice. That also retires the .em-footer__form half
-   of the open --border-inverse contrast question (README, Accessibility);
-   the social buttons and the footer divider still carry it. */
-.em-footer__bottom p{margin:0}
-
 /* ---------- Responsive ---------- */
 /* Breakpoints are an assumption — the source design is desktop-1440-only.
    .em-process is the exception: its five steps carry min-width:238px and
@@ -486,23 +327,6 @@ body{overflow-wrap:break-word}
   .em-process__num{opacity:1}
 }
 
-/* The header bar (logo + six nav links + search + Donate) never wraps and
-   has an intrinsic min-content width of ~940px — measured, not assumed —
-   so it overflows before the general 900px stacking breakpoint gets a
-   chance to help. Hide the nav a step earlier than that, with margin.
-   The mobile toggle + panel come on at the same breakpoint so the nav
-   is never unreachable: .em-header__actions picks up the margin-left:auto
-   that .em-header__nav used to provide, since nav no longer participates
-   in the flex row to push it right. */
-@media (max-width:960px){
-  .em-header__nav{display:none}
-  .em-header__toggle{display:flex}
-  .em-header__actions{margin-left:auto}
-  .em-mobilenav{display:block}
-  .em-mobilenav[hidden]{display:none}
-  .em-mobilenav__sublist[hidden]{display:none}
-}
-
 @media (max-width:900px){
   .em-solutions__head,.em-foundations__head,.em-stories__head{
     grid-template-columns:1fr;gap:var(--space-6)}
@@ -529,7 +353,6 @@ body{overflow-wrap:break-word}
   .em-join__wash{opacity:.24;
     -webkit-mask-image:radial-gradient(145% 95% at 96% 108%,black 10%,transparent 74%);
     mask-image:radial-gradient(145% 95% at 96% 108%,black 10%,transparent 74%)}
-  .em-footer__top{grid-template-columns:1fr 1fr}
 }
 
 @media (max-width:600px){
@@ -539,7 +362,6 @@ body{overflow-wrap:break-word}
   .em-stories__mini{flex-direction:column;align-items:flex-start}
   .em-insights__row{grid-template-columns:1fr;gap:var(--space-5)}
   .em-insights__row>img{width:100%}
-  .em-footer__top{grid-template-columns:1fr}
   /* The subscribe button drops below the field rather than sharing the row
      with it — .em-newsletter__form wraps, but a 220px flex basis keeps the
      input on the button's line until it cannot fit at all. */
@@ -547,25 +369,6 @@ body{overflow-wrap:break-word}
   /* At --fs-lead the ambassador label needs ~250px against a ~263px panel and
      wraps on the tightest phones. One step down keeps it on a single line. */
   .em-join__action{font-size:var(--fs-body)}
-}
-
-/* Below ~324px, .em-header__bar's non-wrapping, non-shrinking children
-   overflow the ~257px available inside a 320px viewport — measured, not
-   assumed. .em-header__nav is already hidden by the 960px rule above, so
-   the remaining overflow is logo + bar gap + actions gap + actions
-   contents. Originally that was just search + Donate (299.5px needed);
-   the mobile menu toggle adds a third action, pushing the measured
-   min-content width to 326px. Search is the one action with no unique
-   destination yet (the mobile menu now covers real navigation), so it
-   drops below 400px; the toggle and both gaps are trimmed a little
-   further on top. That clears the 320px floor with margin, without
-   shrinking the logo or the Donate button themselves — both stay full
-   size and legible. */
-@media (max-width:400px){
-  .em-header__bar{gap:var(--space-2)}
-  .em-header__actions{gap:var(--space-1)}
-  .em-header__search{display:none}
-  .em-header__toggle{width:32px;height:32px}
 }
 
 /* ---------- Accessibility overrides, colour half ----------
@@ -578,17 +381,11 @@ body{overflow-wrap:break-word}
    Applied ONLY to small orange text on light surfaces. Orange fills,
    orange-on-navy (--orange-300) and the focus ring keep the exact brand
    value. */
-.em-eyebrow,
-.em-heading__eyebrow,
 .em-hero__northstar-label,
-.em-solution__more,
-.em-article__more,
-.em-podcast__show,
 .em-insights__podcast .em-podcast__show,
 .em-stories__mini .em-stories__attr,
 .em-stories__lead-body .em-stories__attr{color:var(--em-orange-ink)}
-.em-hero__link:hover,
-.em-mobilenav__sublink:hover{color:var(--em-orange-ink)}
+.em-hero__link:hover{color:var(--em-orange-ink)}
 /* On navy, the original orange ramp already passes (5.44:1) — keep it. */
 .em-stories__head .em-eyebrow{color:var(--orange-300)}
 
@@ -604,10 +401,3 @@ body{overflow-wrap:break-word}
 .em-foundations__head .em-eyebrow,
 .em-insights__aside .em-eyebrow{font-family:var(--font-body);font-weight:var(--fw-semibold);
   font-size:var(--fs-small);letter-spacing:normal;text-transform:none;color:var(--text-body)}
-
-/* components.css sets ::placeholder to --grey-500, which measures 2.85:1 on
-   the input's white background — under the 4.5:1 that placeholder text needs,
-   same as any other text. --text-muted is 5.29:1 and is the same token the
-   rest of the page's secondary text already uses. The audit's
-   contrast sweep walked rendered text nodes, so it never saw this one. */
-.em-input::placeholder,.em-textarea::placeholder{color:var(--text-muted)}

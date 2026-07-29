@@ -1,0 +1,462 @@
+/* ============================================================================
+   Option A — "Front Porch"
+   ----------------------------------------------------------------------------
+   Spatial idea: an interlocking mosaic. Nothing on this page is a full-width
+   band with a centred heading. Photography and copy overlap, elements straddle
+   section boundaries, and the three foundations climb a diagonal rather than
+   sitting in a row of equal cards.
+
+   The warmest of the four options, and the one aimed hardest at a parent on a
+   phone: real faces at real scale, generous radii, no institutional slabs.
+
+   Loads after css/site.css, which owns the header, mobile nav and footer.
+   ========================================================================= */
+
+.fp-hero,.fp-change,.fp-foundations,.fp-stories,.fp-insights,.fp-join{position:relative}
+
+/* Shared local scale. --fp-bleed is how far the page container is allowed to
+   push past --container-max on very wide viewports; the mosaic and the hero
+   both use it so they stay on the same optical margin. */
+:root{
+  --fp-gutter:clamp(var(--gutter),4vw,var(--space-11));
+  --fp-step:clamp(var(--space-9),7vw,var(--space-14));
+  --fp-radius:clamp(var(--radius-lg),2.2vw,var(--radius-panel));
+}
+
+/* ---------- Section rhythm ----------
+   Deliberately uneven. A page where every section has the same top and bottom
+   padding reads as a stack no matter what is inside it. */
+.fp-change{padding:calc(var(--fp-step) + var(--space-12)) 0 var(--fp-step)}
+.fp-foundations{padding:var(--fp-step) 0 calc(var(--fp-step) + var(--space-9))}
+.fp-stories{padding:var(--fp-step) 0}
+.fp-insights{padding:var(--fp-step) 0}
+.fp-join{padding:var(--fp-step) 0 calc(var(--fp-step) + var(--space-6))}
+
+/* ============================ 1 · Hero =================================== */
+/* Three-part composition: copy left, a tall portrait right, and a second,
+   smaller photograph tucked under the portrait's left edge so the two
+   overlap. The north-star quote then straddles the boundary into section 2.
+   The hero is NOT overflow:hidden — the quote card depends on escaping it. */
+.fp-hero{padding:clamp(var(--space-9),5vw,var(--space-13)) 0 0;
+  background:linear-gradient(180deg,var(--white) 0%,var(--blue-100) 100%)}
+
+.fp-hero__grid{width:100%;max-width:var(--container-wide);margin:0 auto;
+  padding:0 var(--fp-gutter) clamp(var(--space-9),5.5vw,var(--space-12));
+  display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);
+  column-gap:clamp(var(--space-11),7vw,var(--space-14));align-items:center}
+
+.fp-hero__copy{position:relative;z-index:5;min-width:0;
+  padding-block:clamp(var(--space-6),3vw,var(--space-11))}
+
+/* The tagline is the brand kicker and appears once. It is not the repeated
+   uppercase eyebrow the page used to put above every section. */
+.fp-tagline{margin:0 0 var(--space-6);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:.02em;color:var(--em-orange-ink)}
+.fp-tagline::before{content:"";width:34px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+
+.fp-hero h1{margin:0 0 var(--space-7);font-size:clamp(2.3rem,1.05rem + 4.3vw,4.5rem);
+  font-weight:var(--fw-black);line-height:1;letter-spacing:-.035em;color:var(--em-blue)}
+/* The second half of the headline is the promise; it carries the accent so the
+   line has a hierarchy of its own without a second type family. */
+.fp-hero h1 em{font-style:normal;color:var(--em-orange);display:block}
+
+.fp-hero__lede{margin:0 0 var(--space-8);font-size:clamp(1.0625rem,.95rem + .45vw,1.375rem);
+  line-height:1.55;color:var(--text-body);max-width:48ch}
+.fp-hero__actions{display:flex;align-items:center;gap:var(--space-6);flex-wrap:wrap}
+
+/* The photograph and the two objects that overlap it are one stack, so both
+   overlaps resolve against the picture rather than against the section. */
+.fp-hero__stack{position:relative;min-width:0}
+
+.fp-hero__media{position:relative;z-index:1;margin:0;border-radius:var(--fp-radius);
+  overflow:hidden;box-shadow:var(--shadow-lg);aspect-ratio:4/5}
+.fp-hero__media img{width:100%;height:100%;object-fit:cover;object-position:center 30%}
+
+/* Tucked under the portrait's top-left corner, reaching back into the copy
+   column's gutter. */
+.fp-hero__aside{position:absolute;z-index:3;margin:0;
+  left:calc(-1 * clamp(var(--space-6),3.5vw,var(--space-11)));
+  top:clamp(var(--space-8),6vw,var(--space-12));
+  width:clamp(120px,13vw,180px);aspect-ratio:1/1;
+  border-radius:var(--radius-lg);overflow:hidden;
+  border:6px solid var(--white);box-shadow:var(--shadow-lg)}
+.fp-hero__aside img{width:100%;height:100%;object-fit:cover;object-position:center 60%}
+
+/* The seam. Overlaps the portrait's bottom-left corner AND hangs past the
+   hero's bottom edge onto section 2's surface, which is what stops the fold
+   reading as a hard cut. Absolute, so it cannot add height to the hero;
+   section 2's extra top padding is what makes room for it. */
+.fp-northstar{position:absolute;z-index:4;margin:0;
+  left:calc(-1 * clamp(var(--space-7),7vw,var(--space-14)));
+  bottom:calc(-1 * clamp(var(--space-9),6vw,var(--space-13)));
+  width:min(430px,88%);
+  padding:clamp(var(--space-6),2.4vw,var(--space-8));
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  border-radius:var(--fp-radius);box-shadow:var(--shadow-lg);
+  isolation:isolate;overflow:hidden;--pattern-ink:var(--blue-600)}
+/* Brand honeycomb, graduated in the paint so it is texture in the empty corner
+   and gone before it reaches the quote. Same technique as the reference build:
+   the SVG is a mask, so one file serves every colour. */
+.fp-northstar::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,var(--pattern-ink) 0%,var(--pattern-ink) 16%,transparent 62%);
+  opacity:.75;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:72px;mask-size:72px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.fp-northstar figcaption{margin:0 0 var(--space-3);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.fp-northstar blockquote{margin:0}
+.fp-northstar p{margin:0;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,.95rem + .45vw,1.3rem);line-height:1.4;letter-spacing:var(--ls-heading);
+  color:var(--white)}
+
+/* ==================== 2 · How Change Happens ============================= */
+/* A sticky intro against a staggered photo mosaic. The intro holds while the
+   five steps travel past it, which is what keeps the section from reading as
+   a list. */
+.fp-change{background:var(--surface-page)}
+.fp-change__grid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);
+  gap:clamp(var(--space-8),4vw,var(--space-13));align-items:start}
+
+.fp-change__intro-inner{position:sticky;top:calc(92px + var(--space-8))}
+.fp-change h2{margin:0;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+.fp-change .em-rule{margin:var(--space-6) 0}
+.fp-change__lede{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.65;
+  color:var(--text-body);max-width:42ch}
+.fp-change__label{margin:0;padding-top:var(--space-5);border-top:1px solid var(--border-subtle);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+
+/* The mosaic. Five tiles on a 6-column grid at five different sizes, so the
+   arrangement is composed rather than repeated. Grid areas, not margins —
+   the whole thing collapses to a single column with one rule below. */
+.fp-mosaic{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:clamp(var(--space-4),1.4vw,var(--space-6))}
+.fp-tile--a{grid-column:span 4}
+.fp-tile--b{grid-column:span 2}
+.fp-tile--c{grid-column:span 2}
+.fp-tile--d{grid-column:span 4}
+.fp-tile--e{grid-column:span 6}
+
+.fp-tile{position:relative;isolation:isolate;overflow:hidden;
+  border-radius:var(--fp-radius);min-height:clamp(180px,17vw,236px);
+  display:flex;align-items:flex-end;
+  padding:clamp(var(--space-5),1.8vw,var(--space-7));
+  background:var(--surface-navy-deep);
+  transition:transform var(--dur-slow) var(--ease-out),box-shadow var(--dur-slow) var(--ease-out)}
+.fp-tile--e{min-height:clamp(160px,13vw,196px)}
+.fp-tile:hover,.fp-tile:focus-within{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+
+/* Scrim as a gradient rather than a flat wash: the faces at the top of each
+   photograph stay readable, the copy at the bottom sits on near-solid navy.
+   Measured at the darkest stop: --white on rgba(0,41,53,.88) over any source
+   pixel is >= 13:1, so no photograph can put this copy under AA. */
+.fp-tile__bg{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.fp-tile::after{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(190deg,rgba(0,41,53,.28) 0%,rgba(0,41,53,.72) 46%,rgba(0,41,53,.92) 100%)}
+.fp-tile:hover .fp-tile__bg,.fp-tile:focus-within .fp-tile__bg{transform:scale(1.05)}
+
+.fp-tile__body{position:relative;max-width:44ch}
+.fp-tile__num{margin:0 0 var(--space-3);font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);color:var(--orange-300)}
+.fp-tile h3{margin:0 0 var(--space-3);font-size:clamp(1.0625rem,.95rem + .4vw,1.375rem);
+  font-weight:var(--fw-bold);line-height:1.2;color:var(--white)}
+.fp-tile__text{margin:0;font-size:var(--fs-small);line-height:1.55;color:var(--text-inverse-muted)}
+
+/* ==================== 3 · Three Foundations ============================== */
+/* Three panels climbing a diagonal. The stagger is the point: equal cards in a
+   row is the shape this section is specifically avoiding. */
+.fp-foundations{background:var(--surface-tint)}
+.fp-foundations__head{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);
+  gap:clamp(var(--space-6),3vw,var(--space-12));align-items:end;
+  margin-bottom:clamp(var(--space-9),4vw,var(--space-12))}
+.fp-foundations h2{margin:0;font-size:clamp(1.75rem,1.15rem + 2.1vw,2.9rem);
+  font-weight:var(--fw-black);line-height:1.04;letter-spacing:-.03em;color:var(--em-blue)}
+.fp-foundations__intro{margin:0;font-size:var(--fs-body);line-height:1.7;color:var(--text-body);
+  max-width:62ch}
+.fp-foundations__intro strong{color:var(--em-blue);font-weight:var(--fw-semibold)}
+
+.fp-pillars{display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(var(--space-5),2vw,var(--space-8));align-items:start}
+/* The diagonal. Third panel highest, first lowest — the section reads as a
+   rise, which is the argument it is making. */
+.fp-pillars>:nth-child(1){margin-top:clamp(var(--space-8),4.5vw,var(--space-13))}
+.fp-pillars>:nth-child(2){margin-top:clamp(var(--space-4),2.2vw,var(--space-9))}
+.fp-pillars>:nth-child(3){margin-top:0}
+
+.fp-pillar{position:relative;background:var(--surface-card);border-radius:var(--fp-radius);
+  overflow:hidden;box-shadow:var(--shadow-sm);
+  transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.fp-pillar:hover,.fp-pillar:focus-within{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.fp-pillar__media{display:block;aspect-ratio:4/3;overflow:hidden;background:var(--blue-100)}
+/* Three different crops, so the trio reads as a composition rather than as one
+   card repeated. Paired with the diagonal below, no two panels share a
+   silhouette. */
+.fp-pillars>:nth-child(1) .fp-pillar__media{aspect-ratio:4/5}
+.fp-pillars>:nth-child(2) .fp-pillar__media{aspect-ratio:1/1}
+.fp-pillars>:nth-child(3) .fp-pillar__media{aspect-ratio:5/4}
+.fp-pillar__media img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.fp-pillar:hover .fp-pillar__media img,
+.fp-pillar:focus-within .fp-pillar__media img{transform:scale(1.05)}
+.fp-pillar__body{padding:clamp(var(--space-6),2.2vw,var(--space-8));
+  display:flex;flex-direction:column;height:calc(100% - 0px)}
+
+.fp-pillar__title{margin:0 0 var(--space-4);font-size:var(--fs-h4);font-weight:var(--fw-black);
+  text-transform:uppercase;letter-spacing:var(--ls-caps);line-height:1.15}
+.fp-pillar__title a{color:var(--em-blue);text-decoration:none}
+/* The whole card is the target; the heading link is what carries the
+   accessible name, so the overlay is anchored to it rather than to the card.
+   The media link above is aria-hidden and untabbable so the card exposes one
+   destination, not two. */
+.fp-pillar__title a::after{content:"";position:absolute;inset:0;z-index:1}
+.fp-pillar:hover .fp-pillar__title a,
+.fp-pillar__title a:focus-visible{color:var(--em-orange-ink)}
+.fp-pillar__promise{margin:0 0 var(--space-5);font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:var(--fs-body);line-height:1.4;color:var(--text-strong)}
+.fp-pillar__text{margin:0 0 var(--space-6);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body)}
+.fp-pillar__flag{display:block;margin-bottom:2px;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.fp-pillar__more{margin-top:auto;display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-blue)}
+.fp-pillar__more svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.fp-pillar:hover .fp-pillar__more{color:var(--em-orange-ink)}
+.fp-pillar:hover .fp-pillar__more svg{transform:translateX(4px)}
+
+/* ==================== 4 · Mississippi Stories ============================ */
+/* A pinned portrait against quotes that travel past it. */
+.fp-stories{background:var(--surface-navy)}
+.fp-stories__grid{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);
+  gap:clamp(var(--space-8),4.5vw,var(--space-14));align-items:start}
+.fp-stories__aside-inner{position:sticky;top:calc(92px + var(--space-8))}
+.fp-stories__portrait{margin:0 0 clamp(var(--space-6),2.5vw,var(--space-8));
+  border-radius:var(--fp-radius);overflow:hidden;aspect-ratio:4/5;
+  box-shadow:var(--shadow-lg)}
+.fp-stories__portrait img{width:100%;height:100%;object-fit:cover;object-position:center 24%}
+.fp-stories h2{margin:0 0 var(--space-5);font-size:clamp(1.6rem,1.15rem + 1.7vw,2.5rem);
+  font-weight:var(--fw-black);line-height:1.08;letter-spacing:-.025em;color:var(--white)}
+/* Light type on dark reads a weight lighter, so the measure gets more leading
+   than the same size does on white. */
+.fp-stories__lede{margin:0 0 var(--space-7);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-inverse-muted);max-width:44ch}
+
+.fp-quotes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+/* Hairlines, not cards. Three quote cards on navy would be the third card grid
+   on one page; a ruled sequence keeps the voice on the words. */
+.fp-quote{padding:clamp(var(--space-8),3.5vw,var(--space-12)) 0;
+  border-bottom:1px solid rgba(255,255,255,.16)}
+.fp-quote:first-child{padding-top:0}
+.fp-quote:last-child{border-bottom:0;padding-bottom:0}
+.fp-quote blockquote{margin:0 0 var(--space-6);position:relative}
+.fp-quote blockquote p{margin:0;font-family:var(--font-display);font-weight:var(--fw-medium);
+  font-size:clamp(1.25rem,1rem + 1.15vw,2rem);line-height:1.35;letter-spacing:-.015em;
+  color:var(--white);text-wrap:balance}
+.fp-quote__attr{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-3);
+  font-size:var(--fs-small);color:var(--text-inverse-muted)}
+.fp-quote__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--orange-300)}
+
+/* ==================== 5 · Latest Insights ================================ */
+/* One dominant story, two secondary, and the podcast as a wide bar that
+   spans both columns and closes the block. */
+.fp-insights{background:var(--surface-page)}
+.fp-insights__head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:clamp(var(--space-5),3vw,var(--space-10));align-items:baseline;
+  padding-bottom:var(--space-7);margin-bottom:clamp(var(--space-8),3vw,var(--space-10));
+  border-bottom:2px solid var(--em-blue)}
+.fp-insights h2{margin:0;font-size:clamp(1.6rem,1.2rem + 1.5vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1;letter-spacing:-.03em;color:var(--em-blue);white-space:nowrap}
+.fp-insights__lede{margin:0;font-size:var(--fs-small);line-height:1.6;color:var(--text-body);
+  max-width:56ch}
+.fp-insights__all{display:inline-flex;align-items:center;gap:var(--space-3);white-space:nowrap;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink);
+  text-decoration:none;min-height:24px}
+.fp-insights__all svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.fp-insights__all:hover{color:var(--em-blue)}
+.fp-insights__all:hover svg{transform:translateX(4px)}
+
+.fp-feed{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);
+  gap:clamp(var(--space-6),2.5vw,var(--space-9))}
+.fp-feed__lead{grid-row:span 2}
+.fp-pod{grid-column:1 / -1}
+
+.fp-feed__link{display:flex;flex-direction:column;height:100%;text-decoration:none;color:inherit}
+.fp-feed__media{display:block;overflow:hidden;border-radius:var(--fp-radius);
+  margin-bottom:var(--space-5);background:var(--blue-100)}
+.fp-feed__media img{width:100%;height:100%;object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.fp-feed__lead .fp-feed__media{aspect-ratio:16/11}
+.fp-feed__item .fp-feed__media{aspect-ratio:16/9}
+.fp-feed__link:hover .fp-feed__media img{transform:scale(1.04)}
+.fp-feed__meta{display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-muted)}
+.fp-feed__title{font-family:var(--font-display);font-weight:var(--fw-bold);line-height:1.22;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.fp-feed__lead .fp-feed__title{font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem)}
+.fp-feed__item .fp-feed__title{font-size:var(--fs-h5)}
+.fp-feed__link:hover .fp-feed__title{color:var(--em-orange-ink)}
+.fp-feed__excerpt{margin-top:var(--space-3);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:52ch}
+
+/* The podcast bar is the one place on this page that uses the tint as a
+   surface, which is what separates it from the three stories above it. */
+.fp-pod{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;
+  gap:clamp(var(--space-5),2vw,var(--space-8));
+  padding:clamp(var(--space-6),2.2vw,var(--space-8));
+  background:var(--surface-tint);border-radius:var(--fp-radius);text-decoration:none;
+  transition:background var(--dur) var(--ease-out)}
+.fp-pod:hover{background:var(--blue-200)}
+.fp-pod__play{width:56px;height:56px;flex:0 0 auto;border-radius:var(--radius-pill);
+  background:var(--em-orange);color:var(--white);display:grid;place-items:center;
+  transition:transform var(--dur) var(--ease-out)}
+.fp-pod:hover .fp-pod__play{transform:scale(1.08)}
+.fp-pod__play svg{width:22px;height:22px;margin-left:2px}
+.fp-pod__show{display:block;margin-bottom:2px;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.fp-pod__title{display:block;margin-bottom:var(--space-2);font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-h4);line-height:1.2;color:var(--em-blue)}
+.fp-pod__meta{display:block;font-size:var(--fs-small);line-height:1.55;color:var(--text-body);
+  max-width:60ch}
+.fp-pod__cue{flex:0 0 auto;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-blue)}
+
+/* ========================== 6 · Join Us ================================== */
+/* A pinwheel: the newsletter takes the dominant panel, a photograph fills the
+   corner it leaves, and the two remaining ways in sit beneath it. The three
+   blocks are the three the roadmap names, in its order. */
+.fp-join{background:var(--surface-tint)}
+.fp-join__grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+  grid-template-areas:"lead photo" "amb give";
+  gap:clamp(var(--space-5),2vw,var(--space-7))}
+.fp-join__lead{grid-area:lead}
+.fp-join__photo{grid-area:photo}
+.fp-way--amb{grid-area:amb}
+.fp-way--give{grid-area:give}
+
+.fp-join__lead{position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(var(--space-8),3.5vw,var(--space-12));
+  background:var(--surface-navy-deep);border-radius:var(--fp-radius);
+  --pattern-ink:var(--blue-600)}
+.fp-join__lead::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 66%);
+  opacity:.7;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:75px;mask-size:75px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.fp-join h2{margin:0 0 var(--space-4);font-size:clamp(1.75rem,1.2rem + 2vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.04;letter-spacing:-.03em;color:var(--white)}
+.fp-join__lede{margin:0 0 var(--space-7);font-size:var(--fs-lead);line-height:1.6;
+  color:var(--text-inverse-muted);max-width:40ch}
+.fp-join__form{display:flex;gap:var(--space-3);flex-wrap:wrap;max-width:520px}
+.fp-join__form .em-input{flex:1 1 220px}
+.fp-join__note{margin:var(--space-4) 0 0;font-size:var(--fs-caption);
+  color:var(--text-inverse-muted)}
+
+.fp-join__photo{margin:0;border-radius:var(--fp-radius);overflow:hidden;min-height:220px}
+.fp-join__photo img{width:100%;height:100%;object-fit:cover;object-position:center 34%}
+
+.fp-way{display:flex;flex-direction:column;align-items:flex-start;
+  padding:clamp(var(--space-6),2.5vw,var(--space-9));
+  background:var(--surface-card);border-radius:var(--fp-radius);text-decoration:none;
+  transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.fp-way:hover,.fp-way:focus-visible{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.fp-way h3{margin:0 0 var(--space-4);font-size:var(--fs-h3);font-weight:var(--fw-bold);
+  color:var(--em-blue)}
+.fp-way p{margin:0 0 var(--space-7);font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body);max-width:42ch}
+.fp-way__cue{margin-top:auto;display:inline-flex;align-items:center;gap:var(--space-3);
+  min-height:24px;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink)}
+.fp-way__cue svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.fp-way:hover .fp-way__cue svg{transform:translateX(4px)}
+
+/* ========================== Responsive =================================== */
+@media (max-width:1100px){
+  .fp-change__grid{grid-template-columns:1fr;gap:var(--space-9)}
+  .fp-change__intro-inner{position:static}
+  .fp-change__lede{max-width:60ch}
+  .fp-stories__grid{grid-template-columns:1fr;gap:var(--space-9)}
+  .fp-stories__aside-inner{position:static}
+  .fp-stories__portrait{aspect-ratio:16/9}
+  .fp-stories__portrait img{object-position:center 22%}
+}
+
+@media (max-width:960px){
+  /* The hero's overlap needs two columns to make sense. Below this the aside
+     photograph and the north-star quote both rejoin the flow, and the quote
+     stops hanging past the section edge. */
+  .fp-hero__grid{grid-template-columns:1fr;row-gap:var(--space-8);
+    padding-bottom:clamp(var(--space-8),6vw,var(--space-11))}
+  .fp-hero__media{aspect-ratio:4/3}
+  /* Both overlaps rejoin the flow: at one column there is no gutter for them
+     to reach into, and an inset photo over a full-width picture just covers
+     the subject's face. */
+  .fp-hero__aside{display:none}
+  .fp-northstar{position:static;width:auto;margin-top:var(--space-5)}
+  .fp-change{padding-top:calc(var(--fp-step) + var(--space-12))}
+
+  .fp-foundations__head{grid-template-columns:1fr;gap:var(--space-6);align-items:start}
+  .fp-pillars{grid-template-columns:repeat(2,1fr)}
+  .fp-pillars>:nth-child(1),.fp-pillars>:nth-child(2),.fp-pillars>:nth-child(3){margin-top:0}
+  /* The diagonal cannot survive two columns; the third panel spans instead so
+     the arrangement still isn't three equal boxes. */
+  .fp-pillars>:nth-child(3){grid-column:1 / -1}
+  .fp-pillars>:nth-child(3) .fp-pillar__media{aspect-ratio:21/9}
+
+  .fp-insights__head{grid-template-columns:1fr;gap:var(--space-4);align-items:start}
+  .fp-insights h2{white-space:normal}
+  .fp-feed{grid-template-columns:1fr}
+  .fp-feed__lead{grid-row:auto}
+  .fp-pod{grid-template-columns:auto minmax(0,1fr);row-gap:var(--space-4)}
+  .fp-pod__cue{grid-column:2}
+
+  .fp-join__grid{grid-template-columns:1fr;grid-template-areas:"lead" "photo" "amb" "give"}
+  .fp-join__photo{aspect-ratio:16/9;min-height:0}
+}
+
+@media (max-width:700px){
+  /* The mosaic collapses to a single column. Every tile spans, so the varied
+     spans above become one consistent stack rather than a broken grid. */
+  .fp-mosaic{grid-template-columns:1fr}
+  .fp-tile--a,.fp-tile--b,.fp-tile--c,.fp-tile--d,.fp-tile--e{grid-column:1 / -1}
+  .fp-pillars{grid-template-columns:1fr}
+  .fp-pillars>:nth-child(3){grid-column:auto}
+  .fp-pillars>:nth-child(3) .fp-pillar__media{aspect-ratio:4/3}
+  .fp-join__form .em-input{flex:1 1 100%}
+}
+
+@media (max-width:420px){
+  /* The lattice reads as noise once the panel is this narrow. */
+  .fp-northstar::before,.fp-join__lead::before{-webkit-mask-size:56px;mask-size:56px}
+}
+
+/* ========================== Reduced motion =============================== */
+/* tokens/base.css already collapses every duration globally. What is left here
+   are the transforms that would still fire on hover as instant jumps. */
+@media (prefers-reduced-motion:reduce){
+  .fp-tile:hover,.fp-tile:focus-within,
+  .fp-pillar:hover,.fp-pillar:focus-within,
+  .fp-way:hover,.fp-way:focus-visible{transform:none}
+  .fp-tile:hover .fp-tile__bg,.fp-tile:focus-within .fp-tile__bg,
+  .fp-pillar:hover .fp-pillar__media img,.fp-pillar:focus-within .fp-pillar__media img,
+  .fp-feed__link:hover .fp-feed__media img{transform:none}
+  .fp-pod:hover .fp-pod__play,
+  .fp-pillar:hover .fp-pillar__more svg,
+  .fp-way:hover .fp-way__cue svg,
+  .fp-insights__all:hover svg{transform:none}
+}

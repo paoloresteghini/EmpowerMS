@@ -13,9 +13,21 @@
   line-height:1.65;color:var(--text-body);max-width:70ch}
 .ch__note{margin:0;font-size:var(--fs-caption);color:var(--text-muted)}
 
+/* Two columns, so the six cards read as three rows: the pick and Option A,
+   then B and C, then D and the baseline. Fixed rather than auto-fit — auto-fit
+   packed three across at desktop, which put the pick and the baseline on the
+   same row and made the six read as a wall rather than as a shortlist. Wider
+   cards also stop the Signature line wrapping to three lines.
+
+   A single column below 760px: two columns of a 320px minimum plus the gutters
+   cannot fit under that, and auto-fit is not doing the collapsing any more. */
 .ch__list{list-style:none;margin:clamp(var(--space-9),4vw,var(--space-12)) 0 0;padding:0;
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   gap:clamp(var(--space-5),2vw,var(--space-7))}
+
+@media (max-width:760px){
+  .ch__list{grid-template-columns:1fr}
+}
 
 .ch__opt{position:relative;display:flex;flex-direction:column;
   padding:clamp(var(--space-7),2.6vw,var(--space-9));

@@ -666,3 +666,12 @@ test('mega menu drives aria-expanded on the trigger', () => {
   assert.match(megaJs, /setAttribute\('aria-expanded', 'true'\)/);
   assert.match(megaJs, /setAttribute\('aria-expanded', 'false'\)/);
 });
+
+test('README documents both new layers for the Elementor hand-off', () => {
+  const readme = readFileSync('README.md', 'utf8');
+  for (const needle of ['## Motion', '## Mega menus', 'data-reveal', 'data-reveal-group',
+                        'data-reveal-entrance', 'prefers-reduced-motion', 'css/motion.css',
+                        'js/reveal.js', 'css/megamenu.css', 'js/megamenu.js']) {
+    assert.ok(readme.includes(needle), `README does not document ${needle}`);
+  }
+});

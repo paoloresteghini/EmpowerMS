@@ -652,8 +652,13 @@ test('hover intent is gated on a fine pointer', () => {
 });
 
 test('mega menu is disabled below the mobile nav breakpoint', () => {
-  assert.match(megaJs, /min-width:\s*961px/,
-    'no desktop media query — panels would fight the mobile nav');
+  // Same boundary value as css/homepage.css's nav breakpoint and
+  // css/megamenu.css's panel breakpoint — both max-width:960px. A mismatched
+  // pair (e.g. min-width:961px here) leaves a sliver viewport width where
+  // the desktop nav is hidden, the mobile toggle is hidden, and the mega
+  // triggers are inert.
+  assert.match(megaJs, /max-width:\s*960px/,
+    'no matching mobile media query — panels would fight the mobile nav');
 });
 
 test('mega menu implements the documented keyboard map', () => {
@@ -665,6 +670,32 @@ test('mega menu implements the documented keyboard map', () => {
 test('mega menu drives aria-expanded on the trigger', () => {
   assert.match(megaJs, /setAttribute\('aria-expanded', 'true'\)/);
   assert.match(megaJs, /setAttribute\('aria-expanded', 'false'\)/);
+});
+
+test('close() and show() keep is-open and hidden in sync', () => {
+  // css/megamenu.css's reduced-motion block forces every panel opaque
+  // regardless of .is-open, so `hidden` is the ONLY thing keeping a closed
+  // panel out of the layout for reduced-motion users. If close() and show()
+  // ever get split so is-open and hidden come off in different code paths,
+  // reduced-motion users get five stacked, permanently-visible panels while
+  // this suite stays green — so this test parses the actual function
+  // bodies rather than grepping the whole file, and will fail if either
+  // half of the invariant is dropped from either function.
+  const closeStart = megaJs.indexOf('function close()');
+  const showStart = megaJs.indexOf('function show(menu)');
+  const afterStart = megaJs.indexOf('function after(');
+  assert.ok(closeStart > -1 && showStart > closeStart && afterStart > showStart,
+    'expected close(), then show(menu), then after() in js/megamenu.js — cannot isolate function bodies');
+
+  const closeBody = megaJs.slice(closeStart, showStart);
+  const showBody = megaJs.slice(showStart, afterStart);
+
+  assert.match(closeBody, /\.panel\.classList\.remove\('is-open'\)/,
+    'close() no longer removes is-open from the panel');
+  assert.match(closeBody, /\.panel\.hidden\s*=\s*true/,
+    'close() no longer hides the panel');
+  assert.match(showBody, /\.panel\.hidden\s*=\s*false/,
+    'show() no longer unhides the panel');
 });
 
 test('README documents both new layers for the Elementor hand-off', () => {

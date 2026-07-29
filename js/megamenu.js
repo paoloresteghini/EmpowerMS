@@ -15,7 +15,10 @@ const header = document.querySelector('.em-header');
 const OPEN_DELAY = 120;
 const CLOSE_DELAY = 200;
 
-const desktop = window.matchMedia('(min-width: 961px)');
+// Same boundary value as css/homepage.css's nav breakpoint and
+// css/megamenu.css's panel breakpoint (both max-width:960px), inverted —
+// so JS and CSS can never disagree about which side of 960/961px they're on.
+const mobile = window.matchMedia('(max-width: 960px)');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 
 const menus = header
@@ -34,11 +37,14 @@ if (menus.length) {
   let open = null;
   let timer = 0;
 
-  for (const { panel } of menus) {
+  for (const { trigger, panel } of menus) {
     panel.hidden = true;
-    // Stagger index for the link cascade, mirroring css/motion.css.
+    trigger.setAttribute('aria-expanded', 'false');
+    // Stagger index for the link cascade. Its own custom property, scaled
+    // at 30ms in css/megamenu.css — not the same clock as --reveal-i (70ms
+    // in css/motion.css), even though both drive a staggered fade-in.
     panel.querySelectorAll('.em-mega__link').forEach((link, i) => {
-      link.style.setProperty('--reveal-i', String(i));
+      link.style.setProperty('--mega-i', String(i));
     });
   }
 
@@ -82,7 +88,7 @@ if (menus.length) {
     // Click always works — it is the only path on touch, and it pins the
     // panel open for mouse users who prefer not to hover.
     trigger.addEventListener('click', () => {
-      if (!desktop.matches) return;
+      if (mobile.matches) return;
       if (open === menu) close();
       else show(menu);
     });
@@ -93,19 +99,19 @@ if (menus.length) {
       // while one is already open is instant — the user has committed.
       for (const el of [item, panel]) {
         el.addEventListener('mouseenter', () => {
-          if (!desktop.matches) return;
+          if (mobile.matches) return;
           if (open) show(menu);
           else after(OPEN_DELAY, () => show(menu));
         });
         el.addEventListener('mouseleave', () => {
-          if (!desktop.matches) return;
+          if (mobile.matches) return;
           after(CLOSE_DELAY, close);
         });
       }
     }
 
     trigger.addEventListener('keydown', (event) => {
-      if (!desktop.matches) return;
+      if (mobile.matches) return;
       const index = menus.indexOf(menu);
 
       if (event.key === 'ArrowDown') {
@@ -138,5 +144,5 @@ if (menus.length) {
   });
 
   // Crossing the breakpoint hands navigation back to the mobile menu.
-  desktop.addEventListener('change', close);
+  mobile.addEventListener('change', close);
 }

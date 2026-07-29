@@ -10,7 +10,10 @@ const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 root.setAttribute('data-reveal', 'on');
 
-const all = [...document.querySelectorAll('[data-reveal]')];
+// Query from body, not document: <html> now carries data-reveal="on" itself
+// (the gate above), and a document-wide query would sweep the root element
+// into this collection alongside the content elements it's meant to gate.
+const all = [...document.body.querySelectorAll('[data-reveal]')];
 
 // Stagger index. Position is counted within the nearest enclosing group,
 // not across the page, so a card's delay reflects where it sits in its own

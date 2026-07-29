@@ -61,7 +61,7 @@
   transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
 [data-mega="on"] .em-mega.is-open .em-mega__link,
 [data-mega="on"] .em-mega.is-open .em-mega__feature{opacity:1;transform:none}
-[data-mega="on"] .em-mega.is-open .em-mega__link{transition-delay:calc(var(--reveal-i, 0) * 30ms)}
+[data-mega="on"] .em-mega.is-open .em-mega__link{transition-delay:calc(var(--mega-i, 0) * 30ms)}
 
 /* Below the desktop breakpoint the mobile nav owns navigation entirely.
    Unconditional — this must hold whether or not the script loaded. */

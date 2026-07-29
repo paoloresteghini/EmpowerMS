@@ -9,9 +9,7 @@ name: Pages
 
 on:
   push:
-    # feat/homepage-variations is here so the review link can be published
-    # before the branch merges. Drop it once this lands on master.
-    branches: [master, feat/homepage-variations]
+    branches: [master]
   workflow_dispatch:
 
 permissions:

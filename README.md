@@ -39,6 +39,15 @@ The foundations panels are `c2-*`, not `at-*`: this page never loads
 would imply a dependency that does not exist. If Empower picks Option C, that
 section then exists twice and one copy should go.
 
+**Live review link:** <https://paoloresteghini.github.io/EmpowerMS/> — the
+chooser, linking all six. Published from `master` by
+`.github/workflows/pages.yml`, which runs the suite, then `pages.mjs` to
+assemble `_site/`. The published copy carries `robots.txt` and a `noindex`
+meta that the hand-off files do not: it is a client review link for unreleased
+brand work and stand-in photography, so it is reachable by anyone holding the
+URL and invisible to search engines. Both are injected into the `_site` copy,
+so `dist/` and `src/` stay byte-identical to what WordPress receives.
+
 Each option's design rationale is in `docs/homepage-options-brief.md`. Each
 stylesheet opens with a comment stating that option's spatial idea and its
 signature interaction — read that first before changing anything in it.

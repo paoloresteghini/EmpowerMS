@@ -357,28 +357,141 @@ body{overflow-wrap:break-word}
 .em-insights__row .em-article__excerpt{margin:0 0 var(--space-4);max-width:52ch}
 .em-insights__row .em-article__more{text-decoration:none}
 
-/* ---------- Join Us ---------- */
+/* ---------- Join Us ----------
+   Deliberately NOT the head-grid-plus-two-column-split every other section
+   uses. Foundations, Stories and the previous Join layout all rendered as
+   "one dominant panel left, two stacked cards right", which made the closing
+   section read as a repeat of the Stories section directly above it. Here the
+   page's last beat is a single stacked composition instead: one navy slab
+   carrying the whole ask, then two quiet, un-carded ways in beneath it. The
+   h2 lives inside the slab, so this section has no separate heading block. */
 .em-join-wrap{background:var(--surface-tint)}
-.em-join__head{display:grid;grid-template-columns:1fr auto;gap:var(--space-9);align-items:end;
-  margin-bottom:var(--space-9)}
-.em-join__head h2{margin:0}
-.em-join__head .em-rule{margin:var(--space-5) 0 0}
-.em-join__head .em-lead{max-width:360px;margin:0}
+.em-join{display:grid;gap:clamp(var(--space-9),4.5vw,var(--space-12))}
 
-.em-join{display:grid;grid-template-columns:1.45fr 1fr;gap:var(--space-6);align-items:stretch}
-.em-join__panel{display:flex;flex-direction:column;justify-content:center;
-  background:var(--surface-card);border:1px solid var(--border-subtle);
-  border-radius:var(--radius-panel);padding:var(--space-11) var(--space-9)}
-.em-join__panel h3{margin:0 0 var(--space-4);font-size:var(--fs-h2)}
-.em-join__body{font-size:var(--fs-lead);line-height:1.6;color:var(--text-body);max-width:46ch;
-  margin:0 0 var(--space-8)}
-.em-join__panel .em-newsletter__form{max-width:520px;flex-wrap:nowrap}
+/* --surface-navy-deep, not the --surface-navy the Stories band and the footer
+   use — the slab has to read as its own object on the tint, not as a third
+   instance of the same navy panel. */
+.em-join__slab{position:relative;isolation:isolate;overflow:hidden;
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:center;
+  background:var(--surface-navy-deep);border-radius:var(--radius-panel);
+  padding:clamp(var(--space-9),4.5vw,var(--space-13)) clamp(var(--space-7),3.5vw,var(--space-12));
+  --pattern-ink:var(--blue-600)}
 
-.em-join__col{display:grid;grid-template-rows:1fr 1fr;gap:var(--space-6)}
-.em-join__card{justify-content:flex-start}
-.em-join__card h3{margin:0 0 var(--space-3);font-size:var(--fs-h4)}
-.em-join__card p{margin:0 0 auto;font-size:var(--fs-small);line-height:1.55;color:var(--text-body)}
-.em-join__card .em-btn{align-self:flex-start;margin-top:var(--space-6)}
+/* ---------- Brand honeycomb ----------
+   patterns/hex-lattice.svg is a true tile: 120 x 69.28 is the hexagon lattice's
+   own period, so it repeats without a seam at any size. It is applied as a MASK,
+   not as a background image, which is why one file serves every colour — the
+   paint is --pattern-ink and the skin can retint it. That replaces the supplied
+   assets/pattern-blue.png + pattern-orange.png pair, which are baked
+   compositions rather than tiles (their empty half meets their dense half at
+   every repeat) and need one raster per brand colour.
+
+   The lattice is graduated, not one flat strength: it runs on the slab's
+   diagonal, densest in the empty bottom-right corner and gone by the time it
+   reaches the headline in the top-left. `to top left` follows the corner
+   diagonal at whatever aspect the slab happens to be, so the direction holds
+   from 1440 down to 320 without a per-breakpoint angle. The
+   graduation lives in the PAINT, not in a second mask layer — a gradient
+   background showing through the tile mask. Doing it with `mask-composite`
+   would be the obvious route, but where that property is unsupported the two
+   mask layers add instead of intersecting, and the fallback is a solid ink
+   blob across the slab rather than a pattern.
+
+   Contrast, measured over a lattice stroke rather than over the flat slab:
+   white sits at 11.75:1 and --text-inverse-muted at 7.24:1. Even with the ink
+   at full strength it is 6.56:1 for white, so the lattice cannot put the
+   slab's copy under AA at any opacity. */
+.em-join__slab::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,
+    var(--pattern-ink) 0%, var(--pattern-ink) 14%, transparent 66%);
+  opacity:.7;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');
+  mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:75px;mask-size:75px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.em-join__slab h2{margin:0 0 var(--space-5);color:var(--text-inverse);line-height:1.12}
+/* Light type on dark reads a weight lighter; 1.65 against the 1.6 used for
+   the same lead size on light surfaces. */
+.em-join__lead{margin:0;font-size:var(--fs-lead);line-height:1.65;
+  color:var(--text-inverse-muted);max-width:44ch}
+
+.em-join__signup{gap:var(--space-4)}
+.em-join__signup .em-newsletter__form{max-width:520px}
+.em-join__signup .em-input{flex:1 1 220px}
+
+.em-join__ways{display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(var(--space-6),2.5vw,var(--space-8))}
+/* The two descriptions run to different lengths. Without this the two actions
+   sit at different heights and the pair reads as misaligned rather than as
+   two peers; the paragraph absorbs the difference instead. */
+/* A real surface, so the wash below has something to be contained by: without
+   it the masked photo's right and bottom edges cut off in mid-air against the
+   tint and read as a broken image rather than as atmosphere. */
+.em-join__way{position:relative;isolation:isolate;overflow:hidden;
+  background:var(--surface-card);border-radius:var(--radius-panel);
+  padding:clamp(var(--space-7),3vw,var(--space-10));
+  display:flex;flex-direction:column;align-items:flex-start;
+  transition:box-shadow var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.em-join__way:hover,.em-join__way:focus-within{box-shadow:var(--shadow-md);
+  transform:translateY(var(--lift-hover))}
+
+/* Photographic wash, not a photo: the image is masked to a radial gradient
+   anchored in the far corner, so it fades out well before it reaches the
+   heading and the action. Both files are already loaded higher up the page,
+   so this adds no bytes. Peak opacity is bounded on purpose. Measured, not
+   assumed: the darkest source pixel anywhere under either paragraph,
+   composited at the .26 hover opacity over --surface-card and treating the
+   mask as fully opaque there (it isn't), leaves --text-body at 4.89:1 and
+   5.09:1 against AA's 4.5:1. Raising the opacity past ~.3 breaks that. The partial
+   desaturation is what keeps one golden-hour photo and one black-and-white
+   one reading as a pair rather than as two unrelated pictures. */
+.em-join__wash{position:absolute;inset:0;z-index:-1;width:100%;height:100%;
+  object-fit:cover;object-position:center 34%;opacity:.22;filter:grayscale(.45);
+  -webkit-mask-image:radial-gradient(135% 120% at 108% 112%,black 12%,transparent 74%);
+  mask-image:radial-gradient(135% 120% at 108% 112%,black 12%,transparent 74%);
+  transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out)}
+.em-join__way:hover .em-join__wash,
+.em-join__way:focus-within .em-join__wash{opacity:.26;transform:scale(1.04)}
+/* Per-photo, because the two sources need different handling to read as the
+   same treatment. The community photo is a tall frame whose subject sits low,
+   so the crop is pulled down to the ball and the grass rather than to a
+   cropped torso. The workshop photo is already light and would disappear into
+   a white panel, so it is darkened a touch instead of made more opaque. */
+.em-join__wash--community{object-position:center 62%}
+.em-join__wash--work{object-position:center 40%;filter:grayscale(.45) brightness(.9) contrast(1.1)}
+@media (prefers-reduced-motion:reduce){
+  .em-join__wash{transition:opacity var(--dur) var(--ease-out)}
+  .em-join__way:hover,.em-join__way:focus-within{transform:none}
+  .em-join__way:hover .em-join__wash,
+  .em-join__way:focus-within .em-join__wash{transform:none}
+}
+.em-join__way h3{margin:0 0 var(--space-4);font-size:var(--fs-h3)}
+.em-join__way p{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.6;
+  color:var(--text-body);max-width:44ch}
+.em-join__way p:last-of-type{margin-bottom:auto;padding-bottom:var(--space-6)}
+
+/* flex-end, not center: the label wraps to two lines in a narrow panel, and a
+   centred arrow then floats in the gap beside it instead of trailing the last
+   word. */
+.em-join__action{display:inline-flex;align-items:flex-end;min-height:44px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-lead);
+  color:var(--text-strong);text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+/* The rule belongs to the label, not the whole link: an underline inherited by
+   the arrow draws a second stub under the glyph and follows it as it moves. */
+.em-join__action-label{text-decoration:underline;text-decoration-color:var(--em-orange);
+  text-decoration-thickness:2px;text-underline-offset:6px;
+  transition:text-decoration-color var(--dur) var(--ease-out)}
+.em-join__action:hover{color:var(--em-orange-ink)}
+.em-join__action:hover .em-join__action-label{text-decoration-color:var(--em-orange-ink)}
+.em-join__arrow{margin-left:var(--space-3);
+  transition:transform var(--dur) var(--ease-out)}
+.em-join__action:hover .em-join__arrow{transform:translateX(4px)}
+@media (prefers-reduced-motion:reduce){
+  .em-join__arrow{transition:none}
+  .em-join__action:hover .em-join__arrow{transform:none}
+}
 
 .em-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
@@ -388,10 +501,11 @@ body{overflow-wrap:break-word}
 .em-footer__top{grid-template-columns:1.5fr 1fr 1fr}
 .em-footer__mission{font-size:var(--fs-small);line-height:1.6;color:var(--text-inverse-muted);
   max-width:40ch;margin:0 0 var(--space-6)}
-.em-footer__form{display:flex;gap:var(--space-3);max-width:440px;margin:0 0 var(--space-2)}
-.em-footer__form .em-input{flex:1 1 auto;background:transparent;border-color:var(--border-inverse);
-  border-radius:var(--radius-pill);color:var(--white);padding:14px 22px}
-.em-footer__form .em-input::placeholder{color:var(--text-inverse-muted)}
+/* The footer newsletter form was removed when Join Us took ownership of the
+   single subscribe field on the page — two email inputs inside one scroll
+   asked the same question twice. That also retires the .em-footer__form half
+   of the open --border-inverse contrast question (README, Accessibility);
+   the social buttons and the footer divider still carry it. */
 .em-footer__bottom p{margin:0}
 
 /* ---------- Responsive ---------- */
@@ -441,9 +555,8 @@ body{overflow-wrap:break-word}
 }
 
 @media (max-width:900px){
-  .em-solutions__head,.em-foundations__head,.em-stories__head,.em-join__head{
+  .em-solutions__head,.em-foundations__head,.em-stories__head{
     grid-template-columns:1fr;gap:var(--space-6)}
-  .em-join__head .em-lead{max-width:none}
 
   .em-hero{grid-template-columns:1fr}
   .em-hero__copy{padding:var(--section-y) var(--gutter);order:1}
@@ -456,7 +569,18 @@ body{overflow-wrap:break-word}
   .em-stories__feature{grid-template-columns:1fr}
   .em-stories__col{grid-template-rows:auto auto}
   .em-insights{grid-template-columns:1fr;gap:var(--space-9)}
-  .em-join{grid-template-columns:1fr}
+  .em-join__slab{grid-template-columns:1fr;gap:var(--space-8)}
+  .em-join__lead{max-width:none}
+  .em-join__ways{grid-template-columns:1fr;gap:var(--space-5)}
+  /* Stacked, the panel is taller relative to its width and the corner
+     gradient reads differently: anchored just below the bottom edge it keeps
+     the wash under and beside the action instead of climbing behind the
+     paragraph, and the wider extent stops it disappearing altogether on the
+     narrowest phones. Slightly more opaque because far less of it is visible.
+     .24 stays under the .26 the contrast measurement was taken at. */
+  .em-join__wash{opacity:.24;
+    -webkit-mask-image:radial-gradient(145% 95% at 96% 108%,black 10%,transparent 74%);
+    mask-image:radial-gradient(145% 95% at 96% 108%,black 10%,transparent 74%)}
   .em-footer__top{grid-template-columns:1fr 1fr}
 }
 
@@ -475,7 +599,13 @@ body{overflow-wrap:break-word}
   .em-insights__row{grid-template-columns:1fr;gap:var(--space-5)}
   .em-insights__row>img{width:100%}
   .em-footer__top{grid-template-columns:1fr}
-  .em-footer__form{flex-direction:column}
+  /* The subscribe button drops below the field rather than sharing the row
+     with it — .em-newsletter__form wraps, but a 220px flex basis keeps the
+     input on the button's line until it cannot fit at all. */
+  .em-join__signup .em-input{flex:1 1 100%}
+  /* At --fs-lead the ambassador label needs ~250px against a ~263px panel and
+     wraps on the tightest phones. One step down keeps it on a single line. */
+  .em-join__action{font-size:var(--fs-body)}
 }
 
 /* Below ~324px, .em-header__bar's non-wrapping, non-shrinking children
@@ -526,11 +656,18 @@ body{overflow-wrap:break-word}
    All six sections shipped the same 13px uppercase tracked orange kicker,
    which is the saturated landing-page tell regardless of the copy being real.
    The hero keeps it as the brand kicker; the stories section keeps it on navy.
-   The four remaining sections become a quieter sentence-case lead-in, so the
+   The remaining sections become a quieter sentence-case lead-in, so the
    pattern reads as deliberate rather than as scaffolding. Every string from
-   the roadmap copy deck is preserved. */
+   the roadmap copy deck is preserved. Join Us now carries no kicker at all —
+   its headline opens the slab directly. */
 .em-solutions__head .em-eyebrow,
 .em-foundations__head .em-eyebrow,
-.em-insights__aside .em-eyebrow,
-.em-join__panel .em-eyebrow{font-family:var(--font-body);font-weight:var(--fw-semibold);
+.em-insights__aside .em-eyebrow{font-family:var(--font-body);font-weight:var(--fw-semibold);
   font-size:var(--fs-small);letter-spacing:normal;text-transform:none;color:var(--text-body)}
+
+/* components.css sets ::placeholder to --grey-500, which measures 2.85:1 on
+   the input's white background — under the 4.5:1 that placeholder text needs,
+   same as any other text. --text-muted is 5.29:1 and is the same token the
+   rest of the page's secondary text already uses. The audit's
+   contrast sweep walked rendered text nodes, so it never saw this one. */
+.em-input::placeholder,.em-textarea::placeholder{color:var(--text-muted)}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empower Mississippi — brand honeycomb</title>
+<link rel="stylesheet" href="../tokens/fonts.css">
+<link rel="stylesheet" href="../tokens/colors.css">
+<link rel="stylesheet" href="../tokens/typography.css">
+<link rel="stylesheet" href="../tokens/spacing.css">
+<link rel="stylesheet" href="../tokens/radius.css">
+<link rel="stylesheet" href="../tokens/base.css">
+<style>
+  body{margin:0;background:var(--surface-page);color:var(--text-strong);
+    font-family:var(--font-body);padding:48px 24px 96px}
+  .lab{max-width:1100px;margin:0 auto}
+  h1{font-family:var(--font-display);font-size:32px;margin:0 0 8px}
+  h2{font-family:var(--font-display);font-size:20px;margin:0 0 4px}
+  .sub{color:var(--text-body);max-width:72ch;margin:0 0 40px;line-height:1.6}
+  .meta{margin:0 0 16px;font-size:14px;color:var(--text-body);max-width:72ch;line-height:1.55}
+  .row{display:grid;grid-template-columns:1fr 220px 220px;gap:16px;margin-bottom:48px}
+  .field{border-radius:20px;overflow:hidden;position:relative;min-height:260px}
+  .chip{border-radius:20px;overflow:hidden;position:relative;min-height:120px}
+  .scales{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:48px}
+  .scales .field{min-height:170px}
+
+  /* One asset, any colour: the tile is the mask, the paint is a background. */
+  .field::after,.chip::after{content:"";position:absolute;inset:0;
+    -webkit-mask-image:url(../patterns/hex-lattice.svg);
+    mask-image:url(../patterns/hex-lattice.svg);
+    -webkit-mask-size:var(--size,150px);mask-size:var(--size,150px);
+    -webkit-mask-repeat:repeat;mask-repeat:repeat;
+    background:var(--ink);opacity:var(--strength,1)}
+  .on-navy-deep{background:var(--surface-navy-deep);--ink:var(--blue-600);--strength:.34}
+  .on-navy{background:var(--surface-navy);--ink:var(--blue-600);--strength:.5}
+  .on-orange{background:var(--surface-accent);--ink:var(--orange-700);--strength:.45}
+  .on-tint{background:var(--surface-tint);--ink:var(--blue-400);--strength:.45}
+  .on-white{background:var(--surface-card);--ink:var(--blue-200);--strength:1}
+  .size-60{--size:60px}
+  .size-300{--size:300px}
+
+  .supplied{background:var(--surface-navy) url(../assets/pattern-blue.png) repeat;background-size:340px}
+  .supplied::after{content:none}
+  .label{position:absolute;left:14px;bottom:12px;z-index:1;font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--text-inverse-muted)}
+  .label--dark{color:var(--text-muted)}
+  code{font-size:.92em}
+</style>
+</head>
+<body>
+<div class="lab">
+  <h1>Brand honeycomb</h1>
+  <p class="sub">The tile that ships is <code>patterns/hex-lattice.svg</code>, applied to the Join Us
+  slab in <code>css/homepage.css</code>. This page exists to show two things a static comp cannot:
+  that it repeats without a seam at any size, and that a single file produces every colourway.</p>
+
+  <h2>Supplied — assets/pattern-blue.png</h2>
+  <p class="meta">767×885 raster, tiled at 340px, colour baked into the pixels. It is a composition
+  rather than a tile: roughly half the canvas is empty, so at every repeat the empty region meets
+  the dense one. The seam is visible below, about a third of the way across.</p>
+  <div class="row">
+    <div class="field supplied"><span class="label">repeat at 340px</span></div>
+    <div class="chip supplied"></div>
+    <div class="chip supplied"></div>
+  </div>
+
+  <h2>Honeycomb — one file, every colourway</h2>
+  <p class="meta">Painted with <code>mask-image</code> and a background colour, so navy, orange and
+  tint all come from the same 950-byte SVG. The supplied approach needs one raster per colour, which
+  is why <code>pattern-orange.png</code> exists as a separate file.</p>
+  <div class="row">
+    <div class="field on-navy-deep"><span class="label">--surface-navy-deep · as shipped, .34</span></div>
+    <div class="chip on-orange"></div>
+    <div class="chip on-tint"></div>
+  </div>
+  <div class="row">
+    <div class="field on-navy"><span class="label">--surface-navy · stories band</span></div>
+    <div class="chip on-white"></div>
+    <div class="chip on-navy-deep"></div>
+  </div>
+
+  <h2>Scale</h2>
+  <p class="meta">Vector, so the same tile is texture at 60px and architecture at 300px. The raster
+  is fixed at its own resolution and softens as it scales.</p>
+  <div class="scales">
+    <div class="field on-navy-deep size-60"><span class="label">60px</span></div>
+    <div class="field on-navy-deep size-300"><span class="label">300px</span></div>
+  </div>
+
+  <h2>What is not in it</h2>
+  <p class="meta">The supplied pattern alternates the hexagon with an <strong>EM</strong> monogram badge.
+  That cell is deliberately absent here: the only logo files in this repo are PNGs rendered from a PDF,
+  and redrawing a logotype by eye from a raster produces a facsimile, not the mark. Add the cell once
+  Empower supplies the vector original — the tile is generated from a script, so it is a re-run,
+  not a redraw.</p>
+</div>
+</body>
+</html>

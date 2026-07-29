@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="69.28" viewBox="0 0 120 69.28">
+<!-- Empower honeycomb. Flat-top hexagons, side 40: horizontal period 3s = 120,
+     vertical period s*sqrt(3) = 69.28. Every hexagon that can cross the tile box
+     is drawn and clipped by the viewport, so the lattice continues across repeats
+     in both axes. Painted through CSS mask-image, so the black here is never seen —
+     the colour comes from whatever background the mask is applied to. -->
+<path d="M40 0L20 34.64L-20 34.64L-40 0L-20 -34.64L20 -34.64ZM40 69.28L20 103.92L-20 103.92L-40 69.28L-20 34.64L20 34.64ZM100 -34.64L80 0L40 0L20 -34.64L40 -69.28L80 -69.28ZM100 34.64L80 69.28L40 69.28L20 34.64L40 0L80 0ZM100 103.92L80 138.56L40 138.56L20 103.92L40 69.28L80 69.28ZM160 0L140 34.64L100 34.64L80 0L100 -34.64L140 -34.64ZM160 69.28L140 103.92L100 103.92L80 69.28L100 34.64L140 34.64Z" fill="none" stroke="#000" stroke-width="2.5"/>
+</svg>

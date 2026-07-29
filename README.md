@@ -14,6 +14,10 @@ tokens/*.css              ← design system, imported verbatim, never edit
 components/components.css ← design system, imported verbatim, never edit
 assets/                   ← design system, imported verbatim, never edit
 
+patterns/hex-lattice.svg  ← seamless brand honeycomb tile — shippable
+patterns/hex-lattice.mjs  ← the script that generates it — never ships
+docs/pattern-lab.html     ← pattern review page — never ships
+
 css/homepage.css          ← this build's layout, brand skin, responsive rules
 css/wireframe.css         ← optional grayscale review skin (never ships)
 css/motion.css            ← scroll + entrance reveals — shippable
@@ -266,7 +270,9 @@ they are not oversights for the WordPress developer to quietly fix.
   the exception.
 - **`--border-inverse` (`rgba(255,255,255,.28)`) on navy measures 2.28:1**, below
   the 3:1 minimum for UI component borders (WCAG SC 1.4.11). It affects the footer
-  newsletter input border, the footer social buttons, and the footer divider.
+  social buttons and the footer divider. (It used to affect the footer newsletter
+  input too; that form was removed when Join Us took over the page's single
+  subscribe field, so the question is now narrower than it was.)
 
 ## Hand-off to WordPress + Elementor
 
@@ -328,6 +334,73 @@ they are not oversights for the WordPress developer to quietly fix.
   swap to a transparent 1×1 GIF in the wireframe skin, so each image paints its
   own diagonal-cross placeholder background instead of the photograph. This is
   geometry-safe only because those images have both dimensions pinned in CSS.
+- **Join Us is rebuilt as a stacked composition** (`src/sections/06-joinus.html`),
+  not the wireframe's panel-plus-two-cards. Foundations, Stories and the original
+  Join Us layout were all "one dominant panel left, two stacked cards right"
+  under a title/lead head grid, so the closing section read as a repeat of the
+  Stories section directly above it. It is now one navy slab carrying the
+  headline and the newsletter, then two photo-washed panels beneath it. Notes
+  for the Elementor build:
+  - The `<h2>` lives inside the slab, so this section has no head grid and no
+    eyebrow. `aria-labelledby` still points at it.
+  - The slab uses `--surface-navy-deep`, deliberately darker than the Stories
+    band and the footer, which both use `--surface-navy`.
+  - `.em-join__wash` is a decorative `<img>` (empty `alt`, `aria-hidden`, lazy),
+    masked to a radial gradient so it fades out before it reaches the copy. Both
+    photographs already appear earlier in the page, so they cost no extra
+    request. Opacity is capped at `.26`; the contrast measurement behind that
+    number is in the CSS comment, and a test enforces the cap.
+  - Unlike Foundations and Stories, Join Us ships **one** layout — there is no
+    `data-join` variant switch.
+- The footer newsletter form was removed. The page asked for an email address
+  twice within one scroll; Join Us now owns the single subscribe field, and a
+  test enforces that there is exactly one `type="email"` input on the page.
+
+## Brand pattern
+
+`assets/pattern-blue.png` and `assets/pattern-orange.png` are declared in
+`tokens/base.css` as `.em-pattern-blue` / `.em-pattern-orange`. **Neither class is
+used in this build**, for three reasons:
+
+1. They are compositions, not tiles. Roughly half of each canvas is empty, so at
+   `repeat` the empty region meets the dense region and the seam is visible.
+   `docs/pattern-lab.html` shows it.
+2. The colour is baked into the pixels, which is why the same artwork ships twice.
+3. 767×885 displayed at 340px softens the `EM` letterforms into noise.
+
+`patterns/hex-lattice.svg` replaces them for the one place this build uses a
+pattern — the Join Us slab:
+
+- **A true tile.** 120 × 69.28 is the hexagon lattice's own period (`3s` by
+  `s√3` at side 40). Every hexagon that can cross the tile box is drawn and
+  clipped by the SVG viewport, so the lattice continues across repeats on both
+  axes at any `mask-size`.
+- **Applied as a mask, not a background image.** The paint is `--pattern-ink`,
+  so one 950-byte file serves navy, orange, tint and the wireframe skin's grey.
+  Retinting for a skin is a one-token override, not a second export.
+- **Graduated in the paint.** The ::before's background is a `to top left`
+  linear gradient of `--pattern-ink` showing through the tile mask: densest in
+  the slab's empty bottom-right corner, gone before it reaches the headline.
+  `to top left` follows the corner diagonal at whatever aspect the slab is, so
+  the direction holds from 1440 down to 320 with no per-breakpoint angle.
+  `mask-composite` would
+  be the more obvious way to fade a mask, but where it is unsupported the mask
+  layers add rather than intersect and the fallback is a solid ink blob — a test
+  pins this.
+- **Vector.** The same file is texture at 60px and architecture at 300px.
+- Contrast measured over a lattice stroke, not over the flat slab: white 11.75:1,
+  `--text-inverse-muted` 7.24:1. The ink at full strength is 6.56:1 for white, so
+  no opacity value can put the slab's copy under AA.
+
+`patterns/hex-lattice.mjs` regenerates the tile (`node patterns/hex-lattice.mjs`).
+The **EM monogram cell** in the supplied pattern is deliberately not reproduced:
+the only logo files here are PNGs rendered from a PDF, and redrawing a logotype by
+eye from a raster gives a facsimile rather than the mark. Once Empower supplies the
+vector original, adding the cell is a change to the generator, not a redraw.
+
+For Elementor: the slab pattern is one `::before` rule in `css/homepage.css`. If
+the section is rebuilt with native widgets, apply it as a background overlay on
+the container and keep `patterns/hex-lattice.svg` next to `css/`.
 
 ## The wireframe skin's contract
 

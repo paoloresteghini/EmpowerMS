@@ -11,6 +11,11 @@
   --surface-subtle:#f6f6f5;
   --surface-tint:#f6f6f5;
   --surface-navy:#2c2f31;
+  /* The Join Us slab and its hairline divider are the only users of these two
+     primitives. Without the overrides the wireframe skin renders one navy
+     panel and one blue rule in an otherwise greyscale page. */
+  --surface-navy-deep:#1f2325;
+  --blue-200:#d8d8d8;
   --surface-card:#fff;
   --surface-accent:#2c2f31;
   --border-subtle:#e2e2e2;
@@ -67,6 +72,20 @@
   background-color:#f4f4f4;
   background-image:linear-gradient(to top right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px)),
                    linear-gradient(to bottom right,transparent calc(50% - .5px),#e6e6e6 50%,transparent calc(50% + .5px))}
+
+/* The honeycomb is painted with --pattern-ink through a mask, so retinting it
+   for the greyscale skin is a one-token change and needs no second asset. */
+[data-skin="wire"] .em-join__slab{--pattern-ink:#3a3f42}
+
+/* The Join Us washes are decorative photography, not content slots — the
+   wireframe shows those panels as flat fields, so the image goes rather than
+   turning into a crossed placeholder box. The hover and focus states are
+   listed too: `.em-join__way:hover .em-join__wash` in homepage.css is one
+   class more specific than a bare `.em-join__wash` here, so without them the
+   photograph faded back in on hover in the greyscale skin. */
+[data-skin="wire"] .em-join__wash,
+[data-skin="wire"] .em-join__way:hover .em-join__wash,
+[data-skin="wire"] .em-join__way:focus-within .em-join__wash{opacity:0}
 
 /* Illustration marks: greyscale rather than boxed out. These are <img>
    elements, which cannot host ::after, and swapping their content would

@@ -180,10 +180,107 @@ test('join us newsletter is a real form with a labelled input', () => {
   assert.match(html, /id="join-email"[^>]*type="email"/);
 });
 
-test('join us actions are navy, not orange', () => {
+test('the page asks for an email address exactly once', () => {
+  // Join Us and the footer both carried a subscribe field, one scroll apart,
+  // asking the same question twice. Join Us owns it now.
+  const emails = html.match(/type="email"/g) || [];
+  assert.equal(emails.length, 1, `expected one email input, found ${emails.length}`);
+  assert.ok(!html.includes('em-footer__form'), 'the footer subscribe form is back');
+});
+
+test('join us carries no orange action, and its secondary ways in are links', () => {
   const s = readFileSync('src/sections/06-joinus.html', 'utf8');
   assert.ok(!s.includes('em-btn--primary'), 'orange button outside the hero');
-  assert.ok(s.includes('em-btn--secondary'), 'expected navy actions in join us');
+  // The only button in the section is Subscribe, which sits on the navy slab
+  // and so has to be the inverse fill, not the navy one.
+  assert.ok(s.includes('em-btn--inverse'), 'expected the inverse subscribe button on the navy slab');
+  assert.ok(!s.includes('em-btn--secondary'),
+    'navy button on the navy slab — it would be invisible against --surface-navy-deep');
+  const actions = s.match(/class="em-join__action"/g) || [];
+  assert.equal(actions.length, 2, `expected the ambassador and donate links, found ${actions.length}`);
+});
+
+test('the honeycomb is a real tile, applied as a mask so one file serves every colour', () => {
+  const tile = 'patterns/hex-lattice.svg';
+  assert.ok(existsSync(tile), `missing ${tile}`);
+  const svg = readFileSync(tile, 'utf8');
+  // 120 x 69.28 is the lattice's own period (3s by s*root3 at s=40). A tile of
+  // any other size cannot repeat without a seam, which is exactly what went
+  // wrong with the supplied assets/pattern-blue.png.
+  assert.match(svg, /viewBox="0 0 120 69\.28"/, 'tile is not the hexagon lattice period');
+  assert.ok(!svg.includes('<image'), 'the tile embeds a raster');
+
+  // Applied as a mask, never as background-image: that is what makes the colour
+  // a CSS token instead of a second exported file.
+  const at = homepage.indexOf('.em-join__slab::before');
+  assert.ok(at > -1, 'the slab does not carry the pattern');
+  const rule = homepage.slice(at, homepage.indexOf('}', at));
+  assert.match(rule, /mask-image:url\('\.\.\/patterns\/hex-lattice\.svg'\)/);
+  assert.match(rule, /-webkit-mask-image:/, 'no -webkit- prefixed mask for Safari');
+  assert.match(rule, /var\(--pattern-ink\)/, 'pattern paint is not tokenised');
+  // Graduated on purpose, and graduated in the PAINT rather than in a second
+  // mask layer: where mask-composite is unsupported, two mask layers add
+  // instead of intersecting and the slab fills with solid ink.
+  assert.match(rule, /background:(linear|radial)-gradient/, 'the lattice runs at one flat strength');
+  const declarations = homepage.replace(/\/\*[\s\S]*?\*\//g, '');   // the comment explains why
+  assert.ok(!/mask-composite/.test(declarations), 'mask-composite has an ink-blob fallback');
+  assert.ok(!/background-image:url\('\.\.\/patterns/.test(homepage),
+    'pattern used as a background image — it could no longer be recoloured');
+});
+
+test('the supplied raster patterns are not reintroduced', () => {
+  // tokens/base.css still declares .em-pattern-blue / .em-pattern-orange; they
+  // are baked compositions, not tiles, and tile with a visible seam.
+  assert.ok(!html.includes('em-pattern-blue') && !html.includes('em-pattern-orange'),
+    'a supplied raster pattern class is applied in the markup');
+});
+
+test('the join us photo wash stays under the opacity its contrast was measured at', () => {
+  // The wash sits behind body copy. Measured against the darkest source pixel
+  // under either paragraph, .26 leaves --text-body at 4.89:1. Anything above
+  // ~.3 pushes it under AA, and nothing in CSS would tell you.
+  for (const m of homepage.matchAll(/\.em-join__wash[^{]*\{[^}]*?opacity:\.(\d+)/g)) {
+    assert.ok(Number(`0.${m[1]}`) <= 0.26, `wash opacity .${m[1]} exceeds the measured-safe .26`);
+  }
+  for (const m of homepage.matchAll(/em-join__wash\{opacity:\.(\d+);transform/g)) {
+    assert.ok(Number(`0.${m[1]}`) <= 0.26, `wash hover opacity .${m[1]} exceeds the measured-safe .26`);
+  }
+  // Decorative: it must never carry alt text or reach the accessibility tree.
+  const s = readFileSync('src/sections/06-joinus.html', 'utf8');
+  for (const tag of s.match(/<img class="em-join__wash[^>]*>/g) || []) {
+    assert.match(tag, /alt=""/, `decorative wash with alt text: ${tag.slice(0, 70)}`);
+    assert.match(tag, /aria-hidden="true"/);
+    assert.match(tag, /loading="lazy"/);
+  }
+});
+
+test('the join us washes reuse photos the page already loads', () => {
+  // A decorative background is not worth a new network request. Both files
+  // appear in an earlier section, so they come from cache.
+  const join = readFileSync('src/sections/06-joinus.html', 'utf8');
+  const others = readdirSync('src/sections')
+    .filter(f => f !== '06-joinus.html')
+    .map(f => readFileSync(`src/sections/${f}`, 'utf8')).join('\n');
+  const washes = [...join.matchAll(/em-join__wash[^>]*src="[^"]*\/([^/"]+\.jpg)"/g)].map(m => m[1]);
+  assert.equal(washes.length, 2, `expected two washes, found ${washes.length}`);
+  for (const file of washes) {
+    assert.ok(others.includes(file), `${file} is only used by the wash — it would be an extra download`);
+  }
+});
+
+test('join us does not repeat the composition of the section above it', () => {
+  // Foundations, Stories and the old Join layout were all "dominant panel
+  // left, two stacked cards right" with a title/lead head grid on top, which
+  // made the closing section read as a copy of Stories. Join Us is a stacked
+  // slab-then-two-ways composition now, and owns no head grid.
+  const s = readFileSync('src/sections/06-joinus.html', 'utf8');
+  assert.ok(!s.includes('em-join__head'), 'the shared head grid is back in join us');
+  assert.ok(!s.includes('em-card'), 'join us is carded again');
+  assert.match(s, /class="em-join__slab"/);
+  assert.match(s, /class="em-join__ways"/);
+  // The h2 lives inside the slab and still labels the section.
+  assert.match(s, /aria-labelledby="join-title"/);
+  assert.match(s, /<h2 id="join-title">/);
 });
 
 test('footer is a landmark with four social links', () => {
@@ -198,8 +295,10 @@ test('footer carries the registered address', () => {
   assert.match(html, /Ridgeland, MS 39157/);
 });
 
-test('footer newsletter input is labelled', () => {
-  assert.match(html, /<label[^>]*for="footer-email"/);
+test('footer keeps mission, social and links after losing the subscribe form', () => {
+  assert.ok(!html.includes('for="footer-email"'), 'the footer subscribe field is back');
+  assert.match(html, /class="em-footer__mission"/);
+  assert.match(html, /class="em-footer__social"/);
 });
 
 const wire = readFileSync('css/wireframe.css', 'utf8');
@@ -744,6 +843,15 @@ test('small orange text uses the darkened ink, not the 3.59:1 brand orange', () 
     const re = new RegExp(`\\${sel}[,{][\\s\\S]{0,400}?var\\(--em-orange-ink\\)`);
     assert.match(homepage, re, `${sel} still resolves to the failing brand orange`);
   }
+});
+
+test('placeholder text clears 4.5:1 against the input background', () => {
+  // components.css ships --grey-500 (#9A9A9A), 2.85:1 on white. Placeholder
+  // text is text. The audit's sweep only walked rendered text nodes, so this
+  // one was never measured.
+  const at = homepage.indexOf('.em-input::placeholder');
+  assert.ok(at > -1, 'no placeholder contrast override');
+  assert.match(homepage.slice(at, homepage.indexOf('}', at)), /var\(--text-muted\)/);
 });
 
 test('standalone links meet the 24px minimum target size', () => {

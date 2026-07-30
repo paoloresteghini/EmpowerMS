@@ -1174,9 +1174,21 @@ test('the chooser page is review-only and never links into the hand-off as a hom
   const chooser = readFileSync('dist/index.html', 'utf8');
   assert.match(chooser, /<meta name="robots" content="noindex">/, 'the chooser is indexable');
   assert.ok(!chooser.includes('em-header__nav'), 'the chooser is pulling in the site header');
+
+  /* Every page in the manifest has to be reachable from the chooser, so a
+     design cannot silently drop out of review. ONE named exemption:
+     current.html is the original wireframe build, and Empower are no longer
+     being asked to consider it — it was pulled from the grid once the five
+     proposals were finished. It still builds, and its URL still resolves for
+     anyone who wants to diff against what exists today, but it is not offered
+     as a choice. Named explicitly rather than skipped by a rule, so removing
+     any OTHER page from the chooser still fails this test. */
+  const UNLISTED = ['dist/index.html', 'dist/current.html'];
   for (const page of PAGES) {
-    if (page.out === 'dist/index.html') continue;
+    if (UNLISTED.includes(page.out)) continue;
     const file = page.out.replace('dist/', '');
     assert.ok(chooser.includes(`href="${file}"`), `the chooser does not link to ${file}`);
   }
+  assert.ok(!chooser.includes('href="current.html"'),
+    'current.html is back in the chooser — if that is intended, drop it from UNLISTED above');
 });

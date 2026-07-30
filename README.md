@@ -24,10 +24,15 @@ not a production runtime.
 | `dist/current-2.html` | **The Evolution** — the existing design moved forward, not replaced |
 | `dist/current.html` | **The Starting Point** — the original wireframe build, toggles stripped |
 
-The chooser leads with **The Evolution** and marks it *Paolo's pick*; **The
-Starting Point** sits last as the baseline the five designs are asking Empower
-to move away from, not as a proposal. The filenames stay `current-2` and
-`current` — renaming them would break the review URLs already shared.
+The chooser leads with **The Evolution** and marks it *Paolo's pick*. It shows
+five cards: `current.html` still builds and its URL still resolves, but it was
+pulled from the grid once the five proposals were finished — Empower are not
+being asked to consider it, and it is kept only for diffing against what
+exists today. A named exemption in `test.mjs` allows that; every other page in
+`PAGES` must still be linked from the chooser.
+
+The filenames stay `current-2` and `current` — renaming them would break the
+review URLs already shared.
 
 `dist/current-2.html` is the current build with three parts replaced: a navy
 utility strip above a centred nav using **simple dropdowns instead of the mega

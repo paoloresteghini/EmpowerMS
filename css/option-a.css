@@ -88,9 +88,35 @@
    hero's bottom edge onto section 2's surface, which is what stops the fold
    reading as a hard cut. Absolute, so it cannot add height to the hero;
    section 2's extra top padding is what makes room for it. */
+/* The card hangs off two edges: left, past the photograph into the gutter, and
+   DOWN, past the bottom of the hero section into whatever follows it. The
+   bottom offset used to be clamp(space-9,6vw,space-13), which cleared the
+   hero's own edge by 7px — technically an overlap, invisible in practice, so
+   the card read as sitting inside a tinted box. It now crosses by roughly a
+   third of its own height, which is what makes the hero's colour edge look
+   like something the composition ignores rather than something it stops at.
+
+   No z-index work is needed for it to survive the crossing: the section below
+   is unpositioned, so this element's own z-index:4 already paints it above
+   that section's background. If a following section is ever given
+   `position`, this card will disappear behind it — that is the thing to check
+   first if it ever looks clipped.
+
+   The offset is a flat value above 1200px and the old clamp below it, because
+   the distance this card has to travel is NOT proportional to the viewport.
+   It is positioned against .fp-hero__stack, and the gap between that stack's
+   bottom and the hero's own bottom edge is set by the photograph's height —
+   measured at 127px at 1000px wide, 72px at 1280 and 89px at 1440, which is
+   not even monotonic. A vw-scaled offset therefore overlaps by 82px at one
+   width and by -6px (i.e. not at all) at another. Above 1200px the geometry
+   is stable enough for one number to hold; below it the card stays inside the
+   hero, which is what it did before and still reads correctly.
+
+   Below 960px it rejoins the flow entirely (see the breakpoint near the end
+   of this file), so none of this applies once the hero is one column. */
 .fp-northstar{position:absolute;z-index:4;margin:0;
   left:calc(-1 * clamp(var(--space-7),7vw,var(--space-14)));
-  bottom:calc(-1 * clamp(var(--space-9),6vw,var(--space-13)));
+  bottom:calc(-1 * var(--space-15));
   width:min(430px,88%);
   padding:clamp(var(--space-6),2.4vw,var(--space-8));
   background:var(--surface-navy-deep);color:var(--text-inverse);
@@ -388,6 +414,15 @@
 .fp-way:hover .fp-way__cue svg{transform:translateX(4px)}
 
 /* ========================== Responsive =================================== */
+/* The north-star card stops crossing the hero's bottom edge here and sits
+   inside it again. See the note on .fp-northstar: the distance it would need
+   to travel is governed by the photograph's height, not by the viewport, so
+   below this width one offset cannot both clear the hero and stay clear of
+   the next section's heading. */
+@media (max-width:1200px){
+  .fp-northstar{bottom:calc(-1 * clamp(var(--space-9),6vw,var(--space-13)))}
+}
+
 @media (max-width:1100px){
   .fp-change__grid{grid-template-columns:1fr;gap:var(--space-9)}
   .fp-change__intro-inner{position:static}

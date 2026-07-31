@@ -1,0 +1,45 @@
+/* Empower Mississippi homepage — the agreed build.
+
+   Empower picked section by section rather than picking one option:
+
+     Header       Evolution   (utility strip + plain dropdowns)
+     1 Hero       Front Porch (option-a)
+     2 How Change Happens
+                  Throughline (option-d)
+     3 Three Foundations
+                  Evolution   (current-2's c2-* panels)
+     4 Mississippi Stories
+                  Evolution — which resolves to the ORIGINAL build's section,
+                  because Evolution never overrode 04. Same for 5 and 6.
+     5 Latest Insights   Evolution / original
+     6 Join Us           Evolution / original
+
+   So this page loads four section stylesheets: homepage.css (4, 5, 6),
+   option-a.css (1), option-d.css (2) and current-2.css (3 + the header).
+   They compose without collision because option-a.css and option-d.css are
+   strictly namespaced — .fp-*/--fp-* and .tl-*/--tl-* — and touch no shared
+   .em-* selector.
+
+   TWO THINGS THIS COSTS, both deliberate and both temporary:
+
+   1. current-2.css carries rules for a banner, a chevron and a solutions tint
+      that this page does not use, because its hero and section 2 come from
+      elsewhere. They are inert — the selectors match nothing here — but they
+      are dead weight in the payload.
+   2. option-a.css and option-d.css are each loaded almost entirely for one
+      section.
+
+   Both are the price of composing from tested sources rather than
+   hand-merging under a deadline. The consolidation — one stylesheet for this
+   page, the option files deleted — is the hand-off step, and it should happen
+   once Empower have confirmed this composition, not before. See the hand-off
+   notes in README.md.
+
+   This file holds only what the SEAMS need: the places where two sections
+   that were designed for different pages now sit next to each other. */
+
+/* ---------- Section rhythm ---------- */
+/* Front Porch's hero and Throughline's change section were each designed to
+   open their own page, so both bring generous top space. Stacked, that reads
+   as a gap rather than as a transition. The second one gives some back. */
+.tl-change{padding-top:clamp(var(--space-11),6vw,var(--space-13))}

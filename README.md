@@ -16,13 +16,57 @@ not a production runtime.
 
 | Page | What it is |
 | --- | --- |
-| `dist/index.html` | Chooser — opens all six side by side. Review tool, never ships. |
+| `dist/final.html` | **The agreed build** — Empower's chosen combination. This is what ships. |
+| `dist/index.html` | Chooser — opens the five proposals side by side. Review tool, never ships. |
 | `dist/option-a.html` | **Front Porch** — interlocking mosaic, warm and photographic |
 | `dist/option-b.html` | **The Index** — persistent sticky rail, typographic, credible |
 | `dist/option-c.html` | **The Atlas** — horizontal rails and expanding panels |
 | `dist/option-d.html` | **The Throughline** — a route, with a sticky photographic stack |
 | `dist/current-2.html` | **The Evolution** — the existing design moved forward, not replaced |
 | `dist/current.html` | **The Starting Point** — the original wireframe build, toggles stripped |
+
+## The agreed build
+
+Empower picked section by section rather than picking one option:
+
+| | Section | Chosen |
+| --- | --- | --- |
+| | Header | Evolution — utility strip + plain dropdowns |
+| 1 | Hero | **Front Porch** |
+| 2 | How Change Happens | **Throughline** |
+| 3 | Three Foundations | **Evolution** |
+| 4 | Mississippi Stories | Evolution → *the original build's section* |
+| 5 | Latest Insights | Evolution → *the original build's section* |
+| 6 | Join Us | Evolution → *the original build's section* |
+
+Sections 4–6 need reading carefully. Evolution never overrode them — its shell
+includes the shared `sections/0[456]-*.html`, which are the **original build's**
+partials. So "Evolution" for those three resolves to the current site's
+sections, not to anything new.
+
+That matters for one reason beyond composition: **the original build rewrote
+seven of the seventeen approved roadmap strings**, and picking it for sections
+5 and 6 brings the rewrite with it. Missing from `dist/final.html`:
+
+- the Latest Insights intro (*"Stay connected with the latest research…"*)
+- the entire Join Us block — *Stay Connected*, *Become an Ambassador*,
+  *Support Our Work* and all three descriptions, replaced by *"This is where
+  you come in."*, *Bring it home* and *Fund the work*
+
+The four options all restore the roadmap wording; this combination does not.
+Either the approved copy goes back into `final`'s sections 5 and 6, or Empower
+sign off the rewrite — until then `final.html` is deliberately held out of the
+`ROADMAP_COPY` assertion in `test.mjs`, with the reason written at the
+exclusion.
+
+**Hand-off cleanup, not yet done.** `final.html` loads four section
+stylesheets — `homepage.css`, `option-a.css`, `option-d.css`, `current-2.css` —
+because it composes from tested sources rather than a hand-merge. Most rules
+in three of those are inert here. Consolidating to one stylesheet and deleting
+the option files is the next step, and it should happen once Empower confirm
+the composition, not before.
+
+## The chooser
 
 The chooser leads with **The Evolution** and marks it *Paolo's pick*. It shows
 five cards: `current.html` still builds and its URL still resolves, but it was

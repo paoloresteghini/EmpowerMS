@@ -13,6 +13,7 @@ const MARKER = /<!--@include\s+([^\s>]+?)\s*-->/g;
    assets as ../assets/… — nesting a page would break those paths. */
 export const PAGES = [
   { src: 'chooser.html', out: 'dist/index.html', title: 'Compare the options' },
+  { src: 'final/index.html', out: 'dist/final.html', title: 'The agreed build' },
   { src: 'index.html', out: 'dist/current.html', title: 'Current reference build' },
   { src: 'current-2/index.html', out: 'dist/current-2.html', title: 'Current build — new header and banner' },
   { src: 'option-a/index.html', out: 'dist/option-a.html', title: 'Option A — Front Porch' },

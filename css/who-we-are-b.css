@@ -1,0 +1,222 @@
+/* Who We Are — variation B, "The Record".
+
+   The typographic reading. Where variation A leads with photography, this one
+   leads with the sentence: the hero is the mission statement at display size
+   and nothing else, and the page below it is a numbered record — three
+   chapters, each with a sticky rail carrying its number and name while the
+   narrative travels past.
+
+   Namespaced .wb- throughout. The rail is the whole idea, so the same grid
+   serves all three chapters rather than each section inventing its own.
+
+   ELEMENTOR NOTE. The rail is `position:sticky` inside a two-column grid; in
+   Elementor that is a two-column section with the left column set to sticky.
+   The photo band under the hero is a three-up gallery with a negative bottom
+   margin so the chapter that follows climbs over it — again a margin on a
+   child, never an element escaping its own section. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+.wb-kicker{margin:0 0 var(--space-5);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+.wb-kicker::before{content:"";width:28px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+.wb-kicker--inverse{color:var(--orange-300)}
+
+/* =============================== 1 · Hero ================================= */
+.wb-hero{padding:clamp(var(--space-10),5.5vw,var(--space-14)) 0 0;
+  background:linear-gradient(180deg,var(--white) 0%,var(--blue-100) 100%)}
+
+.wb-hero h1{margin:0 0 clamp(var(--space-8),4vw,var(--space-11));
+  max-width:18ch;text-wrap:balance;
+  font-size:clamp(2.1rem,1.1rem + 3.8vw,4.15rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.035em;color:var(--em-blue)}
+/* The last clause is the promise the whole organisation turns on, so it takes
+   the accent — the same device the homepage uses on "Starts Here." */
+.wb-hero h1 em{font-style:normal;color:var(--em-orange);display:block}
+
+/* The hero is the mission statement and one action, nothing else. The sentence
+   that used to sit here — "Every Mississippian deserves…" — is the opening of
+   chapter 01, which is where the roadmap puts it. */
+.wb-hero__foot{padding-bottom:clamp(var(--space-9),4.5vw,var(--space-12));
+  padding-top:var(--space-7);border-top:1px solid var(--border-subtle)}
+
+/* A band of three, edge to edge, dropping the page out of the container for
+   one beat. The negative bottom margin is what the first chapter climbs. */
+.wb-hero__band{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:var(--space-2);
+  margin-bottom:calc(-1 * clamp(var(--space-8),4vw,var(--space-11)))}
+.wb-hero__band figure{margin:0;overflow:hidden;aspect-ratio:5/4}
+.wb-hero__band figure:first-child{aspect-ratio:2/1}
+.wb-hero__band img{display:block;width:100%;height:100%;object-fit:cover}
+.wb-hero__band figure:nth-child(1) img{object-position:center 32%}
+.wb-hero__band figure:nth-child(3) img{object-position:center 40%}
+
+/* ============================== Chapters ================================== */
+/* One grid for Why We Exist, Our Story and Nonprofit Status. The rail holds
+   the chapter number and name; the body holds everything a reader reads. */
+.wb-chapter{padding:clamp(var(--space-11),6vw,var(--space-14)) 0;background:var(--surface-page)}
+.wb-chapter--why{position:relative;z-index:1;background:var(--surface-page);
+  border-top-left-radius:var(--radius-xl);border-top-right-radius:var(--radius-xl)}
+.wb-chapter--story{background:var(--surface-subtle)}
+
+.wb-chapter__grid{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr);
+  gap:clamp(var(--space-8),5vw,var(--space-14));align-items:start}
+
+.wb-rail{position:sticky;top:calc(92px + var(--space-8))}
+/* --blue-600, not the pale --blue-200 this started as. At 40px the numeral is
+   large text and needs 3:1; blue-200 on white measures 1.43:1, which is a
+   decorative wash rather than a number anyone can read. blue-600 is 5.3:1 and
+   still sits well behind the navy headings. The numerals are aria-hidden — the
+   chapter name is the accessible heading — but a sighted reader is meant to be
+   able to read them, so the ratio has to hold. */
+/* Number, rule, and — on the story chapter only — the founding year. The rail
+   used to carry a NAME under each number: "Why we exist", "Our story",
+   "Nonprofit status". Empower have since said those were their internal
+   section labels rather than copy, so only the one the roadmap marks as a
+   headline survives, and it is a heading in the body where the reader is
+   rather than a label out in the margin. The orange rule that used to hang off
+   the label now hangs off the number, so the rail keeps its anchor. */
+.wb-rail__num{margin:0;padding-bottom:var(--space-4);
+  border-bottom:3px solid var(--em-orange);
+  font-family:var(--font-display);
+  font-size:clamp(2.5rem,2rem + 1.6vw,3.5rem);font-weight:var(--fw-black);line-height:1;
+  letter-spacing:-.04em;color:var(--blue-600)}
+.wb-rail__year{margin:var(--space-7) 0 0;font-family:var(--font-display);
+  font-size:var(--fs-eyebrow);font-weight:var(--fw-bold);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted)}
+.wb-rail__year span{display:block;margin-top:var(--space-1);font-size:clamp(1.75rem,1.4rem + 1.2vw,2.25rem);
+  font-weight:var(--fw-black);letter-spacing:-.02em;text-transform:none;color:var(--em-orange)}
+
+.wb-chapter__body{min-width:0;max-width:64ch}
+.wb-chapter__body p{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.72;
+  color:var(--text-body);text-wrap:pretty}
+.wb-chapter__body p:last-child{margin-bottom:0}
+
+/* The chapter title, where the roadmap gives one. Only Our Story does — the
+   other two chapters open on their approved sentence instead, set as the
+   heading itself. */
+.wb-chapter__title{margin:0 0 var(--space-5);font-size:clamp(1.75rem,1.3rem + 1.8vw,2.6rem);
+  font-weight:var(--fw-black);line-height:1.08;letter-spacing:-.03em;color:var(--em-blue)}
+
+/* Where a chapter has no title, its opening sentence carries the weight a
+   heading would — and IS the heading. */
+.wb-lead{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.1875rem,1.05rem + .7vw,1.6rem);line-height:1.42;
+  letter-spacing:var(--ls-heading)}
+.wb-chapter__body .wb-lead{color:var(--em-blue)}
+
+/* The five conditions, set as the list the sentence describes rather than
+   repeated as prose. */
+.wb-conditions{margin:0 0 var(--space-8);padding:0;list-style:none;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-6)}
+.wb-conditions li{position:relative;padding-left:var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-body);
+  color:var(--em-blue)}
+.wb-conditions li::before{content:"";position:absolute;left:0;top:.55em;width:14px;height:3px;
+  border-radius:2px;background:var(--em-orange)}
+
+/* A full-measure statement between paragraph groups: the page's punctuation.
+   Set at display size with the brand mark above it — not a stripe down its
+   left edge, which is the accent-bar reflex and reads as a callout box. */
+.wb-statement{position:relative;margin:var(--space-10) 0;padding-top:var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.25rem,1.05rem + .9vw,1.75rem);line-height:1.35;
+  letter-spacing:var(--ls-heading);text-wrap:balance}
+.wb-statement::before{content:"";position:absolute;top:0;left:0;width:56px;height:4px;
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+.wb-chapter__body .wb-statement{color:var(--em-blue)}
+.wb-statement--turn::before{background:var(--blue-400)}
+
+/* ============================= 4 · Our people ============================= */
+/* One card, and the whole card is the link — this section exists to send
+   people to the team page, so there is nothing else on it to click. */
+.wb-people{padding:0 0 clamp(var(--space-11),6vw,var(--space-14));background:var(--surface-subtle)}
+
+.wb-people__card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:center;
+  padding:clamp(var(--space-8),4vw,var(--space-12));
+  background:var(--surface-navy-deep);border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  text-decoration:none;isolation:isolate;overflow:hidden;--pattern-ink:var(--blue-600)}
+.wb-people__card::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top right,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 58%);
+  opacity:.75;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:72px;mask-size:72px;-webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.wb-people h2{margin:0 0 var(--space-5);font-size:clamp(1.5rem,1.15rem + 1.5vw,2.25rem);
+  font-weight:var(--fw-black);line-height:1.12;letter-spacing:-.025em;color:var(--white)}
+.wb-people__index{margin:0 0 var(--space-7);font-size:var(--fs-small);
+  color:var(--text-inverse-muted)}
+.wb-people__cue{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--orange-300)}
+.wb-people__cue svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.wb-people__card:hover .wb-people__cue svg{transform:translateX(4px)}
+.wb-people__card:hover .wb-people__cue{text-decoration:underline;text-underline-offset:4px}
+.wb-people__card:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+
+/* Each frame is a fixed-ratio box with the photograph filling it. The first
+   version put aspect-ratio on the <img> itself inside an align-items:end grid,
+   where the row height won and the pictures stretched into vertical strips. */
+.wb-people__frames{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);
+  align-items:start}
+.wb-people__frames figure{margin:0;aspect-ratio:3/4;overflow:hidden;
+  border-radius:var(--radius-md);
+  transition:transform var(--dur) var(--ease-out)}
+.wb-people__frames img{display:block;width:100%;height:100%;object-fit:cover}
+.wb-people__frames figure:nth-child(1){margin-top:var(--space-7)}
+.wb-people__frames figure:nth-child(3){margin-top:var(--space-3)}
+.wb-people__card:hover .wb-people__frames figure{transform:translateY(-4px)}
+
+/* =========================== 5 · Nonprofit status ========================= */
+.wb-status{padding:clamp(var(--space-11),6vw,var(--space-14)) 0;background:var(--surface-page)}
+
+.wb-entities{margin:var(--space-8) 0 0;display:grid;gap:0}
+.wb-entity{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);
+  gap:var(--space-5) clamp(var(--space-6),3vw,var(--space-10));
+  padding:clamp(var(--space-6),2.5vw,var(--space-8)) 0;border-top:1px solid var(--border-subtle)}
+.wb-entity:last-child{border-bottom:1px solid var(--border-subtle)}
+.wb-entity h3{margin:0;font-family:var(--font-display);font-size:var(--fs-h5);
+  font-weight:var(--fw-bold);line-height:1.3;letter-spacing:var(--ls-heading);color:var(--em-blue)}
+/* The tax status is the thing a donor is scanning for, so it is a badge on the
+   name rather than a phrase buried in the sentence below it. */
+.wb-entity h3 span{display:inline-block;margin-top:var(--space-3);padding:3px 10px;
+  background:var(--blue-100);border-radius:var(--radius-pill);
+  font-size:var(--fs-caption);font-weight:var(--fw-bold);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--blue-700)}
+.wb-entity p{margin:0;font-size:var(--fs-small);line-height:1.65;color:var(--text-body)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1100px){
+  .wb-chapter__grid{grid-template-columns:minmax(0,170px) minmax(0,1fr);
+    gap:clamp(var(--space-6),3vw,var(--space-10))}
+  .wb-people__card{grid-template-columns:1fr;gap:var(--space-8)}
+  .wb-people__frames{max-width:420px}
+}
+
+@media (max-width:860px){
+  /* The rail stops being a rail: it becomes a heading block above the body,
+     which is what it always was semantically. */
+  .wb-chapter__grid{grid-template-columns:1fr;gap:var(--space-6)}
+  .wb-rail{position:static;display:flex;align-items:baseline;gap:var(--space-6);
+    flex-wrap:wrap}
+  .wb-rail__num{padding-bottom:var(--space-2);border-bottom-width:2px}
+  .wb-rail__year{margin:0 0 0 auto;display:flex;align-items:baseline;gap:var(--space-3)}
+  .wb-rail__year span{margin:0}
+  .wb-conditions{grid-template-columns:1fr}
+  .wb-entity{grid-template-columns:1fr;gap:var(--space-3)}
+}
+
+@media (max-width:640px){
+  .wb-hero__band{grid-template-columns:1fr 1fr;gap:2px}
+  .wb-hero__band figure:first-child{grid-column:1 / -1;aspect-ratio:16/9}
+  .wb-people__frames figure:nth-child(3){display:none}
+  .wb-people__frames{grid-template-columns:repeat(2,1fr)}
+  .wb-people__card::before{-webkit-mask-size:56px;mask-size:56px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .wb-people__card:hover .wb-people__cue svg,
+  .wb-people__card:hover .wb-people__frames figure{transform:none}
+}

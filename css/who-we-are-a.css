@@ -1,0 +1,268 @@
+/* Who We Are — variation A, "The Table".
+
+   The warm, photographic reading of the page, and the closest of the three to
+   dist/final.html: a two-column hero with an overlapping picture stack, then a
+   navy slab that climbs over the hero's bottom edge, then the founding story
+   told against a year marker.
+
+   Namespaced .wa- throughout so this file can sit next to the other two
+   variations without a single collision. Nothing here touches an .em- class.
+
+   ELEMENTOR NOTE. Every overlap on this page is a negative margin on a child
+   INSIDE the section that owns it — never an absolutely positioned element
+   reaching into the section below. That is deliberate: an Elementor section
+   can carry a negative top margin natively, but an element that hangs out of
+   its own section needs a z-index workaround and breaks the moment a later
+   section is given a position. The homepage learned that with its north-star
+   card. One section here is one Elementor section, and the overlap survives
+   the conversion. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+/* ONE kicker on this page, in the hero, naming the section of the site the
+   visitor has arrived in. It is not repeated above every section: the build
+   already made that decision once, on the homepage — see the note on
+   .fp-tagline in css/option-a.css — and a label above each heading is
+   scaffolding, not voice. Every section below the hero is introduced by its
+   heading and the brand's own 56x4 orange mark. */
+.wa-kicker{margin:0 0 var(--space-5);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+.wa-kicker::before{content:"";width:28px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+.wa-kicker--inverse{color:var(--orange-300)}
+
+/* The mark. The 88x6 orange rule under section headings is a brand motif this
+   build already uses; here it sits above the heading at 56x4, which is the
+   same gesture at the size these headings need. */
+.wa-mark{position:relative;padding-top:var(--space-6)}
+.wa-mark::before{content:"";position:absolute;top:0;left:0;width:56px;height:4px;
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* =============================== 1 · Hero ================================= */
+/* Same gradient as the homepage hero, so a visitor arriving from it does not
+   feel they have changed sites — but the picture stack is horizontal here
+   rather than a portrait with a card, because this page's job is people
+   rather than promise. */
+.wa-hero{padding:clamp(var(--space-9),5vw,var(--space-13)) 0 0;
+  background:linear-gradient(180deg,var(--white) 0%,var(--blue-100) 100%)}
+
+.wa-hero__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.02fr);
+  column-gap:clamp(var(--space-10),6vw,var(--space-14));align-items:center;
+  padding-bottom:clamp(var(--space-10),6vw,var(--space-13))}
+
+.wa-hero__copy{min-width:0;padding-block:clamp(var(--space-4),2.5vw,var(--space-9))}
+
+.wa-hero h1{margin:0 0 var(--space-7);text-wrap:balance;font-size:clamp(2.6rem,1.4rem + 4.6vw,5rem);
+  font-weight:var(--fw-black);line-height:.98;letter-spacing:-.035em;color:var(--em-blue)}
+
+/* The lede is the roadmap's "Why We Exist" headline, promoted into the hero.
+   It is the only sentence on the page that states the whole mission, so it
+   earns display size rather than body size. */
+.wa-hero__lede{margin:0 0 var(--space-8);max-width:34ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.125rem,.98rem + .6vw,1.5rem);line-height:1.4;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+
+.wa-hero__actions{display:flex;align-items:center;gap:clamp(var(--space-5),2.5vw,var(--space-8));
+  flex-wrap:wrap}
+
+/* An in-page jump, not a second action — it is styled as a link so the orange
+   button stays the only thing on the page that looks pressable. */
+.wa-jump{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.wa-jump svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.wa-jump:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+.wa-jump:hover svg{transform:translateY(3px)}
+
+/* Two landscape frames, the second lifted into the first's bottom-right
+   quarter. Both are in normal flow inside a positioned stack, so the section
+   height accounts for them and nothing hangs into what follows. */
+.wa-hero__stack{position:relative;min-width:0;padding-bottom:clamp(var(--space-8),5vw,var(--space-11))}
+
+.wa-hero__media{margin:0;border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg)}
+.wa-hero__media img{display:block;width:100%;height:100%;object-fit:cover}
+.wa-hero__media:first-child{aspect-ratio:3/2}
+.wa-hero__media:first-child img{object-position:center 38%}
+
+.wa-hero__media--tall{position:absolute;right:calc(-1 * clamp(var(--space-4),2vw,var(--space-8)));
+  bottom:0;width:clamp(140px,17vw,215px);aspect-ratio:3/4;
+  border:6px solid var(--white);box-shadow:var(--shadow-lg)}
+.wa-hero__media--tall img{object-position:center 30%}
+
+/* ============================ 2 · Why we exist ============================ */
+/* The slab climbs over the hero's gradient rather than starting below it, so
+   the two sections read as one arrival instead of two stacked bands. The
+   negative margin is on the SLAB; the section keeps its own box. */
+.wa-why{position:relative;z-index:1;padding-bottom:clamp(var(--space-9),4vw,var(--space-11))}
+
+.wa-why__slab{position:relative;isolation:isolate;overflow:hidden;
+  margin-top:calc(-1 * clamp(var(--space-9),5vw,var(--space-12)));
+  padding:clamp(var(--space-9),4.5vw,var(--space-13)) clamp(var(--space-7),4vw,var(--space-12));
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start;
+  --pattern-ink:var(--blue-600)}
+
+/* The house honeycomb, graduated so it is texture in the top-right corner and
+   gone before it reaches either column of text. Same mask technique as the
+   homepage — one SVG, recoloured by --pattern-ink. */
+.wa-why__slab::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom left,var(--pattern-ink) 0%,var(--pattern-ink) 18%,transparent 64%);
+  opacity:.8;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:76px;mask-size:76px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.wa-why h2{margin:0;text-wrap:balance;font-size:clamp(1.6rem,1.1rem + 1.9vw,2.6rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+
+.wa-why__body{display:grid;gap:var(--space-6);padding-top:var(--space-2)}
+.wa-why__body p{margin:0;font-size:clamp(1rem,.95rem + .25vw,1.125rem);line-height:1.65;
+  color:var(--text-inverse-muted)}
+
+/* The closing line is the organisation's own summary of its posture. It gets
+   the accent and the display face so it does not read as a fourth paragraph. */
+.wa-why__close{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  padding-top:var(--space-5);border-top:1px solid var(--border-inverse)}
+.wa-why .wa-why__close{color:var(--orange-300)}
+
+/* ============================== 3 · Our story ============================= */
+.wa-story{padding:clamp(var(--space-9),4.5vw,var(--space-12)) 0;background:var(--surface-page)}
+
+.wa-story__grid{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1fr);
+  gap:clamp(var(--space-9),5vw,var(--space-14));align-items:start}
+
+.wa-story__aside{position:relative}
+.wa-story__photo{margin:0;border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);
+  aspect-ratio:4/3}
+.wa-story__photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 34%}
+
+/* The year is the page's one piece of data, so it is set as one. It sits half
+   off the photograph's bottom-left corner — inside the aside, which is the
+   positioning context, so the section still owns it. */
+/* The chip is --orange-700, not the brand --em-orange.
+
+   White on #E65A28 measures 3.59:1. The year itself is large text and clears
+   the 3:1 bar, but the label under it is 13px and needs 4.5:1 — the same
+   failing pair as .em-badge--accent, which css/site.css already overrides for
+   the same reason. --orange-700 is the brand hue darkened to 80% lightness and
+   measures 5.38:1 behind white, so both lines pass with the mark still
+   unmistakably orange.
+
+   This is the FOURTH instance of the open --em-orange question and the second
+   where the failing pair is white ON orange. It is a local, reversible
+   override; if Empower darken the brand orange upstream, delete this line. */
+.wa-story__year{position:relative;z-index:2;margin:calc(-1 * var(--space-8)) 0 0 var(--space-6);
+  display:inline-grid;gap:var(--space-1);padding:var(--space-5) var(--space-7);
+  background:var(--orange-700);color:var(--white);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase}
+.wa-story__year span{display:block;font-size:clamp(2rem,1.5rem + 1.6vw,2.75rem);
+  font-weight:var(--fw-black);letter-spacing:-.02em;text-transform:none;line-height:1}
+
+.wa-story__copy{min-width:0}
+.wa-story h2{margin:0 0 var(--space-5);text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+.wa-story__copy p{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);text-wrap:pretty;max-width:68ch}
+.wa-story__copy p:last-child{margin-bottom:0}
+
+/* The founding question, given the weight of the thing that started it. */
+.wa-story__question{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.1rem,1rem + .5vw,1.4rem);line-height:1.45;letter-spacing:var(--ls-heading);
+  text-wrap:balance}
+.wa-story .wa-story__question{color:var(--em-blue)}
+
+.wa-story__turn{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.0625rem,1rem + .3vw,1.25rem)}
+.wa-story .wa-story__turn{color:var(--em-blue)}
+
+/* ============================= 4 · Our people ============================= */
+.wa-people{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+
+.wa-people__grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:clamp(var(--space-9),5vw,var(--space-13));align-items:center}
+
+.wa-people h2{margin:0 0 var(--space-6);text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);
+  font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+
+/* What the team page holds, listed rather than described — the roadmap gives
+   three items and no prose, and three items are a list. */
+.wa-people__list{margin:0 0 var(--space-8);padding:0;list-style:none;display:grid;gap:var(--space-3)}
+.wa-people__list li{position:relative;padding-left:var(--space-7);font-size:var(--fs-body);
+  color:var(--text-body)}
+.wa-people__list li::before{content:"";position:absolute;left:0;top:.62em;
+  width:14px;height:2px;border-radius:1px;background:var(--em-orange)}
+
+/* Three portraits at three heights. The stagger is what stops a row of
+   headshots reading as a stock grid. */
+.wa-people__frames{display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(var(--space-4),1.6vw,var(--space-6));align-items:end}
+.wa-people__frames figure{margin:0;border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:var(--shadow-md);aspect-ratio:3/4}
+.wa-people__frames figure:nth-child(1){margin-bottom:var(--space-8)}
+.wa-people__frames figure:nth-child(3){margin-bottom:var(--space-4)}
+.wa-people__frames img{display:block;width:100%;height:100%;object-fit:cover}
+.wa-people__frames figure:nth-child(2) img{object-position:center 24%}
+
+/* =========================== 5 · Nonprofit status ========================= */
+/* Three legal entities with three different tax treatments. This is the part
+   of the page a donor reads carefully, so it is set for scanning: the status
+   first, the name second, the consequence third. */
+.wa-status{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-page)}
+
+.wa-status__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-11))}
+.wa-status h2{margin:0;text-wrap:balance;font-size:clamp(1.4rem,1.05rem + 1.3vw,2rem);font-weight:var(--fw-bold);
+  line-height:1.25;letter-spacing:-.02em;color:var(--em-blue)}
+
+.wa-status__cards{display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(var(--space-5),2.4vw,var(--space-8))}
+
+.wa-entity{display:flex;flex-direction:column;gap:var(--space-3);
+  padding:clamp(var(--space-6),2.4vw,var(--space-8));
+  background:var(--surface-subtle);border-radius:var(--radius-lg);
+  border-top:4px solid var(--em-blue)}
+.wa-entity:nth-child(2){border-top-color:var(--blue-600)}
+.wa-entity:nth-child(3){border-top-color:var(--em-orange)}
+.wa-entity__tag{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--orange-700)}
+.wa-entity h3{margin:0;font-size:var(--fs-h4);font-weight:var(--fw-bold);line-height:1.25;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.wa-entity p{margin:0;font-size:var(--fs-small);line-height:1.6;color:var(--text-body)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1100px){
+  .wa-hero__grid{grid-template-columns:1fr;gap:var(--space-9)}
+  .wa-hero__lede{max-width:52ch}
+  .wa-hero__stack{padding-bottom:0}
+  .wa-hero__media--tall{width:clamp(120px,20vw,180px)}
+  .wa-story__grid{grid-template-columns:1fr;gap:var(--space-8)}
+  .wa-story__photo{aspect-ratio:16/9}
+  .wa-people__grid{grid-template-columns:1fr;gap:var(--space-9)}
+}
+
+@media (max-width:900px){
+  .wa-why__slab{grid-template-columns:1fr;gap:var(--space-7)}
+  .wa-status__cards{grid-template-columns:1fr}
+  .wa-entity{border-top-width:3px}
+}
+
+@media (max-width:640px){
+  /* The second frame is decoration once the first one is this small; keeping
+     it would leave two thumbnails and no photograph. */
+  .wa-hero__media--tall{display:none}
+  .wa-people__frames{grid-template-columns:repeat(2,1fr)}
+  .wa-people__frames figure:nth-child(3){display:none}
+  .wa-people__frames figure:nth-child(1){margin-bottom:var(--space-6)}
+  .wa-story__year{margin-left:var(--space-4);padding:var(--space-4) var(--space-6)}
+  .wa-why__slab::before{-webkit-mask-size:58px;mask-size:58px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .wa-jump:hover svg{transform:none}
+}

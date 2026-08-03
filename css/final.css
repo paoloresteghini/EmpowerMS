@@ -3,7 +3,7 @@
    Empower picked section by section rather than picking one option:
 
      Header       Evolution   (utility strip + plain dropdowns)
-     1 Hero       Front Porch (option-a)
+     1 Hero       Front Porch (option-a), WITHOUT the north-star card
      2 How Change Happens
                   Throughline (option-d)
      3 Three Foundations
@@ -17,8 +17,21 @@
    So this page loads four section stylesheets: homepage.css (4, 5, 6),
    option-a.css (1), option-d.css (2) and current-2.css (3 + the header).
    They compose without collision because option-a.css and option-d.css are
-   strictly namespaced — .fp-*/--fp-* and .tl-*/--tl-* — and touch no shared
-   .em-* selector.
+   strictly namespaced — .fp- and --fp- here, .tl- and --tl- there — and touch
+   no shared .em- selector.
+   (Do not write those prefixes with a trailing star followed by a slash: the
+   pair closes this comment early, and everything below it stops being CSS.
+   That happened once and left this whole file inert.)
+
+   THE HERO IS A COPY, NOT AN INCLUDE. src/final/sections/01-hero.html is
+   option-a's hero with the .fp-northstar figure deleted — Empower asked for
+   the card off the banner on the build that ships. homepage-a.html still shows
+   it, so the two partials have to stay in step until the option pages are
+   deleted at hand-off, at which point final's copy becomes the only hero.
+   The card's rules stay in option-a.css and are inert here: nothing on this
+   page matches .fp-northstar. Its copy ("Our north star…") was written for
+   this build rather than supplied by Empower, which is why it was the
+   cheapest thing on the page to lose.
 
    TWO THINGS THIS COSTS, both deliberate and both temporary:
 

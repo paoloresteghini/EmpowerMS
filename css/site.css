@@ -133,6 +133,22 @@ body{overflow-wrap:break-word}
 .em-mobilenav__sublink:hover{color:var(--em-orange-ink)}
 
 /* ---------- Footer ---------- */
+/* The two footer column headings are h3, not the h4 components.css styles.
+
+   They were h4 while every page above them happened to end on an h3 — the
+   homepages all close with the Join Us cards. The About Us pages close on a
+   section whose deepest heading is an h2, so the same footer produced h2
+   followed by h4: a skipped level on six pages, caused by a partial that had
+   never been wrong before.
+
+   h3 is also the honest level. These head the footer's own groups; nothing on
+   any page makes them a subsection of something else. components.css is the
+   upstream design system and is left alone, so the h4 rule is restated here
+   for h3 — one line, and reversible by deleting it if the footer ever goes
+   back. */
+.em-footer h3{font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300);margin:0 0 var(--space-4)}
+
 /* Shipped em-footer__top is 1.4fr repeat(3,1fr); the homepage has three groups. */
 .em-footer__top{grid-template-columns:1.5fr 1fr 1fr}
 .em-footer__mission{font-size:var(--fs-small);line-height:1.6;color:var(--text-inverse-muted);

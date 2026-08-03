@@ -16,78 +16,11 @@
    the overrides of .em-header__* are local to .em-header--flat wherever a
    shared component would otherwise be affected. */
 
-/* ---------- Utility strip ---------- */
-/* White on --surface-navy measures 12.6:1. No borders on the navy — see the
-   open --border-inverse question in the repo's todo. */
-.em-utility{background:var(--surface-navy);color:var(--text-inverse)}
-.em-utility__bar{display:flex;align-items:center;justify-content:space-between;
-  gap:var(--space-3) var(--space-6);flex-wrap:wrap;min-height:44px;
-  padding:var(--space-2) 0;
-  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-caption)}
-.em-utility__note{margin:0}
-/* SC 2.5.8: standalone link, so it carries its own 24x24 target. */
-.em-utility__link{display:inline-flex;align-items:center;min-height:24px;min-width:24px;
-  color:var(--white);text-decoration:none}
-.em-utility__link:hover{text-decoration:underline}
-
-/* ---------- Header bar ---------- */
-/* components.css pushes .em-header__nav right with margin-left:auto. Here the
-   nav is the centre of a three-part row instead: logo and actions each take an
-   equal share of the leftover space, so the nav stays optically centred no
-   matter how wide the logo or the actions group gets. */
-.em-header--flat .em-header__bar{gap:var(--space-6)}
-.em-header--flat .em-header__logo{flex:1 1 0;min-width:0}
-.em-header--flat .em-header__nav{flex:0 1 auto;margin:0;gap:var(--space-1);justify-content:center}
-.em-header--flat .em-header__actions{flex:1 1 0;justify-content:flex-end}
-.em-header--flat .em-header__actions .em-btn{border-radius:var(--radius-pill)}
-
-/* ---------- Dropdown panels ---------- */
-/* Progressive enhancement contract, same as css/megamenu.css: components.css
-   ships .em-header__menu already positioned, which without JS would stack five
-   panels on top of one another under the bar. So the panel is returned to
-   normal flow here, and only the [data-dropdown="on"] gate that js/dropdown.js
-   sets makes it an overlay that starts closed. No JS → five plain link lists
-   inside the nav, every destination reachable. */
-.em-header__menu{position:static;min-width:0;padding:0;border:0;box-shadow:none;
-  background:none;border-radius:0}
-.em-header__menu a span{max-width:32ch}
-
-[data-dropdown="on"] .em-header__menu{position:absolute;top:calc(100% + 10px);left:0;
-  z-index:39;min-width:268px;padding:var(--space-3);
-  background:var(--white);border:1px solid var(--border-subtle);
-  border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
-  opacity:0;transform:translateY(-8px);
-  transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
-[data-dropdown="on"] .em-header__menu[hidden]{display:none}
-[data-dropdown="on"] .em-header__menu.is-open{opacity:1;transform:none}
-/* The nav is centred, so the last panel is the only one close enough to the
-   right edge to overflow it on a narrow desktop window. */
-[data-dropdown="on"] .em-header__item:last-child .em-header__menu{left:auto;right:0}
-
-@media (prefers-reduced-motion: reduce){
-  [data-dropdown="on"] .em-header__menu,
-  [data-dropdown="on"] .em-header__menu.is-open{opacity:1;transform:none;transition:none}
-  /* The panels still open — that is content, and gating it would leave a
-     reduced-motion user with less of the page. They open INSTANTLY instead:
-     a 200px box sliding under the pointer is exactly the movement this query
-     exists to stop, and the state change loses nothing by being immediate.
-     The photograph stops zooming with it. */
-  .c2-panel,
-  [data-reveal="on"] .c2-panel[data-reveal],
-  [data-reveal="on"] .c2-panel[data-reveal].is-revealed,
-  .c2-panel__bg,
-  .c2-panel__more,
-  .c2-panel:hover .c2-panel__more,.c2-panel:focus-within .c2-panel__more{
-    transition:none;transition-delay:0s}
-  .c2-panel:hover .c2-panel__bg,.c2-panel:focus-within .c2-panel__bg{transform:none}
-}
-
-/* Below the nav breakpoint js/nav.js's mobile panel owns navigation and
-   .em-header__nav is already display:none (css/site.css). This keeps the
-   panels out of the way even if the nav is ever shown at that width. */
-@media (max-width:960px){
-  .em-header__menu{display:none}
-}
+/* The header this page uses — utility strip, centred nav, plain dropdowns —
+   moved to css/header-2.css when the agreed build and the six About Us pages
+   started loading it too. This page links that file before this one. What is
+   left of its reduced-motion block, the part about the solution panels, is
+   restated at the bottom of this file with the rest of the panel rules. */
 
 /* ---------- Banner ---------- */
 .em-banner{background:var(--surface-page);padding-top:var(--section-y)}
@@ -451,4 +384,19 @@
      but the actions row has to be allowed to stack. */
   .em-banner__actions{flex-direction:column;gap:var(--space-5)}
   .em-banner__actions .em-btn{width:100%}
+}
+
+/* ---------- Reduced motion, panels ----------
+   Moved down here with the header extraction: this block used to sit inside
+   the dropdown rules, which now live in css/header-2.css. The panels are the
+   only thing on this page that still animates. */
+@media (prefers-reduced-motion: reduce){
+  .c2-panel,
+  [data-reveal="on"] .c2-panel[data-reveal],
+  [data-reveal="on"] .c2-panel[data-reveal].is-revealed,
+  .c2-panel__bg,
+  .c2-panel__more,
+  .c2-panel:hover .c2-panel__more,.c2-panel:focus-within .c2-panel__more{
+    transition:none;transition-delay:0s}
+  .c2-panel:hover .c2-panel__bg,.c2-panel:focus-within .c2-panel__bg{transform:none}
 }

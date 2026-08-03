@@ -1,0 +1,153 @@
+/* Staff bio — Grant Callen.
+
+   The page behind a staff portrait. One of ten, and the only one built: the
+   roadmap has all ten bios, but a single detail screen is what the client needs
+   to see and approve before nine more are cut from the same pattern. Every
+   staff card on all three team variations points here until the rest exist.
+
+   Namespaced .tp- throughout.
+
+   THE SHAPE IS THE POINT. A bio is one column of prose and one portrait, and
+   the mistake available here is dressing that up: pull quotes, stat rows, a
+   card grid of "areas of focus" the client never wrote. There is a name, a
+   title and two paragraphs. So the page is a wide portrait held in a tinted
+   frame beside a 68ch measure, and nothing else competes with the reading.
+
+   ELEMENTOR NOTE: the frame's overlap is a negative margin on a child inside
+   this section, as everywhere else in the About set. One section maps to one
+   Elementor section, and this page is the template the other nine bios are
+   built from, so the shape has to survive the conversion nine more times. */
+
+/* =============================== 1 · Profile ============================== */
+.tp-profile{padding:clamp(var(--space-8),4vw,var(--space-11)) 0 clamp(var(--space-10),5vw,var(--space-13));
+  background:linear-gradient(180deg,var(--blue-100) 0%,var(--white) 62%)}
+
+.tp-profile__grid{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);
+  column-gap:clamp(var(--space-9),5vw,var(--space-13));align-items:start}
+
+/* The way back out, above the portrait rather than under the header, because
+   this page is entered from one place and a visitor who wants out wants it in
+   the same corner they arrived from. */
+.tp-back{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  margin-bottom:var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.tp-back svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.tp-back:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+.tp-back:hover svg{transform:translateX(-4px)}
+
+.tp-frame{margin:0}
+
+/* The placeholder monogram, in the box the headshot will use. Dashed, so it
+   reads as pending on sight. */
+.tp-portrait{position:relative;isolation:isolate;display:grid;place-items:center;
+  width:100%;aspect-ratio:4/5;
+  border-radius:var(--radius-xl);border:2px dashed var(--blue-300);
+  background:var(--blue-100);box-shadow:var(--shadow-lg);--pattern-ink:var(--blue-300)}
+.tp-portrait::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;
+  background:linear-gradient(to top right,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 58%);
+  opacity:.55;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:58px;mask-size:58px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.tp-portrait__mono{font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.5rem,1.6rem + 3vw,4.5rem);letter-spacing:-.02em;color:var(--blue-600)}
+
+/* --- Contact --- */
+/* The column under the portrait was dead space at every width above 900px, and
+   a bio page is exactly where a reader looks for a way to reach the person. The
+   rows are labelled, not a bare row of circles: an icon on its own makes a
+   visitor hover to find out where it goes, and the address is the useful part.
+   The label is what makes each link's accessible name, so the icons stay
+   aria-hidden rather than carrying duplicate names of their own. */
+.tp-contact{margin-top:clamp(var(--space-7),3vw,var(--space-9));
+  padding-top:clamp(var(--space-6),2.5vw,var(--space-7));
+  border-top:1px solid var(--blue-200)}
+
+.tp-contact__title{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--text-muted)}
+
+.tp-contact__list{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
+.tp-contact__list a{display:inline-flex;align-items:center;gap:var(--space-4);
+  min-height:44px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none;overflow-wrap:anywhere}
+.tp-contact__list a:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+
+/* 44px, which is the touch target the row needs anyway, so the circle is the
+   target rather than decoration beside it. */
+.tp-contact__icon{display:grid;place-items:center;width:44px;height:44px;flex:0 0 auto;
+  border-radius:var(--radius-pill);border:1px solid var(--blue-200);background:var(--white);
+  color:var(--em-blue);
+  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out)}
+.tp-contact__icon svg{width:19px;height:19px}
+.tp-contact__list a:hover .tp-contact__icon{background:var(--em-blue);border-color:var(--em-blue);
+  color:var(--white)}
+
+/* Same dashed language as the portrait tile above it: this block is standing in
+   for details Empower have not supplied, and it should read that way on sight.
+   Both come out together. */
+.tp-contact__pending{margin:var(--space-5) 0 0;
+  padding:var(--space-3) var(--space-4);
+  border:1px dashed var(--blue-300);border-radius:var(--radius-lg);
+  font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted)}
+
+.tp-profile__copy{min-width:0;padding-top:clamp(var(--space-8),4vw,var(--space-12))}
+
+.tp-profile h1{margin:0;text-wrap:balance;font-size:clamp(2.2rem,1.35rem + 3.2vw,3.5rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.035em;color:var(--em-blue)}
+
+/* The title carries the accent. It is the one piece of hierarchy under the
+   name, and the orange mark that introduces sections elsewhere in this set
+   would be a second one doing the same job. */
+.tp-role{margin:var(--space-4) 0 0;padding-bottom:clamp(var(--space-6),2.5vw,var(--space-8));
+  border-bottom:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.0625rem,1rem + .45vw,1.375rem);letter-spacing:var(--ls-heading);
+  color:var(--em-orange-ink)}
+
+.tp-bio{margin-top:clamp(var(--space-6),2.5vw,var(--space-8))}
+.tp-bio p{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.75;
+  color:var(--text-body);max-width:68ch}
+.tp-bio p:last-child{margin-bottom:0}
+/* The opening paragraph is the one a visitor reads if they read one. */
+.tp-bio p:first-child{font-size:clamp(1.0625rem,1rem + .35vw,1.1875rem);color:var(--text-strong)}
+
+.tp-profile__actions{margin-top:clamp(var(--space-8),3.5vw,var(--space-10))}
+
+/* ================================ 2 · Back ================================ */
+/* A navy slab, not a card grid of colleagues: nine of the ten bios do not
+   exist yet, and a row of "you might also read" tiles would be nine links to
+   this same page wearing nine different names. */
+.tp-more{padding:0 0 clamp(var(--space-10),5vw,var(--space-13));background:var(--surface-page)}
+
+.tp-more__slab{display:flex;align-items:center;justify-content:space-between;
+  gap:clamp(var(--space-6),3vw,var(--space-9));flex-wrap:wrap;
+  padding:clamp(var(--space-7),3.5vw,var(--space-10)) clamp(var(--space-7),4vw,var(--space-11));
+  border-radius:var(--radius-xl);
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+.tp-more h2{margin:0;text-wrap:balance;font-size:clamp(1.375rem,1.1rem + 1.1vw,2rem);
+  font-weight:var(--fw-black);line-height:1.15;letter-spacing:-.025em;color:var(--white)}
+.tp-more__link{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--orange-300);text-decoration:none}
+.tp-more__link svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.tp-more__link:hover{text-decoration:underline;text-underline-offset:4px}
+.tp-more__link:hover svg{transform:translateX(4px)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:900px){
+  .tp-profile__grid{grid-template-columns:1fr;row-gap:clamp(var(--space-7),3vw,var(--space-9))}
+  .tp-frame{max-width:340px}
+  .tp-profile__copy{padding-top:0}
+}
+
+@media (max-width:520px){
+  .tp-more__slab{flex-direction:column;align-items:flex-start}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .tp-back:hover svg,.tp-more__link:hover svg{transform:none}
+}

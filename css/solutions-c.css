@@ -1,0 +1,206 @@
+/* Solutions landing — variation C, "The Lattice".
+
+   The structural one. Education, Work and Safety are not three products in a
+   row: the roadmap's own sentence says opportunity is shaped by all three at
+   once. So this variation sets them as one structure rather than three cards —
+   a single beam across the page with three nodes on it, three columns hanging
+   from those nodes, and the brand's honeycomb behind them at the scale where it
+   reads as a lattice rather than as texture.
+
+   COLOUR STRATEGY: restrained, near-monochrome. Blue ink on white and one tint,
+   photographs desaturated so no single picture pulls the eye off the structure,
+   and orange used ONLY as connective tissue — the three nodes, the rules, the
+   one button. Variation A is full-colour photography and B is navy-drenched;
+   this one had to earn its place by not being either.
+
+   THE PHOTOGRAPHS ARE DESATURATED IN CSS, not in the files. `filter:
+   grayscale()` on the img, restored on hover and focus-within, so the same
+   assets serve all three variations and Empower's real photography drops in
+   without a second export. If they hate it, the fix is deleting one line.
+
+   Namespaced .sc- throughout.
+
+   ELEMENTOR NOTE: the beam is a flex row of three spans inside the section that
+   owns it; nothing is absolutely positioned across a section boundary. One
+   section maps to one Elementor section. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+/* No kicker. On a page whose whole argument is structure, a label above each
+   section would be a fourth structure competing with the other three. */
+
+.sc-more{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink);text-decoration:none}
+.sc-more svg{width:16px;height:16px;transition:transform var(--dur) var(--ease-out)}
+.sc-more:hover{text-decoration:underline;text-underline-offset:5px}
+.sc-more:hover svg{transform:translateX(4px)}
+
+/* =============================== 1 · Hero ================================= */
+/* Type only. The photographs on this page belong to the three areas, and
+   putting one in the hero would make the hero a fourth area. */
+.sc-hero{padding:clamp(var(--space-10),6vw,var(--space-14)) 0 clamp(var(--space-9),4vw,var(--space-12));
+  background:var(--surface-page)}
+
+.sc-hero h1{margin:0 0 clamp(var(--space-8),4vw,var(--space-11));max-width:16ch;
+  text-wrap:balance;font-size:clamp(2.5rem,1.2rem + 5vw,5.25rem);
+  font-weight:var(--fw-black);line-height:.94;letter-spacing:-.04em;color:var(--blue-900)}
+.sc-hero h1 em{font-style:normal;color:var(--em-orange)}
+
+/* Two columns of setting under one headline, divided by a hairline: the
+   roadmap gives this hero two paragraphs and they are doing different jobs —
+   the first names the three areas, the second says what Empower does about
+   them. Set as one block they read as one long paragraph. */
+.sc-hero__columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-12));
+  padding-top:clamp(var(--space-6),2.5vw,var(--space-8));
+  border-top:1px solid var(--border-default)}
+.sc-hero__lede{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.125rem,1rem + .7vw,1.5rem);line-height:1.4;
+  letter-spacing:var(--ls-heading);color:var(--em-blue);text-wrap:pretty}
+.sc-hero__body{margin:0;font-size:var(--fs-body);line-height:1.75;color:var(--text-body)}
+
+/* ============================== 2 · The lattice =========================== */
+.sc-lattice{position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(var(--space-9),4.5vw,var(--space-12)) 0 clamp(var(--space-11),6vw,var(--space-14));
+  background:var(--surface-tint);--pattern-ink:var(--blue-300)}
+
+/* The honeycomb at lattice scale: large, faint, and gone before it reaches the
+   columns. Measured, not guessed: at .55 opacity over the full height it read
+   as wallpaper and the three headings had to fight it. It now fades out by the
+   time the beam arrives, which is the only place it is doing structural work. */
+.sc-lattice::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(180deg,var(--pattern-ink) 0%,transparent 42%);
+  opacity:.32;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:108px;mask-size:108px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.sc-lattice__head{margin:0 0 clamp(var(--space-7),3vw,var(--space-9));max-width:20ch;
+  text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--blue-900)}
+
+/* The beam. One rule across the page with a node over each column: the three
+   areas are held by the same structure, which is the argument this variation
+   is making. The nodes are flex children of the rule, so they stay over their
+   columns at every width without a single magic number. */
+.sc-lattice__beam{display:flex;align-items:center;
+  gap:clamp(var(--space-6),3vw,var(--space-9));
+  margin-bottom:clamp(var(--space-7),3vw,var(--space-9));
+  border-top:1px solid var(--blue-400)}
+.sc-lattice__beam span{flex:1 1 0;height:clamp(var(--space-6),2.5vw,var(--space-8));
+  position:relative}
+.sc-lattice__beam span::before{content:"";position:absolute;top:-5px;left:0;
+  width:10px;height:10px;border-radius:var(--radius-pill);
+  background:var(--em-orange)}
+.sc-lattice__beam span::after{content:"";position:absolute;top:0;left:4px;
+  width:1px;height:100%;background:var(--blue-400)}
+
+/* Subgrid, so the five parts of a column — name, promise, picture, paragraph,
+   link — sit on the same five lines across all three. Without it the promise
+   sentences (two lines, three lines, two lines) push each photograph to its own
+   height and the lattice stops being a lattice. Browsers without subgrid fall
+   back to three independently sized columns, which is exactly what this looked
+   like before, so nothing breaks; it is just less aligned. */
+.sc-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:auto auto auto auto auto;
+  column-gap:clamp(var(--space-6),3vw,var(--space-9))}
+
+.sc-column{display:grid;grid-row:span 5;grid-template-rows:subgrid;min-width:0;
+  align-content:start}
+.sc-column h3{margin:0 0 var(--space-4);font-size:clamp(1.125rem,1rem + .6vw,1.5rem);
+  font-weight:var(--fw-black);line-height:1.15;letter-spacing:-.02em;color:var(--blue-900)}
+
+.sc-column__promise{margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.45;letter-spacing:var(--ls-heading);
+  color:var(--em-blue);text-wrap:pretty}
+
+/* Desaturated by default so the structure reads first, and restored on hover
+   or keyboard focus so the photograph is still a photograph. */
+.sc-column__media{margin:0 0 var(--space-6);overflow:hidden;border-radius:var(--radius-lg);
+  aspect-ratio:5/4;background:var(--blue-200)}
+.sc-column__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  filter:grayscale(1) contrast(1.04);
+  transition:filter var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out)}
+.sc-column:hover .sc-column__media img,
+.sc-column:focus-within .sc-column__media img{filter:grayscale(0) contrast(1);transform:scale(1.02)}
+
+.sc-column__body{margin:0 0 var(--space-6);font-size:var(--fs-small);line-height:1.7;
+  color:var(--text-body)}
+.sc-column .sc-more{align-self:start}
+
+/* ============================== 3 · Research ============================== */
+/* The one place on the page where a single sentence is allowed to be the whole
+   width of the argument. Rules above and below, nothing else. */
+.sc-research{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-page)}
+
+.sc-research__grid{display:grid;
+  grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-12));
+  row-gap:clamp(var(--space-7),3vw,var(--space-9));
+  padding-block:clamp(var(--space-7),3vw,var(--space-9));
+  border-top:2px solid var(--blue-900);border-bottom:1px solid var(--border-default)}
+
+.sc-research h2{grid-column:1;margin:0;text-wrap:balance;
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);font-weight:var(--fw-bold);
+  line-height:1.2;letter-spacing:-.02em;color:var(--blue-900)}
+
+.sc-research__statement{grid-column:2;margin:0;text-wrap:balance;
+  font-size:clamp(1.5rem,1.05rem + 2.1vw,2.75rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.03em;color:var(--em-blue)}
+
+.sc-research__aside{grid-column:2}
+.sc-research__aside p{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.75;
+  color:var(--text-body);max-width:62ch}
+
+/* ============================== 4 · Stories =============================== */
+.sc-stories{padding:0 0 clamp(var(--space-11),6vw,var(--space-14));background:var(--surface-page)}
+
+.sc-stories__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-12));align-items:center;
+  padding-top:clamp(var(--space-9),4vw,var(--space-12))}
+
+.sc-stories h2{margin:0 0 var(--space-6);max-width:14ch;text-wrap:balance;
+  font-size:clamp(1.875rem,1.2rem + 2.4vw,3.25rem);font-weight:var(--fw-black);
+  line-height:1.02;letter-spacing:-.035em;color:var(--blue-900)}
+.sc-stories p{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.75;
+  color:var(--text-body);max-width:54ch}
+
+/* The one full-colour photograph on the page, and the last thing on it. */
+.sc-stories__media{margin:0;overflow:hidden;border-radius:var(--radius-xl);
+  aspect-ratio:4/5;box-shadow:var(--shadow-lg)}
+.sc-stories__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 26%}
+
+/* ============================== Responsive ================================ */
+@media (max-width:900px){
+  .sc-hero__columns{grid-template-columns:1fr;row-gap:var(--space-6)}
+  .sc-research__grid{grid-template-columns:1fr}
+  .sc-research h2,.sc-research__statement,.sc-research__aside{grid-column:1}
+  .sc-stories__grid{grid-template-columns:1fr;row-gap:var(--space-9)}
+  .sc-stories__media{aspect-ratio:4/3}
+  .sc-stories h2{max-width:none}
+}
+
+@media (max-width:760px){
+  /* The beam turns on its side: each column keeps its own node and its own
+     rule, so the structure survives the stack instead of evaporating into
+     three cards. */
+  .sc-lattice__beam{display:none}
+  .sc-columns{grid-template-columns:1fr;gap:0}
+  .sc-column{padding-top:clamp(var(--space-6),3vw,var(--space-8));
+    padding-bottom:clamp(var(--space-7),3.5vw,var(--space-9));
+    border-top:1px solid var(--blue-400);position:relative}
+  .sc-column::before{content:"";position:absolute;top:-5px;left:0;
+    width:10px;height:10px;border-radius:var(--radius-pill);background:var(--em-orange)}
+  .sc-column:last-child{border-bottom:1px solid var(--blue-400)}
+  .sc-column__media{max-width:420px}
+  .sc-lattice::before{-webkit-mask-size:96px;mask-size:96px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sc-more:hover svg{transform:none}
+  .sc-column:hover .sc-column__media img,
+  .sc-column:focus-within .sc-column__media img{transform:none}
+}

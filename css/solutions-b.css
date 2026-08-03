@@ -1,0 +1,194 @@
+/* Solutions landing — variation B, "The Throughline Down".
+
+   The committed one. Navy carries the top half of the page, and the three
+   areas descend a single orange line: one line, three stations, in the order
+   the roadmap states them. The homepage's Throughline option ran that motif
+   horizontally through a five-step model; here it is vertical and it is doing
+   different work, holding three separate arguments on one thread rather than
+   sequencing one argument.
+
+   COLOUR STRATEGY: committed. --surface-navy-deep is the page for two sections
+   out of four, orange is the only other colour on it, and the light panel that
+   follows lands harder for having been withheld. That is the point of showing
+   this next to variation A.
+
+   NO NEW SCRIPTS. The stations are drawn by the existing reveal layer: nodes
+   and the line's fill are start-state CSS under [data-reveal="on"] and settle
+   when js/reveal.js adds .is-revealed. With JavaScript off nothing is hidden,
+   the line is drawn at full strength and the page reads as a plain stack.
+   (Careful with the reveal layer: it sets `transition` on any element carrying
+   data-reveal, which silently replaces that element's own transition. Anything
+   with its own timing here is a CHILD of the revealed element, never the
+   revealed element itself.)
+
+   Namespaced .sb- throughout.
+
+   ELEMENTOR NOTE: the line is a background on the list, not an absolutely
+   positioned element crossing sections, and the research panel's overlap is a
+   negative margin on a child inside its own section. One section maps to one
+   Elementor section. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+/* No kicker on this page. The h1 fills the first screen and the three headings
+   below it are the three areas; a label above each one would be scaffolding. */
+
+.sb-more{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--orange-300);text-decoration:none}
+.sb-more svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.sb-more:hover{text-decoration:underline;text-underline-offset:4px}
+.sb-more:hover svg{transform:translateX(4px)}
+
+/* =============================== 1 · Hero ================================= */
+.sb-hero{position:relative;padding:clamp(var(--space-11),7vw,var(--space-15)) 0 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.sb-hero__inner{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  column-gap:clamp(var(--space-9),5vw,var(--space-13));align-items:end;
+  padding-bottom:clamp(var(--space-10),5vw,var(--space-13))}
+
+.sb-hero h1{margin:0;text-wrap:balance;font-size:clamp(2.5rem,1.3rem + 4.6vw,5rem);
+  font-weight:var(--fw-black);line-height:.96;letter-spacing:-.04em;color:var(--white)}
+.sb-hero h1 em{font-style:normal;display:block;color:var(--orange-300)}
+
+/* Both paragraphs are <p> inside the same block, so the second rule has to be
+   the more specific one or it flattens the lede back to body size and eats the
+   space between them. Written as two scoped rules rather than one plus an
+   override, which is the version that was wrong the first time. */
+.sb-hero__copy{min-width:0;padding-bottom:var(--space-2)}
+.sb-hero__copy .sb-hero__lede{margin:0 0 var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.125rem,1rem + .7vw,1.5rem);line-height:1.45;
+  letter-spacing:var(--ls-heading);color:var(--white);max-width:46ch}
+.sb-hero__copy p:last-child{margin:0;font-size:var(--fs-body);line-height:1.75;
+  color:var(--text-inverse-muted);max-width:58ch}
+
+/* Where the line begins. It is centred on the same rail the stations use, so
+   the eye is already following it when the first heading arrives. */
+.sb-hero__lead-in{height:clamp(var(--space-9),5vw,var(--space-12));
+  background:linear-gradient(180deg,transparent 0%,var(--em-orange) 100%);
+  width:3px;margin-inline:auto;border-radius:var(--radius-pill)}
+
+/* ============================= 2 · The track ============================== */
+.sb-track{padding:0 0 clamp(var(--space-11),6vw,var(--space-14));
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.sb-track__head{margin:0 0 clamp(var(--space-9),4vw,var(--space-12));text-align:center;
+  text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+
+/* The line itself: a background on the list, so it cannot be orphaned from the
+   stations it connects, and it stops at the last node rather than running off
+   the section's bottom edge. */
+.sb-stations{position:relative;list-style:none;margin:0;padding:0;
+  display:grid;row-gap:clamp(var(--space-9),4.5vw,var(--space-12))}
+.sb-stations::before{content:"";position:absolute;top:0;bottom:12%;left:50%;
+  width:3px;margin-left:-1.5px;border-radius:var(--radius-pill);
+  background:var(--em-orange);opacity:.45}
+
+.sb-station{position:relative;display:grid;
+  grid-template-columns:minmax(0,1fr) clamp(var(--space-11),9vw,var(--space-14)) minmax(0,1fr);
+  align-items:center}
+
+/* Copy left, picture right; the second station swaps, so the eye crosses the
+   line rather than running down one side of it. */
+.sb-station__copy{grid-column:1;padding-right:clamp(var(--space-2),2vw,var(--space-6));text-align:right}
+.sb-station__media{grid-column:3;margin:0}
+.sb-station:nth-child(2) .sb-station__copy{grid-column:3;text-align:left;
+  padding-right:0;padding-left:clamp(var(--space-2),2vw,var(--space-6))}
+.sb-station:nth-child(2) .sb-station__media{grid-column:1}
+
+/* The node sits ON the line, in the middle column, and lands when its station
+   is revealed. The transition is on the node, which carries no data-reveal
+   attribute of its own — see the note at the top of this file. */
+.sb-station__node{grid-column:2;justify-self:center;
+  width:18px;height:18px;border-radius:var(--radius-pill);
+  background:var(--em-orange);box-shadow:0 0 0 6px var(--surface-navy-deep);
+  transform:scale(.4);opacity:.5;
+  transition:transform var(--dur-slow) var(--ease-entrance),opacity var(--dur-slow) var(--ease-entrance)}
+.sb-station.is-revealed .sb-station__node{transform:scale(1);opacity:1}
+/* No JavaScript: nothing is ever hidden, so the node is simply drawn. */
+html:not([data-reveal="on"]) .sb-station__node{transform:scale(1);opacity:1}
+
+.sb-station h3{margin:0 0 var(--space-4);font-size:clamp(1.375rem,1.1rem + 1.1vw,2rem);
+  font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+.sb-station__promise{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .5vw,1.3125rem);line-height:1.4;
+  letter-spacing:var(--ls-heading);color:var(--orange-300);text-wrap:balance}
+.sb-station__body{margin:0 0 var(--space-6);font-size:var(--fs-small);line-height:1.7;
+  color:var(--text-inverse-muted)}
+
+/* Capped, and pulled toward the line rather than filling its column: a
+   photograph the full width of half the page turns each station into a slide,
+   and there are three of them. */
+.sb-station__media{border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);
+  aspect-ratio:5/4;border:1px solid var(--border-inverse);
+  max-width:400px;justify-self:start}
+.sb-station:nth-child(2) .sb-station__media{justify-self:end}
+.sb-station__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 32%}
+
+/* ============================== 3 · Research ============================== */
+/* The light panel is the release from two navy sections, so it climbs over the
+   navy rather than starting under it. */
+.sb-research{position:relative;z-index:1;
+  padding:0 0 clamp(var(--space-10),5vw,var(--space-13));background:var(--surface-page)}
+
+.sb-research__panel{margin-top:calc(-1 * clamp(var(--space-10),6vw,var(--space-13)));
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(var(--space-7),4vw,var(--space-11));align-items:start;
+  padding:clamp(var(--space-9),4.5vw,var(--space-13)) clamp(var(--space-7),4vw,var(--space-12));
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  background:var(--surface-page)}
+
+.sb-research h2{margin:0 0 var(--space-5);text-wrap:balance;
+  font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+.sb-research__lede{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .5vw,1.3125rem);line-height:1.4;
+  letter-spacing:var(--ls-heading);color:var(--em-orange-ink)}
+.sb-research__body p{margin:0 0 var(--space-7);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body)}
+
+/* ============================== 4 · Stories =============================== */
+.sb-stories{padding:0 0 clamp(var(--space-11),6vw,var(--space-14));background:var(--surface-page)}
+
+/* Window-wide, shallow, and carrying no words. */
+.sb-stories__band{margin:0 0 clamp(var(--space-8),4vw,var(--space-11));
+  height:clamp(220px,26vw,400px);overflow:hidden}
+.sb-stories__band img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 22%}
+
+.sb-stories__panel{max-width:64ch}
+.sb-stories h2{margin:0 0 var(--space-6);text-wrap:balance;
+  font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);font-weight:var(--fw-black);
+  line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+.sb-stories p{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1000px){
+  .sb-hero__inner{grid-template-columns:1fr;row-gap:var(--space-8);align-items:start}
+  .sb-research__panel{grid-template-columns:1fr;gap:var(--space-7)}
+}
+
+@media (max-width:780px){
+  /* The line moves to the left edge and the stations stack beside it: a centre
+     rail with alternating sides needs two columns of room, and below this width
+     there is only one. The thread is the point, so it stays. */
+  .sb-stations::before{left:9px;bottom:6%}
+  .sb-station{grid-template-columns:34px minmax(0,1fr);row-gap:var(--space-6);align-items:start}
+  .sb-station__node{grid-column:1;grid-row:1;justify-self:start;margin-top:var(--space-2)}
+  .sb-station__copy,
+  .sb-station:nth-child(2) .sb-station__copy{grid-column:2;grid-row:1;text-align:left;
+    padding-left:0;padding-right:0}
+  .sb-station__media,
+  .sb-station:nth-child(2) .sb-station__media{grid-column:2;grid-row:2}
+  .sb-track__head{text-align:left}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sb-more:hover svg{transform:none}
+  /* The node keeps its landed state and simply appears. */
+  .sb-station__node{transition:none;transform:scale(1);opacity:1}
+}

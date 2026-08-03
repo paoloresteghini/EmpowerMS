@@ -1,0 +1,217 @@
+/* Solutions landing — variation A, "The Commons".
+
+   The safe one, and deliberately so: it is the option that makes the other two
+   showable. It sits beside dist/final.html without argument, and a visitor
+   arriving from the homepage would not notice they had changed template.
+
+   THE SHAPE. Three solutions, unequal weight. Education takes a wide feature
+   panel with a portrait photograph; Work and Safety sit under it as a pair.
+   That is a mosaic, not three equal cards, and it is the one arrangement of
+   three the rest of this build has not already used: What We Do A steps them
+   down a diagonal, What We Do B alternates full-width rows, What We Do C sets
+   three tall cards at three heights. If this page repeated any of those, the
+   client would be choosing between two pages that look like each other.
+
+   Namespaced .sa- throughout. Nothing here touches an .em- class or another
+   variation's prefix.
+
+   ELEMENTOR NOTE, the rule this whole set follows: every overlap is a negative
+   margin on a child INSIDE the section that owns it, never an absolutely
+   positioned element reaching into the section below. One section maps to one
+   Elementor section. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+/* One kicker, in the hero, naming where in the site the visitor has landed.
+   Not a label above every section: that scaffold was rejected on the homepage
+   (see the note on .fp-tagline in css/option-a.css) and again on the About set. */
+.sa-kicker{margin:0 0 var(--space-5);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+.sa-kicker::before{content:"";width:28px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+
+.sa-mark{position:relative;padding-top:var(--space-6)}
+.sa-mark::before{content:"";position:absolute;top:0;left:0;width:56px;height:4px;
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+.sa-jump{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.sa-jump svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.sa-jump:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+.sa-jump:hover svg{transform:translateY(3px)}
+
+/* =============================== 1 · Hero ================================= */
+/* The picture bleeds off the left edge of the window and the copy sits in the
+   right half of the container. Every other hero in this build is the other way
+   round and inside the frame — homepage, Who We Are A, the three team pages —
+   and a fifth page arriving in that same shape is how a set of options starts
+   to look like one option. The bleed also rhymes with the three panels below,
+   which are picture-left as well. */
+.sa-hero{display:grid;grid-template-columns:minmax(0,.46fr) minmax(0,.54fr);
+  align-items:stretch;background:linear-gradient(180deg,var(--white) 0%,var(--blue-100) 100%)}
+
+.sa-hero__media{margin:0;overflow:hidden;
+  border-top-right-radius:var(--radius-xl);border-bottom-right-radius:var(--radius-xl)}
+.sa-hero__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 26%}
+
+/* The copy column carries the page's left gutter itself, because the section is
+   not inside .em-container: the picture has to reach the viewport edge, and a
+   container would stop it. The max-width keeps the measure honest on a wide
+   screen instead of letting the column grow with the window. */
+.sa-hero__copy{min-width:0;display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(var(--space-10),6vw,var(--space-14)) var(--gutter);
+  padding-left:clamp(var(--space-8),4vw,var(--space-12))}
+.sa-hero__copy > *{max-width:52ch}
+
+.sa-hero h1{margin:0 0 var(--space-7);text-wrap:balance;font-size:clamp(2.3rem,1.3rem + 3.4vw,4rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.035em;color:var(--em-blue)}
+/* The state's name is the promise in this headline, so it takes the accent and
+   its own line, as the homepage hero does with "Starts Here." */
+.sa-hero h1 em{font-style:normal;display:block;color:var(--em-orange)}
+
+.sa-hero__lede{margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.375rem);line-height:1.45;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.sa-hero__body{margin:0 0 var(--space-8);font-size:var(--fs-body);
+  line-height:1.7;color:var(--text-body)}
+
+/* ============================= 2 · Solutions ============================== */
+.sa-solutions{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-page)}
+
+.sa-solutions__head{margin:0 0 clamp(var(--space-8),4vw,var(--space-11));max-width:22ch;
+  text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);font-weight:var(--fw-black);
+  line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+
+/* Three panels, one per row, all three built the same way. Empower's own
+   framing is that the areas are equal — the roadmap's hero sentence names them
+   in one breath — so the earlier arrangement, which gave Education a feature
+   panel and paired the other two beneath it, was arguing something the copy
+   does not say. Stacked, each one gets the full width and the same shape.
+
+   Still not a What We Do composition: that page alternates the picture side row
+   by row, and these hold the picture on the left every time, which is what
+   makes them read as one repeated object rather than a zigzag. */
+.sa-stack{display:grid;grid-template-columns:minmax(0,1fr);
+  gap:clamp(var(--space-6),2.5vw,var(--space-8))}
+
+.sa-panel{display:flex;flex-direction:column;overflow:hidden;
+  border-radius:var(--radius-xl);background:var(--surface-subtle);
+  transition:box-shadow var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.sa-panel:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+
+.sa-panel__media{margin:0;overflow:hidden;aspect-ratio:4/3}
+.sa-panel__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.sa-panel:hover .sa-panel__media img{transform:scale(1.03)}
+
+.sa-panel__copy{display:flex;flex-direction:column;flex:1 1 auto;
+  padding:clamp(var(--space-6),2.6vw,var(--space-9))}
+.sa-panel h3{margin:0 0 var(--space-4);font-size:var(--fs-h4);font-weight:var(--fw-bold);
+  line-height:1.2;letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.sa-panel__promise{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .5vw,1.3125rem);line-height:1.35;
+  letter-spacing:var(--ls-heading);color:var(--em-blue);text-wrap:balance}
+.sa-panel__body{margin:0 0 var(--space-6);font-size:var(--fs-small);line-height:1.65;
+  color:var(--text-body);max-width:62ch}
+
+.sa-more{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  align-self:flex-start;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-orange-ink);text-decoration:none}
+.sa-more svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.sa-more:hover{text-decoration:underline;text-underline-offset:4px}
+.sa-more:hover svg,.sa-panel:hover .sa-more svg{transform:translateX(4px)}
+
+/* Picture beside copy, and a height. 505px is the measured 674px the feature
+   panel used to stand at, less a quarter: three panels at the old height was
+   two and a half screens of scrolling for three paragraphs. The height is a
+   clamp rather than a fixed value so it gives way on smaller screens before
+   the copy has to. */
+@media (min-width:781px){
+  .sa-panel{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+    align-items:stretch;min-height:clamp(360px,34vw,505px)}
+  /* The image comes out of flow so the PANEL decides the height. Left in flow
+     with height:100%, a percentage against an indefinite row resolves to auto
+     and the portrait photograph's own 1242x1580 ratio sets the row: that is
+     where the 674px came from, and why min-height alone did nothing. */
+  .sa-panel__media{position:relative;aspect-ratio:auto;height:auto;min-height:0}
+  .sa-panel__media img{position:absolute;inset:0;width:100%;height:100%}
+  .sa-panel__copy{justify-content:center;
+    padding:clamp(var(--space-7),3.2vw,var(--space-10))}
+  .sa-panel h3{font-size:clamp(1.375rem,1.15rem + .9vw,1.875rem)}
+  .sa-panel__promise{font-size:clamp(1.125rem,1rem + .8vw,1.5rem)}
+  .sa-panel__body{font-size:var(--fs-body)}
+}
+
+/* ============================== 3 · Research ============================== */
+/* A navy slab, because the research section is the credibility beat on a page
+   that is otherwise photographs of families, and it should read as a change of
+   register rather than a fourth panel. */
+.sa-research{padding:0 0 clamp(var(--space-10),5vw,var(--space-13));background:var(--surface-page)}
+
+.sa-research__slab{position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(var(--space-9),4.5vw,var(--space-13)) clamp(var(--space-7),4vw,var(--space-12));
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  --pattern-ink:var(--blue-600)}
+/* The house honeycomb, graduated into the top-right corner and gone before it
+   reaches the text. Same one SVG, recoloured, as the About slabs. */
+.sa-research__slab::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom left,var(--pattern-ink) 0%,var(--pattern-ink) 18%,transparent 64%);
+  opacity:.8;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:76px;mask-size:76px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.sa-research__copy{max-width:68ch}
+.sa-research h2{margin:0 0 var(--space-6);text-wrap:balance;
+  font-size:clamp(1.6rem,1.1rem + 1.9vw,2.6rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+.sa-research__lede{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .5vw,1.375rem);line-height:1.4;color:var(--orange-300)}
+.sa-research p{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-inverse-muted)}
+
+/* ============================== 4 · Stories =============================== */
+.sa-stories{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+
+.sa-stories__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(var(--space-8),5vw,var(--space-13));align-items:center}
+
+.sa-stories__media{margin:0;border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);
+  aspect-ratio:4/3}
+.sa-stories__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 32%}
+
+.sa-stories h2{margin:0 0 var(--space-6);text-wrap:balance;
+  font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+.sa-stories p{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);max-width:56ch}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1000px){
+  /* The bleed becomes a band: below this width the picture column is too narrow
+     to hold a face, and a 46% sliver of a photograph is worse than none. */
+  .sa-hero{grid-template-columns:1fr}
+  .sa-hero__media{aspect-ratio:16/9;border-radius:0}
+  .sa-hero__media img{object-position:center 22%}
+  .sa-hero__copy{padding-inline:var(--gutter);
+    padding-block:clamp(var(--space-8),5vw,var(--space-11))}
+  .sa-stories__grid{grid-template-columns:1fr;row-gap:var(--space-8)}
+  .sa-stories__media{aspect-ratio:16/9}
+}
+
+@media (max-width:640px){
+  .sa-research__slab::before{-webkit-mask-size:58px;mask-size:58px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .sa-jump:hover svg,.sa-more:hover svg,.sa-panel:hover .sa-more svg{transform:none}
+  .sa-panel:hover{transform:none}
+  .sa-panel:hover .sa-panel__media img{transform:none}
+}

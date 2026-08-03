@@ -1,0 +1,221 @@
+/* Team, Board & Fellows — variation B, "The Directory".
+
+   The typographic reading. Where variation A shows the team as a wall of
+   portraits, this one sets it as a document: a numbered index of ten people,
+   one row each, read top to bottom the way you read a masthead or a staff
+   list in a printed report. The photographs, when they come, are discs beside
+   the names rather than the object the layout is built around, which is the
+   point of having this option at all: it is the version that still works if
+   Empower would rather not lead with faces.
+
+   Namespaced .tb- throughout. Nothing here touches an .em- class or another
+   variation's prefix.
+
+   ELEMENTOR NOTE, same rule as the rest of the About set: every overlap is a
+   negative margin on a child inside the section that owns it, never an
+   absolutely positioned element reaching into the section below. One section
+   maps to one Elementor section.
+
+   NO KICKER on this page, and none needed: the h1 is the whole hero and the
+   three headings below it are the three groups. Variation A carries one, in
+   its hero, which is the build's one-per-page rule; B carries none, exactly as
+   Who We Are B does. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+.tb-mark{position:relative;padding-top:var(--space-6)}
+.tb-mark::before{content:"";position:absolute;top:0;left:0;width:56px;height:4px;
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* The monogram disc, standing in for a headshot. Dashed rather than solid: a
+   solid tile reads as a designed empty state, and a client stops seeing it. */
+.tb-disc{display:grid;place-items:center;width:56px;height:56px;flex:0 0 auto;
+  border-radius:var(--radius-pill);border:2px dashed var(--blue-300);
+  background:var(--blue-100);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--blue-600)}
+
+.tb-jump{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.tb-jump svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.tb-jump:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+.tb-jump:hover svg{transform:translateY(3px)}
+
+.tb-readbio{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-orange-ink);text-decoration:none}
+.tb-readbio svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.tb-readbio:hover{text-decoration:underline;text-underline-offset:4px}
+.tb-readbio:hover svg{transform:translateX(4px)}
+
+/* =============================== 1 · Hero ================================= */
+/* Type, not picture. The headline takes the left column at display size and
+   the roadmap's two paragraphs sit beside it, so the hero is one block of
+   words rather than a copy column next to a photograph. */
+.tb-hero{padding:clamp(var(--space-9),5vw,var(--space-13)) 0 0;background:var(--surface-page)}
+
+.tb-hero__grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  column-gap:clamp(var(--space-9),5vw,var(--space-13));align-items:start;
+  padding-bottom:clamp(var(--space-9),5vw,var(--space-12))}
+
+.tb-hero h1{margin:0;text-wrap:balance;font-size:clamp(2.4rem,1.3rem + 4.2vw,4.6rem);
+  font-weight:var(--fw-black);line-height:.98;letter-spacing:-.035em;color:var(--em-blue)}
+.tb-hero h1 em{font-style:normal;display:block;color:var(--em-orange)}
+
+.tb-hero__copy{min-width:0;padding-top:var(--space-3)}
+.tb-hero__lede{margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.3125rem);line-height:1.45;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.tb-hero__copy p{margin:0 0 var(--space-7);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);max-width:62ch}
+
+.tb-hero__actions{display:flex;align-items:center;gap:clamp(var(--space-5),2.5vw,var(--space-8));
+  flex-wrap:wrap}
+
+/* A hairline closes the hero. On a page set as a document the rule is the
+   punctuation between the opening statement and the list that follows it. */
+.tb-hero__rule{height:1px;background:var(--border-default)}
+
+/* =============================== 2 · Staff ================================ */
+.tb-staff{padding:clamp(var(--space-10),5vw,var(--space-13)) 0 0;background:var(--surface-page)}
+
+.tb-staff__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-10))}
+.tb-staff h2{margin:0;text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+
+.tb-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
+
+/* Build scaffolding, not client copy: names what is missing so the discs are
+   never mistaken for a design decision. Carries the same dashed edge as the
+   thing it explains. Comes out with the last placeholder. */
+.tb-pending{display:inline-block;margin:var(--space-5) 0 0;
+  padding:var(--space-3) var(--space-5);
+  border:1px dashed var(--blue-300);border-radius:var(--radius-lg);
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted)}
+
+/* --- The index --- */
+/* One row per person: number, disc, name, title. The row is the unit, the
+   hairline is the only chrome, and the whole thing scans in one column the way
+   a directory is meant to. */
+.tb-index{list-style:none;margin:0;padding:0}
+
+.tb-row{display:grid;grid-template-columns:auto 56px minmax(0,1fr) minmax(0,auto);
+  align-items:center;gap:clamp(var(--space-4),2vw,var(--space-7));
+  padding:clamp(var(--space-5),2vw,var(--space-6)) var(--space-4);
+  border-top:1px solid var(--border-subtle);
+  transition:background var(--dur) var(--ease-out)}
+.tb-row:last-child{border-bottom:1px solid var(--border-subtle)}
+.tb-row:hover{background:var(--surface-subtle)}
+
+.tb-row__n{font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);color:var(--em-orange-ink);font-variant-numeric:tabular-nums}
+
+.tb-row__name{margin:0;font-size:clamp(1.1875rem,1.05rem + .7vw,1.75rem);font-weight:var(--fw-bold);
+  line-height:1.15;letter-spacing:-.02em}
+.tb-row__name a{color:var(--em-blue);text-decoration:none}
+.tb-row:hover .tb-row__name a{text-decoration:underline;text-underline-offset:5px;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+
+.tb-row__title{margin:0;text-align:right;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  line-height:1.4;color:var(--text-muted)}
+
+/* The founder's row carries the one bio the page holds. It breaks the rhythm
+   once, at the top, rather than turning every row into a paragraph. */
+.tb-row--lead{grid-template-areas:"n disc name title" ". . more more";row-gap:var(--space-5);
+  padding-top:clamp(var(--space-6),2.5vw,var(--space-8));
+  padding-bottom:clamp(var(--space-7),3vw,var(--space-9));
+  border-top:2px solid var(--em-blue)}
+.tb-row--lead .tb-row__n{grid-area:n}
+.tb-row--lead .tb-disc{grid-area:disc}
+.tb-row--lead .tb-row__name{grid-area:name}
+.tb-row--lead .tb-row__title{grid-area:title}
+.tb-row--lead .tb-row__more{grid-area:more}
+.tb-row--lead .tb-disc{width:72px;height:72px;font-size:var(--fs-h5)}
+.tb-row--lead .tb-row__name{font-size:clamp(1.5rem,1.15rem + 1.3vw,2.25rem);font-weight:var(--fw-black)}
+.tb-row__bio{margin:0 0 var(--space-6);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);max-width:70ch}
+
+/* The photograph that keeps this page from being ten rows and nothing else.
+   Full width of the viewport, shallow, and after the index rather than above
+   it: the people come first on a people page. */
+.tb-band{margin:clamp(var(--space-10),5vw,var(--space-13)) 0 0;
+  height:clamp(220px,26vw,380px);overflow:hidden}
+/* 22%, not centre: the band is shallower than the photograph, and a centred
+   crop takes the top off the child on the father's shoulders. */
+.tb-band img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 22%}
+
+/* ============================== 3 · Fellows =============================== */
+/* Five names with subject areas and no bios. Two columns on a tint, each entry
+   a name over its field, no rules between: after ten hairlined rows the page
+   needs the change of texture more than it needs more structure. */
+.tb-fellows{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+
+.tb-fellows__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-10))}
+.tb-fellows h2{margin:0;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+
+.tb-fields{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-12));
+  row-gap:clamp(var(--space-7),3vw,var(--space-9))}
+.tb-fields__name{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.125rem,1rem + .6vw,1.5rem);line-height:1.2;letter-spacing:var(--ls-heading);
+  color:var(--em-blue)}
+.tb-fields__field{margin:var(--space-2) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+
+/* =============================== 4 · Board ================================ */
+/* Eight names, two of them officers. Three columns of plain type with the role
+   under the name: the board is a matter of record on this variation, and a
+   record is set, not decorated. */
+.tb-board{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-page)}
+
+.tb-board__grid{display:grid;grid-template-columns:minmax(0,.45fr) minmax(0,1.55fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start}
+.tb-board h2{margin:0;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+
+.tb-roll{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);
+  column-gap:clamp(var(--space-6),3vw,var(--space-9));row-gap:0}
+.tb-roll li{padding:var(--space-5) 0;border-top:1px solid var(--border-subtle)}
+.tb-roll__name{display:block;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1rem,.95rem + .35vw,1.1875rem);line-height:1.25;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.tb-roll__role{display:block;margin-top:var(--space-1);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1000px){
+  .tb-hero__grid{grid-template-columns:1fr;row-gap:var(--space-8)}
+  .tb-board__grid{grid-template-columns:1fr}
+  .tb-roll{grid-template-columns:repeat(2,1fr)}
+}
+
+@media (max-width:760px){
+  .tb-fields{grid-template-columns:1fr}
+  /* The title drops under the name: at this width a right-aligned column of
+     job titles is two words per line against a name that has room to spare. */
+  .tb-row{grid-template-columns:auto 56px minmax(0,1fr);row-gap:var(--space-2)}
+  .tb-row__title{grid-column:3;text-align:left}
+  .tb-row--lead{grid-template-areas:"n disc name" ". . title" ". . more"}
+}
+
+@media (max-width:520px){
+  /* The number goes: at this width it costs a column that the name needs, and
+     an alphabetical list does not depend on its numbering to be read. */
+  .tb-row__n{display:none}
+  .tb-row{grid-template-columns:48px minmax(0,1fr);padding-inline:0}
+  .tb-row__title{grid-column:2}
+  .tb-row--lead{grid-template-areas:"disc name" "title title" "more more"}
+  .tb-disc{width:48px;height:48px;font-size:var(--fs-caption)}
+  .tb-row--lead .tb-disc{width:56px;height:56px;font-size:var(--fs-small)}
+  .tb-roll{grid-template-columns:1fr}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .tb-jump:hover svg,.tb-readbio:hover svg{transform:none}
+}

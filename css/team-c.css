@@ -1,0 +1,227 @@
+/* Team, Board & Fellows — variation C, "The Frame".
+
+   The photographic reading, and the loudest of the three. A picture the width
+   of the window with the hero panel climbing over it, then the staff as square
+   framed plates rather than loose portraits, the fellows as full-width rows
+   with the subject area set larger than the name, and the board as a navy
+   ribbon that closes the page.
+
+   Namespaced .tc- throughout. Nothing here touches an .em- class or another
+   variation's prefix.
+
+   NO TEXT SITS ON A PHOTOGRAPH. The hero picture carries no words: the copy is
+   on a solid navy panel that overlaps it. That is the rule the whole About set
+   holds to, and it matters most here, because this is the variation where the
+   stand-in photography will be swapped for licensed material at the last
+   minute and the contrast must not depend on which picture lands.
+
+   ELEMENTOR NOTE: the overlap is a negative margin on the panel, a child of
+   the section that owns it, not an absolutely positioned element reaching into
+   the section below. One section maps to one Elementor section. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+.tc-kicker{margin:0 0 var(--space-5);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--orange-300)}
+.tc-kicker::before{content:"";width:28px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+
+/* The placeholder monogram, square here rather than 4:5: this variation frames
+   its portraits, and a frame with a plate under it wants the picture square.
+   Dashed on purpose, so it reads as pending on sight rather than as a designed
+   empty state a client stops noticing. */
+.tc-portrait{position:relative;isolation:isolate;display:grid;place-items:center;
+  width:100%;aspect-ratio:1/1;
+  border:2px dashed var(--blue-300);background:var(--blue-100);--pattern-ink:var(--blue-300)}
+.tc-portrait::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top right,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 58%);
+  opacity:.55;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:58px;mask-size:58px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.tc-portrait__mono{font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.2rem + 1.8vw,2.75rem);letter-spacing:-.02em;color:var(--blue-600)}
+
+.tc-jump{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--white);text-decoration:none}
+.tc-jump svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.tc-jump:hover{color:var(--orange-300);text-decoration:underline;text-underline-offset:4px}
+.tc-jump:hover svg{transform:translateY(3px)}
+
+.tc-readbio{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-orange-ink);text-decoration:none}
+.tc-readbio svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.tc-readbio:hover{text-decoration:underline;text-underline-offset:4px}
+.tc-readbio:hover svg{transform:translateX(4px)}
+
+/* =============================== 1 · Hero ================================= */
+.tc-hero{position:relative;background:var(--surface-tint);
+  padding-bottom:clamp(var(--space-10),5vw,var(--space-13))}
+
+/* Window-wide, and shallow enough that the panel below it is the first thing
+   read on a laptop rather than the second screen. */
+.tc-hero__media{margin:0;height:clamp(260px,34vw,480px);overflow:hidden}
+/* A landscape photograph, cropped from a fifth of the way down: the band is
+   shallower than any picture in the set, and a portrait shot loses its subject's
+   head to it. Verified by eye, because the filenames in assets/photography do
+   not describe what is in them. */
+.tc-hero__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 20%}
+
+.tc-hero__panel{position:relative;z-index:1;
+  margin-top:calc(-1 * clamp(var(--space-9),6vw,var(--space-13)));
+  max-width:800px;
+  padding:clamp(var(--space-8),4vw,var(--space-12));
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-lg)}
+
+.tc-hero h1{margin:0 0 var(--space-6);text-wrap:balance;
+  font-size:clamp(2.1rem,1.25rem + 3.4vw,3.75rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.035em;color:var(--white)}
+.tc-hero h1 em{font-style:normal;display:block;color:var(--orange-300)}
+
+.tc-hero__lede{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.3125rem);line-height:1.5;
+  letter-spacing:var(--ls-heading);color:var(--white)}
+.tc-hero__body{margin:0 0 var(--space-8);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-inverse-muted);max-width:62ch}
+
+.tc-hero__actions{display:flex;align-items:center;gap:clamp(var(--space-5),2.5vw,var(--space-8));
+  flex-wrap:wrap;margin-bottom:clamp(var(--space-8),3vw,var(--space-10))}
+
+/* =============================== 2 · Staff ================================ */
+.tc-staff{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-page)}
+
+.tc-staff__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-11))}
+.tc-staff h2{margin:0;text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+.tc-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
+/* Build scaffolding, not client copy. Carries the same dashed edge as the
+   tiles it explains, and comes out with the last placeholder. */
+.tc-pending{display:inline-block;margin:var(--space-5) 0 0;
+  padding:var(--space-3) var(--space-5);
+  border:1px dashed var(--blue-300);border-radius:var(--radius-lg);
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted)}
+
+/* --- The founder --- */
+/* A wide frame: the portrait square on the left, the plate running the full
+   height of the copy beside it, both inside one tinted box. */
+.tc-lead{display:grid;grid-template-columns:minmax(0,.58fr) minmax(0,1.42fr);
+  align-items:stretch;margin-bottom:clamp(var(--space-10),5vw,var(--space-13));
+  background:var(--surface-tint);overflow:hidden;border-radius:var(--radius-xl)}
+.tc-lead__frame{position:relative}
+.tc-lead__frame .tc-portrait{height:100%;aspect-ratio:auto;border:0;
+  border-right:1px dashed var(--blue-300)}
+.tc-lead__copy{padding:clamp(var(--space-8),4vw,var(--space-11))}
+.tc-lead__copy h3{margin:0;font-size:clamp(1.5rem,1.15rem + 1.3vw,2.25rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+.tc-lead__copy h3 a{color:inherit;text-decoration:none}
+.tc-lead__copy h3 a:hover{text-decoration:underline;text-underline-offset:5px;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+.tc-lead__title{margin:var(--space-3) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-body);
+  color:var(--em-orange-ink)}
+.tc-lead__bio{margin:var(--space-6) 0 var(--space-7);font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);max-width:62ch}
+
+/* --- The plates --- */
+/* Square picture, white bar under it carrying the name. The bar is attached to
+   the frame rather than floating beside it, which is what makes this a plate
+   and not a card: nothing is padded, nothing is centred, and the picture runs
+   to all three edges it touches. */
+.tc-plates{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:clamp(var(--space-5),2.5vw,var(--space-8))}
+
+.tc-plate{display:block;text-decoration:none;color:inherit;
+  border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);
+  background:var(--surface-card);
+  transition:box-shadow var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.tc-plate:hover{box-shadow:var(--shadow-lg);transform:translateY(-4px)}
+.tc-plate .tc-portrait{border-width:0 0 2px 0}
+
+.tc-plate__bar{display:block;padding:var(--space-5) var(--space-6) var(--space-6)}
+.tc-plate__name{margin:0;font-size:clamp(1.0625rem,1rem + .35vw,1.25rem);font-weight:var(--fw-bold);
+  line-height:1.25;letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.tc-plate:hover .tc-plate__name{text-decoration:underline;text-underline-offset:5px;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+.tc-plate__title{display:block;margin-top:var(--space-2);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  line-height:1.4;color:var(--text-muted)}
+
+/* ============================== 3 · Fellows =============================== */
+/* The field is the reason a fellow is listed, so on this variation the field is
+   the big type and the name sits under it. Full-width rows on tint, one rule
+   each, no boxes: the opposite texture to the plates above. */
+.tc-fellows{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+
+.tc-fellows__head{max-width:62ch;margin-bottom:clamp(var(--space-7),3vw,var(--space-9))}
+.tc-fellows h2{margin:0;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+
+.tc-rows{list-style:none;margin:0;padding:0}
+.tc-rows__row{padding:clamp(var(--space-6),2.5vw,var(--space-8)) 0;
+  border-top:1px solid var(--blue-200)}
+.tc-rows__row:last-child{border-bottom:1px solid var(--blue-200)}
+.tc-rows__field{margin:0;text-wrap:balance;
+  font-size:clamp(1.375rem,1.05rem + 1.5vw,2.25rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+.tc-rows__name{margin:var(--space-3) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+
+/* =============================== 4 · Board ================================ */
+/* The ribbon. Eight names wrapping as one block of type, divided by orange
+   marks rather than rules, on the deepest navy in the ramp so it steps away
+   from the footer immediately below it rather than merging into it. */
+.tc-board{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.tc-board__inner{max-width:1000px}
+.tc-board h2{margin:0 0 clamp(var(--space-7),3vw,var(--space-9));
+  font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+
+.tc-ribbon{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;
+  align-items:baseline;column-gap:clamp(var(--space-6),3vw,var(--space-9));
+  row-gap:clamp(var(--space-5),2vw,var(--space-7))}
+.tc-ribbon li{display:flex;align-items:baseline;gap:var(--space-3)}
+/* The orange mark between names. Decorative, and never before the first. */
+.tc-ribbon li + li::before{content:"";align-self:center;width:8px;height:8px;flex:0 0 auto;
+  border-radius:var(--radius-pill);background:var(--em-orange);
+  margin-right:clamp(var(--space-3),1.5vw,var(--space-5))}
+.tc-ribbon__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.125rem,1rem + .7vw,1.625rem);line-height:1.2;letter-spacing:-.02em;
+  color:var(--white)}
+.tc-ribbon__role{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  white-space:nowrap;overflow-wrap:normal;color:var(--orange-300)}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1000px){
+  .tc-lead{grid-template-columns:1fr}
+  .tc-lead__frame .tc-portrait{aspect-ratio:16/10;border-right:0;
+    border-bottom:1px dashed var(--blue-300)}
+  .tc-plates{grid-template-columns:repeat(2,1fr)}
+}
+
+@media (max-width:760px){
+  .tc-hero__panel{margin-top:calc(-1 * var(--space-8))}
+}
+
+@media (max-width:520px){
+  .tc-plates{grid-template-columns:1fr;gap:var(--space-6)}
+  .tc-plate .tc-portrait{aspect-ratio:4/3}
+  /* Names keep their words whole: css/site.css sets overflow-wrap:anywhere
+     below 420px so no long word can push the page sideways, and a person's
+     name broken mid-syllable is not a wrapping decision anyone would make. */
+  .tc-ribbon__name,.tc-plate__name{overflow-wrap:normal}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .tc-jump:hover svg,.tc-readbio:hover svg{transform:none}
+  .tc-plate:hover{transform:none}
+}

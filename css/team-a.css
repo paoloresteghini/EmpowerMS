@@ -1,0 +1,342 @@
+/* Team, Board & Fellows.
+   The page every About variation links to from its "Meet the people behind
+   Empower Mississippi" block, and the first page in this build whose content
+   is a roster rather than an argument.
+
+   Namespaced .ta- throughout, like the six About variations, so it converts
+   (and, if it ever has to, moves) on its own.
+
+   THREE GROUPS, THREE TREATMENTS. The brief was explicitly not three of the
+   same block stacked, and a roster page is where that happens by default:
+
+     Staff    portraits, because ten people with bios behind them are the
+              part of the page a visitor scans by face. One founder block,
+              then a staggered nine.
+     Fellows  a dark ledger. Five names carrying subject areas, no bios and
+              (yet) no photographs, so the row itself is the unit and the
+              field is what earns the accent.
+     Board    a roll. Eight names, two officer roles, nothing else to say
+              about any of them, so they are set as a ragged wall of pills
+              rather than eight identical cards pretending to hold content.
+
+   HEADSHOTS ARE PLACEHOLDERS. Nothing in assets/photography is a staff
+   portrait, so .ta-portrait and .ta-disc are monogram tiles carrying a dashed
+   edge that reads as pending on sight. Each one is marked
+   data-placeholder="headshot" in the markup and each section opens with a
+   comment naming the swap. The tiles hold the same boxes the photographs will
+   (4:5 for staff, 1:1 for fellows and board), so the layout does not move when
+   the pictures land.
+
+   ELEMENTOR NOTE, same rule the About set follows: every overlap here is a
+   negative margin on a child INSIDE the section that owns it, never an
+   absolutely positioned element reaching into the section below. One section
+   maps to one Elementor section and the overlap survives the conversion. */
+
+/* ---------------------------- Shared bits -------------------------------- */
+
+/* One kicker, in the hero, naming where in the site the visitor has arrived.
+   Not repeated above every section: see the note in css/who-we-are-a.css. */
+.ta-kicker{margin:0 0 var(--space-5);display:inline-flex;align-items:center;gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-eyebrow);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--em-orange-ink)}
+.ta-kicker::before{content:"";width:28px;height:4px;border-radius:var(--radius-pill);
+  background:var(--em-orange);flex:0 0 auto}
+
+/* The 56x4 orange mark above a section heading, the same gesture the About
+   pages use in place of a label per section. */
+.ta-mark{position:relative;padding-top:var(--space-6)}
+.ta-mark::before{content:"";position:absolute;top:0;left:0;width:56px;height:4px;
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* The placeholder monogram, in two sizes. Dashed rather than solid on purpose:
+   a solid tile reads as a designed empty state and a client stops seeing it,
+   which is exactly how a placeholder ships. */
+.ta-portrait{position:relative;isolation:isolate;display:grid;place-items:center;
+  width:100%;aspect-ratio:4/5;
+  border-radius:var(--radius-lg);border:2px dashed var(--blue-300);
+  background:var(--blue-100);--pattern-ink:var(--blue-300)}
+/* The house honeycomb inside the tile, fading out before the monogram. An
+   empty tinted rectangle at this size reads as a broken image; the texture
+   makes it read as a frame waiting for its picture. */
+.ta-portrait::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;
+  background:linear-gradient(to top right,var(--pattern-ink) 0%,var(--pattern-ink) 14%,transparent 58%);
+  opacity:.55;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:58px;mask-size:58px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.ta-portrait__mono{font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.2rem + 1.8vw,2.75rem);letter-spacing:-.02em;color:var(--blue-600)}
+
+.ta-disc{display:grid;place-items:center;width:52px;height:52px;flex:0 0 auto;
+  border-radius:var(--radius-pill);border:2px dashed var(--border-inverse);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:.02em;color:var(--orange-300)}
+.ta-disc--roll{width:44px;height:44px;border-color:var(--blue-300);color:var(--blue-600)}
+
+/* =============================== 1 · Hero ================================= */
+/* Same gradient the About pages open on, so arriving here from Who We Are is
+   not a change of site. The composition differs: the copy column runs wider
+   and carries two paragraphs (this hero is the whole of the roadmap's section
+   1), and the picture is a single portrait rather than a two-frame stack. */
+.ta-hero{padding:clamp(var(--space-9),5vw,var(--space-13)) 0 0;
+  background:linear-gradient(180deg,var(--white) 0%,var(--blue-100) 100%)}
+
+.ta-hero__grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-10),6vw,var(--space-14));align-items:center;
+  padding-bottom:clamp(var(--space-10),6vw,var(--space-13))}
+
+.ta-hero__copy{min-width:0;padding-block:clamp(var(--space-4),2.5vw,var(--space-9))}
+
+.ta-hero h1{margin:0 0 var(--space-7);text-wrap:balance;font-size:clamp(2.3rem,1.3rem + 3.9vw,4.2rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.035em;color:var(--em-blue)}
+/* The second sentence is the promise the first one earns, so it breaks to its
+   own line in the brand orange, as the homepage hero does. */
+.ta-hero h1 em{font-style:normal;display:block;color:var(--em-orange)}
+
+.ta-hero__lede{margin:0 0 var(--space-6);max-width:46ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,.98rem + .5vw,1.375rem);line-height:1.45;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.ta-hero__body{margin:0 0 var(--space-8);max-width:56ch;font-size:var(--fs-body);
+  line-height:1.7;color:var(--text-body)}
+
+.ta-hero__actions{display:flex;align-items:center;gap:clamp(var(--space-5),2.5vw,var(--space-8));
+  flex-wrap:wrap}
+
+/* An in-page jump, not a second action: the orange button stays the only
+   pressable-looking thing on the page. */
+.ta-jump{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-blue);text-decoration:none}
+.ta-jump svg{width:18px;height:18px;transition:transform var(--dur) var(--ease-out)}
+.ta-jump:hover{color:var(--orange-700);text-decoration:underline;text-underline-offset:4px}
+.ta-jump:hover svg{transform:translateY(3px)}
+
+.ta-hero__aside{position:relative;min-width:0}
+.ta-hero__media{margin:0;border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);
+  aspect-ratio:4/5}
+.ta-hero__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%}
+
+/* =============================== 2 · Staff ================================ */
+.ta-staff{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0
+  clamp(var(--space-11),6vw,var(--space-14));background:var(--surface-page)}
+
+.ta-staff__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-11))}
+.ta-staff h2{margin:0;text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
+  font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
+
+/* The roadmap's own note about the ordering, kept because it explains an order
+   the page cannot otherwise justify. */
+.ta-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
+
+/* Build scaffolding, not client copy: this line names what is missing so the
+   monogram tiles are never mistaken for a design decision. It carries the same
+   dashed edge as the tiles it explains, rather than a coloured side stripe,
+   which is the callout-bar reflex this build rejects everywhere else. It comes
+   out with the last placeholder. */
+.ta-pending{display:inline-block;margin:var(--space-5) 0 0;
+  padding:var(--space-3) var(--space-5);
+  border:1px dashed var(--blue-300);border-radius:var(--radius-lg);
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted)}
+
+/* --- The founder block --- */
+/* Asymmetric on purpose: the portrait column is narrower than the copy and the
+   panel behind the copy runs under it, so the two overlap instead of sitting
+   side by side. The negative margin is on the copy panel, which is a child of
+   this section. */
+.ta-lead{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);
+  align-items:center;margin-bottom:clamp(var(--space-11),6vw,var(--space-14))}
+
+.ta-lead__frame{position:relative;z-index:1;margin:0;max-width:320px}
+.ta-portrait--lead{aspect-ratio:4/5;border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  background:var(--blue-100)}
+.ta-portrait--lead .ta-portrait__mono{font-size:clamp(2.5rem,1.6rem + 3vw,4.5rem)}
+
+.ta-lead__copy{padding:clamp(var(--space-8),4vw,var(--space-11)) clamp(var(--space-7),4vw,var(--space-11));
+  padding-left:clamp(var(--space-9),6vw,var(--space-14));
+  margin-left:calc(-1 * clamp(var(--space-6),4vw,var(--space-11)));
+  background:var(--surface-subtle);border-radius:var(--radius-xl)}
+.ta-lead__copy h3{margin:0;font-size:clamp(1.5rem,1.15rem + 1.3vw,2.25rem);font-weight:var(--fw-black);
+  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+.ta-lead__copy h3 a{color:inherit;text-decoration:none}
+.ta-lead__copy h3 a:hover{text-decoration:underline;text-underline-offset:5px;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+.ta-lead__bio{margin:var(--space-6) 0 0;font-size:var(--fs-body);line-height:1.7;
+  color:var(--text-body);max-width:62ch}
+
+.ta-readbio{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
+  margin-top:var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--em-orange-ink);text-decoration:none}
+.ta-readbio svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
+.ta-readbio:hover{text-decoration:underline;text-underline-offset:4px}
+.ta-readbio:hover svg{transform:translateX(4px)}
+
+/* --- The nine --- */
+/* Three straight columns. The middle one used to be dropped by a row's worth of
+   space, on the theory that a stagger stops nine headshots reading as a stock
+   grid; in the browser it read as misalignment instead, with three names sitting
+   at three different heights and no reason a visitor could see. The variation
+   already differs from a stock grid by having no cards, capped tiles and a
+   founder block above; it does not need the wobble as well.
+
+   Tracks are capped at 280px and the slack goes into the gutters. A third of a
+   1200px container is a 340px headshot: a face you are meant to recognise at a
+   glance, blown up to the size of the thing the person wrote. The cap is also
+   what keeps the tile from dragging the name and title away from it. */
+.ta-roster{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(3,minmax(0,280px));
+  justify-content:space-between;align-items:start;
+  column-gap:clamp(var(--space-6),3vw,var(--space-10));
+  row-gap:clamp(var(--space-9),4vw,var(--space-12))}
+
+.ta-person__link{display:block;text-decoration:none;color:inherit}
+.ta-person__link .ta-portrait{transition:border-color var(--dur) var(--ease-out),
+  background var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.ta-person__link:hover .ta-portrait{border-color:var(--em-orange);background:var(--blue-200);
+  transform:translateY(-4px)}
+.ta-person__link:hover .ta-portrait__mono{color:var(--em-blue)}
+
+.ta-person__name{display:block;margin:var(--space-5) 0 0;
+  font-size:clamp(1.125rem,1.02rem + .45vw,1.375rem);font-weight:var(--fw-bold);
+  line-height:1.25;letter-spacing:var(--ls-heading);color:var(--em-blue)}
+.ta-person__link:hover .ta-person__name{text-decoration:underline;text-underline-offset:5px;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+
+/* The title is the line a visitor actually scans for, so it gets the accent
+   rather than the muted grey a caption would normally take. */
+.ta-person__title{display:block;margin-top:var(--space-2);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
+  line-height:1.4;color:var(--text-muted)}
+.ta-lead__copy .ta-person__title{margin-top:var(--space-3);font-size:var(--fs-body);
+  color:var(--em-orange-ink)}
+
+/* ============================== 3 · Fellows =============================== */
+/* The slab climbs over the staff section's bottom space so the two read as one
+   run rather than two bands. Negative margin on the SLAB; the section keeps
+   its own box. */
+.ta-fellows{position:relative;z-index:1;padding-bottom:clamp(var(--space-9),4vw,var(--space-11))}
+
+.ta-fellows__slab{position:relative;isolation:isolate;overflow:hidden;
+  margin-top:calc(-1 * clamp(var(--space-9),5vw,var(--space-12)));
+  padding:clamp(var(--space-9),4.5vw,var(--space-13)) clamp(var(--space-7),4vw,var(--space-12));
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start;
+  --pattern-ink:var(--blue-600)}
+
+/* The house honeycomb, graduated into the top-right corner and gone before it
+   reaches the ledger. Same one SVG, recoloured, as the About slabs. */
+.ta-fellows__slab::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to bottom left,var(--pattern-ink) 0%,var(--pattern-ink) 18%,transparent 64%);
+  opacity:.8;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:76px;mask-size:76px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.ta-fellows h2{margin:0;text-wrap:balance;font-size:clamp(1.6rem,1.1rem + 1.9vw,2.6rem);
+  font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--white)}
+
+/* A ledger, not cards: one hairline per row, the name in display and the field
+   carrying the accent, because the field is the reason the fellow is listed. */
+.ta-ledger{list-style:none;margin:0;padding:0}
+.ta-ledger__row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;gap:clamp(var(--space-4),2vw,var(--space-7));
+  padding:clamp(var(--space-5),2vw,var(--space-6)) 0;
+  border-top:1px solid var(--border-inverse)}
+.ta-ledger__row:last-child{border-bottom:1px solid var(--border-inverse)}
+.ta-ledger__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.125rem,1rem + .6vw,1.5rem);line-height:1.2;letter-spacing:var(--ls-heading);
+  color:var(--white)}
+.ta-ledger__field{text-align:right;font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--orange-300)}
+
+/* =============================== 4 · Board ================================ */
+/* Eight names and two officer roles. Anything card-shaped here would be a box
+   holding a name, so the roll is set as a ragged wall of pills that wraps on
+   its own rather than a grid pretending each entry has equal content. */
+.ta-board{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+
+.ta-board__grid{display:grid;grid-template-columns:minmax(0,.5fr) minmax(0,1.5fr);
+  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start}
+.ta-board h2{margin:0;text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);
+  font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
+
+.ta-roll{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;
+  gap:clamp(var(--space-4),1.6vw,var(--space-6))}
+.ta-roll__item{display:flex;align-items:center;gap:var(--space-4);
+  padding:var(--space-4) var(--space-6) var(--space-4) var(--space-4);
+  background:var(--surface-card);border-radius:var(--radius-pill);box-shadow:var(--shadow-sm)}
+.ta-roll__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1rem,.95rem + .35vw,1.1875rem);line-height:1.2;
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+
+/* --orange-700, not the brand --em-orange: white on #E65A28 measures 3.59:1 and
+   this label is 13px, so the large-text exemption cannot apply. Same failing
+   pair, same local override, as .em-badge--accent in css/site.css and the year
+   chip on Who We Are A. One more instance of the open orange question. Delete
+   this line if Empower darken the brand value upstream.
+
+   white-space, and overflow-wrap back to normal, because css/site.css sets
+   `overflow-wrap:anywhere` on everything below 420px so no long word can force
+   sideways scroll. A nine-letter role in a pill is not that word: left alone it
+   breaks as TREASURE / R. The pill is ~90px against 327px of viewport, so
+   holding it on one line cannot overflow anything. */
+.ta-roll__role{padding:var(--space-1) var(--space-4);border-radius:var(--radius-pill);
+  white-space:nowrap;overflow-wrap:normal;
+  background:var(--orange-700);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase}
+
+/* ============================== Responsive ================================ */
+@media (max-width:1100px){
+  .ta-hero__grid{grid-template-columns:1fr;gap:var(--space-9)}
+  .ta-hero__lede,.ta-hero__body{max-width:56ch}
+  .ta-hero__media{aspect-ratio:16/10}
+  .ta-hero__media img{object-position:center 26%}
+  .ta-board__grid{grid-template-columns:1fr}
+}
+
+@media (max-width:900px){
+  /* The founder block keeps its side-by-side shape as long as the portrait and
+     a readable measure both fit. Below that it stacks, and the overlap becomes
+     vertical: the panel climbs the tile instead of sitting behind it. */
+  .ta-lead{grid-template-columns:1fr;gap:0}
+  .ta-lead__frame{max-width:340px}
+  .ta-lead__copy{margin-left:0;margin-top:calc(-1 * var(--space-9));
+    padding-left:clamp(var(--space-7),4vw,var(--space-11));padding-top:var(--space-11)}
+  /* Three 280px tiles plus their gutters need ~890px of container, which is
+     where this breakpoint comes from. */
+  .ta-roster{grid-template-columns:repeat(2,minmax(0,280px))}
+  .ta-fellows__slab{grid-template-columns:1fr;gap:var(--space-7)}
+  .ta-ledger__row{grid-template-columns:auto minmax(0,1fr);row-gap:var(--space-2)}
+  .ta-ledger__field{grid-column:2;text-align:left}
+}
+
+@media (max-width:640px){
+  .ta-fellows__slab::before{-webkit-mask-size:58px;mask-size:58px}
+  .ta-roll__item{width:100%;flex-wrap:wrap}
+  .ta-roll__role{margin-left:auto}
+  /* Names keep their words whole. The `overflow-wrap:anywhere` in
+     css/site.css is there so no long word can push the page sideways at 320px,
+     but a person's name broken as "Ger / ard Gib / ert" is not a wrapping
+     decision anyone would make, and a pill on its own line gives the name the
+     full width it needs anyway. */
+  .ta-roll__name{overflow-wrap:normal}
+}
+
+@media (max-width:480px){
+  /* The columns stay at two. One would give each face the full width of the
+     phone and turn ten people into ten screens of scrolling; a roster is read
+     by scanning, and scanning needs more than one person in view. */
+  .ta-roster{grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:var(--space-4);row-gap:var(--space-8)}
+  .ta-lead__frame{max-width:none}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ta-jump:hover svg,.ta-readbio:hover svg{transform:none}
+  .ta-person__link:hover .ta-portrait{transform:none}
+}

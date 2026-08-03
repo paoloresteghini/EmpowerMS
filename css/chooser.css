@@ -13,15 +13,57 @@
   line-height:1.65;color:var(--text-body);max-width:70ch}
 .ch__note{margin:0;font-size:var(--fs-caption);color:var(--text-muted)}
 
-/* Two columns, so the six cards read as three rows: the pick and Option A,
-   then B and C, then D and the baseline. Fixed rather than auto-fit — auto-fit
-   packed three across at desktop, which put the pick and the baseline on the
-   same row and made the six read as a wall rather than as a shortlist. Wider
-   cards also stop the Signature line wrapping to three lines.
+/* ---------- Jump bar ----------
+   The review page is three sets deep now — one homepage plus six About Us
+   variations — and Empower are opening them one after another, so the page
+   needs a way back to the other sets without a scroll. Plain in-page anchors,
+   sticky under the top of the window. No JavaScript: this page loads no
+   scripts at all and is not going to start for a row of links. */
+.ch__jump{position:sticky;top:0;z-index:20;
+  background:var(--surface-navy-deep);
+  box-shadow:var(--shadow-md)}
+.ch__jump ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;
+  gap:var(--space-2)}
+.ch__jump a{display:flex;align-items:center;gap:var(--space-3);min-height:44px;
+  padding:var(--space-3) var(--space-5);border-radius:var(--radius-pill);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--white);text-decoration:none;
+  transition:background var(--dur) var(--ease-out)}
+.ch__jump a:hover{background:rgba(255,255,255,.14)}
+.ch__jump a:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+/* The count, so the bar says how much is in each set rather than just naming
+   it. --orange-300 on navy, not the brand orange: this is 13px text. */
+.ch__jump span{display:inline-grid;place-items:center;min-width:22px;height:22px;
+  padding:0 6px;border-radius:var(--radius-pill);
+  background:rgba(255,255,255,.12);color:var(--orange-300);
+  font-size:var(--fs-caption);font-weight:var(--fw-bold)}
+
+@media (max-width:520px){
+  .ch__jump ul{gap:0}
+  .ch__jump a{padding:var(--space-3) var(--space-4);font-size:var(--fs-caption)}
+}
+
+/* Group headings. The review index now covers three sets of pages — the
+   homepage, and two About Us pages with three variations each — so the cards
+   need to say which set they belong to before they say anything else. */
+.ch__group{margin:clamp(var(--space-10),5vw,var(--space-13)) 0 var(--space-4);
+  /* the sticky jump bar would otherwise land on the heading it jumped to */
+  scroll-margin-top:72px;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.375rem,1.15rem + 1vw,1.875rem);letter-spacing:-.025em;color:var(--em-blue)}
+.ch__group::after{content:"";display:block;width:56px;height:4px;margin-top:var(--space-4);
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+.ch__groupnote{margin:0;max-width:70ch;font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-body)}
+
+/* Two columns per set, so each set reads as rows of pairs rather than a wall.
+   Fixed rather than auto-fit — auto-fit packed three across at desktop, which
+   put the agreed build and a reference on the same row and flattened the
+   hierarchy. Wider cards also stop the Signature line wrapping to three lines.
 
    A single column below 760px: two columns of a 320px minimum plus the gutters
    cannot fit under that, and auto-fit is not doing the collapsing any more. */
-.ch__list{list-style:none;margin:clamp(var(--space-9),4vw,var(--space-12)) 0 0;padding:0;
+.ch__list{list-style:none;margin:clamp(var(--space-7),3vw,var(--space-9)) 0 0;padding:0;
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   gap:clamp(var(--space-5),2vw,var(--space-7))}
 
@@ -52,11 +94,11 @@
   font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
   color:var(--em-orange-ink)}
 .ch__opt--ref .ch__tag{color:var(--text-muted)}
-.ch__opt h2{margin:0 0 var(--space-5);font-family:var(--font-display);font-weight:var(--fw-black);
+.ch__opt h3{margin:0 0 var(--space-5);font-family:var(--font-display);font-weight:var(--fw-black);
   font-size:clamp(1.5rem,1.2rem + 1.1vw,2.125rem);line-height:1.05;letter-spacing:-.03em}
-.ch__opt h2 a{color:var(--em-blue);text-decoration:none}
-.ch__opt h2 a::after{content:"";position:absolute;inset:0}
-.ch__opt:hover h2 a{color:var(--em-orange-ink)}
+.ch__opt h3 a{color:var(--em-blue);text-decoration:none}
+.ch__opt h3 a::after{content:"";position:absolute;inset:0}
+.ch__opt:hover h3 a{color:var(--em-orange-ink)}
 .ch__desc{margin:0 0 var(--space-7);font-size:var(--fs-small);line-height:1.6;
   color:var(--text-body)}
 

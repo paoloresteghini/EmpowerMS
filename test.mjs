@@ -10,10 +10,24 @@ execFileSync('node', ['build.mjs'], { stdio: 'inherit' });
 /* Every page this build produces, keyed by output path. `html` is the
    reference build — the assertions below that name .em-* section classes are
    about that page specifically. The cross-page contract that has to hold for
-   all five homepages is asserted in its own block at the end of this file. */
+   all five homepages is asserted in its own block at the end of this file.
+
+   HOMEPAGES is filtered by `kind`, not by "everything except the chooser".
+   The About Us variations share the chrome, the tokens and the design
+   language but none of the homepage copy deck, so the homepage contract —
+   seventeen roadmap strings, one hero CTA reading "Explore Our Work", exactly
+   one email field — is nonsense applied to them. They get their own contract
+   further down. */
 const HOMEPAGES = PAGES
-  .filter(p => p.out !== 'dist/index.html')
+  .filter(p => p.kind === 'homepage')
   .map(p => ({ ...p, html: readFileSync(p.out, 'utf8') }));
+const ABOUTPAGES = PAGES
+  .filter(p => p.kind === 'about')
+  .map(p => ({ ...p, html: readFileSync(p.out, 'utf8') }));
+/* Page hygiene — alt text, heading order, the skip link, one orange action —
+   is not a homepage question. Every client-facing page this build produces is
+   swept for it. */
+const ALLPAGES = [...HOMEPAGES, ...ABOUTPAGES];
 const html = readFileSync('dist/current.html', 'utf8');
 
 test('build resolves every include marker', () => {
@@ -706,7 +720,10 @@ test('close() and show() keep is-open and hidden in sync', () => {
 
 const current2 = readFileSync('dist/current-2.html', 'utf8');
 const header2 = readFileSync('src/_shared/header-2.html', 'utf8');
-const dropCss = readFileSync('css/current-2.css', 'utf8');
+/* The header's own stylesheet. It was part of css/current-2.css until the
+   agreed build and the six About Us pages all started using this header;
+   see the note at the top of css/header-2.css. */
+const dropCss = readFileSync('css/header-2.css', 'utf8');
 const dropJs = readFileSync('js/dropdown.js', 'utf8');
 
 test('the dropdown header carries the same six top-level items as the mega header', () => {
@@ -922,7 +939,7 @@ test('every page in the manifest actually built', () => {
 });
 
 test('no page ships an unresolved include marker', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     assert.ok(!html.includes('@include'), `unresolved @include in ${out}`);
   }
 });
@@ -975,8 +992,8 @@ test('the headline uses the roadmap capitalisation', () => {
   }
 });
 
-test('every homepage has exactly one h1 and no skipped heading levels', () => {
-  for (const { out, html } of HOMEPAGES) {
+test('every page has exactly one h1 and no skipped heading levels', () => {
+  for (const { out, html } of ALLPAGES) {
     const h1s = html.match(/<h1[\s>]/g) || [];
     assert.equal(h1s.length, 1, `${out} has ${h1s.length} h1 elements`);
     const levels = [...html.matchAll(/<h([1-5])[\s>]/g)].map(m => Number(m[1]));
@@ -987,11 +1004,21 @@ test('every homepage has exactly one h1 and no skipped heading levels', () => {
   }
 });
 
-test('one orange filled button per page, and it is the hero CTA', () => {
-  for (const { out, html } of HOMEPAGES) {
+/* The one-action rule is the brand's and applies to every page in the build.
+   WHICH action it is is page-specific: the homepages all lead with the
+   roadmap's "Explore Our Work", the About pages lead into the team page or
+   the solutions. So the count is asserted for everything and the label only
+   where the roadmap fixes it. */
+test('one orange filled button per page', () => {
+  for (const { out, html } of ALLPAGES) {
     const primaries = html.match(/em-btn--primary/g) || [];
     assert.equal(primaries.length, 1,
       `${out}: brand rule is one orange action per view, found ${primaries.length}`);
+  }
+});
+
+test('every homepage’s orange button is the roadmap hero CTA', () => {
+  for (const { out, html } of HOMEPAGES) {
     const at = html.indexOf('em-btn--primary');
     assert.match(html.slice(at, at + 200), /Explore Our Work/, `${out}'s orange button is not the hero CTA`);
   }
@@ -1005,8 +1032,8 @@ test('every homepage asks for an email address exactly once', () => {
   }
 });
 
-test('every image on every homepage has alt, dimensions and a loading strategy', () => {
-  for (const { out, html } of HOMEPAGES) {
+test('every image on every page has alt, dimensions and a loading strategy', () => {
+  for (const { out, html } of ALLPAGES) {
     for (const tag of html.match(/<img\b[^>]*>/g) || []) {
       assert.match(tag, /\salt="/, `${out}: img without alt: ${tag.slice(0, 70)}`);
       assert.match(tag, /\swidth="\d+"/, `${out}: img without width: ${tag.slice(0, 70)}`);
@@ -1018,22 +1045,22 @@ test('every image on every homepage has alt, dimensions and a loading strategy',
 });
 
 test('every referenced photograph exists on disk', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     for (const m of html.matchAll(/src="\.\.\/(assets\/[^"]+)"/g)) {
       assert.ok(existsSync(m[1]), `${out} references a missing asset: ${m[1]}`);
     }
   }
 });
 
-test('no homepage carries an inline style attribute', () => {
+test('no page carries an inline style attribute', () => {
   // Elementor hand-off hygiene: styling belongs in the stylesheets.
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     assert.ok(!/\sstyle="/.test(html), `${out} has an inline style attribute`);
   }
 });
 
 test('every aria-controls points at an id that exists, on every page', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
     for (const m of html.matchAll(/aria-controls="([^"]+)"/g)) {
       assert.ok(ids.has(m[1]), `${out}: aria-controls="${m[1]}" has no matching id`);
@@ -1042,7 +1069,7 @@ test('every aria-controls points at an id that exists, on every page', () => {
 });
 
 test('every aria-labelledby points at an id that exists, on every page', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
     for (const m of html.matchAll(/aria-labelledby="([^"]+)"/g)) {
       for (const ref of m[1].split(/\s+/)) {
@@ -1056,7 +1083,7 @@ test('nothing focusable is buried inside aria-hidden', () => {
   // An aria-hidden subtree containing a link or a button is an ARIA violation
   // even when the element carries tabindex="-1" — it stays programmatically
   // focusable and lands a screen-reader user on an element that is not there.
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     for (const m of html.matchAll(/<(\w+)([^>]*\saria-hidden="true"[^>]*)>/g)) {
       assert.ok(!/^\s*<?(a|button)\b/.test(m[0]) && m[1] !== 'a' && m[1] !== 'button',
         `${out}: aria-hidden on a focusable ${m[1]}: ${m[0].slice(0, 80)}`);
@@ -1065,14 +1092,14 @@ test('nothing focusable is buried inside aria-hidden', () => {
 });
 
 test('every page carries the skip link, and it targets the main landmark', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     assert.match(html, /<a class="em-skip" href="#main">/, `${out} has no skip link`);
     assert.match(html, /<main id="main">/, `${out} has no <main id="main"> for the skip link`);
   }
 });
 
 test('every page loads the shared chrome before its own stylesheet', () => {
-  for (const { out, html, src } of HOMEPAGES) {
+  for (const { out, html, src } of ALLPAGES) {
     const own = `css/${src.split('/')[0] === 'index.html' ? 'homepage' : src.split('/')[0]}.css`;
     const siteAt = html.indexOf('css/site.css');
     assert.ok(siteAt > -1, `${out} does not load css/site.css`);
@@ -1092,7 +1119,7 @@ test('every page loads the shared chrome before its own stylesheet', () => {
 });
 
 test('every page ships the three behaviour modules and no preview-only script', () => {
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     for (const js of ['js/nav.js', 'js/reveal.js']) {
       assert.ok(html.includes(js), `${out} does not load ${js}`);
     }
@@ -1110,7 +1137,7 @@ test('every page ships the three behaviour modules and no preview-only script', 
 
 test('every reveal attribute on every page is one of the documented variants', () => {
   const allowed = new Set(['rise', 'fade', 'slide-l', 'slide-r', 'clip']);
-  for (const { out, html } of HOMEPAGES) {
+  for (const { out, html } of ALLPAGES) {
     for (const m of html.matchAll(/data-reveal="([^"]*)"/g)) {
       assert.ok(allowed.has(m[1]), `${out}: undocumented reveal variant "${m[1]}"`);
     }
@@ -1206,4 +1233,576 @@ test('the chooser page is review-only and never links into the hand-off as a hom
   }
   assert.ok(!chooser.includes('href="current.html"'),
     'current.html is back in the chooser — if that is intended, drop it from UNLISTED above');
+});
+
+/* ---------------------------------------------------------------------------
+   Comment termination
+   ------------------------------------------------------------------------ */
+
+/* This exists because css/final.css was silently inert for its whole life. Its
+   header comment described the namespacing as ".fp-" and ".tl-" followed by a
+   star — and a star followed by a slash CLOSES a CSS comment. Everything after
+   that point stopped being a comment: the remaining prose parsed as garbage
+   selectors, the file's one real rule was swallowed with it, and the browser
+   reported zero rules for a stylesheet that looks perfectly fine on disk.
+
+   Nothing else catches this. The file is valid text, the build copies it
+   unchanged, the server returns 200 with the right MIME type, and the page
+   simply renders as though the stylesheet were not linked at all.
+
+   The check: walk each file tracking whether we are inside a comment. A
+   terminator found OUTSIDE one means a comment ended somewhere its author did
+   not intend, because the prose that followed it is now being read as CSS. */
+test('no stylesheet closes a comment by accident', () => {
+  const sheets = ['css', 'tokens', 'components']
+    .flatMap(dir => readdirSync(dir).filter(f => f.endsWith('.css')).map(f => `${dir}/${f}`));
+  assert.ok(sheets.length > 0, 'found no stylesheets to check');
+
+  for (const sheet of sheets) {
+    const css = readFileSync(sheet, 'utf8');
+    let inComment = false;
+    for (let i = 0; i < css.length - 1; i++) {
+      if (!inComment && css[i] === '/' && css[i + 1] === '*') { inComment = true; i++; continue; }
+      if (css[i] === '*' && css[i + 1] === '/') {
+        const line = css.slice(0, i).split('\n').length;
+        assert.ok(inComment,
+          `${sheet}:${line} closes a comment that was not open — the text before it ` +
+          `contains a star-slash pair, so the real comment ended early and the rest ` +
+          `of the file is being parsed as CSS`);
+        inComment = false;
+        i++;
+      }
+    }
+    assert.ok(!inComment, `${sheet} ends inside an unterminated comment`);
+  }
+});
+
+/* ===========================================================================
+   The About Us contract.
+
+   Six pages: three readings of Who We Are and three of What We Do. They share
+   the chrome and the tokens with the homepages, and everything in the sweeps
+   above applies to them — but their copy comes from two different tabs of the
+   roadmap, so the copy deck is asserted here instead.
+
+   The rule this block exists to enforce is the one this build has broken
+   before: NO INVENTED SENTENCE MAY READ AS APPROVED COPY. Every sentence of
+   prose on these pages is quoted from the roadmap's Who We Are and What We Do
+   tabs. Where a variation splits an approved sentence across a heading and a
+   paragraph, or sets a list the sentence describes, the words are unchanged —
+   which is why the strings below are asserted as fragments in some places and
+   whole sentences in others, and why the split points are named.
+   ======================================================================== */
+
+const WHO_WE_ARE_COPY = [
+  /* Why We Exist — the headline, then all four paragraphs. */
+  'Empower exists because we want every Mississippian to have the opportunity to achieve the American Dream right here at home.',
+  'Every Mississippian deserves the opportunity to build a good life, raise a family, find meaningful work, and pursue their dreams.',
+  'Too often, outdated policies and unnecessary barriers stand in the way. We believe government policy should create opportunity, not limit it.',
+  'Empower Mississippi exists to create a path to generational prosperity for Mississippi’s children, workers, and families.',
+  'We aren’t interested in politics for politics’ sake. We’re interested in results that improve people’s lives.',
+
+  /* Our Story. "Our Story" is the roadmap's own Headline: for that section —
+     NOT one of the internal section labels Empower asked us to drop
+     (2026-08-03: "section 3 would just start with Our Story instead of History
+     of Empower"). It was briefly stripped from all three variations along with
+     the labels, which is the mistake this line exists to prevent. The sentence
+     under it is quoted whole, colon included. */
+  'Our Story',
+  'Empower Mississippi began with a simple question: Why are so many Mississippians struggling to build the life they want right here at home?',
+  'In 2013, a small group of Mississippians gathered around a restaurant patio table with a shared love for their state and a belief that Mississippi’s best days were still ahead.',
+  'That vision became Empower Mississippi.',
+  'Today, we work alongside citizens, community leaders, and policymakers to remove barriers to opportunity',
+
+  /* Our People, and the three legal entities. */
+  'Meet the people behind Empower Mississippi.',
+  'Empower Mississippi works to Educate, Engage, and Elect Mississippians dedicated to removing barriers to opportunity.',
+  'Empower Mississippi Foundation is a 501(c)(3) nonprofit organization working to educate citizens. Contributions are tax deductible for federal income tax purposes.',
+  'Empower Mississippi is a 501(c)(4) advocacy organization working to engage citizens in the public policy process. Contributions are not tax deductible for federal income tax purposes.',
+  'Empower PAC is a state political action committee working to support candidates for the legislature who are committed to removing barriers to opportunity so all Mississippians can flourish.',
+];
+
+const WHAT_WE_DO_COPY = [
+  'You want to build a great life.',
+  'We’re here to help.',
+  'Each of us has been entrusted with the privilege—and the responsibility—of helping to leave Mississippi better than we found it.',
+  'Quality Education',
+  'Helping every child access the education they need to reach their full potential.',
+  'Meaningful Work',
+  'Removing barriers so more Mississippians can find meaningful work and build lasting prosperity.',
+  'Public Safety',
+  'Creating safer communities where families and opportunity can thrive.',
+  'View our annual reports:',
+  '2025', '2024', '2023', '2022',
+];
+
+test('the About Us set is three Who We Are pages and three What We Do pages', () => {
+  const who = ABOUTPAGES.filter(p => p.out.includes('who-we-are'));
+  const what = ABOUTPAGES.filter(p => p.out.includes('what-we-do'));
+  assert.equal(who.length, 3, `expected three Who We Are variations, found ${who.length}`);
+  assert.equal(what.length, 3, `expected three What We Do variations, found ${what.length}`);
+});
+
+/* The comparison is against the page's TEXT, not its markup. Two of the six
+   variations break an approved sentence across an <em> so the last clause can
+   take the accent colour, exactly as the homepage does with "Starts Here." —
+   the words are identical and the reader sees one sentence, so a raw
+   html.includes() would fail on a page that is entirely correct. */
+const textOf = html => html
+  .replace(/<[^>]+>/g, '')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/\s+/g, ' ');
+
+test('every Who We Are variation carries the roadmap copy verbatim', () => {
+  for (const { out, html } of ABOUTPAGES.filter(p => p.out.includes('who-we-are'))) {
+    const text = textOf(html);
+    for (const line of WHO_WE_ARE_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('every What We Do variation carries the roadmap copy verbatim', () => {
+  for (const { out, html } of ABOUTPAGES.filter(p => p.out.includes('what-we-do'))) {
+    const text = textOf(html);
+    for (const line of WHAT_WE_DO_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+/* ==========================================================================
+   Team, Board & Fellows.
+
+   The roster page is not a variation and has no sibling to be checked against,
+   so its whole contract lives here: the roadmap's hero copy, then every name
+   and title on the page. A roster is the one page type where a quiet omission
+   (a person dropped, a title stale) is invisible in review and unforgivable
+   after hand-off, so the lists below are asserted whole rather than sampled.
+   ========================================================================== */
+
+const TEAM_COPY = [
+  /* Section 1, the hero, in full. */
+  'Rooted in Mississippi. Committed to its Future.',
+  'We know the promise of Mississippi because we’ve built our lives here. And we know the challenges, because our state only truly thrives when hard work leads to earned success for every family in every neighborhood.',
+  'Our staff, board members, and fellows are committed to creating a path to generational prosperity for Mississippi’s children, workers, and families. Together, we’ve built the state’s leading public policy organization by advancing practical solutions that expand opportunity and help Mississippi reach its full potential.',
+
+  /* The roadmap's own group headings, and its own note about the ordering. */
+  'Contributing Fellows',
+  'Board of Directors',
+  'In alphabetical order by last name',
+
+  /* The one bio the page carries. The other nine sit behind their links. */
+  'Grant is a sixth generation Mississippian who grew up in Laurel. He founded Empower Mississippi in 2014 as a solution center, tackling Mississippi’s biggest challenges so everyone can rise. Previously, Grant served as Director of Development for the Mississippi Center for Public Policy. He is an alumnus of The Witherspoon Fellowship in Washington D.C.',
+];
+
+/* Name, title, bio-page slug. Order here is the roadmap's alphabetical-by-last-
+   name rule applied literally, which moves Richards above Thigpen; the roadmap
+   itself lists those two the other way round. */
+const TEAM_STAFF = [
+  ['Grant Callen', 'Founder & CEO', 'grant-callen'],
+  ['Wil Ervin', 'Senior Vice President', 'wil-ervin'],
+  ['Ashley Green', 'Director of Outreach', 'ashley-green'],
+  ['Kienna Horn', 'Director of Communications', 'kienna-horn'],
+  ['Elyse Marcellino', 'Director of Embark', 'elyse-marcellino'],
+  ['Gina Metzger', 'Executive Vice President', 'gina-metzger'],
+  ['Dr. Patrick Miller', 'Vice President of Development', 'patrick-miller'],
+  ['Joanna Pevey', 'Executive Assistant & Development Manager', 'joanna-pevey'],
+  ['Dr Kristin Vance Richards', 'Director of Research', 'kristin-vance-richards'],
+  ['Forest Thigpen', 'Senior Advisor', 'forest-thigpen'],
+];
+
+const TEAM_FELLOWS = [
+  ['J. Robertson', 'Fellow on Criminal Justice Reform'],
+  ['Christopher Koopman', 'Fellow on Regulation & Innovation'],
+  ['Conor Norris', 'Fellow on Entrepreneurship'],
+  ['Matt Ladner', 'Fellow on Education'],
+  ['Rebekah Staples', 'Fellow on Work'],
+];
+
+const TEAM_BOARD = [
+  'Abb Payne', 'Grant Callen', 'Betsy Dowell', 'Sunny Desai',
+  'Gerard Gibert', 'Lex Lindsey', 'Marie Sanderson', 'George Williams',
+];
+
+/* The three variations only. dist/team-bio.html shares the prefix but is a
+   staff detail screen, not a reading of the roster, and it is asserted on its
+   own below. */
+const TEAMPAGES = ABOUTPAGES.filter(p => /team-[abc]\.html$/.test(p.out));
+
+test('all three team variations build', () => {
+  assert.equal(TEAMPAGES.length, 3, `expected three team variations, found ${TEAMPAGES.length}`);
+});
+
+test('every team variation carries the roadmap copy verbatim', () => {
+  for (const { out, html } of TEAMPAGES) {
+    const text = textOf(html);
+    for (const line of TEAM_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('every member of staff appears on every variation, with title and bio link', () => {
+  for (const { out, html } of TEAMPAGES) {
+    const text = textOf(html);
+    for (const [name, title, slug] of TEAM_STAFF) {
+      assert.ok(text.includes(name), `${out} is missing ${name}`);
+      assert.ok(text.includes(title), `${out} is missing ${name}'s title "${title}"`);
+      /* The roadmap's section 2: "Each staff photo links to their full bio
+         page." One of those pages exists — the CEO's — so every card points at
+         it for review. When the other nine are built this becomes a per-person
+         destination, and `slug` below is the name each one will take. */
+      assert.ok(html.includes('href="team-bio.html"'),
+        `${out} does not link ${name} to the staff detail screen`);
+      assert.ok(typeof slug === 'string' && slug.length > 0,
+        `${name} has no slug for the bio page still to be built`);
+    }
+  }
+});
+
+test('every fellow and board member appears on every variation', () => {
+  for (const { out, html } of TEAMPAGES) {
+    const text = textOf(html);
+    for (const [name, field] of TEAM_FELLOWS) {
+      assert.ok(text.includes(name), `${out} is missing fellow ${name}`);
+      assert.ok(text.includes(field), `${out} is missing ${name}'s field "${field}"`);
+    }
+    for (const name of TEAM_BOARD) {
+      assert.ok(text.includes(name), `${out} is missing board member ${name}`);
+    }
+    for (const role of ['Chairman', 'Treasurer']) {
+      assert.ok(text.includes(role), `${out} does not mark the ${role}`);
+    }
+  }
+});
+
+test('every monogram tile on every team variation is marked as a placeholder', () => {
+  /* Nothing in assets/photography is a headshot, so every portrait on these
+     pages is a monogram tile. HOW MANY differs by variation — A frames all 23,
+     B gives discs to the staff only, C plates the staff and sets the fellows
+     and board as type — so the assertion is not a count but a rule: every tile
+     that exists is marked in the markup, and a page showing tiles says so in
+     words. When the last tile on a page is replaced, this is what tells you
+     that page's note can go. */
+  const TILE = /<span[^>]*class="t[abc]-(?:portrait|disc)(?:--[a-z]+)?(?:\s[^"]*)?"[^>]*>/g;
+  for (const { out, html } of TEAMPAGES) {
+    const tiles = html.match(TILE) || [];
+    for (const tile of tiles) {
+      assert.match(tile, /data-placeholder="headshot"/,
+        `${out} has an unmarked monogram tile: ${tile.slice(0, 80)}`);
+    }
+    assert.ok(tiles.length >= TEAM_STAFF.length,
+      `${out} shows ${tiles.length} tiles — every variation gives all ten staff a portrait`);
+    assert.ok(html.includes('Placeholder portraits'),
+      `${out} shows placeholder tiles but no longer says so`);
+  }
+});
+
+const BIO_COPY = [
+  'Grant Callen',
+  'Founder & CEO',
+  'Grant is a sixth generation Mississippian who grew up in Laurel. He founded Empower Mississippi in 2014 as a solution center, tackling Mississippi’s biggest challenges so everyone can rise. Previously, Grant served as Director of Development for the Mississippi Center for Public Policy. He is an alumnus of The Witherspoon Fellowship in Washington D.C.',
+  'Grant graduated with a B.A. in Political Science from Belhaven University and was selected as their “Young Alumnus of the Year” in 2009. Grant earned an M.A in Government from Regent University. Grant has been named to the Top 50 Most Influential Mississippians list by Y’all Politics. Grant currently lives in Madison with his wife Page and their five children. Grant and Page are members of Redeemer Church, PCA, where Grant serves as an elder.',
+];
+
+test('the staff detail screen carries the whole bio, both paragraphs', () => {
+  /* The roster pages carry the first paragraph; this page is the only place the
+     second one appears, and it is the half a reader gets nowhere else. */
+  const text = textOf(readFileSync('dist/team-bio.html', 'utf8'));
+  for (const line of BIO_COPY) {
+    assert.ok(text.includes(line), `dist/team-bio.html is missing "${line.slice(0, 60)}…"`);
+  }
+});
+
+test('the staff detail screen’s contact block is marked as a placeholder', () => {
+  /* Empower have not supplied Grant's own address or handles, so the block
+     carries the ORGANISATION accounts. That is a reasonable stand-in and an
+     unreasonable thing to ship unnoticed: it is marked in the markup and says
+     so in words, exactly like the portrait tiles. */
+  const html = readFileSync('dist/team-bio.html', 'utf8');
+  assert.match(html, /data-placeholder="contact"/,
+    'dist/team-bio.html has an unmarked contact block');
+  assert.ok(html.includes('Placeholder: Empower’s organisation accounts'),
+    'dist/team-bio.html no longer says its contact details are stand-ins');
+  /* Each row is icon + label. The label is the accessible name, so the icon
+     must stay hidden — an aria-hidden icon inside a link is fine; a link with
+     no text at all is not. */
+  for (const label of ['info@empowerms.org', 'LinkedIn', 'X']) {
+    assert.ok(html.includes(`>\n              ${label}\n`) || html.includes(label),
+      `dist/team-bio.html is missing the ${label} contact row`);
+  }
+});
+
+test('the staff detail screen leads back to the roster', () => {
+  /* A page reached from ten different cards needs the way out to be on it, not
+     in the browser's back button. */
+  const html = readFileSync('dist/team-bio.html', 'utf8');
+  const backs = html.match(/href="team-a\.html"/g) || [];
+  assert.ok(backs.length >= 2,
+    `dist/team-bio.html has ${backs.length} links back to the roster, expected one at the top and one at the foot`);
+});
+
+/* ==========================================================================
+   The Solutions landing page.
+
+   Quoted from the roadmap's Solutions tab. All three variations carry every
+   line; what differs is composition. The three "Explore" labels are asserted
+   because they are the page's real actions and the easiest thing to reword by
+   accident when a layout gets tight.
+   ========================================================================== */
+
+const SOLUTIONS_COPY = [
+  /* Section 1, the hero, in full. */
+  'Practical Solutions for a Stronger Mississippi',
+  'Opportunity is shaped by the things that affect everyday life: the education you receive, the work you can pursue, and the safety of the community you call home.',
+  'That’s why Empower Mississippi focuses on three areas where practical solutions can make a meaningful difference. Through research, community engagement, and policy solutions, we work to turn ideas into lasting change for people across our state.',
+
+  /* Section 2, the heading and all three areas: name, promise, description. */
+  'Solutions That Expand Opportunity',
+  'Quality Education',
+  'Every child deserves the opportunity to learn, grow, and reach their full potential.',
+  'We work to expand educational opportunity, empower parents, and ensure more Mississippi students have access to an education that meets their needs and prepares them for what comes next.',
+  'Explore Quality Education',
+  'Meaningful Work',
+  'Every Mississippian should have the opportunity to build a meaningful career and create a better future.',
+  'We work to connect more people with meaningful work, strengthen Mississippi’s workforce, and advance solutions that help individuals and families build greater stability and opportunity.',
+  'Explore Meaningful Work',
+  'Public Safety',
+  'Opportunity grows when people feel safe in the places they live, work, and raise their families.',
+  'We work to advance practical public safety solutions that promote accountability, improve outcomes, and help build safer, stronger communities across Mississippi.',
+  'Explore Safe Communities',
+
+  /* Section 3. */
+  'Research That Drives Solutions',
+  'Effective solutions start with understanding the problem.',
+  'Our research examines the challenges facing Mississippi, identifies opportunities for improvement, and provides practical recommendations grounded in data and real-world experience.',
+  'Explore Research',
+
+  /* Section 4. The headline here is "Behind every policy is a person." — NOT
+     the homepage's "Behind every solution is a real person." Two tabs of the
+     same document, two sentences, and the wrong one would be a rewrite. */
+  'Behind every policy is a person.',
+  'Across Mississippi, students, parents, workers, employers, and community members are experiencing what becomes possible when people have greater opportunity to shape their own futures.',
+  'Read Community Stories',
+];
+
+const SOLUTIONPAGES = ABOUTPAGES.filter(p => p.out.includes('solutions-'));
+
+test('all three Solutions variations build', () => {
+  assert.equal(SOLUTIONPAGES.length, 3,
+    `expected three Solutions variations, found ${SOLUTIONPAGES.length}`);
+});
+
+test('every Solutions variation carries the roadmap copy verbatim', () => {
+  for (const { out, html } of SOLUTIONPAGES) {
+    const text = textOf(html);
+    for (const line of SOLUTIONS_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('every Solutions variation links all three solution pages and the research page', () => {
+  /* The three /solutions/<name> destinations do not exist yet — the same open
+     link as the report PDFs on What We Do — but a landing page whose reason to
+     exist is routing has to actually route. */
+  for (const { out, html } of SOLUTIONPAGES) {
+    for (const slug of ['education', 'work', 'safety']) {
+      assert.ok(html.includes(`href="/solutions/${slug}"`),
+        `${out} does not link /solutions/${slug}`);
+    }
+    assert.ok(html.includes('href="/latest"'), `${out} does not link the research destination`);
+  }
+});
+
+test('the Solutions variations do not repeat each other’s composition', () => {
+  /* Three readings of one page are only worth showing if they are three. Each
+     variation's signature class is the shape its solutions section takes: a
+     stack of three equal panels, a vertical track of stations, a lattice of
+     columns under one beam. If two pages ever share one, they have converged. */
+  const SIGNATURE = {
+    'dist/solutions-a.html': 'sa-stack',
+    'dist/solutions-b.html': 'sb-stations',
+    'dist/solutions-c.html': 'sc-lattice__beam',
+  };
+  for (const { out, html } of SOLUTIONPAGES) {
+    assert.ok(html.includes(SIGNATURE[out]), `${out} has lost its ${SIGNATURE[out]} composition`);
+    for (const [other, cls] of Object.entries(SIGNATURE)) {
+      if (other === out) continue;
+      assert.ok(!html.includes(cls), `${out} is using ${other}'s ${cls} composition`);
+    }
+  }
+});
+
+test('the About pages use the agreed build’s header, not the mega-menu one', () => {
+  // The agreed homepage runs header-2 (utility strip + plain dropdowns). An
+  // About page on the mega-menu header would put two different navigations in
+  // front of the same client in the same review.
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const shell = readFileSync(`src/${page.src}`, 'utf8');
+    assert.match(shell, /<!--@include _shared\/header-2\.html-->/,
+      `${page.src} does not use the agreed build's header`);
+    assert.ok(!shell.includes('megamenu'), `${page.src} still loads mega-menu code`);
+  }
+});
+
+test('every About section partial uses curly apostrophes and quotes', () => {
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const dir = `src/${page.src.replace('/index.html', '')}/sections`;
+    for (const f of readdirSync(dir)) {
+      const s = readFileSync(`${dir}/${f}`, 'utf8');
+      const bad = s.match(/[A-Za-z]'[A-Za-z]/g) || [];
+      assert.equal(bad.length, 0,
+        `${dir}/${f} has straight apostrophes: ${bad.join(', ')} — brand copy requires U+2019`);
+      const textOnly = s.replace(/<[^>]+>/g, '');
+      assert.ok(!textOnly.includes('"'),
+        `${dir}/${f} has straight double quotes in prose; use U+201C/U+201D`);
+    }
+  }
+});
+
+test('every About variation has its own stylesheet and no other variation’s', () => {
+  /* The six pages are deliberately not sharing a stylesheet. Each one is a
+     candidate for conversion into Elementor blocks on its own, and a shared
+     "about.css" would mean converting the winner drags in rules written for
+     two designs the client rejected. */
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const slug = page.out.replace('dist/', '').replace('.html', '');
+    const shell = readFileSync(`src/${page.src}`, 'utf8');
+    assert.ok(existsSync(`css/${slug}.css`), `css/${slug}.css does not exist`);
+    assert.ok(shell.includes(`css/${slug}.css`), `${page.src} does not link its own stylesheet`);
+    for (const other of PAGES.filter(p => p.kind === 'about' && p.out !== page.out)) {
+      const otherSlug = other.out.replace('dist/', '').replace('.html', '');
+      assert.ok(!shell.includes(`css/${otherSlug}.css`),
+        `${page.src} also links ${otherSlug}.css — the variations must stay separable`);
+    }
+  }
+});
+
+test('no About stylesheet reaches into another variation’s namespace', () => {
+  /* wa-, wb-, wc-, da-, db-, dc- — one prefix per page. A rule written under
+     the wrong prefix is a rule that will not travel with its page when the
+     other five are deleted. */
+  const PREFIX = {
+    'who-we-are-a': 'wa', 'who-we-are-b': 'wb', 'who-we-are-c': 'wc',
+    'what-we-do-a': 'da', 'what-we-do-b': 'db', 'what-we-do-c': 'dc',
+    'team-a': 'ta', 'team-b': 'tb', 'team-c': 'tc', 'team-bio': 'tp',
+    'solutions-a': 'sa', 'solutions-b': 'sb', 'solutions-c': 'sc',
+  };
+  const all = Object.values(PREFIX);
+  for (const [slug, mine] of Object.entries(PREFIX)) {
+    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const other of all) {
+      if (other === mine) continue;
+      assert.ok(!css.includes(`.${other}-`),
+        `css/${slug}.css uses the .${other}- namespace, which belongs to another variation`);
+    }
+  }
+});
+
+test('the About pages hang no element out of its own section', () => {
+  /* Every overlap in this set is a negative margin on a child, never an
+     absolutely positioned element crossing a section boundary. That is the
+     Elementor constraint: a section maps to a section, and the overlap
+     survives the conversion. It is also the bug the homepage's north-star
+     card shipped — an element that hangs out of its section disappears the
+     moment a later section is given `position`.
+
+     The check is narrow on purpose: a rule that is BOTH position:absolute and
+     given a negative `bottom` is the shape that reaches downward out of its
+     own box. Absolute positioning inside a section is fine and used here. */
+  for (const slug of ['who-we-are-a', 'who-we-are-b', 'who-we-are-c',
+                      'what-we-do-a', 'what-we-do-b', 'what-we-do-c',
+                      'team-a', 'team-b', 'team-c', 'team-bio',
+                      'solutions-a', 'solutions-b', 'solutions-c']) {
+    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const block of css.split('}')) {
+      const [selector, body] = block.split('{');
+      if (!body || !/position:\s*absolute/.test(body)) continue;
+      assert.ok(!/bottom:\s*calc\(\s*-|bottom:\s*-/.test(body),
+        `css/${slug}.css hangs ${selector.trim().slice(0, 60)} below its own box — ` +
+        `use a negative margin on a child instead, so the section keeps its height`);
+    }
+  }
+});
+
+test('every page using header-2 also links the stylesheet it needs', () => {
+  /* The dropdown panels ship OPEN and in flow — that is the no-JS fallback.
+     css/header-2.css is what turns them into closed overlays once
+     js/dropdown.js sets [data-dropdown="on"]. A page that includes the
+     partial without the stylesheet renders five permanently open panels over
+     its own hero, which is exactly what the first build of the About pages
+     did: the rules lived inside css/current-2.css, a homepage stylesheet no
+     About page had any reason to load. */
+  for (const page of PAGES) {
+    const shell = readFileSync(`src/${page.src}`, 'utf8');
+    if (!shell.includes('_shared/header-2.html')) continue;
+    assert.ok(shell.includes('css/header-2.css'),
+      `${page.src} includes header-2.html but never links css/header-2.css — ` +
+      `its dropdown panels will render open over the page`);
+    assert.ok(shell.includes('js/dropdown.js'),
+      `${page.src} includes header-2.html but never loads js/dropdown.js`);
+  }
+});
+
+test('the About pages carry none of Empower\u2019s internal section labels', () => {
+  /* 2026-08-03: Empower confirmed the side labels on the Who We Are tab —
+     "Why We Exist", "History of Empower Mississippi", "Nonprofit Status",
+     "Our people" — were for their own organisation, not copy for the page.
+     "Our Story" is the exception: the roadmap marks it Headline:, and the
+     client asked for the section to start with it.
+
+     "Our Solutions" on the What We Do pages is a deliberate keep. It is the
+     only heading that section has, and three solution panels with nothing
+     above them lose the thread — the client's rule is to drop the labels
+     "unless the context is necessary". */
+  const LABELS = ['Why We Exist', 'Why we exist', 'History of Empower', 'Nonprofit Status', 'Nonprofit status'];
+  for (const { out, html } of ABOUTPAGES) {
+    for (const label of LABELS) {
+      assert.ok(!html.includes(label), `${out} still shows the internal section label "${label}"`);
+    }
+  }
+});
+
+test('no About page repeats a kicker above every section', () => {
+  /* The first build of these pages put a tiny uppercase tracked label above
+     each section — ABOUT EMPOWER, WHY WE EXIST, OUR STORY, OUR PEOPLE,
+     NONPROFIT STATUS. That is the scaffold this build already rejected once
+     on the homepage: the note on .fp-tagline in css/option-a.css says the
+     tagline "appears once. It is not the repeated uppercase eyebrow the page
+     used to put above every section."
+
+     One kicker per page, in the hero, naming where the visitor has landed.
+     Below it, sections are introduced by their heading and the brand's orange
+     mark. Variation B is allowed none at all — its chapter rail is the label
+     system. */
+  for (const { out, html } of ABOUTPAGES) {
+    const kickers = html.match(/class="[a-z]{2}-kicker/g) || [];
+    assert.ok(kickers.length <= 1,
+      `${out} has ${kickers.length} kickers — one per page, in the hero`);
+  }
+});
+
+test('no About stylesheet uses a coloured side stripe as an accent', () => {
+  /* border-left / border-right thicker than a hairline, used as a coloured
+     accent on a card or a pull quote, is the callout-bar reflex. Where these
+     pages want to mark a block they use the 56x4 orange rule above it, which
+     is the brand's own motif. */
+  for (const slug of ['who-we-are-a', 'who-we-are-b', 'who-we-are-c',
+                      'what-we-do-a', 'what-we-do-b', 'what-we-do-c',
+                      'team-a', 'team-b', 'team-c', 'team-bio',
+                      'solutions-a', 'solutions-b', 'solutions-c']) {
+    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const block of css.split('}')) {
+      const [selector, body] = block.split('{');
+      if (!body) continue;
+      const m = body.match(/border-(left|right):\s*(\d+)px/);
+      if (m && Number(m[2]) > 1) {
+        assert.fail(`css/${slug}.css puts a ${m[2]}px ${m[1]} border on ` +
+          `${selector.trim().slice(0, 50)} — use the orange mark above the block instead`);
+      }
+    }
+  }
 });

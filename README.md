@@ -1,29 +1,146 @@
-# Empower Mississippi — homepage options
+# Empower Mississippi — website build
 
-Static HTML + CSS builds of the Empower Mississippi homepage: **four complete
-alternative designs for the client to choose from**, plus the original
-reference build kept for comparison and one variation of it.
+Static HTML + CSS builds for the Empower Mississippi refresh. The homepage is
+**settled** — `dist/final.html` is the agreed build. The **About Us** pages are
+still a choice: three readings of Who We Are and three of What We Do, plus the
+**Team, Board & Fellows** page all six of them link to. The four alternative
+homepages the decision was made from still build, as reference.
 
-Content is the **Homepage** section of the *Empower Mississippi Website Refresh
-Roadmap* (Google Doc). Every headline, subhead, section intro, solution promise
-and Join Us block is that copy, used verbatim, on all six pages. What differs
-between them is the composition.
+Content is the *Empower Mississippi Website Refresh Roadmap* (Google Doc) —
+the **Homepage** tab for the homepages, the **Who We Are** and **What We Do**
+tabs for the About pages. Every headline, subhead, section intro and solution
+promise is that copy, used verbatim. What differs between builds is the
+composition.
 
 This is a **reference implementation for hand-off to WordPress + Elementor**,
 not a production runtime.
 
-## The six pages
+## The pages
+
+**The homepage.** Settled — `final.html` is the build. The four `homepage-*`
+pages were the options Empower chose between; they are named for what they are
+now rather than for a decision that has already happened, and they still build
+so the choice can be re-read.
 
 | Page | What it is |
 | --- | --- |
 | `dist/final.html` | **The agreed build** — Empower's chosen combination. This is what ships. |
-| `dist/index.html` | Chooser — opens the five proposals side by side. Review tool, never ships. |
-| `dist/option-a.html` | **Front Porch** — interlocking mosaic, warm and photographic |
-| `dist/option-b.html` | **The Index** — persistent sticky rail, typographic, credible |
-| `dist/option-c.html` | **The Atlas** — horizontal rails and expanding panels |
-| `dist/option-d.html` | **The Throughline** — a route, with a sticky photographic stack |
+| `dist/index.html` | Build review — opens every page side by side. Review tool, never ships. |
+| `dist/homepage-a.html` | **Front Porch** — interlocking mosaic, warm and photographic |
+| `dist/homepage-b.html` | **The Index** — persistent sticky rail, typographic, credible |
+| `dist/homepage-c.html` | **The Atlas** — horizontal rails and expanding panels |
+| `dist/homepage-d.html` | **The Throughline** — a route, with a sticky photographic stack |
 | `dist/current-2.html` | **The Evolution** — the existing design moved forward, not replaced |
 | `dist/current.html` | **The Starting Point** — the original wireframe build, toggles stripped |
+
+**About Us.** Three readings of each page, for Empower to choose between. Same
+chrome as the agreed build, same approved copy, different composition.
+
+| Page | What it is |
+| --- | --- |
+| `dist/who-we-are-a.html` | **The Table** — picture stack, navy slab, the founding year as the one datum |
+| `dist/who-we-are-b.html` | **The Record** — the mission at display size, then numbered chapters on a sticky rail |
+| `dist/who-we-are-c.html` | **The Ground** — full-bleed photography, every word on solid colour |
+| `dist/what-we-do-a.html` | **Three Doors** — homepage-shaped hero, three panels stepped down a diagonal |
+| `dist/what-we-do-b.html` | **The Ledger** — indexed hero, one row per solution, reports as ledger lines |
+| `dist/what-we-do-c.html` | **The Field** — window-wide photograph, tall cards at three heights |
+
+**Team, Board & Fellows.** The page all six About builds link to, in the same
+three-variation shape as the rest of the About set. Same ten staff, five fellows
+and eight board members, same roadmap copy on all three; what differs is how
+much weight the photographs carry.
+
+| Page | What it is |
+| --- | --- |
+| `dist/team-a.html` | **The Roster** — founder block into a staggered wall of tall portraits, fellows on a dark ledger, board as a ragged roll of pills |
+| `dist/team-b.html` | **The Directory** — a numbered index, one hairline row per person, portraits reduced to discs, one window-wide photograph after the list |
+| `dist/team-c.html` | **The Frame** — window-wide photograph with the navy hero panel climbing it, staff as square plates, board as a navy ribbon |
+| `dist/team-bio.html` | **Staff detail — Grant Callen** — the one bio screen, and the template the other nine are cut from |
+
+Within each variation the three groups get three treatments rather than the same
+block three times: ten staff who each have a bio page behind them are scanned by
+face, five fellows carry subject areas and no bios, and eight board members carry
+nothing but a name and (twice) an officer role. B is the one that still works if
+Empower would rather not lead with faces at all.
+
+Two things on all three are unfinished, and both are marked in the markup rather
+than left to be noticed:
+
+- **Every portrait is a placeholder.** Nothing in `assets/photography` is a
+  headshot, so every one is a monogram tile carrying `data-placeholder="headshot"`
+  and a dashed edge, and each page says so in words above its roster. They sit in
+  the box the photographs will use (4:5 on A, 1:1 on B and C), so nothing moves
+  when the pictures land. A test asserts that every tile on every variation is
+  marked and that a page showing tiles still carries the note.
+- **The contact block on the bio page is a stand-in.** Empower have not supplied
+  Grant's own address or handles, so the "Get in touch" rows carry the
+  organisation's inbox and accounts, marked `data-placeholder="contact"` with a
+  note under them. A test keeps the mark and the note together.
+- **Nine of the ten bio pages do not exist.** The CEO's is built
+  (`dist/team-bio.html`), and every staff card on all three variations points at
+  it so the flow is clickable in review. When the other nine are cut from that
+  template each card takes its own destination; at hand-off the links become
+  `/about/team/<name>`. `TEAM_STAFF` in `test.mjs` already holds the slug each
+  page will take.
+
+Names, titles and the founder's bio paragraph are the roadmap's copy, asserted
+whole in `test.mjs` — a roster is where a quiet omission is invisible in review
+and unforgivable after hand-off. The one deviation: the roadmap lists Thigpen
+above Richards, which breaks its own "in alphabetical order by last name"; the
+page sorts them.
+
+**Solutions.** The landing page for the three areas, in three readings. Same
+roadmap copy on all three; what differs is what each one says the three areas
+ARE.
+
+| Page | What it is |
+| --- | --- |
+| `dist/solutions-a.html` | **The Commons** — a hero photograph bleeding off the left edge, then the three areas stacked as three identical picture-left panels |
+| `dist/solutions-b.html` | **The Throughline Down** — navy across the top half, the three areas descending one orange line, the research panel climbing back over the navy |
+| `dist/solutions-c.html` | **The Lattice** — near-monochrome and structural: one beam, three orange nodes, three columns on a shared subgrid, honeycomb behind them |
+
+None of the three reuses a What We Do composition (the diagonal, the alternating
+ledger rows, the tall cards at three heights). That constraint is deliberate:
+both pages present the same three solutions, and if the compositions repeated,
+Empower would be choosing between two pages that look like each other. A test
+asserts each variation keeps its own signature composition and carries neither
+of the other two.
+
+Section 4's headline is **"Behind every policy is a person."** — not the
+homepage's "Behind every solution is a real person." Two tabs of the same
+document, two sentences; the test carries both so neither drifts into the other.
+
+The three "Explore" links point at `/solutions/education`, `/solutions/work` and
+`/solutions/safety`, which are not built: the same open destination as the
+report PDFs on What We Do.
+
+### Rules the About set holds to
+
+- **Every sentence is the client's.** All prose comes from the roadmap's Who We
+  Are and What We Do tabs. Where a variation sets a list the sentence
+  describes, the words are unchanged. `test.mjs` asserts the copy against each
+  page's rendered text.
+- **The side section labels are not copy.** Empower confirmed on 2026-08-03
+  that "Why We Exist", "History of Empower Mississippi", "Nonprofit Status" and
+  "Our people" were their own organising labels, and asked for them to be left
+  out unless the context needs them. None of them appear on any page; a test
+  keeps them out. Two deliberate exceptions:
+  - **"Our Story"** — the roadmap marks it `Headline:`, and Empower asked for
+    section 3 to start with it. It is a heading on all three variations.
+  - **"Our Solutions"** on the What We Do pages — the only heading that
+    section has, and three solution panels with nothing above them lose the
+    thread. Kept under the client's own "unless the context is necessary".
+- The Who We Are tab was renumbered on 2026-08-03 (sections 1–5, previously
+  1, 3, 4, 5, 7 — Empower had combined sections rather than losing any). The
+  partial filenames match the new numbering.
+- **One kicker per page**, in the hero. Not a label above every section — that
+  is the scaffold this build already rejected on the homepage.
+- **No text sits on a photograph.** Every word is on a solid or near-solid
+  surface, because no test in this repo can measure contrast against an image
+  and the photography is stand-in material that will be replaced.
+- **Every overlap is a negative margin on a child**, inside the section that
+  owns it. Nothing is absolutely positioned across a section boundary. See the
+  Elementor note below.
 
 ## The agreed build
 
@@ -66,14 +183,18 @@ in three of those are inert here. Consolidating to one stylesheet and deleting
 the option files is the next step, and it should happen once Empower confirm
 the composition, not before.
 
-## The chooser
+## The review page
 
-The chooser leads with **The Evolution** and marks it *Paolo's pick*. It shows
-five cards: `current.html` still builds and its URL still resolves, but it was
-pulled from the grid once the five proposals were finished — Empower are not
-being asked to consider it, and it is kept only for diffing against what
-exists today. A named exemption in `test.mjs` allows that; every other page in
-`PAGES` must still be linked from the chooser.
+`dist/index.html` is the review index. A sticky jump bar leads to its three
+sets — the homepage, Who We Are, What We Do — and each set is a grid of cards
+carrying what the build feels like, what its signature move is, and who it is
+for. It loads no JavaScript; the jump bar is plain in-page anchors.
+
+The homepage set leads with the agreed build, then the references behind it.
+`current.html` still builds and its URL still resolves, but it is not on the
+page — Empower are not being asked to consider the original wireframe build,
+and it is kept only for diffing against what exists today. A named exemption in
+`test.mjs` allows that; every other page in `PAGES` must still be linked.
 
 The filenames stay `current-2` and `current` — renaming them would break the
 review URLs already shared.
@@ -485,23 +606,66 @@ not oversights for the WordPress developer to quietly fix.
 
 ## Hand-off to WordPress + Elementor
 
+**Read the page you are converting, not this list from memory.** The steps below
+were written for `dist/current.html`, the original build. The pages that ship —
+`final.html` and whichever About Us variations Empower pick — use a different
+header, a different script set and different partials. Per-page notes follow.
+
 1. Copy `tokens/`, `components/` and `assets/` into the child theme. **Keep them as
    siblings** — `tokens/*.css` references `url('../assets/…')`.
-2. Enqueue in this order: the eight `tokens/*.css` files, then
-   `components/components.css`, then `css/homepage.css`, then `css/motion.css`
-   and `css/megamenu.css`. `css/megamenu.css` must load **after**
-   `css/homepage.css` — it overrides `.em-mega`’s base layout rules for the
-   enhanced state.
-3. Each file in `src/sections/` is a standalone fragment. Paste one into an Elementor
-   HTML widget, or use it as the reference for a native Elementor section.
+2. Enqueue in cascade order. Take the list from the page's own `<head>`, which is
+   the source of truth. For every page: the eight `tokens/*.css` files, then
+   `components/components.css`, then **`css/site.css`** — it carries the shared
+   chrome and every local WCAG override, and a build that skips it loses the
+   accessibility work — then the page's own stylesheets in the order they are
+   linked. `css/megamenu.css` applies **only** to pages using the mega-menu
+   header, and must load after `css/homepage.css`.
+3. Each partial under `src/` is a standalone fragment: one `<section>`, no page
+   chrome. Paste one into an Elementor HTML widget, or use it as the reference
+   for a native Elementor section. The section list for a page is the
+   `@include` list in its `src/<page>/index.html`.
 4. Fix up asset paths: partials use `../assets/…` relative to `dist/`. In WordPress
    these become theme URLs.
 5. Replace the "auto-populated" placeholder strings with dynamic content —
    they mark CMS slots (blog posts, EPIC research, Community Stories).
-6. `js/nav.js`, `js/reveal.js`, and `js/megamenu.js` should ship (or be replaced
-   by Elementor’s own responsive nav, entrance-animation and dropdown-menu
-   behaviour) — they drive the real mobile menu, the scroll/entrance reveals
-   plus the sticky-header condense, and the desktop mega menus, respectively.
+6. Ship the scripts the page actually links. `js/nav.js` (mobile menu, sticky
+   header condense) and `js/reveal.js` (entrance reveals) are on every page.
+   The desktop navigation is **either** `js/megamenu.js` **or** `js/dropdown.js`,
+   never both — see the per-page notes.
+
+### Per page
+
+| Page | Header | Desktop nav | Stylesheets beyond tokens/components/site |
+| --- | --- | --- | --- |
+| `final.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `homepage.css`, `motion.css`, `option-a.css`, `option-d.css`, `current-2.css`, `final.css` |
+| `who-we-are-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `who-we-are-*.css` |
+| `what-we-do-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `what-we-do-*.css` |
+| `team-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `team-*.css` |
+| `team-bio.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `team-bio.css` |
+| `solutions-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `solutions-*.css` |
+| `current.html`, `homepage-a..d` | `header` | `js/megamenu.js` + `css/megamenu.css` | `homepage.css`, `motion.css`, `option-*.css` |
+
+`css/header-2.css` is the header's own stylesheet — utility strip, centred nav,
+dropdown panels. In WordPress it is one global header block and this is the CSS
+that block needs. **A page that includes `header-2.html` without it renders five
+permanently open panels across its hero.** There is a test.
+
+### What the About pages are built to survive
+
+They were written with this conversion in mind, so two constraints hold across
+all six:
+
+- **One section is one Elementor section.** Every overlap is a negative margin
+  on a child of the section that owns it — never an absolutely positioned
+  element reaching into the section below. Elementor sections take negative
+  margins natively; an element that hangs out of its own section needs a
+  z-index workaround and disappears the first time a later section is given
+  `position`. The homepage's north-star card learned that, and `test.mjs` now
+  asserts the About stylesheets never do it.
+- **One stylesheet per variation, one namespace per stylesheet** — `.wa-`,
+  `.wb-`, `.wc-`, `.da-`, `.db-`, `.dc-`. Converting the variation Empower pick
+  means taking one file; the five that lose are deleted whole, and nothing they
+  contain is load-bearing anywhere else. Also asserted.
 
 ## Known substitutions
 
@@ -611,7 +775,9 @@ These are flagged throughout and are not defects in the build:
   PDF at 900–1250px and is stand-in material. All `alt` text was written by
   looking at each image, because the extracted filenames do not describe their
   contents — treat the filenames as unreliable if you reuse these assets.
-- **The logo in vector.** The only files here are PNGs rendered from a PDF,
+- **The logo in vector.** Empower supplied their own reversed export on
+  2026-08-03 (`assets/logo-reversed-300x136.png`, now the footer logo on every
+  page); the header logo and the rest are still PNGs rendered from a PDF,
   which is why the brand pattern's EM monogram cell is deliberately not
   reproduced (see **Brand pattern**).
 - **The five steps of the Empower Solutions Model.** The roadmap names the
@@ -622,6 +788,13 @@ These are flagged throughout and are not defects in the build:
   feature cards are placeholder.
 - **Everything marked "auto-populated".** Those strings mark CMS slots — blog
   posts, EPIC research, Community Stories, the podcast feed.
+- **Twenty-three headshots**, for the team pages: ten staff, five fellows, eight
+  board. Every portrait on all three variations is a marked monogram placeholder
+  until they arrive. A has all 23, B gives discs to the staff only, C plates the
+  staff and sets the other two groups as type.
+- **Nine more staff bio pages.** The CEO's is built as the pattern; the copy for
+  the other nine is in the Team tab and each staff card points at the CEO's page
+  until they exist.
 - **A decision on the two open brand-colour questions** in *Known accessibility
   issues* above.
 

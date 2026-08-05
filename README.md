@@ -33,8 +33,9 @@ so the choice can be re-read.
 | `dist/current-2.html` | **The Evolution** — the existing design moved forward, not replaced |
 | `dist/current.html` | **The Starting Point** — the original wireframe build, toggles stripped |
 
-**About Us.** Three readings of each page, for Empower to choose between. Same
-chrome as the agreed build, same approved copy, different composition.
+**About Us.** Three readings of each page. Empower chose on 2026-08-05: **The
+Table** for Who We Are, **Three Doors** for What We Do. The other four still
+build so the decision can be re-read.
 
 | Page | What it is |
 | --- | --- |
@@ -45,8 +46,8 @@ chrome as the agreed build, same approved copy, different composition.
 | `dist/what-we-do-b.html` | **The Ledger** — indexed hero, one row per solution, reports as ledger lines |
 | `dist/what-we-do-c.html` | **The Field** — window-wide photograph, tall cards at three heights |
 
-**Team, Board & Fellows.** The page all six About builds link to, in the same
-three-variation shape as the rest of the About set. Same ten staff, five fellows
+**Team, Board & Fellows.** The page all six About builds link to. Empower chose
+**The Roster** (A) on 2026-08-05. Same ten staff, five fellows
 and eight board members, same roadmap copy on all three; what differs is how
 much weight the photographs carry.
 
@@ -89,9 +90,9 @@ and unforgivable after hand-off. The one deviation: the roadmap lists Thigpen
 above Richards, which breaks its own "in alphabetical order by last name"; the
 page sorts them.
 
-**Solutions.** The landing page for the three areas, in three readings. Same
-roadmap copy on all three; what differs is what each one says the three areas
-ARE.
+**Solutions.** The landing page for the three areas, in three readings. Empower
+chose **The Through Line Down** (B) on 2026-08-05. Same roadmap copy on all
+three; what differs is what each one says the three areas ARE.
 
 | Page | What it is |
 | --- | --- |
@@ -113,6 +114,28 @@ document, two sentences; the test carries both so neither drifts into the other.
 The three "Explore" links point at `/solutions/education`, `/solutions/work` and
 `/solutions/safety`, which are not built: the same open destination as the
 report PDFs on What We Do.
+
+### What Empower asked for on 2026-08-05
+
+Alongside the four picks, three changes, all applied:
+
+- **Every card on The Roster is the same size.** The founder's feature panel is
+  gone and Grant Callen is the first of ten identical cards. His bio paragraph
+  now lives only on his own page.
+- **Only a card with a bio behind it links to one.** Nine of the ten cards are a
+  `<div>`, not an `<a>`. Every card used to open Grant Callen's page, which is
+  how a visitor clicking Wil Ervin ended up reading somebody else's bio — that
+  is what "remove Wil Ervin's bio" was asking for. When the other nine pages are
+  built, each card takes its own destination.
+- **Contact rows per person.** Grant keeps email, LinkedIn and X; every other
+  staff bio gets the email row only. The bio partial says so where the block is.
+- **Our Solutions is a top-level destination.** In `header-2.html` it is now a
+  link to the Solutions landing page with a separate disclosure button beside
+  it, and the dropdown lists only Quality Education, Meaningful Work, Public
+  Safety and Research (EPIC). "Solutions Center" is gone: the item above it is
+  that page. The mega-menu header (`header.html`) keeps the old label — it only
+  serves the original build and the four reference homepages, which are a record
+  of what was reviewed rather than pages that ship. A test names that exception.
 
 ### Rules the About set holds to
 

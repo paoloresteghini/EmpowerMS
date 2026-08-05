@@ -47,6 +47,30 @@
 .em-header--flat .em-header__actions{flex:1 1 0;justify-content:flex-end}
 .em-header--flat .em-header__actions .em-btn{border-radius:var(--radius-pill)}
 
+/* ---------- Split item: a link plus its disclosure ---------- */
+/* Our Solutions is a destination AND a group. The words are a link, the caret
+   is a button beside them, and the two read as one control: the pair share a
+   hover, and the pill background wraps both because the item is what the
+   pointer is aiming at. The button is the only half with aria-controls, so
+   js/dropdown.js binds to it without a line of change. */
+.em-header__item--split{display:flex;align-items:center;gap:0;border-radius:var(--radius-pill)}
+.em-header__item--split .em-header__link{padding-right:var(--space-2)}
+
+.em-header__disclosure{display:inline-flex;align-items:center;justify-content:center;
+  min-width:32px;min-height:32px;padding:0 10px 0 4px;
+  border:0;border-radius:var(--radius-pill);background:none;cursor:pointer;
+  color:var(--em-blue);
+  transition:background var(--dur) var(--ease-out),color var(--dur) var(--ease-out)}
+/* Hovering either half lights both, so the pair never looks like two controls
+   that happen to be adjacent. */
+.em-header__item--split:hover,
+.em-header__item--open.em-header__item--split{background:var(--blue-100)}
+.em-header__item--split:hover .em-header__link,
+.em-header__item--split:hover .em-header__disclosure{color:var(--blue-800)}
+/* The link's own hover background would paint a second pill inside the first. */
+.em-header__item--split .em-header__link:hover{background:none}
+.em-header__disclosure:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+
 /* ---------- Dropdown panels ---------- */
 .em-header__menu{position:static;min-width:0;padding:0;border:0;box-shadow:none;
   background:none;border-radius:0}

@@ -139,40 +139,7 @@
   border:1px dashed var(--blue-300);border-radius:var(--radius-lg);
   font-size:var(--fs-small);line-height:1.5;color:var(--text-muted)}
 
-/* --- The founder block --- */
-/* Asymmetric on purpose: the portrait column is narrower than the copy and the
-   panel behind the copy runs under it, so the two overlap instead of sitting
-   side by side. The negative margin is on the copy panel, which is a child of
-   this section. */
-.ta-lead{display:grid;grid-template-columns:minmax(0,.62fr) minmax(0,1.38fr);
-  align-items:center;margin-bottom:clamp(var(--space-11),6vw,var(--space-14))}
-
-.ta-lead__frame{position:relative;z-index:1;margin:0;max-width:320px}
-.ta-portrait--lead{aspect-ratio:4/5;border-radius:var(--radius-xl);box-shadow:var(--shadow-lg);
-  background:var(--blue-100)}
-.ta-portrait--lead .ta-portrait__mono{font-size:clamp(2.5rem,1.6rem + 3vw,4.5rem)}
-
-.ta-lead__copy{padding:clamp(var(--space-8),4vw,var(--space-11)) clamp(var(--space-7),4vw,var(--space-11));
-  padding-left:clamp(var(--space-9),6vw,var(--space-14));
-  margin-left:calc(-1 * clamp(var(--space-6),4vw,var(--space-11)));
-  background:var(--surface-subtle);border-radius:var(--radius-xl)}
-.ta-lead__copy h3{margin:0;font-size:clamp(1.5rem,1.15rem + 1.3vw,2.25rem);font-weight:var(--fw-black);
-  line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
-.ta-lead__copy h3 a{color:inherit;text-decoration:none}
-.ta-lead__copy h3 a:hover{text-decoration:underline;text-underline-offset:5px;
-  text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
-.ta-lead__bio{margin:var(--space-6) 0 0;font-size:var(--fs-body);line-height:1.7;
-  color:var(--text-body);max-width:62ch}
-
-.ta-readbio{display:inline-flex;align-items:center;gap:var(--space-3);min-height:24px;
-  margin-top:var(--space-7);
-  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
-  color:var(--em-orange-ink);text-decoration:none}
-.ta-readbio svg{width:17px;height:17px;transition:transform var(--dur) var(--ease-out)}
-.ta-readbio:hover{text-decoration:underline;text-underline-offset:4px}
-.ta-readbio:hover svg{transform:translateX(4px)}
-
-/* --- The nine --- */
+/* --- The ten --- */
 /* Three straight columns. The middle one used to be dropped by a row's worth of
    space, on the theory that a stagger stops nine headshots reading as a stock
    grid; in the browser it read as misalignment instead, with three names sitting
@@ -190,26 +157,38 @@
   column-gap:clamp(var(--space-6),3vw,var(--space-10));
   row-gap:clamp(var(--space-9),4vw,var(--space-12))}
 
+/* Nine of the ten cards are a <div>, not an <a>: only Grant Callen has a bio
+   page to open. The class carries the layout for both, and the interaction
+   states below are scoped to the anchor, so a card that goes nowhere does not
+   lift, underline or grow a "Read bio" line under the pointer. */
 .ta-person__link{display:block;text-decoration:none;color:inherit}
-.ta-person__link .ta-portrait{transition:border-color var(--dur) var(--ease-out),
+a.ta-person__link .ta-portrait{transition:border-color var(--dur) var(--ease-out),
   background var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
-.ta-person__link:hover .ta-portrait{border-color:var(--em-orange);background:var(--blue-200);
+a.ta-person__link:hover .ta-portrait{border-color:var(--em-orange);background:var(--blue-200);
   transform:translateY(-4px)}
-.ta-person__link:hover .ta-portrait__mono{color:var(--em-blue)}
+a.ta-person__link:hover .ta-portrait__mono{color:var(--em-blue)}
 
 .ta-person__name{display:block;margin:var(--space-5) 0 0;
   font-size:clamp(1.125rem,1.02rem + .45vw,1.375rem);font-weight:var(--fw-bold);
   line-height:1.25;letter-spacing:var(--ls-heading);color:var(--em-blue)}
-.ta-person__link:hover .ta-person__name{text-decoration:underline;text-underline-offset:5px;
+a.ta-person__link:hover .ta-person__name{text-decoration:underline;text-underline-offset:5px;
   text-decoration-color:var(--em-orange);text-decoration-thickness:3px}
+
+/* The one card with a destination says so. It is not a hover-only affordance:
+   the line is in the markup and visible at rest, and hover only moves it. */
+.ta-person__more{display:inline-flex;align-items:center;gap:var(--space-2);
+  margin-top:var(--space-3);min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--em-orange-ink)}
+.ta-person__more::after{content:"";width:14px;height:2px;border-radius:1px;
+  background:currentColor;transition:width var(--dur) var(--ease-out)}
+a.ta-person__link:hover .ta-person__more::after{width:22px}
 
 /* The title is the line a visitor actually scans for, so it gets the accent
    rather than the muted grey a caption would normally take. */
 .ta-person__title{display:block;margin-top:var(--space-2);
   font-family:var(--font-display);font-weight:var(--fw-semibold);font-size:var(--fs-small);
   line-height:1.4;color:var(--text-muted)}
-.ta-lead__copy .ta-person__title{margin-top:var(--space-3);font-size:var(--fs-body);
-  color:var(--em-orange-ink)}
 
 /* ============================== 3 · Fellows =============================== */
 /* The slab climbs over the staff section's bottom space so the two read as one
@@ -300,13 +279,6 @@
 }
 
 @media (max-width:900px){
-  /* The founder block keeps its side-by-side shape as long as the portrait and
-     a readable measure both fit. Below that it stacks, and the overlap becomes
-     vertical: the panel climbs the tile instead of sitting behind it. */
-  .ta-lead{grid-template-columns:1fr;gap:0}
-  .ta-lead__frame{max-width:340px}
-  .ta-lead__copy{margin-left:0;margin-top:calc(-1 * var(--space-9));
-    padding-left:clamp(var(--space-7),4vw,var(--space-11));padding-top:var(--space-11)}
   /* Three 280px tiles plus their gutters need ~890px of container, which is
      where this breakpoint comes from. */
   .ta-roster{grid-template-columns:repeat(2,minmax(0,280px))}
@@ -333,10 +305,10 @@
      by scanning, and scanning needs more than one person in view. */
   .ta-roster{grid-template-columns:repeat(2,minmax(0,1fr));
     column-gap:var(--space-4);row-gap:var(--space-8)}
-  .ta-lead__frame{max-width:none}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .ta-jump:hover svg,.ta-readbio:hover svg{transform:none}
-  .ta-person__link:hover .ta-portrait{transform:none}
+  .ta-jump:hover svg{transform:none}
+  a.ta-person__link:hover .ta-portrait{transform:none}
+  a.ta-person__link:hover .ta-person__more::after{width:14px}
 }

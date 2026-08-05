@@ -126,6 +126,18 @@ body{overflow-wrap:break-word}
   border-right:2px solid currentColor;border-bottom:2px solid currentColor;
   transform:rotate(45deg);transition:transform var(--dur) var(--ease-out)}
 .em-mobilenav__trigger[aria-expanded="true"] .em-mobilenav__caret{transform:rotate(-135deg)}
+
+/* A row that is both a destination and a group: the label goes to the page,
+   the caret opens the children. The sublist is a child of the row, so the row
+   itself cannot be the flex container — the wrapper is, and the sublist is
+   pushed onto its own line by wrapping rather than by taking the row apart. */
+.em-mobilenav__item--split{display:flex;flex-wrap:wrap;align-items:center}
+.em-mobilenav__item--split .em-mobilenav__link{flex:1 1 auto;width:auto}
+/* 56px against the 44px minimum target: the caret is the smaller half of a
+   split row and is the one control here a thumb can miss. */
+.em-mobilenav__trigger--caret{width:56px;flex:0 0 auto;justify-content:center;
+  padding-inline:var(--space-4);min-height:44px}
+.em-mobilenav__item--split .em-mobilenav__sublist{flex:1 0 100%}
 .em-mobilenav__sublist{list-style:none;margin:0;
   padding:0 var(--gutter) var(--space-3) calc(var(--gutter) + var(--space-4))}
 .em-mobilenav__sublink{display:block;padding:var(--space-2) 0;font-size:var(--fs-caption);

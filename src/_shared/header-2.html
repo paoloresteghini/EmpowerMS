@@ -25,13 +25,22 @@
           </div>
         </div>
 
-        <div class="em-header__item">
-          <button class="em-header__link" type="button" id="drop-trigger-solutions" aria-controls="drop-solutions" aria-expanded="true">Solutions <span class="em-header__caret" aria-hidden="true"></span></button>
+        <!-- Our Solutions is a DESTINATION, not just a menu: Empower asked on
+             2026-08-05 for the top-level item to open the Solutions landing
+             page, with the dropdown holding only the individual solution pages
+             and research. So the item is a link plus a separate disclosure
+             button — the button carries aria-controls, which is what
+             js/dropdown.js binds to, and hovering anywhere on the item still
+             opens the panel. Clicking the words navigates; clicking the caret
+             opens. "Solutions Center" is gone from the panel because the item
+             above it now IS the Solutions Center. -->
+        <div class="em-header__item em-header__item--split">
+          <a class="em-header__link" href="/solutions">Our Solutions</a>
+          <button class="em-header__disclosure" type="button" id="drop-trigger-solutions" aria-controls="drop-solutions" aria-expanded="true" aria-label="Our Solutions menu"><span class="em-header__caret" aria-hidden="true"></span></button>
           <div class="em-header__menu" id="drop-solutions" role="group" aria-labelledby="drop-trigger-solutions">
-            <a href="/solutions">Solutions Center<span>Every issue we work on, in one place.</span></a>
-            <a href="/education">Quality Education<span>Expanding what is possible for every child.</span></a>
-            <a href="/solutions">Meaningful Work<span>Connecting Mississippians to careers worth staying for.</span></a>
-            <a href="/solutions">Public Safety<span>Safer neighbourhoods where opportunity can take hold.</span></a>
+            <a href="/solutions/education">Quality Education<span>Expanding what is possible for every child.</span></a>
+            <a href="/solutions/work">Meaningful Work<span>Connecting Mississippians to careers worth staying for.</span></a>
+            <a href="/solutions/safety">Public Safety<span>Safer neighbourhoods where opportunity can take hold.</span></a>
             <a href="/latest">Research (EPIC)<span>The evidence behind each solution we advance.</span></a>
           </div>
         </div>
@@ -89,13 +98,17 @@
             <li><a class="em-mobilenav__sublink" href="/solutions">What We Do</a></li>
           </ul>
         </li>
-        <li class="em-mobilenav__item">
-          <button class="em-mobilenav__trigger" type="button" aria-expanded="true" aria-controls="mobile-nav-solutions">Solutions <span class="em-mobilenav__caret" aria-hidden="true"></span></button>
+        <!-- Same split on mobile: the words go to the landing page, the caret
+             opens the group. The button keeps .em-mobilenav__trigger because
+             that is the class js/nav.js binds its toggles to; the modifier is
+             what makes it a caret rather than a full-width row. -->
+        <li class="em-mobilenav__item em-mobilenav__item--split">
+          <a class="em-mobilenav__link" href="/solutions">Our Solutions</a>
+          <button class="em-mobilenav__trigger em-mobilenav__trigger--caret" type="button" aria-expanded="true" aria-controls="mobile-nav-solutions" aria-label="Our Solutions menu"><span class="em-mobilenav__caret" aria-hidden="true"></span></button>
           <ul class="em-mobilenav__sublist" id="mobile-nav-solutions">
-            <li><a class="em-mobilenav__sublink" href="/solutions">Solutions Center</a></li>
-            <li><a class="em-mobilenav__sublink" href="/education">Quality Education</a></li>
-            <li><a class="em-mobilenav__sublink" href="/solutions">Meaningful Work</a></li>
-            <li><a class="em-mobilenav__sublink" href="/solutions">Public Safety</a></li>
+            <li><a class="em-mobilenav__sublink" href="/solutions/education">Quality Education</a></li>
+            <li><a class="em-mobilenav__sublink" href="/solutions/work">Meaningful Work</a></li>
+            <li><a class="em-mobilenav__sublink" href="/solutions/safety">Public Safety</a></li>
             <li><a class="em-mobilenav__sublink" href="/latest">Research (EPIC)</a></li>
           </ul>
         </li>

@@ -23,28 +23,96 @@
   <div class="em-container">
     <img class="ch__logo" src="../assets/logo-primary.png" alt="Empower Mississippi" width="1053" height="491">
     <h1>Build review</h1>
-    <p class="ch__lede">The homepage is settled — the agreed build is at the top. Below it are the reference homepages the decision was made from, and then the About Us pages: three ways to read Who We Are and three ways to read What We Do. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
+    <p class="ch__lede">Every set has now been chosen from, and the choices are marked. The homepage is the agreed build; Empower picked The Table, Three Doors, The Roster and The Through Line Down on 5 August. The pages that were not picked still build, so the decision can be re-read. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
     <p class="ch__note">This page is a review tool. It is never part of the hand-off.</p>
   </div>
 </header>
 
-<nav class="ch__jump" aria-label="Jump to a set">
-  <div class="em-container">
-    <ul>
-      <li><a href="#group-home">The homepage <span>7</span></a></li>
-      <li><a href="#group-who">Who We Are <span>3</span></a></li>
-      <li><a href="#group-do">What We Do <span>3</span></a></li>
-      <li><a href="#group-team">Team, Board &amp; Fellows <span>3</span></a></li>
-      <li><a href="#group-solutions">Solutions <span>3</span></a></li>
-    </ul>
-  </div>
-</nav>
+<div class="ch__layout em-container">
 
-<main class="em-container">
-  <section aria-labelledby="group-home">
+  <!-- The filter rail. Still no script on this page: every control here is a
+       real form control, the facets are :has() rules in css/chooser.css, and
+       Clear is a native <button type="reset">, which is why the form element is
+       load-bearing rather than decorative.
+
+       It is a <details> below the layout breakpoint so a phone gets the cards
+       first and the filters on demand; open by default on desktop, where the
+       rail is a column of its own. -->
+  <form class="ch__rail">
+    <details class="ch__rail__panel" open>
+      <summary class="ch__rail__summary">
+        <span>Filter builds</span>
+        <span class="ch__rail__caret" aria-hidden="true"></span>
+      </summary>
+
+      <div class="ch__rail__body">
+        <fieldset class="ch__facet">
+          <legend>Status</legend>
+          <div class="ch__check">
+            <input class="ch__check__input" type="checkbox" id="signed-off">
+            <label class="ch__check__label" for="signed-off">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              Signed off
+              <span class="ch__check__n">5</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="ch__facet">
+          <legend>Set</legend>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-home">
+            <label class="ch__check__label" for="set-home">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              The homepage
+              <span class="ch__check__n">7</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-who">
+            <label class="ch__check__label" for="set-who">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              Who We Are
+              <span class="ch__check__n">3</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-do">
+            <label class="ch__check__label" for="set-do">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              What We Do
+              <span class="ch__check__n">3</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-team">
+            <label class="ch__check__label" for="set-team">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              Team, Board &amp; Fellows
+              <span class="ch__check__n">3</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-solutions">
+            <label class="ch__check__label" for="set-solutions">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              Solutions
+              <span class="ch__check__n">3</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <button class="ch__rail__clear" type="reset">Clear filters</button>
+      </div>
+    </details>
+  </form>
+
+
+  <main class="ch__results">
+  <section data-set="home" aria-labelledby="group-home">
     <h2 class="ch__group" id="group-home">The homepage</h2>
     <ul class="ch__list">
-      <li class="ch__opt ch__opt--pick">
+      <li data-set="home" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Agreed build</p>
         <h3><a href="final.html">The homepage</a></h3>
         <p class="ch__desc">What Empower chose, section by section: The Evolution’s header and foundations, Front Porch’s hero, The Throughline’s solutions model. The north-star card has been removed from the banner at Empower’s request. This is the page that ships.</p>
@@ -55,7 +123,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt ch__opt--ref">
+      <li data-set="home" class="ch__opt ch__opt--ref">
         <p class="ch__tag">Reference</p>
         <h3><a href="current-2.html">The Evolution</a></h3>
         <p class="ch__desc">The design you already have, moved forward rather than replaced. A navy utility strip over a centred nav with plain dropdowns instead of mega menus; a centred banner whose three photographs cross the edge of a tinted band; the three foundations as full-height photographic panels that open under the pointer.</p>
@@ -66,7 +134,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt ch__opt--ref">
+      <li data-set="home" class="ch__opt ch__opt--ref">
         <p class="ch__tag">Reference · Homepage A</p>
         <h3><a href="homepage-a.html">Front Porch</a></h3>
         <p class="ch__desc">An interlocking mosaic. The hero portrait carries an inset photograph at one corner and the north-star quote at the other; the solutions model is a staggered photo mosaic against a sticky intro; the three foundations climb a diagonal.</p>
@@ -77,7 +145,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt ch__opt--ref">
+      <li data-set="home" class="ch__opt ch__opt--ref">
         <p class="ch__tag">Reference · Homepage B</p>
         <h3><a href="homepage-b.html">The Index</a></h3>
         <p class="ch__desc">A persistent armature. Every section is a sticky rail carrying its place in the funnel against a wide content column. Hairlines instead of card borders, tabular numerals, real negative space.</p>
@@ -88,7 +156,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt ch__opt--ref">
+      <li data-set="home" class="ch__opt ch__opt--ref">
         <p class="ch__tag">Reference · Homepage C</p>
         <h3><a href="homepage-c.html">The Atlas</a></h3>
         <p class="ch__desc">Horizontal motion inside a vertical page. The solutions model and the stories run as scroll-snapped rails; the three foundations are full-height photographic panels that expand under the pointer or the keyboard.</p>
@@ -99,7 +167,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt ch__opt--ref">
+      <li data-set="home" class="ch__opt ch__opt--ref">
         <p class="ch__tag">Reference · Homepage D</p>
         <h3><a href="homepage-d.html">The Throughline</a></h3>
         <p class="ch__desc">The page as a route. An orange line threads the five steps of the solutions model, and the three foundations are full-height photographic slabs that stick and slide over one another as you scroll.</p>
@@ -112,12 +180,12 @@
     </ul>
   </section>
 
-  <section aria-labelledby="group-who">
+  <section data-set="who" aria-labelledby="group-who">
     <h2 class="ch__group" id="group-who">About Us — Who We Are</h2>
     <p class="ch__groupnote">Mission, history and nonprofit status. All three carry the same roadmap copy in the same order, and all three link to the team page below.</p>
     <ul class="ch__list">
-      <li class="ch__opt">
-        <p class="ch__tag">Who We Are A</p>
+      <li data-set="who" class="ch__opt ch__opt--pick">
+        <p class="ch__tag">Chosen — Who We Are A</p>
         <h3><a href="who-we-are-a.html">The Table</a></h3>
         <p class="ch__desc">The warm reading, closest to the agreed homepage. A picture stack in the hero, a navy slab that climbs over it carrying why Empower exists, and the founding year set as the one piece of data on the page.</p>
         <dl class="ch__meta">
@@ -127,7 +195,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="who" class="ch__opt">
         <p class="ch__tag">Who We Are B</p>
         <h3><a href="who-we-are-b.html">The Record</a></h3>
         <p class="ch__desc">The typographic reading. The mission statement fills the hero at display size; below it the page is a numbered record, each chapter with a sticky rail holding its number and name while the narrative travels past.</p>
@@ -138,7 +206,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="who" class="ch__opt">
         <p class="ch__tag">Who We Are C</p>
         <h3><a href="who-we-are-c.html">The Ground</a></h3>
         <p class="ch__desc">The photographic reading. A full-width picture behind a navy panel, the story on a navy band with two offset frames, and the three legal entities set against the roadmap’s own verbs — educate, engage, elect.</p>
@@ -151,12 +219,12 @@
     </ul>
   </section>
 
-  <section aria-labelledby="group-do">
+  <section data-set="do" aria-labelledby="group-do">
     <h2 class="ch__group" id="group-do">About Us — What We Do</h2>
     <p class="ch__groupnote">The roadmap gives this page one headline, one line of copy, three solutions and four report links. Each variation is a different answer to how little that is.</p>
     <ul class="ch__list">
-      <li class="ch__opt">
-        <p class="ch__tag">What We Do A</p>
+      <li data-set="do" class="ch__opt ch__opt--pick">
+        <p class="ch__tag">Chosen — What We Do A</p>
         <h3><a href="what-we-do-a.html">Three Doors</a></h3>
         <p class="ch__desc">A hero built like the homepage’s, three solution panels stepped down a diagonal, and the annual reports as year-sized type on a navy slab.</p>
         <dl class="ch__meta">
@@ -166,7 +234,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="do" class="ch__opt">
         <p class="ch__tag">What We Do B</p>
         <h3><a href="what-we-do-b.html">The Ledger</a></h3>
         <p class="ch__desc">The page as a document: a typographic hero with the three solutions indexed beneath it, one full-width row per solution with the photograph alternating side, and the reports as ledger lines.</p>
@@ -177,7 +245,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="do" class="ch__opt">
         <p class="ch__tag">What We Do C</p>
         <h3><a href="what-we-do-c.html">The Field</a></h3>
         <p class="ch__desc">The loudest of the three. A photograph the width of the window with the hero card climbing it, three tall photographic cards at three heights, and a navy ribbon of years closing the page.</p>
@@ -190,12 +258,12 @@
     </ul>
   </section>
 
-  <section aria-labelledby="group-team">
+  <section data-set="team" aria-labelledby="group-team">
     <h2 class="ch__group" id="group-team">About Us — Team, Board &amp; Fellows</h2>
     <p class="ch__groupnote">The page all six About builds link to. Three readings of it: the same ten staff, five fellows and eight board members, the same roadmap copy, three different answers to how much weight the photographs carry. Portraits are marked placeholders until Empower supply headshots.</p>
     <ul class="ch__list">
-      <li class="ch__opt">
-        <p class="ch__tag">Team A</p>
+      <li data-set="team" class="ch__opt ch__opt--pick">
+        <p class="ch__tag">Chosen — Team A</p>
         <h3><a href="team-a.html">The Roster</a></h3>
         <p class="ch__desc">Faces first. The founder opens a staggered wall of tall staff portraits, the fellows sit on a dark ledger of subject areas, and the board is a ragged roll of names with the two officer roles marked.</p>
         <dl class="ch__meta">
@@ -205,7 +273,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="team" class="ch__opt">
         <p class="ch__tag">Team B</p>
         <h3><a href="team-b.html">The Directory</a></h3>
         <p class="ch__desc">The typographic reading, and the one that still works if Empower would rather not lead with faces. A numbered index, one hairline row per person, photographs reduced to discs beside the names, and a window-wide photograph after the list rather than above it.</p>
@@ -216,7 +284,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="team" class="ch__opt">
         <p class="ch__tag">Team C</p>
         <h3><a href="team-c.html">The Frame</a></h3>
         <p class="ch__desc">The loudest of the three. A photograph the width of the window with the navy hero panel climbing it, the staff as square framed plates, the fellows as full-width rows with the subject area set larger than the name, and the board closing the page as a navy ribbon.</p>
@@ -230,11 +298,11 @@
     <p class="ch__groupnote">On all three, every staff card opens the one staff detail screen built so far: <a href="team-bio.html">Grant Callen’s bio</a>, the template the other nine are cut from. The set still waits on 23 headshots and those nine pages.</p>
   </section>
 
-  <section aria-labelledby="group-solutions">
+  <section data-set="solutions" aria-labelledby="group-solutions">
     <h2 class="ch__group" id="group-solutions">Solutions</h2>
     <p class="ch__groupnote">The landing page for the three areas: Quality Education, Meaningful Work, Public Safety, plus research and community stories. Same roadmap copy on all three, three different arguments about what the three areas ARE. None of them reuses a What We Do composition, so the two pages cannot be mistaken for each other.</p>
     <ul class="ch__list">
-      <li class="ch__opt">
+      <li data-set="solutions" class="ch__opt">
         <p class="ch__tag">Solutions A</p>
         <h3><a href="solutions-a.html">The Commons</a></h3>
         <p class="ch__desc">The familiar one. A hero photograph running off the left edge of the window, then the three areas stacked as three identical panels, picture always on the left. Research lands on a navy slab and the page closes on community stories. Sits beside the agreed homepage without argument.</p>
@@ -245,8 +313,8 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
-        <p class="ch__tag">Solutions B</p>
+      <li data-set="solutions" class="ch__opt ch__opt--pick">
+        <p class="ch__tag">Chosen — Solutions B</p>
         <h3><a href="solutions-b.html">The Throughline Down</a></h3>
         <p class="ch__desc">Navy carries the top half of the page and the three areas descend a single orange line, crossing from side to side as you scroll. The research panel is the release: a white slab climbing over the navy. Drawn by the reveal layer the site already ships, so it degrades to a plain stack with JavaScript off.</p>
         <dl class="ch__meta">
@@ -256,7 +324,7 @@
         </dl>
       </li>
 
-      <li class="ch__opt">
+      <li data-set="solutions" class="ch__opt">
         <p class="ch__tag">Solutions C</p>
         <h3><a href="solutions-c.html">The Lattice</a></h3>
         <p class="ch__desc">The structural reading, and the least like anything else in this build. Near-monochrome: the three areas hang from one beam with three orange nodes, the house honeycomb sits behind them at lattice scale, and the photographs are desaturated until you touch them so the structure reads first.</p>
@@ -281,7 +349,8 @@
       <li>No text sits directly on a photograph anywhere in this set — every word is on a solid or near-solid surface, so contrast survives the stand-in photography being replaced.</li>
     </ul>
   </section>
-</main>
+  </main>
+</div>
 
 </body>
 </html>

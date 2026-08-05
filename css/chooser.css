@@ -13,41 +13,153 @@
   line-height:1.65;color:var(--text-body);max-width:70ch}
 .ch__note{margin:0;font-size:var(--fs-caption);color:var(--text-muted)}
 
-/* ---------- Jump bar ----------
-   The review page is three sets deep now — one homepage plus six About Us
-   variations — and Empower are opening them one after another, so the page
-   needs a way back to the other sets without a scroll. Plain in-page anchors,
-   sticky under the top of the window. No JavaScript: this page loads no
-   scripts at all and is not going to start for a row of links. */
-.ch__jump{position:sticky;top:0;z-index:20;
-  background:var(--surface-navy-deep);
-  box-shadow:var(--shadow-md)}
-.ch__jump ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;
-  gap:var(--space-2)}
-.ch__jump a{display:flex;align-items:center;gap:var(--space-3);min-height:44px;
-  padding:var(--space-3) var(--space-5);border-radius:var(--radius-pill);
-  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
-  color:var(--white);text-decoration:none;
-  transition:background var(--dur) var(--ease-out)}
-.ch__jump a:hover{background:rgba(255,255,255,.14)}
-.ch__jump a:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
-/* The count, so the bar says how much is in each set rather than just naming
-   it. --orange-300 on navy, not the brand orange: this is 13px text. */
-.ch__jump span{display:inline-grid;place-items:center;min-width:22px;height:22px;
-  padding:0 6px;border-radius:var(--radius-pill);
-  background:rgba(255,255,255,.12);color:var(--orange-300);
-  font-size:var(--fs-caption);font-weight:var(--fw-bold)}
+/* ---------- Layout: rail + results ---------- */
+/* This page used to be one long column with a sticky bar of anchors on top. It
+   is now five sets and eighteen builds, and it gains another every time Empower
+   ask for a page, so it is laid out the way a catalogue is: filters in a rail
+   on the left, results on the right, rail stays put while the results scroll.
 
-@media (max-width:520px){
-  .ch__jump ul{gap:0}
-  .ch__jump a{padding:var(--space-3) var(--space-4);font-size:var(--fs-caption)}
+   NO SCRIPT, still — the rule that has held here since the anchors went in.
+   Every control in the rail is a real form control: checkboxes for the facets,
+   a native <button type="reset"> to clear them, and a <details> so the rail
+   folds away on a phone. The filtering itself is :has(). */
+.ch__layout{display:grid;grid-template-columns:minmax(0,264px) minmax(0,1fr);
+  align-items:start;gap:clamp(var(--space-7),3vw,var(--space-10));
+  /* The grey starts at the header's bottom border. Without this the rail and
+     the first heading both sit against that edge, which reads as the layout
+     having slipped rather than as a deliberate flush top. */
+  padding-top:clamp(var(--space-8),3.5vw,var(--space-11));
+  padding-bottom:clamp(var(--space-10),5vw,var(--space-13))}
+
+.ch__results{min-width:0}
+/* Sections carry a generous top margin, which would drop the first heading
+   well below the top of the rail beside it. The space above both now belongs to
+   the layout, so the heading gives its own back. */
+.ch__results > section:first-child .ch__group{margin-top:0}
+
+/* ---------- The rail ---------- */
+.ch__rail{position:sticky;top:var(--space-6);min-width:0}
+.ch__rail__panel{border-radius:var(--radius-lg);background:var(--surface-navy-deep);
+  color:var(--text-inverse);overflow:hidden;box-shadow:var(--shadow-md)}
+
+.ch__rail__summary{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--space-4);min-height:52px;padding:var(--space-4) var(--space-6);
+  cursor:pointer;list-style:none;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--white)}
+.ch__rail__summary::-webkit-details-marker{display:none}
+.ch__rail__summary:hover{background:rgba(255,255,255,.06)}
+.ch__rail__summary:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+.ch__rail__caret{width:9px;height:9px;flex:0 0 auto;
+  border-right:2px solid var(--orange-300);border-bottom:2px solid var(--orange-300);
+  transform:rotate(45deg);transition:transform var(--dur) var(--ease-out)}
+.ch__rail__panel[open] .ch__rail__caret{transform:rotate(-135deg)}
+
+.ch__rail__body{padding:0 var(--space-6) var(--space-6)}
+/* The last facet sits directly above Clear, which has a target of its own. */
+.ch__facet:last-of-type{margin-bottom:var(--space-6)}
+
+/* The rhythm inside the rail is tighter than the page's: these are rows of a
+   control panel, not sections of a document. 16px above a legend, 4px under it
+   — the label below carries its own 8px of padding inside a 40px target, so a
+   16px margin here opened a gap you could park a card in. */
+.ch__facet{margin:0 0 var(--space-5);padding:var(--space-4) 0 0;border:0;
+  border-top:1px solid var(--border-inverse)}
+.ch__facet legend{padding:0;margin-bottom:var(--space-1);
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--orange-300)}
+
+/* Visually hidden, not display:none: the checkbox is the control and has to
+   stay focusable and announced. The label is what is seen and clicked. */
+.ch__check{position:relative}
+.ch__check__input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.ch__check__label{display:flex;align-items:center;gap:var(--space-3);
+  min-height:40px;padding:var(--space-2) var(--space-3);margin-inline:calc(-1 * var(--space-3));
+  border-radius:var(--radius-sm);cursor:pointer;
+  font-size:var(--fs-small);line-height:1.3;color:var(--white);
+  transition:background var(--dur) var(--ease-out)}
+.ch__check__label:hover{background:rgba(255,255,255,.08)}
+.ch__check__input:focus-visible + .ch__check__label{outline:none;box-shadow:var(--shadow-focus-inverse)}
+
+.ch__check__box{width:18px;height:18px;flex:0 0 auto;border-radius:var(--radius-xs);
+  border:2px solid rgba(255,255,255,.5);display:grid;place-items:center;
+  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
+.ch__check__box::after{content:"";width:10px;height:6px;
+  border-left:2px solid var(--surface-navy-deep);border-bottom:2px solid var(--surface-navy-deep);
+  transform:rotate(-45deg) translate(1px,-1px) scale(.6);opacity:0;
+  transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
+.ch__check__input:checked + .ch__check__label .ch__check__box{background:var(--em-orange);
+  border-color:var(--em-orange)}
+.ch__check__input:checked + .ch__check__label .ch__check__box::after{opacity:1;
+  transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+
+/* The count sits at the end of the row, as a catalogue's does. --orange-300 on
+   navy is 7:1; the brand orange at this size would not clear 4.5. */
+.ch__check__n{margin-left:auto;display:inline-grid;place-items:center;
+  min-width:22px;height:22px;padding:0 6px;border-radius:var(--radius-pill);
+  background:rgba(255,255,255,.12);color:var(--orange-300);
+  font-family:var(--font-display);font-size:var(--fs-caption);font-weight:var(--fw-bold)}
+
+/* A native form reset: the one control here that would otherwise need a script,
+   which is why the <form> around the rail is load-bearing. */
+.ch__rail__clear{display:inline-flex;align-items:center;min-height:40px;
+  padding:var(--space-2) var(--space-5);border-radius:var(--radius-pill);
+  border:1px solid var(--border-inverse);background:none;cursor:pointer;
+  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--white);
+  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
+.ch__rail__clear:hover{background:rgba(255,255,255,.12);border-color:var(--orange-300)}
+.ch__rail__clear:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+
+/* ---------- What the facets do ---------- */
+/* Two facets, and they compose: Set narrows to the sets ticked, Status keeps
+   only what Empower signed off. The mechanism is hide-everything-then-reveal,
+   which is how an OR across several checkboxes works without a script.
+
+   Where :has() is missing the whole rail is hidden — a filter panel that does
+   nothing is worse than none — and the page is the plain long list it was
+   before. Safari 15.4, Chrome 105, Firefox 121 and up. */
+@supports not selector(body:has(a)){
+  .ch__rail{display:none}
+  .ch__layout{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Set: nothing ticked shows everything, so the hide only fires once one is. */
+body:has(.ch__set:checked) .ch__opt,
+body:has(.ch__set:checked) .ch__results > section{display:none}
+body:has(#set-home:checked) .ch__opt[data-set="home"],
+body:has(#set-who:checked) .ch__opt[data-set="who"],
+body:has(#set-do:checked) .ch__opt[data-set="do"],
+body:has(#set-team:checked) .ch__opt[data-set="team"],
+body:has(#set-solutions:checked) .ch__opt[data-set="solutions"]{display:flex}
+body:has(#set-home:checked) .ch__results > section[data-set="home"],
+body:has(#set-who:checked) .ch__results > section[data-set="who"],
+body:has(#set-do:checked) .ch__results > section[data-set="do"],
+body:has(#set-team:checked) .ch__results > section[data-set="team"],
+body:has(#set-solutions:checked) .ch__results > section[data-set="solutions"]{display:block}
+
+/* Status. Carries one more element on the left than the reveal rules above, so
+   it outranks them when both facets are on: a card has to satisfy BOTH, and the
+   more specific rule is the one that says no. */
+body:has(#signed-off:checked) .ch__results .ch__opt:not(.ch__opt--pick){display:none}
+body:has(#signed-off:checked) .ch__results > section:not(:has(.ch__opt--pick)){display:none}
+
+/* The shared-rules panel is not a build and cannot be filtered to. It is the
+   page's footnote and stays wherever the filters land. */
+body:has(.ch__set:checked) .ch__results > section.ch__shared{display:block}
+
+@media (prefers-reduced-motion:reduce){
+  .ch__check__box,.ch__check__box::after,.ch__rail__caret{transition:none}
 }
 
 /* Group headings. The review index now covers three sets of pages — the
    homepage, and two About Us pages with three variations each — so the cards
    need to say which set they belong to before they say anything else. */
 .ch__group{margin:clamp(var(--space-10),5vw,var(--space-13)) 0 var(--space-4);
-  /* the sticky jump bar would otherwise land on the heading it jumped to */
+  /* kept from the sticky bar of anchors this page used to carry: the rail is
+     sticky too, and an in-page link should still clear it */
   scroll-margin-top:72px;
   font-family:var(--font-display);font-weight:var(--fw-black);
   font-size:clamp(1.375rem,1.15rem + 1vw,1.875rem);letter-spacing:-.025em;color:var(--em-blue)}
@@ -67,6 +179,17 @@
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   gap:clamp(var(--space-5),2vw,var(--space-7))}
 
+/* Below the layout breakpoint the rail stops being a column and becomes a panel
+   above the results. It also stops being sticky: a sticky filter panel on a
+   phone is a filter panel sitting on top of the thing you filtered for. It
+   stays open by default and collapses on tap, which is the right way round —
+   the alternative is every visitor opening it before they can use it. */
+@media (max-width:980px){
+  .ch__layout{grid-template-columns:minmax(0,1fr);gap:var(--space-7)}
+  .ch__rail{position:static;top:auto}
+  .ch__results > section:first-child .ch__group{margin-top:var(--space-4)}
+}
+
 @media (max-width:760px){
   .ch__list{grid-template-columns:1fr}
 }
@@ -74,25 +197,46 @@
 .ch__opt{position:relative;display:flex;flex-direction:column;
   padding:clamp(var(--space-7),2.6vw,var(--space-9));
   background:var(--surface-card);border-radius:var(--radius-panel);
-  border-top:4px solid var(--em-orange);
+  /* Orange is the chosen build, and only the chosen build. Everything else
+     takes the blue rule; the reference baselines go quieter still. Before this,
+     every card that was not a reference had an orange top rule, which made the
+     one signal the page exists to carry — this is the one Empower picked —
+     indistinguishable from the default. */
+  border:1px solid var(--border-subtle);
+  border-top:4px solid var(--blue-400);
+  /* White on --surface-subtle is 1.07:1 — a real difference and an invisible
+     one. The shadow is what makes a card read as a card here, not the tone. */
+  box-shadow:var(--shadow-xs);
   transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
 .ch__opt:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
 /* The reference build is deliberately quieter than the proposals: a blue rule
-   instead of the orange one, on a grey card. It is a baseline, not an option. */
-.ch__opt--ref{border-top-color:var(--blue-400);background:var(--grey-100)}
+   instead of the orange one, and a muted tag. It is a baseline, not an option.
+
+   It used to be a grey card as well — var(--grey-100) — which was fine while
+   the page behind it was white. The page background is var(--surface-subtle),
+   which IS grey-100, so those cards were grey on grey: no card at all, just
+   text floating under a blue rule. Every card is white now and the quietness is
+   carried by the rule and the tag, which is where it was doing the work anyway.
+
+   Three rules, three states: orange chose it, blue was in the running, grey is
+   a baseline nobody is being asked about. */
+.ch__opt--ref{border-top-color:var(--grey-400)}
 
 /* The recommendation reads as a recommendation without shouting: a thicker
    orange rule, a ring in the same colour, and a resting shadow so it already
    sits slightly proud of the grid the way the others only do on hover.
    --em-orange-ink for the tag, not --em-orange — it is 11px uppercase text on
    white, where the brand value measures 3.59:1. */
-.ch__opt--pick{border-top-width:8px;box-shadow:var(--shadow-md);
+.ch__opt--pick{border-top-width:8px;border-top-color:var(--em-orange);
+  box-shadow:var(--shadow-md);
   outline:2px solid var(--em-orange);outline-offset:-2px}
 .ch__opt--pick .ch__tag{color:var(--em-orange-ink)}
 
+/* Blue by default, for the same reason the rule above it is: orange on this
+   page means Empower chose it. */
 .ch__tag{margin:0 0 var(--space-4);font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
-  color:var(--em-orange-ink)}
+  color:var(--em-blue)}
 .ch__opt--ref .ch__tag{color:var(--text-muted)}
 .ch__opt h3{margin:0 0 var(--space-5);font-family:var(--font-display);font-weight:var(--fw-black);
   font-size:clamp(1.5rem,1.2rem + 1.1vw,2.125rem);line-height:1.05;letter-spacing:-.03em}

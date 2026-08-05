@@ -726,13 +726,41 @@ const header2 = readFileSync('src/_shared/header-2.html', 'utf8');
 const dropCss = readFileSync('css/header-2.css', 'utf8');
 const dropJs = readFileSync('js/dropdown.js', 'utf8');
 
-test('the dropdown header carries the same six top-level items as the mega header', () => {
-  // Two renderings of one nav. The labels are the contract; how they open is not.
+test('the dropdown header carries the same top-level items as the mega header, bar the one Empower changed', () => {
+  /* Two renderings of one nav. The labels are the contract; how they open is
+     not. ONE documented divergence, 2026-08-05: Empower asked for the shipping
+     header's Solutions item to become "Our Solutions" and to be a link to the
+     landing page. header.html is the mega-menu header, which only the original
+     build and the four reference homepages use — it is a record of what was
+     reviewed, not a page that ships, so it keeps the old label. If the mega
+     header is ever revived, this is the line that says what it owes. */
   const labels = (partial) =>
     [...partial.matchAll(/<(?:a|button) class="em-header__link"[^>]*>([^<]+)/g)]
       .map(m => m[1].trim()).sort();
-  assert.deepEqual(labels(header2), labels(readFileSync('src/_shared/header.html', 'utf8')),
+  const shipped = labels(header2).map(l => l === 'Our Solutions' ? 'Solutions' : l).sort();
+  assert.deepEqual(shipped, labels(readFileSync('src/_shared/header.html', 'utf8')),
     'header-2.html and header.html no longer offer the same top-level nav');
+  assert.ok(header2.includes('<a class="em-header__link" href="/solutions">Our Solutions</a>'),
+    'Our Solutions is no longer a link to the landing page');
+});
+
+test('Our Solutions opens the landing page and its dropdown holds only the pages beneath it', () => {
+  /* Empower, 2026-08-05: the top-level item goes to the Solutions landing page;
+     the dropdown lists the individual solutions and research, and no longer
+     repeats the landing page as "Solutions Center". */
+  const panel = header2.match(/<div class="em-header__menu" id="drop-solutions"[\s\S]*?<\/div>/)[0];
+  const links = [...panel.matchAll(/<a href="([^"]+)">([^<]*?)<span>/g)].map(m => m[2]);
+  assert.deepEqual(links,
+    ['Quality Education', 'Meaningful Work', 'Public Safety', 'Research (EPIC)'],
+    'the Our Solutions dropdown is not the four pages beneath the landing page');
+  const markup = header2.replace(/<!--[\s\S]*?-->/g, '');
+  assert.ok(!markup.includes('Solutions Center'),
+    'Solutions Center is still in the nav — the item above it is now that page');
+  /* The disclosure button, not the link, carries aria-controls: that is what
+     js/dropdown.js binds to, and it is why the link can navigate. */
+  assert.match(header2,
+    /<button class="em-header__disclosure"[^>]*aria-controls="drop-solutions"/,
+    'the Solutions panel has no disclosure button to open it');
 });
 
 test('the dropdowns and their own mobile nav stay in sync', () => {
@@ -1212,6 +1240,60 @@ test('the shared header and footer are shared, not copied per option', () => {
   assert.ok(!existsSync('src/sections/00-header.html'), 'a stale per-page header partial is back');
 });
 
+test('the chooser filters without a script, and every control is a real one', () => {
+  /* The review index has loaded no scripts since it was built, and a filter
+     rail was not the reason to start. Checkboxes for the facets, a native
+     <button type="reset"> to clear them, a <details> to fold the rail away, and
+     :has() to do the filtering — all four are the reason the <form> around the
+     rail is load-bearing rather than decoration. */
+  const chooser = readFileSync('dist/index.html', 'utf8');
+  const css = readFileSync('css/chooser.css', 'utf8');
+
+  assert.equal((chooser.match(/<script/g) || []).length, 0,
+    'the chooser has grown a script — the rail is meant to be CSS and form controls');
+  assert.match(chooser, /<form class="ch__rail">/, 'the rail is not a form, so reset cannot work');
+  assert.match(chooser, /<button class="ch__rail__clear" type="reset">/,
+    'Clear filters is not a native form reset');
+  assert.match(css, /@supports not selector\(body:has\(a\)\)/,
+    'the rail is not gated behind an @supports test for :has()');
+
+  /* Every facet is an input with a label bound to it by id. A label that has
+     drifted off its input is a filter a keyboard cannot reach. */
+  const ids = [...chooser.matchAll(/<input class="ch__check__input[^"]*" type="checkbox" id="([^"]+)"/g)]
+    .map(m => m[1]);
+  assert.deepEqual(ids, ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions'],
+    'the facets in the rail are not the six expected controls');
+  for (const id of ids) {
+    assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
+      `the ${id} facet has no label bound to it`);
+  }
+});
+
+test('every build on the chooser is filterable, and every set has exactly one pick', () => {
+  /* The Set facet works by hiding everything and revealing what is ticked, so a
+     card without a data-set is a card that disappears and never comes back.
+
+     The pick count matters as much: Status filters to .ch__opt--pick, so a set
+     with no pick would vanish from the signed-off view and a set with two would
+     quietly claim Empower chose twice. */
+  const chooser = readFileSync('dist/index.html', 'utf8');
+  const css = readFileSync('css/chooser.css', 'utf8');
+
+  const cards = chooser.match(/<li[^>]*class="ch__opt[^"]*"/g) || [];
+  const tagged = chooser.match(/<li data-set="[a-z]+" class="ch__opt/g) || [];
+  assert.equal(tagged.length, cards.length,
+    `${cards.length - tagged.length} cards have no data-set and would vanish when the Set facet is used`);
+
+  const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
+  assert.equal(sections.length, 5, `expected five sets on the chooser, found ${sections.length}`);
+  for (const section of sections) {
+    const key = section.match(/data-set="([a-z]+)"/)[1];
+    const picks = (section.match(/ch__opt--pick/g) || []).length;
+    assert.equal(picks, 1, `the ${key} set has ${picks} chosen builds, expected exactly one`);
+    assert.ok(css.includes(`#set-${key}:checked`), `no facet rule reveals the ${key} set`);
+  }
+});
+
 test('the chooser page is review-only and never links into the hand-off as a homepage', () => {
   const chooser = readFileSync('dist/index.html', 'utf8');
   assert.match(chooser, /<meta name="robots" content="noindex">/, 'the chooser is indexable');
@@ -1393,8 +1475,10 @@ const TEAM_COPY = [
   'Board of Directors',
   'In alphabetical order by last name',
 
-  /* The one bio the page carries. The other nine sit behind their links. */
-  'Grant is a sixth generation Mississippian who grew up in Laurel. He founded Empower Mississippi in 2014 as a solution center, tackling Mississippi’s biggest challenges so everyone can rise. Previously, Grant served as Director of Development for the Mississippi Center for Public Policy. He is an alumnus of The Witherspoon Fellowship in Washington D.C.',
+  /* The founder's bio paragraph is NOT asserted here. Empower asked on
+     2026-08-05 for every card on The Roster to be the same size, which took the
+     bio off that page; it is asserted whole on dist/team-bio.html instead, in
+     BIO_COPY below. Variations B and C still carry it, and are welcome to. */
 ];
 
 /* Name, title, bio-page slug. Order here is the roadmap's alphabetical-by-last-
@@ -1524,11 +1608,12 @@ test('the staff detail screen’s contact block is marked as a placeholder', () 
   const html = readFileSync('dist/team-bio.html', 'utf8');
   assert.match(html, /data-placeholder="contact"/,
     'dist/team-bio.html has an unmarked contact block');
-  assert.ok(html.includes('Placeholder: Empower’s organisation accounts'),
+  assert.ok(html.includes('Placeholder: Empower’s organisation inbox and accounts'),
     'dist/team-bio.html no longer says its contact details are stand-ins');
-  /* Each row is icon + label. The label is the accessible name, so the icon
-     must stay hidden — an aria-hidden icon inside a link is fine; a link with
-     no text at all is not. */
+  /* Empower, 2026-08-05: Grant keeps all three rows; every other staff bio gets
+     the email row only. This page is Grant's, so all three are asserted — and
+     the day one of them disappears from here, it should be because the client
+     asked, not because a layout ate it. */
   for (const label of ['info@empowerms.org', 'LinkedIn', 'X']) {
     assert.ok(html.includes(`>\n              ${label}\n`) || html.includes(label),
       `dist/team-bio.html is missing the ${label} contact row`);

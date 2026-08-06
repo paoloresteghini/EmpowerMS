@@ -78,13 +78,6 @@
   font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
   letter-spacing:-.025em;color:var(--text-strong);text-wrap:balance}
 
-.psa-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
-  padding-top:var(--space-4);
-  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
-.psa-feednote::before{content:"";display:block;width:56px;height:4px;
-  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
-
-
 /* ============================== 1 · Hero ================================= */
 
 .psa-hero{position:relative;display:flex;align-items:flex-end;
@@ -137,19 +130,77 @@
 
 /* ==================== 2, 3 · The two facing blocks ======================= */
 
-/* These were two rounded panels, each a near-white box on a near-white field.
-   The box was invisible at that contrast and the left/right hold it was
-   supposed to express went with it, so both sections read as one undifferentiated
-   run of text in a faint rectangle. The boxes are gone: the two blocks are set
-   directly on their own fields, held to opposite sides, and the fields
-   themselves (white, then tint) carry the change. */
-.psa-panels{padding:clamp(var(--space-12),7vw,var(--space-14)) 0}
-.psa-panels--vision{background:var(--surface-page)}
-.psa-panels--problem{background:var(--surface-subtle)}
+/* Three goes at this block, and the reason is worth keeping.
 
-.psa-panel{max-width:min(100%,46rem)}
-.psa-panel--left{margin-right:auto}
-.psa-panel--right{margin-left:auto}
+   It started as two rounded panels, each a near-white box on a near-white field:
+   the box was invisible at that contrast, so the left/right hold it was meant to
+   express went with it. Taking the box away fixed that and introduced a worse
+   fault — held-right text with a bare half-window to its left reads as a column
+   that failed to load. It was read that way twice in review, which is twice more
+   than a composition gets to be explained.
+
+   So the block is a PLATE that runs off its own side of the window. It is
+   anchored to an edge rather than floating in the middle of a field, the empty
+   side is visibly the section's own ground in the other tone, and the two plates
+   face each other across the page. That is the same move the hero makes, where
+   the navy block stands on the ground line instead of hovering inside the
+   photograph, and it is what "The Neighbourhood" is supposed to mean: things
+   built along an edge, not objects placed on a table.
+
+   The grid is what bleeds it. The plate is a column that reaches the viewport
+   edge because the grid is not inside .em-container; the copy inside it is held
+   to a measure and padded so it still lines up with the sections above and
+   below. No vw arithmetic, so no scrollbar overflow, and it converts to a
+   two-column Elementor section with a background on one column. */
+/* --edge is the distance from the window's edge to where container-width copy
+   starts, written without percentages so it holds whatever the element is
+   nested inside. It is what keeps the words in these full-bleed bands lined up
+   with every container-width section above and below them. */
+.psa-panels{--edge:calc(var(--gutter) + max(0px,(100vw - var(--container-max)) / 2));
+  padding:clamp(var(--space-12),7vw,var(--space-14)) 0;overflow-x:clip}
+.psa-panels--vision{background:var(--surface-subtle)}
+.psa-panels--problem{background:var(--surface-page)}
+
+/* Plate one side, photograph the other, and the two sections swap sides. The
+   pair is a child of the section rather than of .em-container, so both columns
+   already reach their own edge of the window and nothing needs a negative
+   margin to get there. */
+.psa-panels__pair{display:grid;align-items:stretch}
+.psa-panels--vision .psa-panels__pair{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}
+.psa-panels--problem .psa-panels__pair{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
+
+.psa-panel{display:flex;flex-direction:column;justify-content:center;
+  padding-block:clamp(var(--space-10),6vw,var(--space-13))}
+
+.psa-panel--left{padding-left:var(--edge);
+  padding-right:clamp(var(--space-8),4vw,var(--space-11));
+  background:var(--surface-page)}
+
+.psa-panel--right{grid-column:2;padding-right:var(--edge);
+  padding-left:clamp(var(--space-8),4vw,var(--space-11));
+  background:var(--surface-subtle)}
+
+/* The plate is wide; the copy inside it is not. */
+.psa-panel__inner{max-width:min(100%,40rem)}
+
+/* Square where it meets the plate: a radius here would open a sliver of the
+   section's field between the two halves and break the band. */
+.psa-panels__media{margin:0;overflow:hidden}
+.psa-panels--problem .psa-panels__media{grid-column:1;grid-row:1}
+.psa-panels__media img{display:block;width:100%;height:100%;
+  min-height:clamp(300px,34vw,520px);object-fit:cover;object-position:50% 42%}
+
+@media (max-width:900px){
+  /* Stacked, copy first: the photograph is the section's evidence, not its
+     headline, and at this width it would push the words off the screen. */
+  .psa-panels__pair,
+  .psa-panels--vision .psa-panels__pair,
+  .psa-panels--problem .psa-panels__pair{grid-template-columns:minmax(0,1fr)}
+  .psa-panel--left,.psa-panel--right{grid-column:1;
+    padding-left:var(--edge);padding-right:var(--edge)}
+  .psa-panels--problem .psa-panels__media{grid-column:1;grid-row:2}
+  .psa-panels__media img{min-height:0;aspect-ratio:16/10;height:auto}
+}
 
 /* The mark sits ABOVE the heading, never down its left edge — a coloured
    border-left thicker than a hairline is the callout-bar reflex and this build
@@ -310,41 +361,65 @@
 
 .psa-stories{background:var(--surface-page)}
 
-.psa-stories__band{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
-  background:var(--surface-navy-deep);color:var(--text-inverse)}
-.psa-stories__inner{max-width:64ch}
-.psa-stories__inner h2{margin:0 0 var(--space-5);
+/* The navy band was words on the left and half a window of nothing on the right.
+   A photograph of one of the Mississippians the section is about is a better
+   answer than more space: "Voices of Safer Communities" should show a face.
+   No words sit on it — the band's own navy carries every one of them. */
+.psa-stories__band{--edge:calc(var(--gutter) + max(0px,(100vw - var(--container-max)) / 2));
+  background:var(--surface-navy-deep);color:var(--text-inverse);overflow-x:clip}
+
+.psa-stories__pair{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  align-items:center}
+/* The measure lives on the words, NOT on this wrapper. The wrapper carries
+   --edge as padding-left, and --edge grows with the window; a max-width on the
+   same box is measured border-box, so past about 1200px the padding ate the
+   measure and every heading wrapped one character per line. Same trap the
+   work-b hero documents: `ch` belongs on the element whose type it describes. */
+.psa-stories__inner{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
+  padding-left:var(--edge);
+  padding-right:clamp(var(--space-8),4vw,var(--space-11))}
+
+.psa-stories__media{margin:0;align-self:stretch;overflow:hidden}
+.psa-stories__media img{display:block;width:100%;height:100%;
+  min-height:clamp(320px,32vw,480px);object-fit:cover;object-position:50% 32%}
+
+@media (max-width:900px){
+  .psa-stories__pair{grid-template-columns:minmax(0,1fr)}
+  .psa-stories__inner{padding-right:var(--edge)}
+  .psa-stories__media img{min-height:0;aspect-ratio:16/10;height:auto}
+}
+.psa-stories__inner h2{margin:0 0 var(--space-5);max-width:20ch;
   font-family:var(--font-display);font-weight:var(--fw-black);
   font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
   letter-spacing:-.025em;color:var(--white);text-wrap:balance}
-.psa-stories__inner p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
-  line-height:1.55;color:var(--text-inverse-muted)}
+.psa-stories__inner p{margin:0 0 var(--space-7);max-width:46ch;
+  font-size:var(--fs-lead);line-height:1.55;color:var(--text-inverse-muted)}
 
-/* No box round a placeholder. These are three empty slots waiting for a feed,
-   and drawing a bordered rounded card round each one made the emptiest content
-   on the page into its third card grid. The dashed thumb says "picture missing"
-   on its own. */
+/* No box round the cards. The three most recent Public Safety community
+   stories are typographic — a bordered rounded card round each one would make
+   this the page's third card grid. */
 .psa-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(var(--space-6),3vw,var(--space-8));
-  list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-6),3vw,var(--space-8));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.psa-feed__card{display:flex;flex-direction:column;gap:var(--space-4)}
+.psa-feed__card{display:flex;flex-direction:column;gap:var(--space-3);
+  padding-top:var(--space-5);border-top:1px solid var(--border-default)}
 
-.psa-feed__thumb{display:block;aspect-ratio:16/10;
-  border:1px dashed var(--border-default);border-radius:var(--radius-media);
-  background:var(--surface-subtle)}
-
-/* Muted, not orange. Six placeholder labels in the accent colour spent the
-   page's one loud colour on the one thing that is not real yet. */
 .psa-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
-  text-transform:uppercase;color:var(--text-muted)}
+  text-transform:uppercase;color:var(--em-orange-ink)}
 
-.psa-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
-.psa-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.psa-feed__lines i:nth-child(2){width:88%}
-.psa-feed__lines i:nth-child(3){width:54%}
+.psa-feed__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.22;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.psa-feed__title:hover,.psa-feed__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.psa-feed__excerpt{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+
+.psa-feed__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 @media (max-width:860px){
   .psa-feed{grid-template-columns:minmax(0,1fr)}
@@ -362,20 +437,22 @@
 
 /* Hairline separators only. The 3px left rule this used to carry was the same
    callout-bar reflex as the block above, in grey rather than orange. */
-.psa-rows{list-style:none;margin:0;padding:0;
-  border-top:1px solid var(--border-default)}
+.psa-rows{list-style:none;margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;
+  padding:0;border-top:1px solid var(--border-default)}
 .psa-row{display:grid;grid-template-columns:clamp(90px,12vw,150px) minmax(0,1fr);
-  column-gap:var(--space-6);align-items:center;
+  column-gap:var(--space-6);align-items:baseline;
   padding:clamp(var(--space-6),3vw,var(--space-8)) 0;
   border-bottom:1px solid var(--border-default)}
 .psa-row__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
-  text-transform:uppercase;color:var(--text-muted)}
-.psa-row__lines{display:flex;flex-direction:column;gap:var(--space-3)}
-.psa-row__lines i{display:block;height:12px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.psa-row__lines i:nth-child(1){width:68%}
-.psa-row__lines i:nth-child(2){width:40%}
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.psa-row__title{grid-column:2;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-h5);line-height:1.24;
+  letter-spacing:-.01em;color:var(--text-strong);text-decoration:none}
+.psa-row__title:hover,.psa-row__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+.psa-row__date{grid-column:2;margin-top:var(--space-2);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 .psa-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
 
@@ -383,5 +460,7 @@
   .psa-latest__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
 }
 @media (max-width:620px){
-  .psa-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-4)}
+  .psa-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-3)}
+  .psa-row__title,.psa-row__date{grid-column:1}
+  .psa-row__date{margin-top:0}
 }

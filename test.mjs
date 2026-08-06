@@ -1999,8 +1999,8 @@ test('the C readings carry the three sections they were built to reuse', () => {
     assert.match(css, new RegExp(`\\.${ns}-chip\\{[^}]*background:var\\(--orange-700\\)`),
       `${out}'s chips are no longer the orange pill (or lost the 5.55:1 fill)`);
 
-    assert.match(css, new RegExp(`\\.${ns}-feed__col\\{[^}]*border-top:2px dashed`),
-      `${out}'s story columns have lost their dashed rule`);
+    assert.match(css, new RegExp(`\\.${ns}-feed__col\\{[^}]*border-top:2px solid`),
+      `${out}'s story columns have lost their 2px rule`);
     assert.match(css, new RegExp(`\\.${ns}-stubs\\{[^}]*grid-template-columns:repeat\\(2,`),
       `${out}'s article stubs are no longer a 2x2`);
   }
@@ -2100,7 +2100,7 @@ test('the episode library filters without a script, and every control is real', 
   }
 });
 
-test('the episode library cannot filter itself empty, and invents no episodes', () => {
+test('the episode library cannot filter itself empty, and every episode is real', () => {
   /* Nine cards, one per topic-and-guest pair. That is what makes an empty result
      impossible for ANY combination of ticks — with a gap in the matrix, some
      combination shows the reviewer a dead end the real library would not have.
@@ -2111,7 +2111,7 @@ test('the episode library cannot filter itself empty, and invents no episodes', 
   for (const { out, html } of PODCASTPAGES) {
     const cards = [...html.matchAll(/data-topic="([a-z]+)" data-guest="([a-z]+)"/g)]
       .map(m => `${m[1]}/${m[2]}`);
-    assert.equal(cards.length, 9, `${out} has ${cards.length} episode placeholders, expected nine`);
+    assert.equal(cards.length, 9, `${out} has ${cards.length} episodes, expected nine`);
     for (const t of TOPICS) {
       for (const g of GUESTS) {
         assert.ok(cards.includes(`${t}/${g}`),
@@ -2119,10 +2119,18 @@ test('the episode library cannot filter itself empty, and invents no episodes', 
       }
     }
 
-    const marked = (html.match(/data-placeholder="episode"/g) || []).length;
-    assert.equal(marked, 9, `${out} marks ${marked} of its nine episodes as placeholders`);
-    assert.match(html, /placeholders/,
-      `${out} shows stub episodes without saying so in words`);
+    /* No stub bars and no invented episodes: every card carries a title that
+       links to the published episode on empowerms.org, so a headline nobody at
+       Empower wrote cannot reach the page. */
+    assert.doesNotMatch(html, /data-placeholder="episode"/,
+      `${out} still marks episodes as placeholders`);
+    const titles = [...html.matchAll(/class="[a-z]{3}-ep__title" href="(https:\/\/empowerms\.org\/[^"]+)">([^<]+)</g)];
+    assert.equal(titles.length, 9, `${out} has ${titles.length} linked episode titles, expected nine`);
+    for (const [, href, title] of titles) {
+      assert.ok(title.trim().length > 8, `${out} has an episode title too short to be real: "${title}"`);
+      assert.match(href, /^https:\/\/empowerms\.org\/[a-z0-9-]+\/$/,
+        `${out}: ${title} does not link to a published episode`);
+    }
   }
 });
 
@@ -2245,7 +2253,7 @@ test('Wil Ervin’s name is not a link on either Capitol Chat reading', () => {
   }
 });
 
-test('the Capitol Chat library filters by session and invents no dates', () => {
+test('the Capitol Chat library filters by session and every row is a real episode', () => {
   const SHAPE = {
     'capitol-a': { ns: 'cca', prefix: 'ca', groups: false },
     'capitol-b': { ns: 'ccb', prefix: 'cb', groups: true },
@@ -2284,12 +2292,21 @@ test('the Capitol Chat library filters by session and invents no dates', () => {
         `css/${slug}.css has no session hide rule targeting ${target}"${se}"]`);
     }
 
-    /* The date column is a marked stub, not a fabricated date and not an empty
-       cell that reads as a layout fault. */
-    const dates = (html.match(/data-placeholder="date"/g) || []).length;
-    assert.equal(dates, 6, `${slug} marks ${dates} of its six date columns as stubs`);
-    assert.ok(!/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d/.test(textOf(html)),
-      `${slug} contains what looks like a fabricated episode date`);
+    /* Titles and dates are the published ones. Nothing on this page is a stub,
+       and no headline or date is invented: every row links to the episode it
+       names on empowerms.org. */
+    assert.doesNotMatch(html, /data-placeholder="(episode|date)"/,
+      `${slug} still marks episode rows or date columns as stubs`);
+    const titled = [...html.matchAll(
+      new RegExp(`class="${ns}-ep__title" href="(https://empowerms\\.org/[^"]+)">([^<]+)<`, 'g'))];
+    assert.equal(titled.length, 6, `${slug} has ${titled.length} linked episode titles, expected six`);
+    for (const [, href] of titled) {
+      assert.match(href, /^https:\/\/empowerms\.org\/[a-z0-9-]+\/$/,
+        `${slug} has an episode row that does not link to a published episode`);
+    }
+    const dates = (html.match(
+      /class="[a-z]{3}-ep__date">(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, 20\d\d</g) || []).length;
+    assert.equal(dates, 6, `${slug} shows ${dates} episode dates, expected six`);
 
     /* No script, native reset, gated on :has(). */
     assert.equal((html.match(/<script/g) || []).length, 3,
@@ -2304,8 +2321,8 @@ test('the Capitol Chat library filters by session and invents no dates', () => {
 
 test('neither Capitol Chat reading invents an intro under the library heading', () => {
   /* The roadmap gives the podcast library an intro paragraph and gives this one
-     only a heading. The note that follows is ours and says so about itself; what
-     must not appear is a sentence dressed as approved copy. */
+     only a heading. What must not appear between the heading and the filter is a
+     sentence dressed as approved copy. */
   for (const { out, html } of CAPITOLPAGES) {
     /* Comments stripped FIRST. Both partials quote the heading in their opening
        comment to explain why there is no intro under it, so a plain indexOf finds
@@ -2315,8 +2332,8 @@ test('neither Capitol Chat reading invents an intro under the library heading', 
     const at = markup.indexOf('Catch Up From the Capitol');
     assert.ok(at > -1, `${out} has no library heading`);
     const after = textOf(markup.slice(at, at + 400));
-    assert.match(after, /Catch Up From the Capitol\s*The list below is a live query in WordPress/,
-      `${out} has something between the library heading and the placeholder note — ` +
+    assert.match(after, /Catch Up From the Capitol\s*Topic/,
+      `${out} has something between the library heading and the filter — ` +
       `the roadmap gives this section no intro paragraph`);
   }
 });
@@ -2347,21 +2364,40 @@ test('the C readings put a working rail on the work areas', () => {
   }
 });
 
-test('every auto-populated block is marked as a feed and says so in words', () => {
+test('every auto-populated block shows published posts, not invented headlines', () => {
   /* Sections 6 and 7 of both roadmap tabs end in a bracketed instruction to
-     auto-populate. Nothing in them is copy, so nothing in them may look like
-     copy: no invented headline, no plausible article title. The blocks are grey
-     bars behind a data-placeholder mark, and a note above each one says in words
-     that it is a feed — the same treatment the team pages give the missing
-     headshots, and for the same reason: a page showing stand-ins has to admit it
-     in review or the stand-ins ship. */
+     auto-populate. These blocks become live WordPress queries; until then they
+     carry real posts from empowerms.org so the client reviews the shape with
+     content in it. Nothing here may be written by us: every headline in both
+     blocks has to link to the post it names, which is what makes a plausible
+     but invented article title impossible to ship. */
   for (const { out, html } of DETAILPAGES) {
-    const feeds = (html.match(/data-placeholder="feed"/g) || []).length;
-    assert.ok(feeds >= 6,
-      `${out} marks only ${feeds} feed placeholders — expected at least six (three stories, three articles)`);
-    const notes = (html.match(/live feed in WordPress/g) || []).length;
-    assert.equal(notes, 2,
-      `${out} has ${notes} feed notes, expected two — one over each auto-populated block`);
+    assert.doesNotMatch(html, /data-placeholder="feed"/,
+      `${out} still carries grey-bar feed placeholders`);
+    assert.doesNotMatch(html, /live feed in WordPress/,
+      `${out} still shows a developer note about the feed`);
+
+    const titled = [...html.matchAll(
+      /class="[a-z]{3}-(?:feed|row|stub)__title" href="(https:\/\/empowerms\.org\/[^"]+)">([^<]+)</g)];
+    assert.ok(titled.length >= 6,
+      `${out} has ${titled.length} linked headlines across its two blocks — expected at least six`);
+    for (const [, href, title] of titled) {
+      assert.match(href, /^https:\/\/empowerms\.org\/[a-z0-9-]+\/$/,
+        `${out}: "${title}" does not link to a published post`);
+    }
+
+    /* Both blocks keep their kind labels, so a reader still knows which of the
+       three post types each row is. */
+    for (const kind of ['Community story', 'Article', 'Research']) {
+      assert.ok(html.includes(`>${kind}<`), `${out} has lost its "${kind}" labels`);
+    }
+
+    /* Every headline carries a date. A feed row without one reads as undated
+       evergreen copy rather than as the most recent post. */
+    const dates = (html.match(
+      /__date">(January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, 20\d\d</g) || []).length;
+    assert.equal(dates, titled.length,
+      `${out} shows ${dates} dates for ${titled.length} headlines`);
   }
 });
 

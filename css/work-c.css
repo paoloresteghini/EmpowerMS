@@ -51,13 +51,6 @@
 .wkc-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
 
-/* The orange mark, above the block it marks. */
-.wkc-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
-  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
-.wkc-feednote::before{content:"";display:block;width:56px;height:4px;
-  margin-bottom:var(--space-4);border-radius:var(--radius-pill);
-  background:var(--em-orange)}
-
 /* ============================== 1 · Hero ================================= */
 
 .wkc-hero{background:var(--surface-navy-deep);color:var(--text-inverse);
@@ -175,6 +168,24 @@
   column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
 .wkc-plate__cols h2{margin-bottom:0}
 .wkc-plate__copy{min-width:0}
+
+/* The plate was a claim, its explanation, and then two thirds of a card with
+   nothing in it, which is what a reviewer sees before they read a word of it.
+   The photograph runs to the plate's own edges — negative margins matched to
+   the plate padding — so it reads as part of the card rather than a picture
+   pasted onto it. It sits between the explanation and the turn, which is where
+   the argument stops describing the problem and starts answering it.
+
+   No words on it: the turn below carries them, on the plate. */
+.wkc-plate__media{margin:clamp(var(--space-8),4vw,var(--space-10))
+  calc(-1 * clamp(var(--space-8),4.4vw,var(--space-12))) 0;
+  overflow:hidden}
+.wkc-plate__media img{display:block;width:100%;height:auto;
+  aspect-ratio:21/9;object-fit:cover;object-position:50% 34%}
+
+@media (max-width:620px){
+  .wkc-plate__media img{aspect-ratio:16/10}
+}
 
 .wkc-plate .wkc-turn{margin-top:clamp(var(--space-8),4vw,var(--space-10));
   padding-top:clamp(var(--space-7),3.4vw,var(--space-9));
@@ -307,21 +318,27 @@
   line-height:1.5;color:var(--text-body)}
 
 .wkc-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.wkc-feed__col{display:flex;flex-direction:column;gap:var(--space-4);
-  padding-top:var(--space-5);border-top:2px dashed var(--border-default)}
+.wkc-feed__col{display:flex;flex-direction:column;gap:var(--space-3);
+  padding-top:var(--space-5);border-top:2px solid var(--border-default)}
 
 .wkc-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.wkc-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
-.wkc-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.wkc-feed__lines i:nth-child(2){width:92%}
-.wkc-feed__lines i:nth-child(3){width:78%}
-.wkc-feed__lines i:nth-child(4){width:46%}
+.wkc-feed__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.22;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.wkc-feed__title:hover,.wkc-feed__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.wkc-feed__excerpt{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+
+.wkc-feed__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 @media (max-width:780px){
   .wkc-feed{grid-template-columns:minmax(0,1fr)}
@@ -341,21 +358,25 @@
   color:var(--text-body)}
 
 .wkc-stubs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.wkc-stub{display:flex;flex-direction:column;gap:var(--space-4);
-  padding:var(--space-6);border:1px dashed var(--border-default);
+.wkc-stub{display:flex;flex-direction:column;gap:var(--space-3);
+  padding:var(--space-6);border:1px solid var(--border-default);
   border-radius:var(--radius-md)}
 
 .wkc-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.wkc-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
-.wkc-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.wkc-stub__lines i:nth-child(1){width:76%}
-.wkc-stub__lines i:nth-child(2){width:42%}
+.wkc-stub__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.24;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.wkc-stub__title:hover,.wkc-stub__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.wkc-stub__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 .wkc-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
 

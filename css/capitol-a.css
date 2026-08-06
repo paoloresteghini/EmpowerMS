@@ -51,12 +51,6 @@
   font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.cca-photonote,.cca-libnote{font-size:var(--fs-small);line-height:var(--lh-body);
-  color:var(--text-muted)}
-.cca-photonote::before,.cca-libnote::before{content:"";display:block;
-  width:56px;height:4px;margin-bottom:var(--space-4);
-  border-radius:var(--radius-pill);background:var(--em-orange)}
-
 /* ============================== 1 · Hero ================================= */
 
 .cca-hero{padding:clamp(var(--space-11),7vw,var(--space-13)) 0
@@ -94,8 +88,6 @@
 .cca-plate span{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--text-muted)}
-
-.cca-photonote{margin:var(--space-6) 0 0;max-width:76ch}
 
 @media (max-width:720px){
   .cca-triptych{grid-template-columns:minmax(0,1fr)}
@@ -152,12 +144,10 @@
 /* The roadmap gives this section a heading and no intro paragraph. None is
    invented, so the note below carries straight on. */
 
-.cca-libnote{margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0
-  clamp(var(--space-6),3vw,var(--space-7));max-width:76ch}
-
 /* ---- The filter ---- */
 
-.cca-filter{display:grid;grid-template-columns:auto auto minmax(0,1fr);
+.cca-filter{margin-top:clamp(var(--space-7),3.4vw,var(--space-9));
+  display:grid;grid-template-columns:auto auto minmax(0,1fr);
   gap:clamp(var(--space-5),2.4vw,var(--space-8));align-items:end;
   padding:clamp(var(--space-5),2.6vw,var(--space-6));
   border:1px solid var(--border-subtle);border-radius:var(--radius-card);
@@ -236,25 +226,17 @@ body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-sessio
   border-radius:var(--radius-pill);background:var(--em-orange);color:var(--white)}
 .cca-ep__play svg{width:16px;height:16px}
 
-/* The stub fills its column, and the widths VARY per row. At a fixed 34ch it
-   left a dead gap between the title and the metadata, and six identical bars read
-   as a table of empty cells rather than as six episodes whose titles are not in
-   yet. Varying them is the difference between a skeleton and a fault. */
-.cca-ep__title i{display:block;height:12px;width:88%;
-  border-radius:var(--radius-xs);background:var(--grey-300)}
-.cca-ep:nth-child(2) .cca-ep__title i{width:72%}
-.cca-ep:nth-child(3) .cca-ep__title i{width:94%}
-.cca-ep:nth-child(4) .cca-ep__title i{width:66%}
-.cca-ep:nth-child(5) .cca-ep__title i{width:82%}
-.cca-ep:nth-child(6) .cca-ep__title i{width:76%}
+.cca-ep__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-body);line-height:1.3;color:var(--text-strong);
+  text-decoration:none}
+.cca-ep__title:hover,.cca-ep__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
 
 .cca-ep__tag{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);color:var(--em-orange-ink);white-space:nowrap}
 
-/* The date column is a stub of its own rather than blank: that is where the real
-   date goes, and an empty column reads as a layout fault. */
-.cca-ep__date i{display:block;height:12px;width:9ch;
-  border-radius:var(--radius-xs);background:var(--grey-300)}
+.cca-ep__date{font-size:var(--fs-caption);color:var(--text-muted);
+  white-space:nowrap}
 
 .cca-ep__session{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);

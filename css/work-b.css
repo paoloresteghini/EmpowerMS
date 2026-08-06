@@ -39,13 +39,6 @@
   font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.wrb-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
-  padding-top:var(--space-4);
-  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
-.wrb-feednote::before{content:"";display:block;width:56px;height:4px;
-  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
-
-
 /* Every section heading on this page is the same object at the same size — the
    clamp below is repeated per section rather than shared, because each one is
    scoped to its own surface and Elementor will carry them as separate widgets.
@@ -117,6 +110,17 @@
 
 /* The one claim on the page set at display size. It is the sentence with the
    fact in it, so it gets the weight rather than the heading above it. */
+/* The heading held column one and nothing else did, so the section was a
+   headline over an empty half. The photograph takes that space: black and
+   white, because this is the one dark section on the page and a colour frame
+   here would pull the eye off the claim in column two, which is the line the
+   section exists to land. No words sit on it. */
+.wrb-problem__media{grid-column:1;grid-row:2 / span 2;align-self:start;
+  margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0 0;
+  border-radius:var(--radius-card);overflow:hidden}
+.wrb-problem__media img{display:block;width:100%;height:auto;
+  aspect-ratio:4/3;object-fit:cover;object-position:50% 28%}
+
 .wrb-problem__claim{grid-column:2;margin:0 0 var(--space-6);
   font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:clamp(1.25rem,1.05rem + .9vw,1.75rem);line-height:1.35;
@@ -135,9 +139,14 @@
 @media (max-width:900px){
   .wrb-problem__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-7)}
   .wrb-problem__inner h2,
+  .wrb-problem__media,
   .wrb-problem__claim,
   .wrb-problem__body,
   .wrb-problem__turn{grid-column:1}
+  /* One column: the row placement above has to go with the second column, or
+     the picture is pinned to a row the copy now occupies. It falls last, which
+     is its source order. */
+  .wrb-problem__media{grid-row:auto;margin-top:0}
 }
 
 /* ========================= 4 · The four-track ============================ */
@@ -277,21 +286,27 @@
 /* Columns under hairlines rather than bordered cards — the same feed, drawn the
    way this variation draws everything else. */
 .wrb-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.wrb-feed__col{display:flex;flex-direction:column;gap:var(--space-4);
-  padding-top:var(--space-5);border-top:2px dashed var(--border-default)}
+.wrb-feed__col{display:flex;flex-direction:column;gap:var(--space-3);
+  padding-top:var(--space-5);border-top:2px solid var(--border-default)}
 
 .wrb-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.wrb-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
-.wrb-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.wrb-feed__lines i:nth-child(2){width:92%}
-.wrb-feed__lines i:nth-child(3){width:78%}
-.wrb-feed__lines i:nth-child(4){width:46%}
+.wrb-feed__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.22;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.wrb-feed__title:hover,.wrb-feed__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.wrb-feed__excerpt{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+
+.wrb-feed__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 @media (max-width:780px){
   .wrb-feed{grid-template-columns:minmax(0,1fr)}
@@ -311,21 +326,25 @@
   color:var(--text-body)}
 
 .wrb-stubs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.wrb-stub{display:flex;flex-direction:column;gap:var(--space-4);
-  padding:var(--space-6);border:1px dashed var(--border-default);
+.wrb-stub{display:flex;flex-direction:column;gap:var(--space-3);
+  padding:var(--space-6);border:1px solid var(--border-default);
   border-radius:var(--radius-md)}
 
 .wrb-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.wrb-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
-.wrb-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.wrb-stub__lines i:nth-child(1){width:76%}
-.wrb-stub__lines i:nth-child(2){width:42%}
+.wrb-stub__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.24;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.wrb-stub__title:hover,.wrb-stub__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.wrb-stub__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 .wrb-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
 

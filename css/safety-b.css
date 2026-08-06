@@ -51,14 +51,6 @@
 .psb-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
 
-.psb-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
-  padding-top:var(--space-4);
-  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
-.psb-feednote::before{content:"";display:block;width:56px;height:4px;
-  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
-
-.psb-feednote--dark{color:var(--text-inverse-muted)}
-
 /* ============================== 1 · Hero ================================= */
 
 /* The glow is a radial gradient over the navy, offset left so it sits behind the
@@ -97,8 +89,8 @@
 
 .psb-vision__inner h2{grid-column:1;margin:0;
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--white)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--white)}
 
 .psb-vision__lede{grid-column:2;margin:0 0 var(--space-6);
   font-family:var(--font-display);font-weight:var(--fw-semibold);
@@ -126,8 +118,16 @@
 
 .psb-problem__inner h2{margin:0;
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--text-strong)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--text-strong)}
+
+/* Under the heading, in the column that was otherwise empty below it. The page's
+   first picture, arriving with its first light. No words on it. */
+.psb-problem__media{grid-column:1;grid-row:2;align-self:start;
+  margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0 0;
+  border-radius:var(--radius-card);overflow:hidden}
+.psb-problem__media img{display:block;width:100%;height:auto;
+  aspect-ratio:4/3;object-fit:cover;object-position:50% 38%}
 
 .psb-problem__copy{min-width:0}
 .psb-problem__copy p{margin:0 0 var(--space-5);font-size:var(--fs-body);
@@ -136,13 +136,21 @@
 /* Out-ranks the paragraph rule above, or the lede flattens to body size. */
 .psb-problem__copy .psb-lede{margin-bottom:var(--space-6)}
 
-.psb-problem__copy .psb-turn{margin-top:var(--space-7);
+/* The turn of the page, and the second-loudest thing on it after the headline.
+   Six section headings had been set at one size, so nothing on the page was
+   louder than anything else and the whole run read flat. The ladder is now:
+   headline, this line, section heads, card heads. */
+.psb-problem__copy .psb-turn{margin-top:var(--space-8);
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.375rem,1.05rem + 1.2vw,2rem);line-height:1.15;
-  letter-spacing:-.02em;color:var(--em-orange-ink)}
+  font-size:clamp(1.6rem,1.1rem + 1.8vw,2.5rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--em-orange-ink)}
 
 @media (max-width:900px){
   .psb-problem__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+  /* One column: the row placement above has to go with the second column, or
+     the picture is pinned to a row the copy now occupies. It falls last, which
+     is its source order. */
+  .psb-problem__media{grid-row:auto;margin-top:0}
 }
 
 /* ======================= 4 · The numbered rows =========================== */
@@ -153,8 +161,8 @@
 .psb-steps__head{margin:0 0 clamp(var(--space-8),4vw,var(--space-10));
   max-width:26ch;
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--text-strong)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--text-strong)}
 
 .psb-steps__list{list-style:none;margin:0;padding:0;
   border-top:1px solid var(--border-default)}
@@ -197,8 +205,8 @@
   margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
 .psb-grid__head h2{margin:0;
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--white)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--white)}
 .psb-grid__intro{min-width:0}
 .psb-grid__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
   line-height:var(--lh-body);color:var(--text-inverse-muted)}
@@ -211,19 +219,21 @@
   gap:clamp(var(--space-5),2.4vw,var(--space-7));
   list-style:none;margin:0;padding:0}
 
-/* Lit: a highlight in the top-left corner, an orange rule across the top, and a
-   surface one step up from the page so the card sits in front of it. Both are
-   gradients on the element itself — no extra markup, no overlay. */
+/* Lit: a highlight falling into the top-left corner and a surface one step up
+   from the page, so the card sits in front of it. Both are gradients on the
+   element itself — no extra markup, no overlay.
+
+   No outline, and no orange rule across the top. The rule was on all four, which
+   made it scenery rather than a mark, and an outline plus a highlight is two
+   ways of saying the same thing: a lit object is defined by its light. Dropping
+   both leaves the light doing the work the section is named for, and stops the
+   four reading as four identical boxes. */
 .psb-lit{display:flex;flex-direction:column;position:relative;
   padding:clamp(var(--space-7),3.2vw,var(--space-9));
-  border:1px solid var(--border-inverse);border-radius:var(--radius-card);
+  border-radius:var(--radius-card);
   background:
-    radial-gradient(90% 70% at 6% 0%, rgba(143,189,204,.22) 0%, rgba(0,60,80,0) 58%),
+    radial-gradient(90% 70% at 6% 0%, rgba(143,189,204,.26) 0%, rgba(0,60,80,0) 60%),
     var(--surface-navy)}
-
-.psb-lit::before{content:"";position:absolute;inset:0 auto auto 0;
-  width:clamp(48px,6vw,80px);height:3px;background:var(--em-orange);
-  border-radius:var(--radius-pill)}
 
 .psb-lit__label{margin:0 0 var(--space-5);
   font-family:var(--font-display);font-weight:var(--fw-bold);
@@ -267,30 +277,36 @@
   padding:clamp(var(--space-10),6vw,var(--space-12)) 0 0}
 .psb-stories__panel h2{margin:0 0 var(--space-5);
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--text-strong)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--text-strong)}
 .psb-stories__panel p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
   line-height:1.5;color:var(--text-body)}
 
 .psb-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:var(--space-6);list-style:none;margin:0;padding:0}
+  gap:var(--space-6);list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.psb-feed__card{display:flex;flex-direction:column;gap:var(--space-4);
-  padding:var(--space-5);border:1px dashed var(--border-default);
-  border-radius:var(--radius-card);background:var(--surface-subtle)}
-
-.psb-feed__thumb{display:block;aspect-ratio:16/10;
-  border-radius:var(--radius-media);background:var(--surface-muted)}
+/* No box round the cards. A border, a radius and a tint round each of three
+   stories would make this a card grid, and the page already has one. A
+   hairline over each column separates them without drawing a second. */
+.psb-feed__card{display:flex;flex-direction:column;gap:var(--space-3);
+  padding-top:var(--space-5);border-top:1px solid var(--border-default)}
 
 .psb-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--em-orange-ink)}
 
-.psb-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
-.psb-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
-  background:var(--grey-300)}
-.psb-feed__lines i:nth-child(2){width:90%}
-.psb-feed__lines i:nth-child(3){width:52%}
+.psb-feed__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.22;letter-spacing:-.01em;
+  color:var(--text-strong);text-decoration:none}
+.psb-feed__title:hover,.psb-feed__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.psb-feed__excerpt{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+
+.psb-feed__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-muted)}
 
 @media (max-width:860px){
   .psb-feed{grid-template-columns:minmax(0,1fr)}
@@ -307,29 +323,33 @@
 .psb-latest__head{max-width:64ch}
 .psb-latest__head h2{margin:0 0 var(--space-5);
   font-family:var(--font-display);font-weight:var(--fw-black);
-  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
-  letter-spacing:-.03em;color:var(--white)}
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--white)}
 .psb-latest__head p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
   color:var(--text-inverse-muted)}
 
 .psb-stubs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-12)) 0 0;padding:0}
 
-.psb-stub{display:flex;flex-direction:column;gap:var(--space-4);
-  padding:var(--space-6);border:1px dashed var(--border-inverse);
-  border-radius:var(--radius-md)}
+/* Same call as the feed above: no box. A hairline over each stub keeps them
+   separated as three things without drawing a third card grid on a page that
+   already had two. */
+.psb-stub{display:flex;flex-direction:column;gap:var(--space-3);
+  padding-top:var(--space-5);border-top:1px solid var(--border-inverse)}
 
 .psb-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
   text-transform:uppercase;color:var(--orange-300)}
 
-.psb-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
-/* Lighter bars than the light sections use: --grey-300 on navy is nearly
-   invisible as a shape and reads as a rendering fault rather than a stub. */
-.psb-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
-  background:rgba(255,255,255,.22)}
-.psb-stub__lines i:nth-child(1){width:74%}
-.psb-stub__lines i:nth-child(2){width:44%}
+.psb-stub__title{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.24;letter-spacing:-.01em;
+  color:var(--white);text-decoration:none}
+.psb-stub__title:hover,.psb-stub__title:focus-visible{text-decoration:underline;
+  text-underline-offset:3px}
+
+.psb-stub__date{margin-top:auto;padding-top:var(--space-3);
+  font-size:var(--fs-caption);color:var(--text-inverse-muted)}
 
 .psb-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
 

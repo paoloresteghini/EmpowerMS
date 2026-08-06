@@ -25,6 +25,17 @@
 [data-reveal="on"] [data-reveal].is-revealed{opacity:1;transform:none}
 [data-reveal="on"] [data-reveal="clip"].is-revealed{clip-path:inset(0 0 0 0)}
 
+/* The 1.04 above is measured from the element's centre, so a band drawn the
+   full width of the window hangs 2% off each side of the document until it
+   reveals — and the page carries a horizontal scrollbar for as long as that
+   lasts. Clip it at the section that owns the band.
+
+   overflow-x:clip, NOT hidden: hidden makes a scroll container, which breaks
+   position:sticky for anything inside and would take the sticky header with
+   it. clip does not. Where :has() is missing the rule simply does not apply
+   and the behaviour is what it was before this block existed. */
+[data-reveal="on"] section:has([data-reveal="clip"]){overflow-x:clip}
+
 @media (prefers-reduced-motion: reduce){
   [data-reveal="on"] [data-reveal],
   [data-reveal="on"] [data-reveal].is-revealed{

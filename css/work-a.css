@@ -1,0 +1,357 @@
+/* Meaningful Work — variation A, "The Open Door".
+
+   The argument this variation makes: the page is a corridor of doors. A navy
+   hero with the photograph pushed through its right edge, then every section
+   hung off a numeral in a left gutter, the four approaches cut out of ONE block
+   by hairlines rather than set as four separate cards, and the five work areas
+   as five full-width bands each closed by a navy commitment strip flush to its
+   bottom edge.
+
+   SIGNATURE, so the two variations cannot be mistaken for each other: the
+   quadrant block and the bottom-flush navy strip. Variation B has neither — it
+   runs the four approaches as a single horizontal track and the five areas as a
+   mosaic with one double-width plate.
+
+   COLOUR: light page. Navy is used three times only (hero, the five commitment
+   strips, the stories panel) and orange is reserved for the numerals, the issue
+   chips and the one primary action. Variation B inverts that balance.
+
+   ORANGE AND CONTRAST. Two rules, both from css/site.css:
+     - Numerals are brand orange (#E65A28, 3.59:1 on white, 3.15:1 on tint).
+       Legal because every one of them is large text — 32px+ and 800 weight,
+       so the 3:1 threshold applies, not 4.5:1. They are also aria-hidden, so
+       they are decoration carrying a contrast pass rather than content.
+     - Small orange text uses --em-orange-ink; white-on-orange chips use
+       --orange-700. The brand value fails both of those at label sizes.
+
+   NO NEW SCRIPTS. Reveals are the existing layer. Careful with it: motion.css
+   sets `transition` on any element carrying data-reveal, which silently
+   replaces that element's own transition — so anything here with its own timing
+   is a CHILD of the revealed element, never the revealed element itself.
+
+   ELEMENTOR NOTE: one section maps to one Elementor section. The hero
+   photograph is positioned inside the hero, the commitment strip is a child of
+   its own band, and nothing overlaps a section boundary.
+
+   Namespaced .wra- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+/* The numeral gutter. aria-hidden everywhere it appears: "01" spoken before a
+   heading is noise, and the sequence is a visual aid, not information. */
+.wra-num{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.2rem + 2.4vw,3.25rem);line-height:.9;
+  letter-spacing:-.03em;color:var(--em-orange)}
+
+.wra-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--text-strong)}
+
+/* Feed placeholders are marked in the markup AND said in words. This is the
+   note; every block it introduces carries data-placeholder="feed". */
+.wra-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
+  padding-top:var(--space-4);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
+.wra-feednote::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
+
+
+/* ============================== 1 · Hero ================================= */
+
+.wra-hero{position:relative;overflow:hidden;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+/* The empty second column is the hole the photograph sits in. Declared as a
+   grid column rather than as padding-right so the copy's measure and the
+   picture's edge are the same number in one place. */
+.wra-hero__inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr);
+  align-items:center;min-height:clamp(420px,46vw,600px);
+  padding:clamp(var(--space-11),7vw,var(--space-14)) 0}
+
+.wra-hero__copy{grid-column:1;min-width:0}
+
+.wra-hero__eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+.wra-hero h1{margin:0;font-size:clamp(2.4rem,1.2rem + 4.4vw,4.75rem);
+  font-weight:var(--fw-black);line-height:.98;letter-spacing:-.04em;
+  color:var(--white);text-wrap:balance}
+/* "Opportunity" drops to its own line and takes the orange. Not a colour
+   applied to a random word: it is the noun the whole page is about. */
+.wra-hero h1 em{font-style:normal;display:block;color:var(--orange-300)}
+
+/* Bleeds off the right viewport edge, not off the container. Absolute inside
+   the hero — it never crosses into the section below it. */
+.wra-hero__media{position:absolute;inset:0 0 0 auto;width:44%;margin:0}
+.wra-hero__media img{display:block;width:100%;height:100%;object-fit:cover;
+  object-position:50% 30%}
+
+@media (max-width:900px){
+  .wra-hero__inner{grid-template-columns:minmax(0,1fr);min-height:0;
+    padding-bottom:clamp(var(--space-9),6vw,var(--space-11))}
+  .wra-hero__media{position:static;width:100%}
+  .wra-hero__media img{aspect-ratio:16/9;height:auto}
+}
+
+/* ====================== 2, 3 · Vision and Problem ======================== */
+
+.wra-band{padding:clamp(var(--space-12),7vw,var(--space-14)) 0}
+.wra-band--vision{background:var(--surface-page)}
+.wra-band--problem{background:var(--surface-tint)}
+
+.wra-band__grid{display:grid;
+  grid-template-columns:clamp(56px,7vw,112px) minmax(0,1fr) minmax(0,1.1fr);
+  column-gap:clamp(var(--space-6),4vw,var(--space-11));align-items:start}
+
+.wra-band__grid .wra-num{grid-column:1}
+
+.wra-band__head{grid-column:2;margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+.wra-band__body{grid-column:3;min-width:0}
+.wra-band__body p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wra-band__body p:last-child{margin-bottom:0}
+/* The lede is display type and has to out-rank the plain paragraph rule above
+   it, which would otherwise flatten it back to body size. Same trap as the two
+   paragraphs in the Solutions B hero. */
+.wra-band__body .wra-lede{margin-bottom:var(--space-6)}
+
+/* "We can do better." — the turn of the page, so it is a different size and a
+   different colour from the sentences that earned it. --em-orange-ink because
+   this sits on --surface-tint, where the brand value measures 3.15:1. */
+.wra-band__body .wra-turn{margin-top:var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.1rem + 1.4vw,2.25rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--em-orange-ink)}
+
+@media (max-width:980px){
+  .wra-band__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+  .wra-band__grid .wra-num,
+  .wra-band__head,
+  .wra-band__body{grid-column:1}
+}
+
+/* ========================= 4 · The quadrant ============================== */
+
+.wra-quad{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.wra-quad__head{display:grid;
+  grid-template-columns:clamp(56px,7vw,112px) minmax(0,1fr);
+  column-gap:clamp(var(--space-6),4vw,var(--space-11));align-items:start;
+  margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
+.wra-quad__head h2{margin:0;max-width:22ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+/* One block cut in four. The outer top and left hairlines live on the list and
+   the right and bottom ones on each cell, which is what keeps the internal
+   rules single-width instead of doubling where two cells meet. */
+.wra-quad__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default);
+  border-left:1px solid var(--border-default)}
+
+.wra-cell{position:relative;padding:clamp(var(--space-7),3.2vw,var(--space-10));
+  border-right:1px solid var(--border-default);
+  border-bottom:1px solid var(--border-default)}
+
+/* Scoped to its cell on purpose. The numeral is a <p>, and `.wra-cell p` below
+   is a descendant selector — it out-ranks a bare class and silently reset this
+   numeral to 17px grey body copy. Any single-class rule on an element that a
+   later element-scoped rule also matches has to carry the parent. */
+.wra-cell .wra-cell__num{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.2rem + 1.2vw,2.5rem);line-height:1;
+  color:var(--em-orange)}
+
+.wra-cell h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);line-height:1.2;letter-spacing:-.01em;
+  color:var(--text-strong)}
+
+.wra-cell p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+@media (max-width:980px){
+  .wra-quad__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-4)}
+}
+@media (max-width:720px){
+  .wra-quad__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ===================== 5 · The five work areas =========================== */
+
+.wra-issues{background:var(--surface-page)}
+
+.wra-issues__head{display:grid;
+  grid-template-columns:clamp(56px,7vw,112px) minmax(0,1fr) minmax(0,1.1fr);
+  column-gap:clamp(var(--space-6),4vw,var(--space-11));align-items:start;
+  padding:clamp(var(--space-12),7vw,var(--space-14)) 0 clamp(var(--space-9),5vw,var(--space-11))}
+.wra-issues__head h2{grid-column:2;margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wra-issues__intro{grid-column:3;min-width:0}
+.wra-issues__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wra-issues__intro p:last-child{margin-bottom:0}
+.wra-issues__intro .wra-lede{margin-bottom:var(--space-6)}
+
+.wra-issues__list{list-style:none;margin:0;padding:0}
+
+/* Alternating surfaces, because five bands of the same colour in a row give the
+   eye nothing to count. The band's own padding-bottom is zero: the commitment
+   strip closes it, flush to the edge. */
+.wra-issue{padding:clamp(var(--space-9),5vw,var(--space-12)) 0 0;
+  background:var(--surface-page)}
+.wra-issue:nth-child(even){background:var(--surface-subtle)}
+
+.wra-issue__inner{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  column-gap:clamp(var(--space-7),4vw,var(--space-11));align-items:start;
+  padding-bottom:clamp(var(--space-8),4vw,var(--space-10))}
+
+/* White on --orange-700 (5.55:1). The brand orange is 3.59:1 and this label is
+   13px, so the large-text exemption cannot apply — the same call site.css makes
+   for .em-badge--accent. */
+.wra-issue__label{grid-column:1;justify-self:start;align-self:start;
+  margin:0;padding:6px 14px;border-radius:var(--radius-pill);
+  background:var(--orange-700);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase}
+
+.wra-issue__inner h3{grid-column:1;margin:var(--space-5) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.375rem,1.05rem + 1.1vw,2rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--text-strong)}
+
+.wra-issue__body{grid-column:2;grid-row:1 / span 2;margin:0;
+  font-size:var(--fs-lead);line-height:1.5;color:var(--text-body)}
+
+/* The commitment, on navy, flush to the bottom of the band. A different KIND of
+   sentence from the description above it, and over five bands that difference
+   is what makes the section scannable rather than five paragraphs deep. */
+.wra-issue__toward{margin:0;padding:clamp(var(--space-6),2.6vw,var(--space-8)) 0;
+  background:var(--surface-navy);color:var(--text-inverse-muted);
+  font-size:var(--fs-body);line-height:var(--lh-body)}
+/* .em-container is a block-level utility from tokens/base.css and this one is a
+   span inside a paragraph, so it needs the display it does not inherit. */
+.wra-issue__toward .em-container{display:block}
+.wra-issue__toward strong{color:var(--orange-300);font-weight:var(--fw-bold)}
+
+@media (max-width:980px){
+  .wra-issues__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+  .wra-issues__head h2,
+  .wra-issues__intro{grid-column:1}
+  .wra-issue__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+  .wra-issue__label,
+  .wra-issue__inner h3,
+  .wra-issue__body{grid-column:1}
+  .wra-issue__body{grid-row:auto}
+  .wra-issue__inner h3{margin-top:0}
+}
+
+/* ========================= 6 · Community stories ========================= */
+
+.wra-stories{background:var(--surface-page)}
+
+/* Photograph one side, every word on the solid panel the other side. No text
+   over the picture anywhere on this page. */
+.wra-stories__split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  align-items:stretch}
+
+.wra-stories__media{margin:0;overflow:hidden}
+.wra-stories__media img{display:block;width:100%;height:100%;
+  object-fit:cover;object-position:50% 22%}
+
+.wra-stories__panel{display:flex;flex-direction:column;align-items:flex-start;
+  justify-content:center;gap:var(--space-6);
+  padding:clamp(var(--space-10),6vw,var(--space-14)) clamp(var(--space-7),5vw,var(--space-12));
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+.wra-stories__panel h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--white)}
+.wra-stories__panel p{margin:0;max-width:46ch;font-size:var(--fs-lead);
+  line-height:1.5;color:var(--text-inverse-muted)}
+
+@media (max-width:900px){
+  .wra-stories__split{grid-template-columns:minmax(0,1fr)}
+  .wra-stories__media img{aspect-ratio:4/3;height:auto}
+}
+
+/* The feed. Dashed edges and grey bars, at the aspect the real cards will use,
+   so wiring the feed in Elementor moves nothing. */
+.wra-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--space-6);list-style:none;margin:0 0 clamp(var(--space-11),6vw,var(--space-13));
+  padding:0}
+
+.wra-feed__card{display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-5);border:1px dashed var(--border-default);
+  border-radius:var(--radius-card);background:var(--surface-page)}
+
+.wra-feed__thumb{display:block;aspect-ratio:16/10;border-radius:var(--radius-media);
+  background:var(--surface-muted)}
+
+.wra-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wra-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.wra-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wra-feed__lines i:nth-child(2){width:86%}
+.wra-feed__lines i:nth-child(3){width:58%}
+
+@media (max-width:860px){
+  .wra-feed{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ====================== 7 · Articles and research ======================== */
+
+.wra-latest{padding:0 0 clamp(var(--space-12),7vw,var(--space-14));
+  background:var(--surface-page)}
+
+.wra-latest__head{display:grid;
+  grid-template-columns:clamp(56px,7vw,112px) minmax(0,1fr) minmax(0,1.1fr);
+  column-gap:clamp(var(--space-6),4vw,var(--space-11));align-items:start}
+.wra-latest__head h2{grid-column:2;margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.06;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wra-latest__head .wra-lede{grid-column:3;margin:0;min-width:0}
+
+/* Rows, not cards — the block above is cards, and two placeholder grids in a
+   row would read as the same block twice. */
+.wra-rows{list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+.wra-row{display:grid;grid-template-columns:clamp(90px,12vw,150px) minmax(0,1fr);
+  column-gap:var(--space-6);align-items:center;
+  padding:clamp(var(--space-6),3vw,var(--space-8)) 0;
+  border-bottom:1px solid var(--border-default)}
+.wra-row__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.wra-row__lines{display:flex;flex-direction:column;gap:var(--space-3)}
+.wra-row__lines i{display:block;height:12px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wra-row__lines i:nth-child(1){width:72%}
+.wra-row__lines i:nth-child(2){width:44%}
+
+.wra-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+@media (max-width:980px){
+  .wra-latest__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+  .wra-latest__head h2,
+  .wra-latest__head .wra-lede{grid-column:1}
+}
+@media (max-width:620px){
+  .wra-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-4)}
+}

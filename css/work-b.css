@@ -1,0 +1,334 @@
+/* Meaningful Work — variation B, "The Sidelines".
+
+   The argument this variation makes: the page is an editorial. Nothing sits on
+   top of a photograph, nothing is a card with a shadow, and the composition is
+   made of measure and rules rather than panels. The headline is the whole first
+   screen on white; the page's one photograph arrives immediately under it,
+   window-wide; the problem is the only dark section on the page and the only
+   place a claim is set at display size.
+
+   SIGNATURE, so the two variations cannot be mistaken for each other: the four
+   approaches run as ONE horizontal track divided by vertical hairlines, and the
+   five work areas are a mosaic with one double-width lead plate. Variation A has
+   a 2x2 quadrant block and five identical bands closed by navy strips; neither
+   device appears here.
+
+   COLOUR: near-monochrome. One navy section, one orange accent role (numerals,
+   labels, the closing line on navy, the single primary action), and everything
+   else is ink on white or on --surface-subtle. Variation A is the warmer, more
+   photographic reading of the same copy.
+
+   ORANGE AND CONTRAST, both rules from css/site.css:
+     - The "01"-"04" numerals are brand orange and are large text (32px+, 800),
+       so the 3:1 threshold applies, not 4.5:1. They are aria-hidden too.
+     - Small orange text on light uses --em-orange-ink; orange on navy uses
+       --orange-300 (5.44:1); white-on-orange chips use --orange-700.
+
+   NO NEW SCRIPTS. Reveals are the existing layer. Nothing carrying data-reveal
+   declares its own transition — motion.css would overwrite it.
+
+   ELEMENTOR NOTE: every section is self-contained; the hero photograph is a
+   sibling of the hero copy inside the hero section, not an overlap.
+
+   Namespaced .wrb- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.wrb-eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wrb-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
+  padding-top:var(--space-4);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
+.wrb-feednote::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
+
+
+/* Every section heading on this page is the same object at the same size — the
+   clamp below is repeated per section rather than shared, because each one is
+   scoped to its own surface and Elementor will carry them as separate widgets.
+   The variation's hierarchy comes from measure and surface, not from six
+   heading sizes. */
+
+/* ============================== 1 · Hero ================================= */
+
+.wrb-hero{background:var(--surface-page)}
+
+.wrb-hero__copy{padding:clamp(var(--space-11),7vw,var(--space-14)) 0
+  clamp(var(--space-9),5vw,var(--space-12))}
+
+/* The measure lives on the h1, NOT on the wrapper. `ch` resolves against the
+   element's own font-size: on the body-sized wrapper 20ch is about 160px, and
+   the headline broke one word per line. On the h1 it is 20 characters of the
+   headline's own type, which is what "20ch" was ever meant to say. */
+.wrb-hero h1{margin:0;max-width:18ch;
+  font-size:clamp(2.5rem,1.1rem + 5.4vw,5.5rem);
+  font-weight:var(--fw-black);line-height:.94;letter-spacing:-.045em;
+  color:var(--text-strong);text-wrap:balance}
+
+.wrb-hero__rule{height:4px;margin:clamp(var(--space-7),4vw,var(--space-10)) 0 0;
+  width:min(100%,320px);background:var(--em-orange)}
+
+/* The page's one photograph, window-wide. Fixed aspect so the hero's height is
+   predictable at every width and the fold lands in the same place. */
+.wrb-hero__band{margin:0;overflow:hidden}
+.wrb-hero__band img{display:block;width:100%;height:auto;
+  aspect-ratio:21/9;object-fit:cover;object-position:50% 40%}
+
+@media (max-width:720px){
+  .wrb-hero__copy{max-width:none}
+  .wrb-hero__band img{aspect-ratio:4/3}
+}
+
+/* ============================= 2 · Vision ================================ */
+
+/* The only narrow measure on the page. A statement of belief, set as one. */
+.wrb-vision{padding:clamp(var(--space-12),8vw,var(--space-15)) 0;
+  background:var(--surface-page)}
+
+.wrb-vision__inner{max-width:62ch;margin:0 auto;text-align:center}
+.wrb-vision__inner h2{margin:0 0 var(--space-7);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wrb-vision__inner p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wrb-vision__inner p:last-child{margin-bottom:0}
+/* Has to out-rank the paragraph rule above, or the lede flattens to body size. */
+.wrb-vision__inner .wrb-vision__lede{margin-bottom:var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
+
+/* ============================ 3 · The problem ============================ */
+
+.wrb-problem{padding:clamp(var(--space-12),8vw,var(--space-15)) 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.wrb-problem__inner{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
+
+.wrb-problem__inner h2{grid-column:1;margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2.2vw,3rem);line-height:1.04;
+  letter-spacing:-.03em;color:var(--white)}
+
+/* The one claim on the page set at display size. It is the sentence with the
+   fact in it, so it gets the weight rather than the heading above it. */
+.wrb-problem__claim{grid-column:2;margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.25rem,1.05rem + .9vw,1.75rem);line-height:1.35;
+  color:var(--white)}
+
+.wrb-problem__body{grid-column:2;margin:0;font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-inverse-muted)}
+
+/* --orange-300 on navy is 5.44:1 — the pairing the accessibility overrides in
+   site.css leave at the brand value on purpose. */
+.wrb-problem__turn{grid-column:2;margin:var(--space-8) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.1rem + 1.4vw,2.25rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--orange-300)}
+
+@media (max-width:900px){
+  .wrb-problem__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-7)}
+  .wrb-problem__inner h2,
+  .wrb-problem__claim,
+  .wrb-problem__body,
+  .wrb-problem__turn{grid-column:1}
+}
+
+/* ========================= 4 · The four-track ============================ */
+
+.wrb-track{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-subtle)}
+
+.wrb-track__head{margin:0 0 clamp(var(--space-9),5vw,var(--space-11));
+  max-width:24ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+/* Four columns, hairlines between rather than around. The rule is a left border
+   on every item except the first, which is what keeps the track open at both
+   ends instead of boxed. */
+.wrb-track__list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  list-style:none;margin:0;padding:0}
+
+.wrb-step{padding:0 clamp(var(--space-5),2.4vw,var(--space-7));
+  border-left:1px solid var(--border-default)}
+.wrb-step:first-child{border-left:0;padding-left:0}
+.wrb-step:last-child{padding-right:0}
+
+/* Scoped to its step. The numeral is a <p> and `.wrb-step p` below is a
+   descendant selector, which out-ranks a bare class and would reset this to
+   small grey body copy. */
+.wrb-step .wrb-step__num{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.3rem + 1.6vw,3rem);line-height:.9;
+  letter-spacing:-.04em;color:var(--em-orange)}
+
+.wrb-step h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.25;color:var(--text-strong)}
+
+.wrb-step p{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+@media (max-width:900px){
+  .wrb-track__list{grid-template-columns:repeat(2,minmax(0,1fr));
+    row-gap:clamp(var(--space-7),4vw,var(--space-9))}
+  /* On two columns the hairline pattern has to restart per row, or the third
+     item keeps a rule that now sits at the left edge of the block. */
+  .wrb-step:nth-child(odd){border-left:0;padding-left:0}
+  .wrb-step:nth-child(even){padding-right:0}
+}
+@media (max-width:560px){
+  .wrb-track__list{grid-template-columns:minmax(0,1fr)}
+  .wrb-step{border-left:0;padding:0}
+  .wrb-step + .wrb-step{padding-top:var(--space-7);
+    border-top:1px solid var(--border-default)}
+}
+
+/* ========================= 5 · The work mosaic =========================== */
+
+.wrb-mosaic{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.wrb-mosaic__head{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start;
+  margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
+.wrb-mosaic__head h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wrb-mosaic__intro{min-width:0}
+.wrb-mosaic__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wrb-mosaic__intro p:last-child{margin-bottom:0}
+
+.wrb-mosaic__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));
+  list-style:none;margin:0;padding:0}
+
+.wrb-plate{display:flex;flex-direction:column;
+  padding:clamp(var(--space-7),3.2vw,var(--space-9));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-page)}
+
+/* The lead plate spans both columns and takes the navy. Workforce Participation
+   is the area the page opened on and restated as the problem; giving it the same
+   weight as the other four would flatten the argument. */
+.wrb-plate--lead{grid-column:1 / -1;border-color:transparent;
+  background:var(--surface-navy)}
+
+.wrb-plate__label{margin:0 0 var(--space-5);align-self:flex-start;
+  padding:6px 14px;border-radius:var(--radius-pill);
+  background:var(--orange-700);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase}
+
+.wrb-plate h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);line-height:1.15;
+  letter-spacing:-.02em;color:var(--text-strong)}
+
+.wrb-plate__body{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+/* The commitment, under a hairline inside its own plate. No navy strip: that is
+   variation A's device. */
+.wrb-plate__toward{margin:var(--space-6) 0 0;padding-top:var(--space-6);
+  border-top:1px solid var(--border-default);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-body)}
+.wrb-plate__toward strong{color:var(--em-orange-ink);font-weight:var(--fw-bold)}
+
+.wrb-plate--lead h3{color:var(--white)}
+.wrb-plate--lead .wrb-plate__body{color:var(--text-inverse);
+  font-size:var(--fs-lead);line-height:1.5}
+.wrb-plate--lead .wrb-plate__toward{border-top-color:var(--border-inverse);
+  color:var(--text-inverse-muted)}
+.wrb-plate--lead .wrb-plate__toward strong{color:var(--orange-300)}
+
+@media (max-width:900px){
+  .wrb-mosaic__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+@media (max-width:720px){
+  .wrb-mosaic__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ========================= 6 · Community stories ========================= */
+
+.wrb-stories{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-subtle)}
+
+.wrb-stories__panel{max-width:62ch}
+.wrb-stories__panel h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wrb-stories__panel p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
+  line-height:1.5;color:var(--text-body)}
+
+/* Columns under hairlines rather than bordered cards — the same feed, drawn the
+   way this variation draws everything else. */
+.wrb-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;margin:0;padding:0}
+
+.wrb-feed__col{display:flex;flex-direction:column;gap:var(--space-4);
+  padding-top:var(--space-5);border-top:2px dashed var(--border-default)}
+
+.wrb-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wrb-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.wrb-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wrb-feed__lines i:nth-child(2){width:92%}
+.wrb-feed__lines i:nth-child(3){width:78%}
+.wrb-feed__lines i:nth-child(4){width:46%}
+
+@media (max-width:780px){
+  .wrb-feed{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ====================== 7 · Articles and research ======================== */
+
+.wrb-latest{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.wrb-latest__head{max-width:62ch;margin-bottom:0}
+.wrb-latest__head h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wrb-latest__head p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+.wrb-stubs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+
+.wrb-stub{display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6);border:1px dashed var(--border-default);
+  border-radius:var(--radius-md)}
+
+.wrb-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wrb-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
+.wrb-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wrb-stub__lines i:nth-child(1){width:76%}
+.wrb-stub__lines i:nth-child(2){width:42%}
+
+.wrb-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+@media (max-width:620px){
+  .wrb-stubs{grid-template-columns:minmax(0,1fr)}
+}

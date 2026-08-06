@@ -1,0 +1,146 @@
+<!-- The episode library, and the roadmap’s own suggestion built rather than
+     described: "have Paolo create a database where people can search or filter
+     for previous podcasts based on tags (topic/guest/part of Mississippi)."
+
+     NO SCRIPT. The filtering is :has() over real checkboxes, the same mechanism
+     the review index uses, and Clear is a native <button type="reset"> — which is
+     why the <form> is load-bearing rather than decoration. Where :has() is
+     missing the rail hides itself and the full library stays on the page.
+
+     NINE PLACEHOLDER EPISODES, one for every topic-and-guest pair, which is not
+     an arbitrary number: with all nine pairs present, no combination of ticks can
+     ever return an empty grid, so the demo cannot show Empower a dead end that
+     the real library would not have. The cards carry no titles, dates or guest
+     names — those are the client’s content, and an invented episode title is the
+     one kind of placeholder that reads as finished work. -->
+<section class="pca-library" aria-labelledby="library-title">
+  <div class="em-container">
+    <div class="pca-library__head" data-reveal-group>
+      <h2 id="library-title" data-reveal="rise">Explore More Episodes</h2>
+      <p data-reveal="rise">Discover more conversations about the people, ideas, and solutions shaping Mississippi’s future.</p>
+    </div>
+
+    <p class="pca-libnote">The library below is a live query in WordPress. The nine cards are placeholders — no episode titles, dates or guest names are invented here — but the filter is real: it is the tag search the roadmap asks for, working without JavaScript. Tags shown are the three solution areas and the three kinds of guest the roadmap names.</p>
+
+    <div class="pca-catalogue">
+      <form class="pca-facets">
+        <details class="pca-facets__panel" open>
+          <summary class="pca-facets__summary">
+            <span>Filter episodes</span>
+            <span class="pca-facets__caret" aria-hidden="true"></span>
+          </summary>
+
+          <div class="pca-facets__body">
+            <fieldset class="pca-facet">
+              <legend>Topic</legend>
+              <div class="pca-check">
+                <input class="pca-check__input pca-topic" type="checkbox" id="pa-t-education">
+                <label class="pca-check__label" for="pa-t-education">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Quality Education
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+              <div class="pca-check">
+                <input class="pca-check__input pca-topic" type="checkbox" id="pa-t-work">
+                <label class="pca-check__label" for="pa-t-work">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Meaningful Work
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+              <div class="pca-check">
+                <input class="pca-check__input pca-topic" type="checkbox" id="pa-t-safety">
+                <label class="pca-check__label" for="pa-t-safety">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Public Safety
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="pca-facet">
+              <legend>Guest</legend>
+              <div class="pca-check">
+                <input class="pca-check__input pca-guest" type="checkbox" id="pa-g-lawmaker">
+                <label class="pca-check__label" for="pa-g-lawmaker">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Lawmakers
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+              <div class="pca-check">
+                <input class="pca-check__input pca-guest" type="checkbox" id="pa-g-expert">
+                <label class="pca-check__label" for="pa-g-expert">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Policy experts
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+              <div class="pca-check">
+                <input class="pca-check__input pca-guest" type="checkbox" id="pa-g-leader">
+                <label class="pca-check__label" for="pa-g-leader">
+                  <span class="pca-check__box" aria-hidden="true"></span>
+                  Community leaders
+                  <span class="pca-check__n">3</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <button class="pca-facets__clear" type="reset">Clear filters</button>
+          </div>
+        </details>
+      </form>
+
+      <ul class="pca-eps" data-reveal-group>
+        <li class="pca-ep" data-topic="education" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Lawmaker</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="education" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Policy expert</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="education" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Community leader</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+
+        <li class="pca-ep" data-topic="work" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Lawmaker</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="work" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Policy expert</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="work" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Community leader</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+
+        <li class="pca-ep" data-topic="safety" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Public Safety</span><span>Lawmaker</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="safety" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Public Safety</span><span>Policy expert</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+        <li class="pca-ep" data-topic="safety" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+          <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="pca-ep__tags"><span>Public Safety</span><span>Community leader</span></span>
+          <span class="pca-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

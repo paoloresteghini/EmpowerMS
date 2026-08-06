@@ -1,0 +1,35 @@
+<!-- Navy holds the top third. The headline sits on it, the photograph is an inset
+     plate beside the words (no text on the picture, anywhere on this page), and
+     the navy’s bottom edge carries the thing neither variation A nor B has: a
+     real rail to the five work areas.
+
+     The rail is NAVIGATION, not decoration and not a set of section numbers —
+     five areas is more than a reader will scroll on a phone to survey, and the
+     labels on it are the roadmap’s own. Real anchors, so it works with no
+     JavaScript, and each target carries scroll-margin so the sticky header does
+     not land on the heading it just jumped to. -->
+<section class="wkc-hero" aria-labelledby="hero-title" data-reveal-entrance>
+  <div class="em-container">
+    <div class="wkc-hero__grid">
+      <div class="wkc-hero__copy" data-reveal-group>
+        <p class="wkc-hero__eyebrow" data-reveal="rise">Meaningful Work</p>
+        <h1 id="hero-title" data-reveal="rise">Work Should Open Doors to Opportunity</h1>
+      </div>
+
+      <figure class="wkc-hero__media" data-reveal="clip">
+        <img src="../assets/photography/worker-workshop-bw.jpg" alt="A young man working at a computer in an open-plan office" width="918" height="620" fetchpriority="high" decoding="async">
+      </figure>
+    </div>
+
+    <nav class="wkc-rail" aria-label="The five areas of this work">
+      <p class="wkc-rail__label" id="rail-label">Jump to</p>
+      <ul aria-labelledby="rail-label">
+        <li><a href="#area-participation">Workforce Participation</a></li>
+        <li><a href="#area-skills">Skills &amp; Career Pathways</a></li>
+        <li><a href="#area-requirements">Requirements to Work</a></li>
+        <li><a href="#area-benefits">The Benefits Cliff</a></li>
+        <li><a href="#area-economy">Economic Opportunity</a></li>
+      </ul>
+    </nav>
+  </div>
+</section>

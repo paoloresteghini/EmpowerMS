@@ -1,0 +1,277 @@
+/* Capitol Chat — variation A, "The Dome".
+
+   Built with the impeccable craft flow on 2026-08-05. Three sections, because the
+   roadmap's Capitol Chat tab has three.
+
+   THE ARGUMENT: this show is a five-minute weekly briefing, and the page should
+   feel like one. The headline is a question, so it is set centred — nothing else in
+   this build centres a hero, and a centred question reads as one being asked
+   rather than one being answered. Under it, a triptych where the Capitol
+   photography will go. Then one passage about the show, and then the thing a
+   returning listener actually came for: a dated list, most recent first.
+
+   WHY IT IS NOT A PODCAST PAGE. The Empower Podcast's readings both lead with
+   YouTube and both present episodes as cards. This page has no video affordance at
+   all — the roadmap gives it one button, Listen Now, and describes audio players —
+   and its library is a dense dated list, because a card the size of a long-form
+   interview's would say the wrong thing about a five-minute update.
+
+   COLOUR STRATEGY: restrained, which is the right register for a briefing. The
+   page is light throughout, on --surface-tint at the top so the hero reads as a
+   masthead, and navy appears only as ink and as the row rules. Orange does three
+   jobs: the one filled action, the play glyphs, the checked tag.
+
+   NO SIDE STRIPES, NO SECTION EYEBROWS beyond the one naming the show, NO
+   NUMERALS.
+
+   ORANGE AND CONTRAST, from css/site.css:
+     - Small orange text on light uses --em-orange-ink (5.17:1 on white, 4.54:1 on
+       the tint, which this hero sits on).
+     - The checked tag is white on --orange-700 (5.55:1); a 15px label cannot
+       carry the brand value.
+     - The play glyph is a white triangle on an --em-orange fill: a graphic, so
+       the 3:1 non-text threshold applies.
+
+   NO NEW SCRIPTS. The filter is :has() over real checkboxes with a native reset.
+   Reveals are the existing layer, which ships visible. Nothing carrying data-reveal
+   declares its own transition — motion.css would replace it — so the tags and rows,
+   which do own transitions, sit outside the reveal system.
+
+   ELEMENTOR NOTE: three sections, three Elementor sections. The filter is the one
+   thing that will not survive as-is (it needs the <form> wrapper and :has()
+   reaching from body to the rows); in WordPress it becomes the theme's filter
+   widget or a small script.
+
+   Namespaced .cca- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.cca-eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.cca-photonote,.cca-libnote{font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+.cca-photonote::before,.cca-libnote::before{content:"";display:block;
+  width:56px;height:4px;margin-bottom:var(--space-4);
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* ============================== 1 · Hero ================================= */
+
+.cca-hero{padding:clamp(var(--space-11),7vw,var(--space-13)) 0
+  clamp(var(--space-10),6vw,var(--space-12));background:var(--surface-tint)}
+
+/* Centred, and the only centred hero in the build. The measure is on the
+   elements themselves so each one centres on its own width. */
+.cca-hero__copy{text-align:center}
+.cca-hero__copy .cca-eyebrow{margin-bottom:var(--space-4)}
+
+.cca-hero h1{margin:0 auto var(--space-6);max-width:22ch;
+  font-size:clamp(2.2rem,1.15rem + 3.8vw,4rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.04em;
+  color:var(--text-strong);text-wrap:balance}
+
+.cca-hero__lede{margin:0 auto clamp(var(--space-8),4vw,var(--space-10));
+  max-width:58ch;font-size:var(--fs-lead);line-height:1.5;color:var(--text-body)}
+
+.cca-hero__action{margin:0}
+
+/* ---- The triptych, where the Capitol photography will go ---- */
+
+.cca-triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--space-5);list-style:none;
+  margin:clamp(var(--space-9),5vw,var(--space-11)) 0 0;padding:0}
+
+/* 3:2 and short on purpose. A tall placeholder is a void; a letterbox reads as a
+   slot. The first one carries the caption so the row explains itself without
+   repeating the same words three times. */
+.cca-plate{display:grid;place-items:center;aspect-ratio:3/2;
+  padding:var(--space-4);text-align:center;
+  border:2px dashed var(--border-default);border-radius:var(--radius-media);
+  background:repeating-linear-gradient(135deg,
+    rgba(0,60,80,.05) 0 10px, rgba(0,60,80,0) 10px 20px)}
+.cca-plate span{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.cca-photonote{margin:var(--space-6) 0 0;max-width:76ch}
+
+@media (max-width:720px){
+  .cca-triptych{grid-template-columns:minmax(0,1fr)}
+  .cca-plate{aspect-ratio:16/9}
+  /* One under another, so only the first needs to say what they are. */
+  .cca-plate:not(:first-child){display:none}
+}
+
+/* ========================== 2 · About the show =========================== */
+
+.cca-about{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.cca-about__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
+
+.cca-about__grid h2{margin:0;max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong);text-wrap:balance}
+
+.cca-about__copy{min-width:0}
+.cca-about__copy p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.cca-about__copy p:last-child{margin-bottom:0}
+
+/* The show's promise — under five minutes — lives inside this sentence, so the
+   sentence gets the weight rather than being broken up to extract the phrase. */
+.cca-about__copy .cca-about__claim{margin-bottom:var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.625rem);line-height:1.35;
+  color:var(--text-strong)}
+
+.cca-about__copy .cca-about__where{
+  margin-top:clamp(var(--space-7),3.4vw,var(--space-9));
+  padding-top:clamp(var(--space-6),3vw,var(--space-7));
+  border-top:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
+
+@media (max-width:900px){
+  .cca-about__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+
+/* ======================= 3 · The despatch list =========================== */
+
+.cca-library{padding:clamp(var(--space-11),6vw,var(--space-13)) 0
+  clamp(var(--space-12),7vw,var(--space-14));background:var(--surface-subtle)}
+
+.cca-library__head{margin:0;max-width:24ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+/* The roadmap gives this section a heading and no intro paragraph. None is
+   invented, so the note below carries straight on. */
+
+.cca-libnote{margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0
+  clamp(var(--space-6),3vw,var(--space-7));max-width:76ch}
+
+/* ---- The filter ---- */
+
+.cca-filter{display:grid;grid-template-columns:auto auto minmax(0,1fr);
+  gap:clamp(var(--space-5),2.4vw,var(--space-8));align-items:end;
+  padding:clamp(var(--space-5),2.6vw,var(--space-6));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-page)}
+
+.cca-filter__group{margin:0;padding:0;border:0;min-width:0}
+.cca-filter__group legend{padding:0;margin-bottom:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+.cca-filter__row{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+
+.cca-tag{position:relative}
+/* Focusable: a display:none input cannot be reached by keyboard. */
+.cca-tag__input{position:absolute;width:1px;height:1px;opacity:0}
+
+.cca-tag__label{display:inline-flex;align-items:center;min-height:40px;
+  padding:0 var(--space-5);cursor:pointer;
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:var(--surface-page);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-body);
+  transition:background var(--dur) var(--ease-out),
+             border-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out)}
+.cca-tag__label:hover{border-color:var(--em-orange);color:var(--text-strong)}
+.cca-tag__input:checked + .cca-tag__label{background:var(--orange-700);
+  border-color:var(--orange-700);color:var(--white)}
+.cca-tag__input:focus-visible + .cca-tag__label{
+  outline:3px solid var(--focus-ring);outline-offset:2px}
+
+.cca-filter__clear{min-height:40px;justify-self:end;padding:0 var(--space-5);
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:transparent;cursor:pointer;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-strong);
+  transition:background var(--dur) var(--ease-out)}
+.cca-filter__clear:hover{background:var(--surface-subtle)}
+
+/* ---- The filtering ----
+
+   The same shape as the podcast pages: AND across the two groups, OR inside each,
+   hide-only rules so two active groups intersect instead of fighting. Six rules,
+   no script. A hide-everything-then-reveal shape would turn the second group's
+   reveals into an OR.
+
+   Trade, as everywhere else here: the state does not survive a reload and a
+   filtered view cannot be linked to. */
+body:has(.cca-topic:checked):not(:has(#ca-t-education:checked)) .cca-ep[data-topic="education"],
+body:has(.cca-topic:checked):not(:has(#ca-t-work:checked)) .cca-ep[data-topic="work"],
+body:has(.cca-topic:checked):not(:has(#ca-t-safety:checked)) .cca-ep[data-topic="safety"],
+body:has(.cca-session:checked):not(:has(#ca-s-2026:checked)) .cca-ep[data-session="2026"],
+body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-session="2025"]{
+  display:none}
+
+@supports not selector(body:has(a)){
+  .cca-filter{display:none}
+}
+
+/* ---- The rows ---- */
+
+.cca-eps{list-style:none;margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0 0;
+  padding:0;border-top:1px solid var(--border-default)}
+
+/* One row, five columns: play, title, topic, date, session. The title column is
+   the flexible one because it is the only one whose content varies in length. */
+.cca-ep{display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto auto;
+  gap:var(--space-5);align-items:center;
+  padding:var(--space-5) var(--space-4);
+  border-bottom:1px solid var(--border-default);
+  background:var(--surface-page);
+  transition:background var(--dur) var(--ease-out)}
+.cca-ep:hover{background:var(--surface-tint)}
+
+.cca-ep__play{display:grid;place-items:center;width:40px;height:40px;
+  border-radius:var(--radius-pill);background:var(--em-orange);color:var(--white)}
+.cca-ep__play svg{width:16px;height:16px}
+
+/* The stub fills its column, and the widths VARY per row. At a fixed 34ch it
+   left a dead gap between the title and the metadata, and six identical bars read
+   as a table of empty cells rather than as six episodes whose titles are not in
+   yet. Varying them is the difference between a skeleton and a fault. */
+.cca-ep__title i{display:block;height:12px;width:88%;
+  border-radius:var(--radius-xs);background:var(--grey-300)}
+.cca-ep:nth-child(2) .cca-ep__title i{width:72%}
+.cca-ep:nth-child(3) .cca-ep__title i{width:94%}
+.cca-ep:nth-child(4) .cca-ep__title i{width:66%}
+.cca-ep:nth-child(5) .cca-ep__title i{width:82%}
+.cca-ep:nth-child(6) .cca-ep__title i{width:76%}
+
+.cca-ep__tag{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);color:var(--em-orange-ink);white-space:nowrap}
+
+/* The date column is a stub of its own rather than blank: that is where the real
+   date goes, and an empty column reads as a layout fault. */
+.cca-ep__date i{display:block;height:12px;width:9ch;
+  border-radius:var(--radius-xs);background:var(--grey-300)}
+
+.cca-ep__session{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+
+@media (max-width:860px){
+  .cca-filter{grid-template-columns:minmax(0,1fr)}
+  .cca-filter__clear{justify-self:stretch}
+  /* Five columns do not fit a phone. Play stays with the title, the metadata
+     drops to a second line under them. */
+  .cca-ep{grid-template-columns:auto minmax(0,1fr);gap:var(--space-4) var(--space-5)}
+  .cca-ep__tag{grid-column:2}
+  .cca-ep__date{grid-column:2}
+  .cca-ep__session{grid-column:2}
+  .cca-ep__play{grid-row:1 / span 4}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cca-tag__label,.cca-filter__clear,.cca-ep{transition:none}
+}

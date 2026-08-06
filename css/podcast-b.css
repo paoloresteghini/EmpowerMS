@@ -1,0 +1,270 @@
+/* The Empower Podcast — variation B, "On the Record".
+
+   Built with the impeccable craft flow on 2026-08-05, alongside variation A and
+   deliberately not the same page.
+
+   THE ARGUMENT: the headline IS the hero. The roadmap's opening line is three
+   sentences, so it is set as three lines at display size on white with the third
+   in orange, because that third sentence — Real Conversations — is the promise the
+   other two build to. Variation A sets the same headline as a block of display
+   type on navy beside a contact sheet. Here the picture arrives after the words as
+   one window-wide band, the show's description is the page's one navy panel, and
+   the library filters from a row of chips across the top rather than a rail down
+   the side.
+
+   COLOUR STRATEGY: committed, inverted from variation A. White carries the page,
+   navy arrives once as an object, orange marks the third sentence, the one filled
+   action, the play glyphs and the checked chips.
+
+   NO SIDE STRIPES, NO SECTION EYEBROWS beyond the one naming the show, NO
+   NUMERALS.
+
+   ORANGE AND CONTRAST, from css/site.css:
+     - "Real Conversations." is display type at 40px+ and 800 weight, so the 3:1
+       large-text threshold applies and it can carry the brand orange.
+     - Small orange text on light uses --em-orange-ink (5.17:1); orange on navy
+       uses --orange-300 (5.44:1); the checked chip is white on --orange-700
+       (5.55:1), because a chip label is 15px and the brand value is 3.59:1.
+
+   NO NEW SCRIPTS. The filter is :has() over real checkboxes; Clear is a native
+   form reset. Reveals are the existing layer. Nothing carrying data-reveal
+   declares its own transition — motion.css would replace it — so the chips and
+   card hovers, which do own transitions, sit outside the reveal system.
+
+   ELEMENTOR NOTE: three sections, three Elementor sections. The filter is the one
+   thing that does not survive the conversion as-is (it needs the <form> wrapper
+   and :has() reaching from body to the cards); in WordPress it becomes the
+   theme's filter widget or a small script.
+
+   Namespaced .pcb- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.pcb-eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.pcb-photonote,.pcb-libnote{font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+.pcb-photonote::before,.pcb-libnote::before{content:"";display:block;
+  width:56px;height:4px;margin-bottom:var(--space-4);
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* ============================== 1 · Hero ================================= */
+
+.pcb-hero{padding:clamp(var(--space-11),7vw,var(--space-14)) 0
+  clamp(var(--space-10),6vw,var(--space-12));background:var(--surface-page)}
+
+.pcb-hero__copy{max-width:none}
+
+/* Three sentences, three lines. The spans are display:block rather than <br>
+   because the break is typographic, not a line in the copy — and at narrow widths
+   each sentence is still free to wrap within its own line. */
+.pcb-hero h1{margin:0;
+  font-size:clamp(2.1rem,1rem + 3.9vw,4.25rem);
+  font-weight:var(--fw-black);line-height:1.02;letter-spacing:-.04em;
+  color:var(--text-strong)}
+.pcb-hero h1 span,.pcb-hero h1 em{display:block;font-style:normal}
+.pcb-hero h1 em{color:var(--em-orange)}
+
+.pcb-hero__rule{height:4px;width:min(100%,280px);
+  margin:clamp(var(--space-7),4vw,var(--space-9)) 0 0;
+  background:var(--em-orange)}
+
+.pcb-hero__lede{margin:clamp(var(--space-7),4vw,var(--space-9)) 0 0;
+  max-width:62ch;font-size:var(--fs-lead);line-height:1.5;color:var(--text-body)}
+
+.pcb-hero__actions{display:flex;flex-wrap:wrap;gap:var(--space-4);
+  margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+/* The photograph that does not exist yet.
+
+   3/1, not the 21/9 this started at: at full container width 21/9 is over 500px
+   of hatched nothing and it stops reading as "a picture goes here" and starts
+   reading as a broken page. A letterbox says the same thing at half the cost,
+   and it is close enough to the crop a behind-the-scenes band will actually take.
+
+   The caption inside is the point. A hatched rectangle explains itself only to
+   whoever built it; two words inside it explain it to everyone, and the note
+   underneath carries the detail. */
+.pcb-band{display:grid;place-items:center;aspect-ratio:3/1;margin:0;
+  margin-top:clamp(var(--space-10),6vw,var(--space-12));
+  border:2px dashed var(--border-default);border-radius:var(--radius-panel);
+  background:repeating-linear-gradient(135deg,
+    var(--surface-subtle) 0 10px, var(--surface-page) 10px 20px)}
+.pcb-band figcaption{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.pcb-photonote{margin:var(--space-6) 0 0;max-width:76ch}
+
+@media (max-width:720px){
+  .pcb-band{aspect-ratio:16/9}
+}
+
+/* ========================== 2 · About the show =========================== */
+
+.pcb-about{padding:0 0 clamp(var(--space-12),7vw,var(--space-14));
+  background:var(--surface-page)}
+
+.pcb-about__panel{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start;
+  padding:clamp(var(--space-9),5vw,var(--space-13));
+  border-radius:var(--radius-panel);
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.pcb-about__panel h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.875rem,1.15rem + 2.2vw,3rem);line-height:1.02;
+  letter-spacing:-.035em;color:var(--white);text-wrap:balance}
+
+.pcb-about__copy{min-width:0}
+.pcb-about__copy p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:1.65;color:var(--text-inverse-muted)}
+.pcb-about__copy p:last-child{margin-bottom:0}
+/* Light type on dark reads lighter than it is, so the measure gets more leading
+   than the same paragraph would take on white (1.65 against 1.6). */
+
+.pcb-about__copy a{color:var(--orange-300);text-decoration:underline;
+  text-underline-offset:3px;text-decoration-thickness:2px}
+.pcb-about__copy a:hover{color:var(--white)}
+
+/* Spans the full width of the panel under a hairline: it is the line that tells
+   you where to go, and it belongs to both columns. */
+.pcb-about__where{grid-column:1 / -1;
+  margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0;
+  padding-top:clamp(var(--space-6),3vw,var(--space-7));
+  border-top:1px solid var(--border-inverse);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-h5);line-height:1.35;color:var(--orange-300)}
+
+@media (max-width:900px){
+  .pcb-about__panel{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+
+/* ========================= 3 · The episode library ======================= */
+
+.pcb-library{padding:0 0 clamp(var(--space-12),7vw,var(--space-14));
+  background:var(--surface-page)}
+
+.pcb-library__head{max-width:64ch}
+.pcb-library__head h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.pcb-library__head p{margin:0;font-size:var(--fs-lead);line-height:1.5;
+  color:var(--text-body)}
+
+.pcb-libnote{margin:clamp(var(--space-8),4vw,var(--space-10)) 0
+  clamp(var(--space-6),3vw,var(--space-7));max-width:76ch}
+
+/* ---- The chip row ---- */
+
+/* Grid, not flex-wrap. On flex the two groups filled the row and pushed Clear
+   onto a line of its own, right-aligned under them, which reads as a mistake
+   rather than as a control. Three explicit tracks keep it on the baseline with
+   the groups it clears. */
+.pcb-chips{display:grid;grid-template-columns:auto auto minmax(0,1fr);
+  gap:clamp(var(--space-5),2.4vw,var(--space-8));align-items:end;
+  padding:clamp(var(--space-6),3vw,var(--space-7));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-subtle)}
+
+.pcb-chipset{margin:0;padding:0;border:0;min-width:0}
+.pcb-chipset legend{padding:0;margin-bottom:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+.pcb-chipset__row{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+
+.pcb-chip{position:relative}
+/* Focusable, not display:none — a hidden input cannot be reached by keyboard. */
+.pcb-chip__input{position:absolute;width:1px;height:1px;opacity:0}
+
+.pcb-chip__label{display:inline-flex;align-items:center;min-height:40px;
+  padding:0 var(--space-5);cursor:pointer;
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:var(--surface-page);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-body);
+  transition:background var(--dur) var(--ease-out),
+             border-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out)}
+.pcb-chip__label:hover{border-color:var(--em-orange);color:var(--text-strong)}
+
+/* White on --orange-700 (5.55:1). A 15px label cannot use the brand value. */
+.pcb-chip__input:checked + .pcb-chip__label{background:var(--orange-700);
+  border-color:var(--orange-700);color:var(--white)}
+.pcb-chip__input:focus-visible + .pcb-chip__label{
+  outline:3px solid var(--focus-ring);outline-offset:2px}
+
+.pcb-chips__clear{min-height:40px;justify-self:end;padding:0 var(--space-5);
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:transparent;cursor:pointer;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-strong);
+  transition:background var(--dur) var(--ease-out)}
+.pcb-chips__clear:hover{background:var(--surface-page)}
+
+/* ---- The filtering ----
+
+   Identical mechanism to variation A, different UI on top of it: AND across the
+   two groups, OR inside each, six rules, no script. Each group contributes only
+   HIDES ("this group is in use and this value is not ticked"), which is what makes
+   two groups intersect rather than fight — a hide-everything-then-reveal shape
+   would turn the second group's reveals into an OR.
+
+   Nothing ticked means no rule matches and the whole library shows. The trade,
+   the same as the review index: state does not survive a reload and a filtered
+   view cannot be linked to. */
+body:has(.pcb-topic:checked):not(:has(#pb-t-education:checked)) .pcb-ep[data-topic="education"],
+body:has(.pcb-topic:checked):not(:has(#pb-t-work:checked)) .pcb-ep[data-topic="work"],
+body:has(.pcb-topic:checked):not(:has(#pb-t-safety:checked)) .pcb-ep[data-topic="safety"],
+body:has(.pcb-guest:checked):not(:has(#pb-g-lawmaker:checked)) .pcb-ep[data-guest="lawmaker"],
+body:has(.pcb-guest:checked):not(:has(#pb-g-expert:checked)) .pcb-ep[data-guest="expert"],
+body:has(.pcb-guest:checked):not(:has(#pb-g-leader:checked)) .pcb-ep[data-guest="leader"]{
+  display:none}
+
+/* No :has(), no chip row. The library itself is unaffected. */
+@supports not selector(body:has(a)){
+  .pcb-chips{display:none}
+}
+
+/* ---- The episodes, two up ---- */
+
+.pcb-eps{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-6));
+  list-style:none;margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0 0;padding:0}
+
+.pcb-ep{display:grid;grid-template-columns:auto minmax(0,1fr);
+  gap:var(--space-5);align-items:center;
+  padding:var(--space-6);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-card);background:var(--surface-page)}
+
+.pcb-ep__play{display:grid;place-items:center;width:48px;height:48px;flex:none;
+  border-radius:var(--radius-pill);background:var(--em-orange);color:var(--white)}
+.pcb-ep__play svg{width:20px;height:20px}
+
+.pcb-ep__body{display:flex;flex-direction:column;gap:var(--space-3);min-width:0}
+
+.pcb-ep__tags{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.pcb-ep__tags span{padding:4px 10px;border-radius:var(--radius-pill);
+  background:var(--surface-subtle);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);color:var(--em-orange-ink)}
+
+.pcb-ep__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.pcb-ep__lines i{display:block;height:11px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.pcb-ep__lines i:nth-child(2){width:48%}
+
+@media (max-width:860px){
+  /* One control per row once the two groups stop fitting side by side. */
+  .pcb-chips{grid-template-columns:minmax(0,1fr)}
+  .pcb-chips__clear{justify-self:stretch}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .pcb-chip__label,.pcb-chips__clear{transition:none}
+}

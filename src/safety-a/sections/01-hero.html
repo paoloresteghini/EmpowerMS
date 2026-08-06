@@ -1,0 +1,19 @@
+<!-- Photograph across the full window with the headline on a navy panel inset
+     INSIDE it, not over it. The panel is opaque, so no word on this page ever
+     depends on what is behind it — the one accessibility question the test
+     suite cannot answer for us is text over photography, so this variation
+     avoids the question rather than guessing at it.
+
+     The roadmap gives this page one hero line and no subhead. -->
+<section class="psa-hero" aria-labelledby="hero-title" data-reveal-entrance>
+  <figure class="psa-hero__media" data-reveal="clip">
+    <img src="../assets/photography/children-running-parent.jpg" alt="An adult and two children playing football in a field at sunset" width="1243" height="1578" fetchpriority="high" decoding="async">
+  </figure>
+
+  <div class="em-container">
+    <div class="psa-hero__panel" data-reveal-group>
+      <p class="psa-eyebrow" data-reveal="rise">Public Safety</p>
+      <h1 id="hero-title" data-reveal="rise">Every Mississippian Deserves to Feel Safe at Home</h1>
+    </div>
+  </div>
+</section>

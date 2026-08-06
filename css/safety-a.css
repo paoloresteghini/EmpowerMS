@@ -1,0 +1,387 @@
+/* Public Safety — variation A, "The Neighbourhood".
+
+   The argument this variation makes: safety is a place, so the page is built out
+   of places. A window-wide photograph with the headline on a navy block standing
+   on its bottom edge; the vision and the problem held to opposite sides of the
+   page, facing each other across it; the four approaches laid as a course of
+   brick with no mortar gap; the four work areas standing as four posts divided
+   by hairlines, each capped by a navy header.
+
+   SIGNATURE, so the three variations cannot be mistaken for each other: the
+   offset brick course and the four capped posts. Variation B has neither — it
+   runs the four approaches as numbered rows on a light break and the four work
+   areas as lit cards on a dark field. Variation C runs them as four wide rows
+   with the name at display size in a left column.
+
+   COLOUR: light and warm, navy used as punctuation (the hero block, four post
+   caps, the stories band). Variation B inverts it: dark page, light breaks.
+
+   NOTHING HERE IS A CARD. That is the correction this page needed. It shipped as
+   three card grids in a row — four rounded plates, four bordered columns, three
+   feed tiles — which is the shape the eye reads as generated rather than
+   composed. The plates became a course of brick that tiles with no gaps, the
+   columns became posts divided by hairlines with no border of their own, and the
+   feed tiles lost their boxes. The compositions are the same ideas; what changed
+   is that they are now made of edges rather than of boxes.
+
+   NO NUMERALS, the same call variation C makes. Four simultaneous commitments,
+   not a sequence: numbering them asserts an order the roadmap does not have, and
+   a large orange numeral on each plate was the strongest single generated-looking
+   move on the page.
+
+   ORANGE IS SCARCE. It marks the block that turns the argument, the hero kicker,
+   the four commitments the roadmap itself calls out, and one button. It used to
+   also carry four numerals and six feed labels, at which point it had stopped
+   meaning "look here" and become the page's body colour. Placeholder labels are
+   muted grey now.
+
+   TEXT OVER PHOTOGRAPHY: never, anywhere on this page. The hero block is opaque
+   navy standing inside the picture rather than a caption laid over it. Contrast
+   over photography is the one thing the test suite here cannot measure, so this
+   variation removes the question instead of answering it by eye.
+
+   ORANGE AND CONTRAST, from css/site.css:
+     - Small orange text on light uses --em-orange-ink (5.17:1 on white, 4.54:1
+       on tint); white-on-orange labels use --orange-700 (5.55:1); orange on
+       navy uses --orange-300 (5.44:1).
+
+   TYPE LADDER. The page used to set five section headings at one size, so
+   nothing on it was louder than anything else and the whole page read flat.
+   The ladder now runs: headline, the turn ("Mississippi can build safer,
+   stronger communities."), section heads, then the two card-scale headings.
+
+   NO NEW SCRIPTS. Reveals are the existing layer, and nothing carrying
+   data-reveal declares its own transition — motion.css would overwrite it.
+   Reveals are on section heads and list items only; every paragraph carrying
+   its own identical rise was the uniform-entrance reflex.
+
+   ELEMENTOR NOTE: the hero block is a child of the hero, the post caps are
+   children of their own posts, and no element crosses a section boundary. The
+   hairlines between posts are a 1px grid gap over a coloured grid background,
+   which survives the conversion as a styled columns widget.
+
+   Namespaced .psa- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.psa-eyebrow{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+.psa-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
+
+/* One step below the hero and one above the section heads. */
+.psa-head{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--text-strong);text-wrap:balance}
+
+.psa-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
+  padding-top:var(--space-4);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
+.psa-feednote::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:var(--space-4);border-radius:var(--radius-pill);background:var(--em-orange)}
+
+
+/* ============================== 1 · Hero ================================= */
+
+.psa-hero{position:relative;display:flex;align-items:flex-end;
+  min-height:clamp(400px,40vw,500px);overflow:hidden;
+  background:var(--surface-navy-deep)}
+
+.psa-hero__media{position:absolute;inset:0;margin:0}
+/* 21%, not centred, against a deliberately short frame. The picture is a tall
+   backlit portrait in a wide box, so the crop is the composition and the only
+   axis that exists: cover scales it by width, which means object-position's
+   horizontal value does nothing here and the vertical value does everything.
+
+   At 50% the crop lands on the adult's chest and cuts the heads off. Below
+   about 15% the frame fills with blown-out sky and the figures sink to the
+   bottom edge. 21% against a 400-500px frame keeps the heads clear of the top
+   without handing half the hero to white sky. */
+.psa-hero__media img{display:block;width:100%;height:100%;object-fit:cover;
+  object-position:50% 21%}
+
+/* No bottom padding: the block stands ON the hero's bottom edge rather than
+   floating clear of it. A navy rectangle with air all the way round is a card
+   dropped on a photograph; one that meets an edge is a building on a ground
+   line, which is the composition this page is named for. */
+.psa-hero > .em-container{position:relative;z-index:1;
+  padding-top:clamp(var(--space-11),8vw,var(--space-14))}
+
+/* Opaque, and inside the picture rather than over it. Square along the bottom,
+   where it meets the ground; rounded on top, where it does not. */
+.psa-hero__panel{max-width:min(100%,40rem);
+  padding:clamp(var(--space-7),4vw,var(--space-10));
+  border-radius:var(--radius-panel) var(--radius-panel) 0 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.psa-hero h1{margin:0;font-size:clamp(2.1rem,1.2rem + 3.4vw,3.75rem);
+  font-weight:var(--fw-black);line-height:1;letter-spacing:-.035em;
+  color:var(--white);text-wrap:balance}
+
+@media (max-width:760px){
+  .psa-hero{display:block;min-height:0}
+  .psa-hero__media{position:static}
+  .psa-hero__media img{aspect-ratio:4/3;height:auto}
+  .psa-hero > .em-container{padding-top:0;padding-left:0;padding-right:0}
+  /* The block climbs the bottom of the photograph and runs the full width of
+     the window — the same "standing on the ground line" relationship at a width
+     where an inset block would leave the picture as a thin strip. */
+  .psa-hero__panel{max-width:none;border-radius:0;
+    margin-top:calc(-1 * clamp(var(--space-6),5vw,var(--space-9)));
+    padding-left:var(--gutter);padding-right:var(--gutter)}
+}
+
+/* ==================== 2, 3 · The two facing blocks ======================= */
+
+/* These were two rounded panels, each a near-white box on a near-white field.
+   The box was invisible at that contrast and the left/right hold it was
+   supposed to express went with it, so both sections read as one undifferentiated
+   run of text in a faint rectangle. The boxes are gone: the two blocks are set
+   directly on their own fields, held to opposite sides, and the fields
+   themselves (white, then tint) carry the change. */
+.psa-panels{padding:clamp(var(--space-12),7vw,var(--space-14)) 0}
+.psa-panels--vision{background:var(--surface-page)}
+.psa-panels--problem{background:var(--surface-subtle)}
+
+.psa-panel{max-width:min(100%,46rem)}
+.psa-panel--left{margin-right:auto}
+.psa-panel--right{margin-left:auto}
+
+/* The mark sits ABOVE the heading, never down its left edge — a coloured
+   border-left thicker than a hairline is the callout-bar reflex and this build
+   bans it (there is a test); the 56x4 orange rule is the brand's own motif.
+
+   It marks the problem only. Marking both blocks made the mark scenery: with
+   the two feed notes below it the page carried four identical orange ticks and
+   none of them meant anything. This one marks the block the argument turns on. */
+.psa-panels--problem .psa-panel::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:clamp(var(--space-6),3vw,var(--space-8));
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+.psa-panel h2{margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--text-strong);text-wrap:balance}
+
+.psa-panel p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body);max-width:70ch}
+.psa-panel p:last-child{margin-bottom:0}
+/* Out-ranks the paragraph rule above it, or the lede flattens to body size. */
+.psa-panel .psa-lede{margin-bottom:var(--space-6)}
+
+/* The turn of the page, and the second-loudest thing on it after the headline.
+   --em-orange-ink because it sits on the subtle grey, where the brand value
+   measures 3.15:1. */
+.psa-panel .psa-turn{margin-top:var(--space-8);max-width:none;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.6rem,1.1rem + 1.8vw,2.5rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--em-orange-ink)}
+
+/* ====================== 4 · The offset brick course ====================== */
+
+.psa-bricks{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-tint)}
+
+.psa-bricks__head{margin:0 0 clamp(var(--space-8),4vw,var(--space-10));
+  max-width:26ch}
+
+/* No gaps and no radius on the individual plates. Four plates with air between
+   them are four cards however they are arranged; four that tile are a wall.
+
+   The joints are STAGGERED, which is the whole difference between a course of
+   brick and a 2x2 table. The first course splits down the middle, the second
+   splits at 35%, so no vertical joint runs through both — a stretcher bond.
+   With the joints aligned this read as a quartered plate, which is variation
+   work-c's move, not this one's.
+
+   Twenty columns because the two courses need different split points and a
+   grid has one set of column tracks: the bricks span it rather than sitting in
+   it. */
+.psa-bricks__grid{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));
+  gap:0;list-style:none;margin:0;padding:0;
+  border-radius:var(--radius-card);overflow:hidden}
+
+.psa-brick{padding:clamp(var(--space-7),3.4vw,var(--space-9));
+  background:var(--surface-page)}
+.psa-brick:nth-child(1){grid-column:1 / span 10}
+.psa-brick:nth-child(2){grid-column:11 / span 10;background:var(--surface-muted)}
+.psa-brick:nth-child(3){grid-column:1 / span 7;background:var(--surface-muted)}
+.psa-brick:nth-child(4){grid-column:8 / span 13}
+
+/* The offset, done as padding rather than as a margin. A margin would open a
+   gap in the wall and put the cards back; padding steps the COPY down half a
+   course while the plates themselves stay flush against each other. */
+.psa-brick:nth-child(even){padding-top:calc(clamp(var(--space-7),3.4vw,var(--space-9)) + clamp(var(--space-6),3vw,var(--space-9)))}
+.psa-brick:nth-child(odd){padding-bottom:calc(clamp(var(--space-7),3.4vw,var(--space-9)) + clamp(var(--space-6),3vw,var(--space-9)))}
+
+.psa-brick h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);line-height:1.2;letter-spacing:-.01em;
+  color:var(--text-strong);text-wrap:balance}
+
+.psa-brick p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+@media (max-width:760px){
+  /* One column: a bond needs two bricks to a course. The courses stack and
+     alternate top to bottom instead, and the stepped copy goes with them —
+     at this width the step is just an inconsistent gap. */
+  .psa-bricks__grid{grid-template-columns:minmax(0,1fr)}
+  .psa-brick:nth-child(1),
+  .psa-brick:nth-child(2),
+  .psa-brick:nth-child(3),
+  .psa-brick:nth-child(4){grid-column:1 / -1;
+    padding-top:clamp(var(--space-7),3.4vw,var(--space-9));
+    padding-bottom:clamp(var(--space-7),3.4vw,var(--space-9))}
+  .psa-brick:nth-child(2n){background:var(--surface-muted)}
+  .psa-brick:nth-child(2n+1){background:var(--surface-page)}
+}
+
+/* ========================= 5 · The four posts ============================ */
+
+.psa-posts{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.psa-posts__head{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start;
+  margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
+.psa-posts__intro{min-width:0}
+.psa-posts__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.psa-posts__intro p:last-child{margin-bottom:0}
+.psa-posts__intro .psa-lede{margin-bottom:var(--space-6)}
+
+/* Hairlines between the posts, not borders round them. The 1px gap over a
+   coloured grid background draws one rule between every pair of neighbours and
+   none round the outside, at every breakpoint, without a single nth-child rule
+   to undo at the wrap points. Four posts holding up a porch, which is the
+   argument the intro copy makes in words. */
+.psa-posts__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:1px;background:var(--border-subtle);
+  list-style:none;margin:0;padding:0}
+
+/* Four posts of equal height whatever their copy length: the cap is a fixed
+   block at the top and the body stretches, so the four bottoms line up. */
+.psa-post{display:flex;flex-direction:column;background:var(--surface-page)}
+
+.psa-post__label{margin:0;padding:var(--space-5) var(--space-6);
+  background:var(--surface-navy);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;line-height:1.3}
+
+/* Flex gap rather than margins on the children, because the commitment below
+   uses margin-top:auto to pin itself to the bottom — a margin on the paragraph
+   above it and an auto margin on itself cannot both be the spacing. The gap
+   holds the minimum; the auto margin takes up whatever is left. */
+.psa-post__body{display:flex;flex-direction:column;flex:1;
+  gap:var(--space-5);padding:clamp(var(--space-6),2.4vw,var(--space-7))}
+
+.psa-post__body h3{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h5);line-height:1.25;letter-spacing:-.01em;
+  color:var(--text-strong)}
+
+.psa-post__body p{margin:0;font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+/* Pushed to the bottom of the post, under a hairline, so the commitment sits in
+   the same place on all four columns however long the description above it is. */
+.psa-post__toward{margin-top:auto;padding-top:var(--space-5);
+  border-top:1px solid var(--border-default)}
+.psa-post__toward strong{color:var(--em-orange-ink);font-weight:var(--fw-bold)}
+
+@media (max-width:1100px){
+  .psa-posts__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .psa-posts__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+@media (max-width:620px){
+  .psa-posts__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ========================= 6 · Community stories ========================= */
+
+.psa-stories{background:var(--surface-page)}
+
+.psa-stories__band{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+.psa-stories__inner{max-width:64ch}
+.psa-stories__inner h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.6rem,1.05rem + 1.7vw,2.25rem);line-height:1.1;
+  letter-spacing:-.025em;color:var(--white);text-wrap:balance}
+.psa-stories__inner p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
+  line-height:1.55;color:var(--text-inverse-muted)}
+
+/* No box round a placeholder. These are three empty slots waiting for a feed,
+   and drawing a bordered rounded card round each one made the emptiest content
+   on the page into its third card grid. The dashed thumb says "picture missing"
+   on its own. */
+.psa-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(var(--space-6),3vw,var(--space-8));
+  list-style:none;margin:0;padding:0}
+
+.psa-feed__card{display:flex;flex-direction:column;gap:var(--space-4)}
+
+.psa-feed__thumb{display:block;aspect-ratio:16/10;
+  border:1px dashed var(--border-default);border-radius:var(--radius-media);
+  background:var(--surface-subtle)}
+
+/* Muted, not orange. Six placeholder labels in the accent colour spent the
+   page's one loud colour on the one thing that is not real yet. */
+.psa-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.psa-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.psa-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.psa-feed__lines i:nth-child(2){width:88%}
+.psa-feed__lines i:nth-child(3){width:54%}
+
+@media (max-width:860px){
+  .psa-feed{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ====================== 7 · Articles and research ======================== */
+
+.psa-latest{padding:clamp(var(--space-11),6vw,var(--space-13)) 0
+  clamp(var(--space-12),7vw,var(--space-14));background:var(--surface-page)}
+
+.psa-latest__head{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
+.psa-latest__head .psa-lede{margin:0;min-width:0}
+
+/* Hairline separators only. The 3px left rule this used to carry was the same
+   callout-bar reflex as the block above, in grey rather than orange. */
+.psa-rows{list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+.psa-row{display:grid;grid-template-columns:clamp(90px,12vw,150px) minmax(0,1fr);
+  column-gap:var(--space-6);align-items:center;
+  padding:clamp(var(--space-6),3vw,var(--space-8)) 0;
+  border-bottom:1px solid var(--border-default)}
+.psa-row__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+.psa-row__lines{display:flex;flex-direction:column;gap:var(--space-3)}
+.psa-row__lines i{display:block;height:12px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.psa-row__lines i:nth-child(1){width:68%}
+.psa-row__lines i:nth-child(2){width:40%}
+
+.psa-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+@media (max-width:900px){
+  .psa-latest__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+}
+@media (max-width:620px){
+  .psa-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-4)}
+}

@@ -1,0 +1,104 @@
+<!-- "Catch Up From the Capitol" is the roadmap’s heading and, unlike the podcast
+     page’s library, it gives this one NO intro paragraph. None is invented.
+
+     A DATED LIST, not a grid of cards. This show is weekly and under five minutes;
+     a card the size of a long-form interview’s would say the wrong thing about it.
+     Rows scan, and a reader catching up wants the most recent first.
+
+     Same filter mechanism as the podcast pages and still no script: :has() over
+     real checkboxes, native reset, @supports gate. The facets differ because the
+     show does — there are no guests to filter by, Wil Ervin presents every week,
+     so it is topic and legislative session instead.
+
+     SIX ROWS, one for every topic-and-session pair, so no combination of ticks can
+     return an empty list. No episode titles, dates or numbers are invented: the
+     title is a stub bar and the date column is a marked stub of its own, because
+     that column is where the real date goes. -->
+<section class="cca-library" aria-labelledby="library-title">
+  <div class="em-container">
+    <h2 class="cca-library__head" id="library-title" data-reveal="rise">Catch Up From the Capitol</h2>
+
+    <p class="cca-libnote">The list below is a live query in WordPress. The six rows are placeholders — no episode titles, dates or numbers are invented here — but the filter is real: it is the tag search the roadmap asks for, working without JavaScript. The session labels are a stand-in vocabulary until Empower supply the real tags.</p>
+
+    <form class="cca-filter">
+      <fieldset class="cca-filter__group">
+        <legend>Topic</legend>
+        <div class="cca-filter__row">
+          <div class="cca-tag">
+            <input class="cca-tag__input cca-topic" type="checkbox" id="ca-t-education">
+            <label class="cca-tag__label" for="ca-t-education">Quality Education</label>
+          </div>
+          <div class="cca-tag">
+            <input class="cca-tag__input cca-topic" type="checkbox" id="ca-t-work">
+            <label class="cca-tag__label" for="ca-t-work">Meaningful Work</label>
+          </div>
+          <div class="cca-tag">
+            <input class="cca-tag__input cca-topic" type="checkbox" id="ca-t-safety">
+            <label class="cca-tag__label" for="ca-t-safety">Public Safety</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="cca-filter__group">
+        <legend>Session</legend>
+        <div class="cca-filter__row">
+          <div class="cca-tag">
+            <input class="cca-tag__input cca-session" type="checkbox" id="ca-s-2026">
+            <label class="cca-tag__label" for="ca-s-2026">2026 session</label>
+          </div>
+          <div class="cca-tag">
+            <input class="cca-tag__input cca-session" type="checkbox" id="ca-s-2025">
+            <label class="cca-tag__label" for="ca-s-2025">2025 session</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <button class="cca-filter__clear" type="reset">Clear filters</button>
+    </form>
+
+    <ol class="cca-eps" data-reveal-group>
+      <li class="cca-ep" data-topic="education" data-session="2026" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Quality Education</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2026 session</span>
+      </li>
+      <li class="cca-ep" data-topic="work" data-session="2026" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Meaningful Work</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2026 session</span>
+      </li>
+      <li class="cca-ep" data-topic="safety" data-session="2026" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Public Safety</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2026 session</span>
+      </li>
+      <li class="cca-ep" data-topic="education" data-session="2025" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Quality Education</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2025 session</span>
+      </li>
+      <li class="cca-ep" data-topic="work" data-session="2025" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Meaningful Work</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2025 session</span>
+      </li>
+      <li class="cca-ep" data-topic="safety" data-session="2025" data-placeholder="episode" data-reveal="rise">
+        <span class="cca-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="cca-ep__title" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__tag">Public Safety</span>
+        <span class="cca-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        <span class="cca-ep__session">2025 session</span>
+      </li>
+    </ol>
+  </div>
+</section>

@@ -65,6 +65,62 @@ export const PAGES = [
   { src: 'solutions-a/index.html', out: 'dist/solutions-a.html', title: 'Solutions A — The Commons', kind: 'about' },
   { src: 'solutions-b/index.html', out: 'dist/solutions-b.html', title: 'Solutions B — The Throughline Down', kind: 'about' },
   { src: 'solutions-c/index.html', out: 'dist/solutions-c.html', title: 'Solutions C — The Lattice', kind: 'about' },
+
+  /* Two of the three solution DETAIL pages. Content is the roadmap's Meaningful
+     Work and Public Safety tabs — its "Standard Solution Page Flow", all seven
+     sections, in the order the document states them — checked by WORK_COPY and
+     SAFETY_COPY in test.mjs.
+
+     Unlike the Solutions landing set, these are NOT fillings of one template:
+     every reading is composed independently, so each has its own stylesheet and
+     its own signature composition. That means there is no single solution-page
+     template to hand off yet, and Quality Education (the third destination the
+     landing page routes to) is still unbuilt.
+
+     The two sets are no longer the same size: Meaningful Work has B and C,
+     Public Safety has all three. */
+  /* work-a (The Open Door) was withdrawn on 2026-08-05 before Empower saw it.
+     src/work-a/ and css/work-a.css are still on disk; re-adding the line here,
+     its chooser card and its test.mjs SIGNATURE/PREFIX entries is all it takes
+     to bring it back. */
+  { src: 'work-b/index.html', out: 'dist/work-b.html', title: 'Meaningful Work B — The Sidelines', kind: 'about' },
+  { src: 'safety-a/index.html', out: 'dist/safety-a.html', title: 'Public Safety A — The Neighbourhood', kind: 'about' },
+  { src: 'safety-b/index.html', out: 'dist/safety-b.html', title: 'Public Safety B — The Streetlight', kind: 'about' },
+
+  /* A third reading of each, built with the impeccable craft flow on 2026-08-05.
+     These two keep three sections of work-b that Paolo picked out — the work-area
+     mosaic, the story columns, the article stubs — and replace everything above
+     them. They are the only two with a rail to the work areas.
+
+     Still not a shared template: Paolo chose six distinct pages. work-c is white
+     plates on a navy field, safety-c is one navy plate on a white field, and
+     test.mjs asserts each of the six keeps its own signature. */
+  { src: 'work-c/index.html', out: 'dist/work-c.html', title: 'Meaningful Work C — The Plate', kind: 'about' },
+  { src: 'safety-c/index.html', out: 'dist/safety-c.html', title: 'Public Safety C — The Watch', kind: 'about' },
+
+  /* The Empower Podcast, two readings. The roadmap's Podcast tab has three
+     sections and both pages carry all three verbatim; what differs is where the
+     weight sits and how the episode library is filtered.
+
+     These are the first pages in the build with a working FILTER. It is the
+     roadmap's own suggestion ("have Paolo create a database where people can
+     search or filter for previous podcasts based on tags") and it runs on
+     :has() over real checkboxes with no script, the same way the review index
+     does. */
+  { src: 'podcast-a/index.html', out: 'dist/podcast-a.html', title: 'The Empower Podcast A — The Studio', kind: 'about' },
+  { src: 'podcast-b/index.html', out: 'dist/podcast-b.html', title: 'The Empower Podcast B — On the Record', kind: 'about' },
+
+  /* Capitol Chat, the sibling tab in the same dropdown, two readings. Its roadmap
+     copy differs from The Empower Podcast's in ways that drive the design rather
+     than decorate it: ONE button (it is an audio show, where the podcast leads on
+     YouTube), a five-minute weekly format, and a host — Wil Ervin — whose bio page
+     does not exist, so his name is deliberately not a link.
+
+     Paolo chose unrelated readings on 2026-08-05 rather than a pair matched to the
+     two podcast readings, so these are two more distinct compositions. Both carry
+     the filter, with topic and SESSION facets: there are no guests to filter by. */
+  { src: 'capitol-a/index.html', out: 'dist/capitol-a.html', title: 'Capitol Chat A — The Dome', kind: 'about' },
+  { src: 'capitol-b/index.html', out: 'dist/capitol-b.html', title: 'Capitol Chat B — The Session', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

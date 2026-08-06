@@ -1,0 +1,126 @@
+<!-- The same filter the roadmap asks for, in a different shape from variation A:
+     a row of tag chips across the top rather than a rail down the side, and the
+     episodes as wide two-up rows rather than a grid of cards. The mechanism
+     underneath is identical and still has no script.
+
+     Nine placeholder episodes, one per topic-and-guest pair, so no combination of
+     ticks can return an empty grid. No episode titles, dates or guest names are
+     invented. -->
+<section class="pcb-library" aria-labelledby="library-title">
+  <div class="em-container">
+    <div class="pcb-library__head" data-reveal-group>
+      <h2 id="library-title" data-reveal="rise">Explore More Episodes</h2>
+      <p data-reveal="rise">Discover more conversations about the people, ideas, and solutions shaping Mississippi’s future.</p>
+    </div>
+
+    <p class="pcb-libnote">The library below is a live query in WordPress. The nine rows are placeholders — no episode titles, dates or guest names are invented here — but the filter is real: it is the tag search the roadmap asks for, working without JavaScript.</p>
+
+    <form class="pcb-chips">
+      <fieldset class="pcb-chipset">
+        <legend>Topic</legend>
+        <div class="pcb-chipset__row">
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-topic" type="checkbox" id="pb-t-education">
+            <label class="pcb-chip__label" for="pb-t-education">Quality Education</label>
+          </div>
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-topic" type="checkbox" id="pb-t-work">
+            <label class="pcb-chip__label" for="pb-t-work">Meaningful Work</label>
+          </div>
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-topic" type="checkbox" id="pb-t-safety">
+            <label class="pcb-chip__label" for="pb-t-safety">Public Safety</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="pcb-chipset">
+        <legend>Guest</legend>
+        <div class="pcb-chipset__row">
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-guest" type="checkbox" id="pb-g-lawmaker">
+            <label class="pcb-chip__label" for="pb-g-lawmaker">Lawmakers</label>
+          </div>
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-guest" type="checkbox" id="pb-g-expert">
+            <label class="pcb-chip__label" for="pb-g-expert">Policy experts</label>
+          </div>
+          <div class="pcb-chip">
+            <input class="pcb-chip__input pcb-guest" type="checkbox" id="pb-g-leader">
+            <label class="pcb-chip__label" for="pb-g-leader">Community leaders</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <button class="pcb-chips__clear" type="reset">Clear filters</button>
+    </form>
+
+    <ul class="pcb-eps" data-reveal-group>
+      <li class="pcb-ep" data-topic="education" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Quality Education</span><span>Lawmaker</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="education" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Quality Education</span><span>Policy expert</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="education" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Quality Education</span><span>Community leader</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+
+      <li class="pcb-ep" data-topic="work" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Meaningful Work</span><span>Lawmaker</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="work" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Meaningful Work</span><span>Policy expert</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="work" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Meaningful Work</span><span>Community leader</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+
+      <li class="pcb-ep" data-topic="safety" data-guest="lawmaker" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Public Safety</span><span>Lawmaker</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="safety" data-guest="expert" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Public Safety</span><span>Policy expert</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+      <li class="pcb-ep" data-topic="safety" data-guest="leader" data-placeholder="episode" data-reveal="rise">
+        <span class="pcb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+        <span class="pcb-ep__body">
+          <span class="pcb-ep__tags"><span>Public Safety</span><span>Community leader</span></span>
+          <span class="pcb-ep__lines" aria-hidden="true"><i></i><i></i></span>
+        </span>
+      </li>
+    </ul>
+  </div>
+</section>

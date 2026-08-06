@@ -1,0 +1,364 @@
+/* Meaningful Work — variation C, "The Plate".
+
+   Built with the impeccable craft flow on 2026-08-05, keeping three sections of
+   variation B that Paolo picked out (the work-area mosaic, the story columns, the
+   article stubs) and replacing everything above them.
+
+   THE ARGUMENT: the page is plates on a field. Navy holds the top third and the
+   headline sits on it with the photograph as an inset plate beside the words. The
+   navy's bottom edge carries a rail to the five work areas — the thing variations
+   A and B both lack, because five areas is more than anyone will scroll to
+   survey. Then white plates climb that edge, the four approaches are quartered
+   inside one navy plate, and the mosaic below is the page paying off the rail.
+
+   COLOUR STRATEGY: committed. Navy is the ground for the top third and returns
+   for the approaches and the mosaic's lead plate; orange is structural only —
+   the 56x4 mark, the chips, the rail's hover state, and the one filled button.
+   No third colour.
+
+   WHY IT IS NOT VARIATION A OR B: A quarters a WHITE block on a white page and
+   closes five identical bands with navy strips; B is near-monochrome with a
+   horizontal four-track. This inverts A's quarter block into navy, has no bands
+   and no track, and is the only one of the three with a rail.
+
+   NO NUMERALS ANYWHERE. The four approaches are four simultaneous commitments,
+   not an ordered sequence, and the five areas are a set. Numbering either would
+   be scaffolding pretending to be information — which is what variation A's
+   gutter numerals are, and the reason they are not repeated here.
+
+   NO SIDE STRIPES. Where a block needs marking it takes the 56x4 orange rule
+   above it, which is the brand's own motif. A coloured border-left thicker than a
+   hairline is the callout-bar reflex; there is a test.
+
+   TEXT OVER PHOTOGRAPHY: never. The hero photograph is an inset plate beside the
+   words, not a bed for them.
+
+   NO NEW SCRIPTS. Reveals are the existing layer, which ships visible and hides
+   nothing when the script does not load. Nothing carrying data-reveal declares
+   its own transition — motion.css sets `transition` on those elements and would
+   silently replace it. Anything with its own timing here (the rail links) is
+   outside the reveal system entirely.
+
+   ELEMENTOR NOTE: the plates that overlap the navy do it with a negative margin
+   on a child INSIDE their own section, never an absolutely positioned element
+   crossing a boundary. One section maps to one Elementor section and each keeps
+   its own height.
+
+   Namespaced .wkc- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.wkc-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
+
+/* The orange mark, above the block it marks. */
+.wkc-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
+.wkc-feednote::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:var(--space-4);border-radius:var(--radius-pill);
+  background:var(--em-orange)}
+
+/* ============================== 1 · Hero ================================= */
+
+.wkc-hero{background:var(--surface-navy-deep);color:var(--text-inverse);
+  padding-top:clamp(var(--space-10),6vw,var(--space-13));
+  /* The bottom padding is what the next section's plate climbs into. Held in one
+     custom property so the plate's negative margin can never drift out of step
+     with it. */
+  --wkc-lift:clamp(var(--space-9),5vw,var(--space-12));
+  padding-bottom:calc(var(--wkc-lift) + clamp(var(--space-9),5vw,var(--space-12)))}
+
+.wkc-hero__grid{display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:center}
+
+.wkc-hero__copy{min-width:0}
+
+/* One eyebrow, on the hero only. Repeating a tracked label above every section
+   is the scaffolding tell; naming the page at the top is not. */
+.wkc-hero__eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+/* Measure on the h1 itself: `ch` resolves against the element's own font-size,
+   so on a body-sized wrapper it would be a fraction of the width intended. */
+.wkc-hero h1{margin:0;max-width:17ch;
+  font-size:clamp(2.4rem,1.15rem + 4.6vw,4.75rem);
+  font-weight:var(--fw-black);line-height:.96;letter-spacing:-.04em;
+  color:var(--white);text-wrap:balance}
+
+.wkc-hero__media{margin:0;overflow:hidden;border-radius:var(--radius-panel)}
+.wkc-hero__media img{display:block;width:100%;height:auto;
+  aspect-ratio:4/3;object-fit:cover;object-position:50% 35%}
+
+/* ---- The rail: navigation, on the navy's bottom edge ---- */
+
+.wkc-rail{display:grid;grid-template-columns:auto minmax(0,1fr);
+  align-items:baseline;column-gap:clamp(var(--space-6),3vw,var(--space-9));
+  margin-top:clamp(var(--space-9),5vw,var(--space-11));
+  padding-top:var(--space-6);border-top:1px solid var(--border-inverse)}
+
+/* "Jump to" is doing real work: without it five underlined labels in a row read
+   as a run-on sentence rather than as five destinations. Sentence case, not
+   tracked caps — a tracked all-caps label here would be the section-eyebrow tell
+   in a place where the label is genuinely functional. */
+.wkc-rail__label{margin:0;font-family:var(--font-display);
+  font-weight:var(--fw-bold);font-size:var(--fs-small);
+  color:var(--orange-300)}
+
+.wkc-rail ul{display:flex;flex-wrap:wrap;
+  gap:var(--space-2) clamp(var(--space-6),2.6vw,var(--space-8));
+  list-style:none;margin:0;padding:0}
+
+/* 24px minimum target (SC 2.5.8) via padding, not a fixed height, so a label
+   that wraps at a narrow width still keeps a full-size target. The underline is
+   drawn with box-shadow rather than border so it does not shift the text, and it
+   is on a child of nothing revealed, so it may own its transition. */
+.wkc-rail a{display:inline-block;padding:6px 0;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);line-height:1.4;color:var(--white);
+  text-decoration:none;box-shadow:inset 0 -1px 0 rgba(255,255,255,.34);
+  transition:color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.wkc-rail a:hover{color:var(--orange-300);
+  box-shadow:inset 0 -2px 0 var(--em-orange)}
+
+@media (max-width:900px){
+  .wkc-hero__grid{grid-template-columns:minmax(0,1fr);row-gap:clamp(var(--space-7),4vw,var(--space-9))}
+  .wkc-hero__media img{aspect-ratio:16/9}
+}
+
+/* ==================== 2, 3 · The two white plates ======================== */
+
+/* display:flow-root is load-bearing, not decoration. The plate inside this
+   section lifts itself onto the navy with a negative top margin, and this section
+   has no top padding or border — so without a block formatting context that
+   margin COLLAPSES THROUGH the section and moves the whole band up instead of
+   moving the plate within it. The overlap then measures correctly in the box
+   model and is completely absent on screen, which is exactly how it shipped the
+   first time. flow-root stops the collapse. */
+.wkc-plate-band{display:flow-root;
+  padding:0 0 clamp(var(--space-11),6vw,var(--space-13));
+  background:var(--surface-page)}
+.wkc-plate-band--tint{padding-top:clamp(var(--space-11),6vw,var(--space-13));
+  background:var(--surface-subtle)}
+
+.wkc-plate{padding:clamp(var(--space-8),4.4vw,var(--space-12));
+  border-radius:var(--radius-panel);background:var(--surface-page);
+  box-shadow:0 24px 60px -40px rgba(0,41,53,.45)}
+.wkc-plate--tint{background:var(--surface-subtle)}
+
+/* The climb. A negative margin on this child, matched to the hero's --wkc-lift,
+   so the plate overlaps the navy without either element leaving its section. The
+   value is repeated rather than inherited because custom properties do not cross
+   the section boundary in the Elementor conversion. */
+.wkc-plate--lift{max-width:min(100%,62rem);
+  margin-top:calc(-1 * clamp(var(--space-9),5vw,var(--space-12)))}
+
+.wkc-plate--wide{max-width:none}
+
+.wkc-plate h2{margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+.wkc-plate p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wkc-plate p:last-child{margin-bottom:0}
+/* Out-ranks the paragraph rule above it, or the lede flattens to body size. */
+.wkc-plate .wkc-lede{margin-bottom:var(--space-6)}
+
+/* The problem plate runs its heading and copy as two columns, which the vision
+   plate does not: the vision is one statement, the problem is a claim plus its
+   explanation. */
+.wkc-plate__cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
+.wkc-plate__cols h2{margin-bottom:0}
+.wkc-plate__copy{min-width:0}
+
+.wkc-plate .wkc-turn{margin-top:clamp(var(--space-8),4vw,var(--space-10));
+  padding-top:clamp(var(--space-7),3.4vw,var(--space-9));
+  border-top:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.1rem + 1.4vw,2.25rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--em-orange-ink)}
+
+@media (max-width:900px){
+  .wkc-plate__cols{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+
+/* ======================= 4 · The navy quarters =========================== */
+
+.wkc-quarters{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
+  background:var(--surface-subtle)}
+
+.wkc-quarters__head{margin:0 0 clamp(var(--space-8),4vw,var(--space-10));
+  max-width:24ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+/* One navy plate quartered by white hairlines. The rules are borders on the
+   cells (right and bottom on the first column / first row only) so no internal
+   rule doubles where two cells meet, and the plate's own radius clips them. */
+.wkc-quarters__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  list-style:none;margin:0;padding:0;overflow:hidden;
+  border-radius:var(--radius-panel);background:var(--surface-navy)}
+
+.wkc-quarter{padding:clamp(var(--space-7),3.4vw,var(--space-10));
+  color:var(--text-inverse)}
+.wkc-quarter:nth-child(odd){border-right:1px solid var(--border-inverse)}
+.wkc-quarter:nth-child(-n+2){border-bottom:1px solid var(--border-inverse)}
+
+.wkc-quarter h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);line-height:1.2;letter-spacing:-.01em;
+  color:var(--white)}
+.wkc-quarter p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-inverse-muted)}
+
+@media (max-width:760px){
+  .wkc-quarters__grid{grid-template-columns:minmax(0,1fr)}
+  .wkc-quarter:nth-child(odd){border-right:0}
+  .wkc-quarter:not(:last-child){border-bottom:1px solid var(--border-inverse)}
+}
+
+/* ============= 5 · The work mosaic (kept from variation B) =============== */
+
+.wkc-mosaic{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.wkc-mosaic__head{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start;
+  margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
+.wkc-mosaic__head h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wkc-mosaic__intro{min-width:0}
+.wkc-mosaic__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.wkc-mosaic__intro p:last-child{margin-bottom:0}
+
+.wkc-mosaic__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));
+  list-style:none;margin:0;padding:0}
+
+.wkc-plate-area{display:flex;flex-direction:column;
+  padding:clamp(var(--space-7),3.2vw,var(--space-9));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-page);
+  /* Every plate is a rail destination, so the sticky header must not land on the
+     heading the reader just jumped to. */
+  scroll-margin-top:clamp(80px,12vh,132px)}
+
+.wkc-plate-area--lead{grid-column:1 / -1;border-color:transparent;
+  background:var(--surface-navy)}
+
+/* White on --orange-700 (5.55:1). The brand orange is 3.59:1 and this label is
+   13px, so the large-text exemption cannot apply — the same call site.css makes
+   for .em-badge--accent. */
+.wkc-chip{margin:0 0 var(--space-5);align-self:flex-start;
+  padding:6px 14px;border-radius:var(--radius-pill);
+  background:var(--orange-700);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase}
+
+.wkc-plate-area h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);line-height:1.15;
+  letter-spacing:-.02em;color:var(--text-strong)}
+
+.wkc-area__body{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+.wkc-area__toward{margin:var(--space-6) 0 0;padding-top:var(--space-6);
+  border-top:1px solid var(--border-default);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-body)}
+.wkc-area__toward strong{color:var(--em-orange-ink);font-weight:var(--fw-bold)}
+
+.wkc-plate-area--lead h3{color:var(--white)}
+.wkc-plate-area--lead .wkc-area__body{color:var(--text-inverse);
+  font-size:var(--fs-lead);line-height:1.5}
+.wkc-plate-area--lead .wkc-area__toward{border-top-color:var(--border-inverse);
+  color:var(--text-inverse-muted)}
+.wkc-plate-area--lead .wkc-area__toward strong{color:var(--orange-300)}
+
+@media (max-width:900px){
+  .wkc-mosaic__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+@media (max-width:720px){
+  .wkc-mosaic__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ========== 6 · Community stories (kept from variation B) =============== */
+
+.wkc-stories{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-subtle)}
+
+.wkc-stories__panel{max-width:62ch}
+.wkc-stories__panel h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wkc-stories__panel p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
+  line-height:1.5;color:var(--text-body)}
+
+.wkc-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;margin:0;padding:0}
+
+.wkc-feed__col{display:flex;flex-direction:column;gap:var(--space-4);
+  padding-top:var(--space-5);border-top:2px dashed var(--border-default)}
+
+.wkc-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wkc-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.wkc-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wkc-feed__lines i:nth-child(2){width:92%}
+.wkc-feed__lines i:nth-child(3){width:78%}
+.wkc-feed__lines i:nth-child(4){width:46%}
+
+@media (max-width:780px){
+  .wkc-feed{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ======= 7 · Articles and research (kept from variation B) ============== */
+
+.wkc-latest{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.wkc-latest__head{max-width:62ch}
+.wkc-latest__head h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.wkc-latest__head p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+.wkc-stubs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+
+.wkc-stub{display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6);border:1px dashed var(--border-default);
+  border-radius:var(--radius-md)}
+
+.wkc-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.wkc-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
+.wkc-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.wkc-stub__lines i:nth-child(1){width:76%}
+.wkc-stub__lines i:nth-child(2){width:42%}
+
+.wkc-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+@media (max-width:620px){
+  .wkc-stubs{grid-template-columns:minmax(0,1fr)}
+}

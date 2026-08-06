@@ -133,16 +133,28 @@ body:has(#set-home:checked) .ch__opt[data-set="home"],
 body:has(#set-who:checked) .ch__opt[data-set="who"],
 body:has(#set-do:checked) .ch__opt[data-set="do"],
 body:has(#set-team:checked) .ch__opt[data-set="team"],
-body:has(#set-solutions:checked) .ch__opt[data-set="solutions"]{display:flex}
+body:has(#set-solutions:checked) .ch__opt[data-set="solutions"],
+body:has(#set-work:checked) .ch__opt[data-set="work"],
+body:has(#set-safety:checked) .ch__opt[data-set="safety"],
+body:has(#set-podcast:checked) .ch__opt[data-set="podcast"],
+body:has(#set-capitol:checked) .ch__opt[data-set="capitol"]{display:flex}
 body:has(#set-home:checked) .ch__results > section[data-set="home"],
 body:has(#set-who:checked) .ch__results > section[data-set="who"],
 body:has(#set-do:checked) .ch__results > section[data-set="do"],
 body:has(#set-team:checked) .ch__results > section[data-set="team"],
-body:has(#set-solutions:checked) .ch__results > section[data-set="solutions"]{display:block}
+body:has(#set-solutions:checked) .ch__results > section[data-set="solutions"],
+body:has(#set-work:checked) .ch__results > section[data-set="work"],
+body:has(#set-safety:checked) .ch__results > section[data-set="safety"],
+body:has(#set-podcast:checked) .ch__results > section[data-set="podcast"],
+body:has(#set-capitol:checked) .ch__results > section[data-set="capitol"]{display:block}
 
 /* Status. Carries one more element on the left than the reveal rules above, so
    it outranks them when both facets are on: a card has to satisfy BOTH, and the
-   more specific rule is the one that says no. */
+   more specific rule is the one that says no.
+
+   The two solution detail sets carry no pick yet, so ticking Signed off hides
+   both of them whole. That is correct rather than a gap: they are the sets
+   Empower has not decided, and the filter's job is to show what has been. */
 body:has(#signed-off:checked) .ch__results .ch__opt:not(.ch__opt--pick){display:none}
 body:has(#signed-off:checked) .ch__results > section:not(:has(.ch__opt--pick)){display:none}
 

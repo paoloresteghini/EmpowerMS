@@ -1,0 +1,261 @@
+/* Capitol Chat — variation B, "The Session".
+
+   Built with the impeccable craft flow on 2026-08-05, and deliberately not
+   variation A's page: Paolo chose unrelated readings rather than a pair matched to
+   the two podcast readings.
+
+   THE ARGUMENT: a question needs something opposite it. The headline holds the
+   left of a navy hero and the reply — what the show gives you, and its one button
+   — holds the right. The Capitol photography then runs full-bleed under it, the
+   widest any placeholder gets in this build. The show is described in two text
+   columns, the way a briefing is printed. And the library accumulates by session,
+   because a weekly show does: the rows are grouped under session headings, and the
+   session filter hides whole groups rather than individual rows, which is the one
+   thing a flat list cannot demonstrate.
+
+   WHY IT IS NOT VARIATION A: A centres the question on a tinted masthead, sets the
+   Capitol frames as a contained triptych, runs heading-beside-copy, and lists
+   episodes flat. Not one of those four devices appears here.
+
+   COLOUR STRATEGY: committed at the top, restrained below. Navy carries the hero
+   and nothing else; the rest is ink on white with the session headings as the only
+   structure. Orange: one filled action, the play glyphs, the checked tag.
+
+   NO SIDE STRIPES, NO SECTION EYEBROWS beyond the one naming the show, NO
+   NUMERALS.
+
+   ORANGE AND CONTRAST, from css/site.css: --orange-300 on navy (5.44:1),
+   --em-orange-ink for small orange text on white (5.17:1), white on --orange-700
+   for the checked tag (5.55:1). The play glyph is a graphic on an orange fill, so
+   the 3:1 non-text threshold applies.
+
+   NO NEW SCRIPTS. The filter is :has() over real checkboxes with a native reset.
+   Reveals are the existing layer; nothing carrying data-reveal declares its own
+   transition, so the tags and rows that own transitions sit outside it.
+
+   ELEMENTOR NOTE: three sections, three Elementor sections. The full-bleed band is
+   a child of the hero that escapes the container by being outside it in the markup,
+   not by a negative margin, so it converts as its own full-width row. The filter is
+   the one thing that does not survive as-is.
+
+   Namespaced .ccb- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.ccb-eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+.ccb-photonote,.ccb-libnote{font-size:var(--fs-small);line-height:var(--lh-body);
+  color:var(--text-muted)}
+.ccb-photonote::before,.ccb-libnote::before{content:"";display:block;
+  width:56px;height:4px;margin-bottom:var(--space-4);
+  border-radius:var(--radius-pill);background:var(--em-orange)}
+
+/* ============================== 1 · Hero ================================= */
+
+.ccb-hero{padding-bottom:clamp(var(--space-9),5vw,var(--space-11));
+  background:var(--surface-page)}
+
+/* The navy is on the grid, not the section, because the band below it is
+   full-bleed white-page width and the note under that is on the page. Three
+   different widths in one section, each carrying its own surface. */
+.ccb-hero__grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:end;
+  padding:clamp(var(--space-10),6vw,var(--space-13));
+  border-radius:0 0 var(--radius-panel) var(--radius-panel);
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.ccb-hero h1{margin:0;max-width:18ch;
+  font-size:clamp(2.2rem,1.1rem + 4vw,4.25rem);
+  font-weight:var(--fw-black);line-height:1;letter-spacing:-.04em;
+  color:var(--white);text-wrap:balance}
+
+.ccb-hero__reply{min-width:0}
+.ccb-hero__lede{margin:0 0 clamp(var(--space-7),3.4vw,var(--space-9));
+  font-size:var(--fs-lead);line-height:1.5;color:var(--text-inverse-muted)}
+.ccb-hero__action{margin:0}
+
+/* Full-bleed: outside .em-container in the markup, so it needs no negative margin
+   and nothing has to be told the gutter's width. */
+.ccb-band{display:grid;place-items:center;aspect-ratio:5/1;margin:0;
+  border-bottom:1px solid var(--border-default);
+  background:repeating-linear-gradient(135deg,
+    var(--surface-subtle) 0 12px, var(--surface-page) 12px 24px)}
+.ccb-band figcaption{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.ccb-photonote{margin:clamp(var(--space-6),3vw,var(--space-7)) 0 0;max-width:76ch}
+
+@media (max-width:900px){
+  .ccb-hero__grid{grid-template-columns:minmax(0,1fr);
+    row-gap:clamp(var(--space-7),4vw,var(--space-9));align-items:start}
+}
+@media (max-width:720px){
+  /* 5:1 is a letterbox at desktop and a hairline on a phone. */
+  .ccb-band{aspect-ratio:16/9}
+}
+
+/* ========================== 2 · About the show =========================== */
+
+.ccb-about{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.ccb-about__inner{max-width:96ch}
+
+.ccb-about__inner h2{margin:0 0 clamp(var(--space-8),4vw,var(--space-10));
+  max-width:26ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong);text-wrap:balance}
+
+/* Two text columns, the way a briefing is printed. Multi-column rather than a
+   grid because the three paragraphs should FLOW between the columns and balance
+   themselves; a grid would pin one paragraph per cell and leave a ragged bottom.
+   `orphans`/`widows` keep a single line from being stranded at a column break. */
+.ccb-about__cols{columns:2;column-gap:clamp(var(--space-8),5vw,var(--space-12));
+  orphans:2;widows:2}
+/* break-inside:avoid is the load-bearing declaration, not a nicety. Without it
+   the column break fell mid-paragraph and split the sentence carrying this show's
+   whole promise — "…highlights the action under the dome—all in under five
+   minutes" — across the gutter, stranding its tail at the top of column two.
+   orphans/widows do not prevent that: a two-line remainder satisfies them. Whole
+   paragraphs per column costs a slightly ragged column bottom, which is the
+   cheaper of the two. */
+.ccb-about__cols p{margin:0 0 var(--space-5);break-inside:avoid;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body)}
+.ccb-about__cols p:last-child{margin-bottom:0}
+
+.ccb-about__where{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0;
+  padding-top:clamp(var(--space-6),3vw,var(--space-7));
+  border-top:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
+
+@media (max-width:760px){
+  .ccb-about__cols{columns:1}
+}
+
+/* ==================== 3 · The library, grouped by session ================ */
+
+.ccb-library{padding:0 0 clamp(var(--space-12),7vw,var(--space-14));
+  background:var(--surface-page)}
+
+.ccb-library__head{margin:0;max-width:24ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+.ccb-libnote{margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0
+  clamp(var(--space-6),3vw,var(--space-7));max-width:76ch}
+
+/* ---- The filter ---- */
+
+.ccb-filter{display:grid;grid-template-columns:auto auto minmax(0,1fr);
+  gap:clamp(var(--space-5),2.4vw,var(--space-8));align-items:end;
+  padding:clamp(var(--space-5),2.6vw,var(--space-6));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-subtle)}
+
+.ccb-filter__group{margin:0;padding:0;border:0;min-width:0}
+.ccb-filter__group legend{padding:0;margin-bottom:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-muted)}
+.ccb-filter__row{display:flex;flex-wrap:wrap;gap:var(--space-3)}
+
+.ccb-tag{position:relative}
+.ccb-tag__input{position:absolute;width:1px;height:1px;opacity:0}
+
+.ccb-tag__label{display:inline-flex;align-items:center;min-height:40px;
+  padding:0 var(--space-5);cursor:pointer;
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:var(--surface-page);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-body);
+  transition:background var(--dur) var(--ease-out),
+             border-color var(--dur) var(--ease-out),color var(--dur) var(--ease-out)}
+.ccb-tag__label:hover{border-color:var(--em-orange);color:var(--text-strong)}
+.ccb-tag__input:checked + .ccb-tag__label{background:var(--orange-700);
+  border-color:var(--orange-700);color:var(--white)}
+.ccb-tag__input:focus-visible + .ccb-tag__label{
+  outline:3px solid var(--focus-ring);outline-offset:2px}
+
+.ccb-filter__clear{min-height:40px;justify-self:end;padding:0 var(--space-5);
+  border:1px solid var(--border-default);border-radius:var(--radius-pill);
+  background:transparent;cursor:pointer;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);color:var(--text-strong);
+  transition:background var(--dur) var(--ease-out)}
+.ccb-filter__clear:hover{background:var(--surface-page)}
+
+/* ---- The filtering ----
+
+   Same hide-only shape as everywhere else here: AND across the two groups, OR
+   inside each. The difference on this page is the TARGET — session hides whole
+   .ccb-group blocks, heading included, because the list is grouped by session and
+   a hidden group's heading left behind would be a lie. Topic still hides rows.
+
+   Every group carries all three topics, so a topic filter can never empty a
+   visible group and leave an orphaned heading. */
+body:has(.ccb-topic:checked):not(:has(#cb-t-education:checked)) .ccb-ep[data-topic="education"],
+body:has(.ccb-topic:checked):not(:has(#cb-t-work:checked)) .ccb-ep[data-topic="work"],
+body:has(.ccb-topic:checked):not(:has(#cb-t-safety:checked)) .ccb-ep[data-topic="safety"],
+body:has(.ccb-session:checked):not(:has(#cb-s-2026:checked)) .ccb-group[data-session="2026"],
+body:has(.ccb-session:checked):not(:has(#cb-s-2025:checked)) .ccb-group[data-session="2025"]{
+  display:none}
+
+@supports not selector(body:has(a)){
+  .ccb-filter{display:none}
+}
+
+/* ---- The groups and rows ---- */
+
+.ccb-group{margin-top:clamp(var(--space-9),5vw,var(--space-11))}
+
+.ccb-group__head{margin:0 0 var(--space-4);
+  padding-bottom:var(--space-3);border-bottom:2px solid var(--surface-navy);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-strong)}
+
+.ccb-eps{list-style:none;margin:0;padding:0}
+
+/* Four columns here against variation A's five: the session is the group heading,
+   so it is not repeated on every row. */
+.ccb-ep{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:var(--space-5);align-items:center;
+  padding:var(--space-5) var(--space-2);
+  border-bottom:1px solid var(--border-default)}
+
+.ccb-ep__play{display:grid;place-items:center;width:40px;height:40px;
+  border-radius:var(--radius-pill);background:var(--em-orange);color:var(--white)}
+.ccb-ep__play svg{width:16px;height:16px}
+
+/* Fills its column, varied per row: a fixed width left a dead gap before the
+   metadata, and identical bars read as a fault rather than as titles to come. */
+.ccb-ep__title i{display:block;height:12px;width:90%;
+  border-radius:var(--radius-xs);background:var(--grey-300)}
+.ccb-ep:nth-child(2) .ccb-ep__title i{width:74%}
+.ccb-ep:nth-child(3) .ccb-ep__title i{width:84%}
+
+.ccb-ep__tag{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);color:var(--em-orange-ink);white-space:nowrap}
+
+/* The date column is a stub rather than blank: that is where the real date goes. */
+.ccb-ep__date i{display:block;height:12px;width:9ch;
+  border-radius:var(--radius-xs);background:var(--grey-300)}
+
+@media (max-width:860px){
+  .ccb-filter{grid-template-columns:minmax(0,1fr)}
+  .ccb-filter__clear{justify-self:stretch}
+  .ccb-ep{grid-template-columns:auto minmax(0,1fr);gap:var(--space-4) var(--space-5)}
+  .ccb-ep__tag,.ccb-ep__date{grid-column:2}
+  .ccb-ep__play{grid-row:1 / span 3}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .ccb-tag__label,.ccb-filter__clear{transition:none}
+}

@@ -1,16 +1,24 @@
 # Empower Mississippi — website build
 
 Static HTML + CSS builds for the Empower Mississippi refresh. The homepage is
-**settled** — `dist/final.html` is the agreed build. The **About Us** pages are
-still a choice: three readings of Who We Are and three of What We Do, plus the
-**Team, Board & Fellows** page all six of them link to. The four alternative
-homepages the decision was made from still build, as reference.
+**settled** — `dist/final.html` is the agreed build, and the About Us, Team and
+Solutions sets were decided on 2026-08-05. Open: **two solution detail pages**
+(Meaningful Work and Public Safety, three readings each) and both shows in the
+Podcast dropdown — **The Empower Podcast** and **Capitol Chat**, two readings
+each. The alternatives every decision was made from still build, as reference.
 
-Content is the *Empower Mississippi Website Refresh Roadmap* (Google Doc) —
-the **Homepage** tab for the homepages, the **Who We Are** and **What We Do**
-tabs for the About pages. Every headline, subhead, section intro and solution
-promise is that copy, used verbatim. What differs between builds is the
-composition.
+Content is the *Empower Mississippi Website Refresh Roadmap* — the **Homepage**
+tab for the homepages, **Who We Are** / **What We Do** for the About pages, the
+**Meaningful Work** and **Public Safety** tabs for the solution detail pages, and
+the **Podcast** tab for the show page.
+Every headline, subhead, section intro and solution promise is that copy, used
+verbatim. What differs between builds is the composition.
+
+The document itself is committed at
+`docs/Empower Mississippi Design System/uploads/`, as both `.docx` and `.pdf`.
+**Read the PDF.** The `.docx` export carries the Homepage tab only — 99 lines
+against the PDF's 1,865 — so every other tab is missing from it without saying
+so.
 
 This is a **reference implementation for hand-off to WordPress + Elementor**,
 not a production runtime.
@@ -112,8 +120,153 @@ homepage's "Behind every solution is a real person." Two tabs of the same
 document, two sentences; the test carries both so neither drifts into the other.
 
 The three "Explore" links point at `/solutions/education`, `/solutions/work` and
-`/solutions/safety`, which are not built: the same open destination as the
-report PDFs on What We Do.
+`/solutions/safety`. Two of those three are now built (below); Education is not.
+
+**The solution detail pages.** Two of the three, three readings each. Copy is the
+roadmap's own **Meaningful Work** and **Public Safety** tabs: its "Standard
+Solution Page Flow", all seven sections, in the order the document states them.
+Nothing is chosen yet.
+
+| Page | What it is |
+| --- | --- |
+| `dist/work-a.html` | **Meaningful Work A — The Open Door** — navy hero with the photograph pushed through its right edge, sections hung off numerals in a left gutter, four approaches cut from one block by hairlines, five work areas each closed by a navy commitment strip |
+| `dist/work-b.html` | **Meaningful Work B — The Sidelines** — near-monochrome editorial: the headline is the first screen on white, one window-wide photograph under it, the problem the only dark section, four approaches on one horizontal track, five areas as a mosaic led by a double-width navy plate |
+| `dist/safety-a.html` | **Public Safety A — The Neighbourhood** — photograph with the headline on a navy panel set inside it, vision and problem as two orange-edged panels facing each other, four approaches laid as an offset course of brick, four work areas as capped posts |
+| `dist/safety-b.html` | **Public Safety B — The Streetlight** — dark page, light in sections: no photograph until the stories band, four of seven sections navy, four approaches as numbered rows on the first light break, four work areas as lit cards on navy |
+| `dist/work-c.html` | **Meaningful Work C — The Plate** — navy holds the top third with the photograph inset beside the headline and a rail to the five areas on its bottom edge; white plates climb that edge; the four approaches are quartered inside one navy plate |
+| `dist/safety-c.html` | **Public Safety C — The Watch** — the inverse: one navy plate on a white field with the photograph as a column inside it, the rail beneath on white, a second navy plate for the vision, and the four approaches as wide rows |
+
+**The C pair** was built with the `impeccable` craft flow after Paolo picked three
+sections out of work-b and asked for the rest to be new. Those three are carried
+over deliberately and a test holds them there: the work-area mosaic with a
+double-width navy lead plate and orange chip labels, the community-story columns
+under dashed rules, and the 2×2 of dashed article stubs. Everything above them is
+new, and the two pages are the only readings with a **rail** — a real anchor list
+to the work areas, because five areas (four on safety) is more than anyone will
+scroll to survey. Every rail target carries `scroll-margin-top` so the sticky
+header does not cover the heading it just jumped to; a test checks that every
+rail href resolves to an id that exists.
+
+Unlike the Solutions landing set, these are **six independently composed pages,
+not one template filled repeatedly** — Paolo's call on 2026-08-05, reaffirmed when
+the C pair was added. A test asserts all six keep their own signature composition
+and carry none of the other five's, so the six stay six. The consequence to be aware of: there is no single
+solution-page template to hand off yet, and **Quality Education is still
+unbuilt**. Whichever reading Empower prefer is what it should be cut from.
+
+Two things on all six are unfinished, and both are marked in the markup rather
+than left to be noticed:
+
+- **Sections 6 and 7 are feeds, not content.** Both roadmap tabs end those
+  sections with a bracketed instruction to auto-populate, so the blocks carry no
+  headlines at all: grey bars behind `data-placeholder="feed"`, with a note in
+  words above each block saying it is a live query in WordPress. **No headline on
+  any of the six pages is invented** — a plausible article title is exactly the
+  kind of thing that reads as approved copy and survives review.
+- **The photography is stand-in and its filenames lie.** `young-man-portrait-bw.jpg`
+  is a colour classroom scene; `family-outdoors-park.jpg` is a boy reading in a
+  library. Every image on these six pages was opened and looked at before its
+  alt text was written, and one was swapped after a render showed a classroom
+  where a workplace was meant to be. Do not pick one of these files by name.
+
+Two deliberate transformations of the roadmap's copy, both recorded in
+`test.mjs` next to the assertions:
+
+- The work-area labels are set in caps by CSS, not typed in caps, so the copy
+  assertion matches the sentence-case string and the page shows what the document
+  shows. Same call the homepage made for QUALITY EDUCATION.
+- The roadmap's section titles ("The Vision", "The Problem - Why This Work
+  Matters") are its internal organisation, which Empower confirmed about the Who
+  We Are side labels on 2026-08-03. They are not printed on any of the four
+  pages; the existing internal-labels sweep asserts that.
+
+One build-wide fix came out of building these: **two sweeps in `test.mjs` listed
+their pages by hand** (the side-stripe check and the hang-out-of-section check).
+Both were written when thirteen About pages was all there was, so the four pages
+added on 2026-08-05 were never in them — and all four shipped a 3px orange
+`border-left` on their feed note, which is exactly the callout-bar reflex the
+side-stripe sweep exists to reject, while that sweep passed green. Both now derive
+their page list from `PAGES`. Where those pages need a block marked they use the
+56×4 orange rule above it, which is the brand's own motif.
+
+**The Empower Podcast.** The show page, in two readings. Copy is the roadmap's
+Podcast tab: the three-sentence hero, both of its buttons, "Go Beyond the
+Headlines." and the episode library. Nothing is chosen yet.
+
+| Page | What it is |
+| --- | --- |
+| `dist/podcast-a.html` | **The Studio** — navy hero with the headline, both actions and a contact sheet of behind-the-scenes frames; one quiet white passage for the show's description; the episodes as a catalogue with a sticky filter rail |
+| `dist/podcast-b.html` | **On the Record** — the headline is the hero, three sentences on three lines with the third in orange; the picture arrives after the words as one band; the description is the page's single navy panel; the library filters from a row of tag chips |
+
+Three things about this set are unlike anything else in the build:
+
+- **The library actually filters.** The roadmap puts the request directly to
+  Paolo: *"have Paolo create a 'database' where people can search or filter for
+  previous podcasts based on tags (topic/guest/part of Mississippi)."* Both pages
+  answer it with a working filter and **no script** — `:has()` over real
+  checkboxes, with a native `<button type="reset">` to clear, which is why the
+  `<form>` is load-bearing. Where `:has()` is missing the filter hides itself and
+  the full library stays on the page.
+- **It composes AND across the two facet groups, OR within each.** The
+  hide-everything-then-reveal shape the review index uses works for one group and
+  silently becomes an OR when a second group can reveal what the first hid. These
+  pages use hide-only rules instead — "this group is in use and this value is not
+  ticked, so hide the cards carrying it" — six rules that intersect by
+  construction. Verified in the browser, not just asserted: 9 episodes → 3 (one
+  topic) → 6 (two topics) → 2 (× one guest) → 4 (× two guests) → 9 cleared.
+- **There are nine placeholder episodes because that is every topic-and-guest
+  pair.** With a gap in that matrix some combination of ticks would show a
+  reviewer an empty grid the real library would never produce. A test asserts the
+  full matrix rather than the count.
+
+Two roadmap requirements needed a decision rather than an implementation, and
+both are recorded in the markup:
+
+- **The hero has two buttons and the brand rule allows one orange action.** Both
+  labels ship; Watch on YouTube takes the fill because the roadmap states it
+  first, Listen Now takes the outline. A test checks both are present AND that
+  only one is filled — the one-orange-action sweep alone would pass just as
+  happily on a page that deleted "Listen Now".
+- **The behind-the-scenes photographs do not exist.** Nothing in
+  `assets/photography` is a studio, stage or event frame, so both pages carry
+  marked placeholders at the shape the real pictures will take rather than an
+  unrelated stock photo that would look finished.
+
+No episode titles, dates or guest names are invented anywhere.
+
+**Capitol Chat.** The other show in the same dropdown, in two readings. Copy is
+the roadmap's Capitol Chat tab: the hero question, "The Capitol Moves Fast. We
+Help You Keep Up." and the episode library. Nothing is chosen yet.
+
+| Page | What it is |
+| --- | --- |
+| `dist/capitol-a.html` | **The Dome** — the question set centred on a tinted masthead, the only centred hero in the build, with the Capitol photography as a triptych beneath it and a flat dated list below |
+| `dist/capitol-b.html` | **The Session** — the question holds the left of a navy hero and the reply the right; the photography runs full-bleed; the show is described in two text columns; the library accumulates under session headings |
+
+Three differences from The Empower Podcast drove this page rather than decorating
+it, and each one is a test:
+
+- **One button, and no video anywhere.** The roadmap gives this page only "Listen
+  Now", and the show is audio ("listen and subscribe wherever you get your
+  podcasts", "audio players") where the other leads on YouTube. A test fails the
+  page if a Watch action appears on it.
+- **Wil Ervin's name is not a link.** Grant Callen is one on the podcast pages
+  because his bio is built; Wil Ervin's is not, and Empower's note on 2026-08-05
+  was about precisely this failure — a name that opens somebody else's bio. A test
+  checks every anchor on both readings, and separately checks the name is still
+  *present*, because not-a-link must not quietly become not-there.
+- **No intro paragraph under the library heading.** The Podcast tab gives its
+  library one; this tab gives only "Catch Up From the Capitol". None is invented,
+  and a test asserts nothing sits between that heading and the placeholder note.
+
+The library filters by **topic and legislative session** — there are no guests to
+filter by, Wil Ervin presents every week. Six rows, one per topic-and-session
+pair, so no combination of ticks can empty the list. On The Session the session
+facet hides whole **groups**, heading included, which is the one thing a flat list
+cannot demonstrate; verified in the browser at 2 groups/6 rows → 1 group/3 rows →
+1 group/1 row → 2 groups/2 rows → cleared. No episode titles, dates or numbers are
+invented: the date column is a marked stub, because that column is where the real
+date goes.
 
 ### What Empower asked for on 2026-08-05
 

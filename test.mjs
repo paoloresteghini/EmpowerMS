@@ -1261,8 +1261,10 @@ test('the chooser filters without a script, and every control is a real one', ()
      drifted off its input is a filter a keyboard cannot reach. */
   const ids = [...chooser.matchAll(/<input class="ch__check__input[^"]*" type="checkbox" id="([^"]+)"/g)]
     .map(m => m[1]);
-  assert.deepEqual(ids, ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions'],
-    'the facets in the rail are not the six expected controls');
+  assert.deepEqual(ids,
+    ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
+     'set-work', 'set-safety', 'set-podcast', 'set-capitol'],
+    'the facets in the rail are not the ten expected controls');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1284,12 +1286,21 @@ test('every build on the chooser is filterable, and every set has exactly one pi
   assert.equal(tagged.length, cards.length,
     `${cards.length - tagged.length} cards have no data-set and would vanish when the Set facet is used`);
 
+  /* UNDECIDED sets are named, not inferred. A set awaiting a decision has zero
+     picks and disappears from the signed-off view, which is correct — but the
+     same shape is what a set whose pick was accidentally deleted looks like, so
+     the exemption is a list here rather than a rule that tolerates zero. Moving
+     a set off this list is the commit that records Empower's choice. */
+  const UNDECIDED = ['work', 'safety', 'podcast', 'capitol'];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 5, `expected five sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 9, `expected nine sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
-    assert.equal(picks, 1, `the ${key} set has ${picks} chosen builds, expected exactly one`);
+    const expected = UNDECIDED.includes(key) ? 0 : 1;
+    assert.equal(picks, expected,
+      `the ${key} set has ${picks} chosen builds, expected ${expected}` +
+      (expected === 0 ? ' — it is still awaiting Empower’s decision' : ''));
     assert.ok(css.includes(`#set-${key}:checked`), `no facet rule reveals the ${key} set`);
   }
 });
@@ -1721,6 +1732,648 @@ test('the Solutions variations do not repeat each other’s composition', () => 
   }
 });
 
+/* ===========================================================================
+   The solution detail pages.
+
+   Two of the three destinations the Solutions landing page routes to, two
+   readings each: Meaningful Work and Public Safety. Quality Education is not
+   built. Copy is the roadmap's own tabs for those two pages — its "Standard
+   Solution Page Flow", all seven sections, in the order the document states
+   them.
+
+   Two deliberate transformations of that copy, both here rather than left to be
+   noticed:
+
+     1. The roadmap sets the work-area labels in caps (WORKFORCE PARTICIPATION).
+        The pages carry them in sentence case and uppercase them in CSS, the same
+        call the homepage made for QUALITY EDUCATION. So the strings below are
+        the sentence-case form, and text-transform supplies what the document
+        shows.
+     2. The roadmap's own section titles — "The Vision", "The Problem - Why This
+        Work Matters", "What We're Working Toward" as a section name — are its
+        internal organisation, which Empower confirmed about the Who We Are side
+        labels on 2026-08-03. They are not printed on any of the four pages, and
+        the existing internal-labels sweep asserts that.
+
+   What is NOT asserted as copy: the three placeholder feed blocks in sections 6
+   and 7. The roadmap ends both with a bracketed instruction to auto-populate, so
+   those blocks carry no headlines at all — see the feed test below.
+   ======================================================================== */
+
+const WORK_COPY = [
+  /* Section 1. The roadmap gives this hero one line and nothing else. */
+  'Work Should Open Doors to Opportunity',
+
+  /* Section 2, the vision. */
+  'What Does Meaningful Work Look Like?',
+  'Every Mississippian should have the opportunity to earn success, provide for their family, and find purpose through meaningful work.',
+  'That means creating more pathways to good careers and an environment where people and businesses can thrive.',
+
+  /* Section 3, the problem. "We can do better." is its own paragraph in the
+     document and is set as its own line on all four pages. */
+  'Too Many Mississippians Are Disconnected From Work',
+  'Mississippi has one of the lowest workforce participation rates in the country, while employers struggle to find the workers they need.',
+  'The reasons are complex. Limited pathways to good careers, unnecessary requirements, and policies that make returning to work harder can all keep people on the sidelines.',
+  'We can do better.',
+
+  /* Section 4, the four approaches. */
+  'Practical Solutions for Mississippi Workers',
+  'Understand What Keeps People From Work',
+  'Identify why Mississippians are disconnected from work and what can help them return.',
+  'Remove Obstacles to Opportunity',
+  'Ensure unnecessary requirements and outdated policies don’t stand between people and meaningful work.',
+  'Build Pathways to Good Careers',
+  'Create more ways for Mississippians to gain skills, enter the workforce, and build successful careers.',
+  'Create an Environment for Growth',
+  'Make Mississippi a place where businesses can grow, jobs are created, and opportunity expands.',
+
+  /* Section 5, the intro and all five work areas: label, claim, description,
+     commitment. Five areas here against Public Safety's four. */
+  'More Pathways to Meaningful Work',
+  'Too many Mississippians remain disconnected from work for different and often complex reasons.',
+  'We’re working to understand those challenges and advance practical solutions that help more people enter the workforce, build careers, and move toward greater opportunity.',
+
+  'Workforce Participation',
+  'Too Many Mississippians Remain on the Sidelines',
+  'Mississippi has one of the nation’s lowest workforce participation rates, leaving people disconnected from opportunity and employers without the workers they need.',
+  'Understanding why people aren’t working and advancing solutions that help more Mississippians enter or return to the workforce.',
+
+  'Skills & Career Pathways',
+  'There’s More Than One Path to Success',
+  'A four-year degree isn’t the only path to a good career. Skills, experience, training, and alternative credentials can all open doors.',
+  'Expanding pathways that connect people with the skills and opportunities they need to build meaningful careers.',
+
+  'Requirements to Work',
+  'Opportunity Shouldn’t Be Harder Than Necessary',
+  'Unnecessary licensing, degree, and other requirements can make it harder for qualified people to enter a profession or put their skills to work.',
+  'Ensuring requirements are reasonable and opening more pathways to work.',
+
+  'The Benefits Cliff',
+  'Moving Up Should Always Pay',
+  'For some families, earning more can mean suddenly losing benefits before they can afford to make up the difference.',
+  'Creating a smoother path from public assistance to financial independence so earning more always moves families forward.',
+
+  'Economic Opportunity',
+  'Mississippi Should Be a Place Where Opportunity Grows',
+  'When businesses and entrepreneurs can grow, they create jobs and more opportunities for Mississippians to succeed.',
+  'Creating an environment where businesses can thrive, jobs can grow, and more people can build a better future through work.',
+
+  /* Sections 6 and 7, the two feed headings and their intros. */
+  'Voices of Mississippi’s Workforce',
+  'Hear from Mississippians navigating careers, building businesses, and pursuing better opportunities—and see what meaningful work can make possible.',
+  'The Latest on Meaningful Work',
+  'Explore the latest research, ideas, and policies shaping Mississippi’s workforce and creating more opportunities to succeed.',
+];
+
+const SAFETY_COPY = [
+  /* Section 1. */
+  'Every Mississippian Deserves to Feel Safe at Home',
+
+  /* Section 2, the vision. */
+  'What Do Safe Communities Look Like?',
+  'Every Mississippian should feel safe in the community they call home.',
+  'That means preventing crime, supporting effective law enforcement, strengthening families, and ensuring our justice system promotes both safety and fairness.',
+
+  /* Section 3, the problem, closing on its own paragraph. */
+  'Safe Communities Are the Foundation for Opportunity',
+  'When crime and instability take hold, families suffer, neighborhoods struggle, and opportunity becomes harder to reach.',
+  'Creating safer communities requires understanding what drives crime, supporting solutions that work, and ensuring our justice system holds people accountable while creating pathways to a better future.',
+  'Mississippi can build safer, stronger communities.',
+
+  /* Section 4, the four approaches. */
+  'Practical Solutions for a Safer Mississippi',
+  'Understand What Drives Crime',
+  'Use research and real-world data to better understand crime and identify solutions that improve public safety.',
+  'Support Effective Public Safety',
+  'Work alongside law enforcement and community leaders to advance strategies that prevent crime and keep communities safe.',
+  'Strengthen Justice and Accountability',
+  'Promote a justice system that protects the public, ensures fairness, and holds people accountable.',
+  'Create Pathways to a Better Future',
+  'Help people successfully reenter their communities, find meaningful work, and build stable lives after serving their sentence.',
+
+  /* Section 5, the intro and all four work areas. */
+  'Safety Creates the Foundation for Opportunity',
+  'Safe communities don’t happen through one solution alone. They require effective law enforcement, strong families, a fair justice system, and opportunities for people to build stable lives.',
+  'We’re advancing research and practical solutions that help make Mississippi communities safer and stronger.',
+
+  'Crime Prevention & Public Safety',
+  'Safety Starts With Solutions That Work',
+  'Reducing crime requires understanding where and why it happens and focusing resources on strategies that make communities safer.',
+  'Using research, data, and partnerships with law enforcement and community leaders to advance effective approaches to crime reduction.',
+
+  'Effective Justice',
+  'Safety and Fairness Go Hand in Hand',
+  'A strong justice system should protect communities, hold people accountable, and ensure laws are clear, fair, and consistently applied.',
+  'Advancing justice policies that strengthen public safety, protect due process, and build confidence in the justice system.',
+
+  'Second Chances & Reentry',
+  'A Second Chance Should Lead Somewhere',
+  'Most people who enter prison will eventually return home. Successful reentry helps people find work, rebuild their lives, and become contributing members of their communities.',
+  'Expanding pathways to employment and successful reentry that reduce repeat crime and help build safer communities.',
+
+  'Strong Families & Communities',
+  'Strong Communities Start With Strong Foundations',
+  'Stable families and connected communities play an important role in creating environments where people can thrive and neighborhoods can flourish.',
+  'Better understanding the connection between family stability, community strength, and public safety—and advancing solutions that help strengthen those foundations.',
+
+  /* Sections 6 and 7. */
+  'Voices of Safer Communities',
+  'Hear from Mississippians whose experiences with crime, justice, reentry, and community leadership show what it takes to build safer, stronger communities.',
+  'The Latest on Public Safety',
+  'Explore the latest research, ideas, and policies shaping public safety, effective justice, and stronger communities across Mississippi.',
+];
+
+const WORKPAGES = ABOUTPAGES.filter(p => p.out.includes('work-'));
+const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.includes('safety-'));
+const DETAILPAGES = [...WORKPAGES, ...SAFETYPAGES];
+
+/* Meaningful Work lost its A reading (The Open Door) on 2026-08-05, so the two
+   sets are no longer the same size. The counts stay asserted rather than
+   derived: a page that stops building should fail here, not silently shrink
+   the set the SIGNATURE and copy sweeps run over. */
+test('both solution detail pages build in the readings that survived', () => {
+  assert.equal(WORKPAGES.length, 2, `expected two Meaningful Work readings, found ${WORKPAGES.length}`);
+  assert.equal(SAFETYPAGES.length, 3, `expected three Public Safety readings, found ${SAFETYPAGES.length}`);
+});
+
+test('every Meaningful Work reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of WORKPAGES) {
+    const text = textOf(html);
+    for (const line of WORK_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('every Public Safety reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of SAFETYPAGES) {
+    const text = textOf(html);
+    for (const line of SAFETY_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('neither page carries the other page’s copy', () => {
+  /* Two pages, one document, seven identically named sections. The failure mode
+     is a paragraph copied across while a variation was being built and never
+     changed — which would read as approved copy on a page it was never written
+     for. Checked on the two sentences that are unmistakably one page's: the
+     hero, and the closing feed heading. */
+  const WORK_ONLY = ['Work Should Open Doors to Opportunity', 'The Latest on Meaningful Work'];
+  const SAFETY_ONLY = ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Public Safety'];
+  for (const { out, html } of WORKPAGES) {
+    for (const line of SAFETY_ONLY) {
+      assert.ok(!textOf(html).includes(line), `${out} carries Public Safety copy: "${line}"`);
+    }
+  }
+  for (const { out, html } of SAFETYPAGES) {
+    for (const line of WORK_ONLY) {
+      assert.ok(!textOf(html).includes(line), `${out} carries Meaningful Work copy: "${line}"`);
+    }
+  }
+});
+
+test('the six solution detail readings do not repeat each other’s composition', () => {
+  /* Paolo chose independently composed pages on 2026-08-05 rather than one
+     template filled repeatedly, and reaffirmed it when the C pair was added, so
+     all six have to stay distinct — not just the readings of a given page. Each
+     signature is the shape that page's own load-bearing sections take: the four
+     approaches, and the work areas. If any two pages share one, the choice they
+     were built to offer is gone.
+
+     The C pair is the case that needs stating: work-c and safety-c deliberately
+     REUSE work-b's mosaic, story columns and article stubs (Paolo picked those
+     three sections out), so their signatures are their upper halves — the navy
+     quarters and the four rows — and their own namespaced copies of the mosaic.
+     That reuse is asserted separately below, so it stays a decision rather than
+     drifting into three pages that are accidentally the same page. */
+  const SIGNATURE = {
+    'dist/work-b.html': ['wrb-track__list', 'wrb-plate--lead'],
+    'dist/work-c.html': ['wkc-quarters__grid', 'wkc-rail'],
+    'dist/safety-a.html': ['psa-bricks__grid', 'psa-post__label'],
+    'dist/safety-b.html': ['psb-steps__list', 'psb-lit'],
+    'dist/safety-c.html': ['sfc-rows__list', 'sfc-rail'],
+  };
+  assert.equal(Object.keys(SIGNATURE).length, DETAILPAGES.length,
+    'a solution detail page was added without a signature composition to hold it apart');
+  for (const { out, html } of DETAILPAGES) {
+    for (const cls of SIGNATURE[out]) {
+      assert.ok(html.includes(cls), `${out} has lost its ${cls} composition`);
+    }
+    for (const [other, classes] of Object.entries(SIGNATURE)) {
+      if (other === out) continue;
+      for (const cls of classes) {
+        assert.ok(!html.includes(cls), `${out} is using ${other}'s ${cls} composition`);
+      }
+    }
+  }
+});
+
+test('the C readings carry the three sections they were built to reuse', () => {
+  /* work-c and safety-c exist because Paolo picked three sections out of work-b:
+     the work-area mosaic with a double-width navy lead plate and orange chip
+     labels, the community-story columns under dashed rules, and the 2x2 of dashed
+     article stubs. That is the brief, so it is a contract — a redesign that
+     quietly drops one of the three has stopped being the page that was asked for.
+
+     Checked structurally, per namespace, because the whole point is that each page
+     owns its own copy of these rules (one stylesheet per variation, so converting
+     the winner to Elementor never drags in a rejected design's CSS). */
+  const REUSED = {
+    'dist/work-c.html': 'wkc',
+    'dist/safety-c.html': 'sfc',
+  };
+  for (const [out, ns] of Object.entries(REUSED)) {
+    const html = readFileSync(out, 'utf8');
+    const css = readFileSync(`css/${out.replace('dist/', '').replace('.html', '')}.css`, 'utf8');
+
+    assert.ok(html.includes(`${ns}-plate-area--lead`), `${out} has no double-width lead plate`);
+    assert.match(css, new RegExp(`\\.${ns}-plate-area--lead\\{[^}]*grid-column:1 / -1`),
+      `${out}'s lead plate is no longer double-width`);
+    assert.match(css, new RegExp(`\\.${ns}-plate-area--lead\\{[^}]*background:var\\(--surface-navy\\)`),
+      `${out}'s lead plate is no longer navy`);
+
+    const chips = (html.match(new RegExp(`class="${ns}-chip"`, 'g')) || []).length;
+    assert.ok(chips >= 4, `${out} has ${chips} chip labels, expected one per work area`);
+    assert.match(css, new RegExp(`\\.${ns}-chip\\{[^}]*background:var\\(--orange-700\\)`),
+      `${out}'s chips are no longer the orange pill (or lost the 5.55:1 fill)`);
+
+    assert.match(css, new RegExp(`\\.${ns}-feed__col\\{[^}]*border-top:2px dashed`),
+      `${out}'s story columns have lost their dashed rule`);
+    assert.match(css, new RegExp(`\\.${ns}-stubs\\{[^}]*grid-template-columns:repeat\\(2,`),
+      `${out}'s article stubs are no longer a 2x2`);
+  }
+});
+
+/* ===========================================================================
+   The Empower Podcast.
+
+   Two readings of the roadmap's Podcast tab. Three sections, all three carried
+   whole. Two things about this page set are unlike anything else in the build
+   and both are asserted below:
+
+     1. The roadmap gives the hero TWO buttons. The brand rule is one orange
+        filled action per view and the sweep above enforces the count, so both
+        labels ship and only Watch on YouTube takes the fill. A page that drops
+        "Listen Now" to satisfy the button rule has lost approved copy, which is
+        the more serious of the two failures.
+     2. The episode library FILTERS, which the roadmap asks for in a note
+        addressed to Paolo. It runs on :has() with no script.
+   ======================================================================== */
+
+const PODCAST_COPY = [
+  /* Section 1, the hero: the three-sentence headline, the paragraph, both
+     buttons. */
+  'Mississippi’s Biggest Challenges. Biggest Opportunities. Real Conversations.',
+  'Join Grant Callen for thoughtful conversations with lawmakers, policy experts, and community leaders about the ideas and solutions that can help every Mississippian rise.',
+  'Watch on YouTube',
+  'Listen Now',
+
+  /* Section 2, about the show. The full stop in the heading is the roadmap's. */
+  'Go Beyond the Headlines.',
+  'Hosted by Empower Mississippi Founder and CEO Grant Callen, The Empower Podcast brings together lawmakers, policy experts, and community leaders to explore Mississippi’s biggest challenges and brightest opportunities.',
+  'Through thoughtful, long-form conversations, we look beyond divisive politics to the people impacted by public policy and the ideas that can help create a Mississippi where everyone can rise.',
+  'Watch on YouTube or listen wherever you get your podcasts.',
+
+  /* Section 3, the episode library. */
+  'Explore More Episodes',
+  'Discover more conversations about the people, ideas, and solutions shaping Mississippi’s future.',
+];
+
+const PODCASTPAGES = ABOUTPAGES.filter(p => p.out.includes('podcast-'));
+
+test('both Podcast readings build', () => {
+  assert.equal(PODCASTPAGES.length, 2, `expected two Podcast readings, found ${PODCASTPAGES.length}`);
+});
+
+test('every Podcast reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of PODCASTPAGES) {
+    const text = textOf(html);
+    for (const line of PODCAST_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('the Podcast hero keeps both roadmap buttons and fills only one', () => {
+  /* The failure this guards against is quiet: the one-orange-action sweep passes
+     just as happily on a page that deleted "Listen Now" as on one that demoted it
+     to an outline. Only the second is correct. */
+  for (const { out, html } of PODCASTPAGES) {
+    const watch = html.match(/em-btn[^"]*"[^>]*>\s*Watch on YouTube/);
+    assert.ok(watch, `${out} has no Watch on YouTube button`);
+    assert.match(watch[0], /em-btn--primary/,
+      `${out}: the roadmap's first button is not the page's orange action`);
+
+    const listen = html.match(/<a class="em-btn([^"]*)"[^>]*>\s*Listen Now/);
+    assert.ok(listen, `${out} has dropped the Listen Now button — that is approved copy`);
+    assert.ok(!listen[1].includes('em-btn--primary'),
+      `${out}: Listen Now is a second orange action`);
+    assert.match(listen[1], /outline/, `${out}: Listen Now should be an outline button`);
+  }
+});
+
+test('the episode library filters without a script, and every control is real', () => {
+  for (const { out, html } of PODCASTPAGES) {
+    const slug = out.replace('dist/', '').replace('.html', '');
+    const css = readFileSync(`css/${slug}.css`, 'utf8');
+
+    /* Same rule the review index has held to since it was built. */
+    assert.equal((html.match(/<script/g) || []).length, 3,
+      `${out} has grown a script beyond the three shared modules`);
+    assert.match(html, /<form class="[a-z]+-(facets|chips)"/,
+      `${out}'s filter is not a form, so Clear cannot be a native reset`);
+    assert.match(html, /<button class="[a-z-]+__clear" type="reset">/,
+      `${out}'s Clear is not a native form reset`);
+    assert.match(css, /@supports not selector\(body:has\(a\)\)/,
+      `${slug}.css does not hide the filter where :has() is missing`);
+
+    /* Every facet is an input with a label bound by id: a label that has drifted
+       off its input is a filter a keyboard cannot reach. */
+    const ids = [...html.matchAll(/<input class="[^"]*(?:check|chip)__input[^"]*" type="checkbox" id="([^"]+)"/g)]
+      .map(m => m[1]);
+    assert.equal(ids.length, 6, `${out} has ${ids.length} facet controls, expected six`);
+    for (const id of ids) {
+      assert.ok(html.includes(`for="${id}"`), `${out}: the ${id} facet has no label bound to it`);
+    }
+  }
+});
+
+test('the episode library cannot filter itself empty, and invents no episodes', () => {
+  /* Nine cards, one per topic-and-guest pair. That is what makes an empty result
+     impossible for ANY combination of ticks — with a gap in the matrix, some
+     combination shows the reviewer a dead end the real library would not have.
+     Asserted as the actual set of pairs, not as a count of nine. */
+  const TOPICS = ['education', 'work', 'safety'];
+  const GUESTS = ['lawmaker', 'expert', 'leader'];
+
+  for (const { out, html } of PODCASTPAGES) {
+    const cards = [...html.matchAll(/data-topic="([a-z]+)" data-guest="([a-z]+)"/g)]
+      .map(m => `${m[1]}/${m[2]}`);
+    assert.equal(cards.length, 9, `${out} has ${cards.length} episode placeholders, expected nine`);
+    for (const t of TOPICS) {
+      for (const g of GUESTS) {
+        assert.ok(cards.includes(`${t}/${g}`),
+          `${out} has no ${t}/${g} episode — that combination of filters would return nothing`);
+      }
+    }
+
+    const marked = (html.match(/data-placeholder="episode"/g) || []).length;
+    assert.equal(marked, 9, `${out} marks ${marked} of its nine episodes as placeholders`);
+    assert.match(html, /placeholders/,
+      `${out} shows stub episodes without saying so in words`);
+  }
+});
+
+test('the library filter composes AND across groups, not OR', () => {
+  /* The bug this exists to catch is silent and specific: the hide-everything-
+     then-reveal shape used on the review index works for one facet group and
+     turns into an OR the moment a second group can reveal what the first hid.
+     These pages use hide-only rules per value instead, which intersect by
+     construction. Checked by reading the rules rather than the rendering: every
+     facet value must contribute a rule of the form "group in use AND this value
+     unticked -> hide", and no rule may reveal a card. */
+  const VALUES = {
+    'podcast-a': { ns: 'pca', prefix: 'pa', topics: ['education', 'work', 'safety'],
+                   guests: ['lawmaker', 'expert', 'leader'] },
+    'podcast-b': { ns: 'pcb', prefix: 'pb', topics: ['education', 'work', 'safety'],
+                   guests: ['lawmaker', 'expert', 'leader'] },
+  };
+  for (const [slug, { ns, prefix, topics, guests }] of Object.entries(VALUES)) {
+    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const t of topics) {
+      assert.ok(css.includes(
+        `body:has(.${ns}-topic:checked):not(:has(#${prefix}-t-${t}:checked)) .${ns}-ep[data-topic="${t}"]`),
+        `css/${slug}.css has no hide rule for the ${t} topic`);
+    }
+    for (const g of guests) {
+      assert.ok(css.includes(
+        `body:has(.${ns}-guest:checked):not(:has(#${prefix}-g-${g}:checked)) .${ns}-ep[data-guest="${g}"]`),
+        `css/${slug}.css has no hide rule for the ${g} guest`);
+    }
+    /* A reveal rule on an episode is the shape that breaks the intersection. */
+    for (const block of css.split('}')) {
+      const [selector, body] = block.split('{');
+      if (!body || !selector.includes(`-ep[data-`)) continue;
+      assert.ok(!/display:\s*(flex|grid|block)/.test(body),
+        `css/${slug}.css reveals ${selector.trim().slice(0, 60)} — a reveal rule turns the ` +
+        `two facet groups from AND into OR`);
+    }
+  }
+});
+
+/* ===========================================================================
+   Capitol Chat.
+
+   The sibling show in the same dropdown, two readings. The roadmap's copy for it
+   differs from The Empower Podcast's in three ways that are design decisions here
+   rather than details, and all three are asserted:
+
+     1. ONE button. Capitol Chat is audio ("listen and subscribe wherever you get
+        your podcasts", "audio players"); the podcast page leads on YouTube. So
+        neither reading may carry a watch-on-YouTube action.
+     2. NO INTRO PARAGRAPH under the library heading. The podcast tab gives its
+        library one; this tab does not, so none is invented.
+     3. WIL ERVIN IS NOT A LINK. His bio page does not exist, and Empower's note
+        on 2026-08-05 was about exactly this: a visitor clicking his name and
+        landing on somebody else's bio.
+   ======================================================================== */
+
+const CAPITOL_COPY = [
+  /* Section 1, the hero, and its single button. */
+  'What’s Happening Under the Dome?',
+  'Get quick, straightforward updates on the legislation, debates, and decisions shaping Mississippi during the legislative session.',
+  'Listen Now',
+
+  /* Section 2, about the show. */
+  'The Capitol Moves Fast. We Help You Keep Up.',
+  'Capitol Chat is Empower Mississippi’s weekly insider update on what’s happening at the Mississippi State Capitol during the legislative session.',
+  'Each week, Senior Vice President Wil Ervin breaks down the biggest developments and highlights the action under the dome—all in under five minutes.',
+  'Get the context you need to understand what’s happening, why it matters, and what to watch next.',
+  'Listen and subscribe wherever you get your podcasts.',
+
+  /* Section 3. The roadmap gives this one a heading and nothing else. */
+  'Catch Up From the Capitol',
+];
+
+const CAPITOLPAGES = ABOUTPAGES.filter(p => p.out.includes('capitol-'));
+
+test('both Capitol Chat readings build', () => {
+  assert.equal(CAPITOLPAGES.length, 2, `expected two Capitol Chat readings, found ${CAPITOLPAGES.length}`);
+});
+
+test('every Capitol Chat reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of CAPITOLPAGES) {
+    const text = textOf(html);
+    for (const line of CAPITOL_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('Capitol Chat is an audio page with one action', () => {
+  /* The roadmap gives this page one button. A watch action here would be a
+     feature nobody asked for on a show that does not have video, and it would put
+     a second primary action on the page. */
+  for (const { out, html } of CAPITOLPAGES) {
+    assert.ok(!/Watch on YouTube/.test(textOf(html)),
+      `${out} has a Watch on YouTube action — Capitol Chat is an audio show and the roadmap gives it one button`);
+    const listen = html.match(/<a class="em-btn([^"]*)"[^>]*>\s*Listen Now/);
+    assert.ok(listen, `${out} has no Listen Now button`);
+    assert.match(listen[1], /em-btn--primary/,
+      `${out}: Listen Now is the page's only action, so it takes the orange fill`);
+  }
+});
+
+test('Wil Ervin’s name is not a link on either Capitol Chat reading', () => {
+  /* Grant Callen is a link on the podcast pages because his bio is built. Wil
+     Ervin's is not, and Empower asked for exactly this to stop happening: a card
+     or a name that opens somebody else's bio. The check is the whole anchor set,
+     because the failure would come from copying the podcast page's pattern. */
+  for (const { out, html } of CAPITOLPAGES) {
+    const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
+    for (const inner of anchors) {
+      assert.ok(!/Wil Ervin/.test(inner),
+        `${out} links Wil Ervin's name — his bio page does not exist, so it would open somebody else's`);
+    }
+    assert.ok(!html.includes('href="team-bio.html"'),
+      `${out} links the CEO's bio from a page hosted by somebody else`);
+    /* And the name is still on the page: not-a-link must not become not-there. */
+    assert.ok(textOf(html).includes('Senior Vice President Wil Ervin'),
+      `${out} has lost the host's name`);
+  }
+});
+
+test('the Capitol Chat library filters by session and invents no dates', () => {
+  const SHAPE = {
+    'capitol-a': { ns: 'cca', prefix: 'ca', groups: false },
+    'capitol-b': { ns: 'ccb', prefix: 'cb', groups: true },
+  };
+  const TOPICS = ['education', 'work', 'safety'];
+  const SESSIONS = ['2026', '2025'];
+
+  for (const [slug, { ns, prefix, groups }] of Object.entries(SHAPE)) {
+    const html = readFileSync(`dist/${slug}.html`, 'utf8');
+    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+    /* Six rows, one per topic-and-session pair, so no combination of ticks can
+       empty the list. */
+    const rows = [...html.matchAll(/data-topic="([a-z]+)" data-session="(\d+)"/g)]
+      .map(m => `${m[1]}/${m[2]}`);
+    assert.equal(rows.length, 6, `${slug} has ${rows.length} episode rows, expected six`);
+    for (const t of TOPICS) {
+      for (const se of SESSIONS) {
+        assert.ok(rows.includes(`${t}/${se}`),
+          `${slug} has no ${t}/${se} row — that combination of filters would return nothing`);
+      }
+    }
+
+    /* Topic hides rows on both. Session hides ROWS on the flat list and whole
+       GROUPS on the grouped one — a hidden group whose heading stayed behind
+       would be a lie about what is in the list. */
+    for (const t of TOPICS) {
+      assert.ok(css.includes(
+        `body:has(.${ns}-topic:checked):not(:has(#${prefix}-t-${t}:checked)) .${ns}-ep[data-topic="${t}"]`),
+        `css/${slug}.css has no hide rule for the ${t} topic`);
+    }
+    const target = groups ? `.${ns}-group[data-session=` : `.${ns}-ep[data-session=`;
+    for (const se of SESSIONS) {
+      assert.ok(css.includes(
+        `body:has(.${ns}-session:checked):not(:has(#${prefix}-s-${se}:checked)) ${target}"${se}"]`),
+        `css/${slug}.css has no session hide rule targeting ${target}"${se}"]`);
+    }
+
+    /* The date column is a marked stub, not a fabricated date and not an empty
+       cell that reads as a layout fault. */
+    const dates = (html.match(/data-placeholder="date"/g) || []).length;
+    assert.equal(dates, 6, `${slug} marks ${dates} of its six date columns as stubs`);
+    assert.ok(!/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d/.test(textOf(html)),
+      `${slug} contains what looks like a fabricated episode date`);
+
+    /* No script, native reset, gated on :has(). */
+    assert.equal((html.match(/<script/g) || []).length, 3,
+      `${slug} has grown a script beyond the three shared modules`);
+    assert.match(html, new RegExp(`<form class="${ns}-filter"`), `${slug}'s filter is not a form`);
+    assert.match(html, new RegExp(`<button class="${ns}-filter__clear" type="reset">`),
+      `${slug}'s Clear is not a native form reset`);
+    assert.match(css, /@supports not selector\(body:has\(a\)\)/,
+      `css/${slug}.css does not hide the filter where :has() is missing`);
+  }
+});
+
+test('neither Capitol Chat reading invents an intro under the library heading', () => {
+  /* The roadmap gives the podcast library an intro paragraph and gives this one
+     only a heading. The note that follows is ours and says so about itself; what
+     must not appear is a sentence dressed as approved copy. */
+  for (const { out, html } of CAPITOLPAGES) {
+    /* Comments stripped FIRST. Both partials quote the heading in their opening
+       comment to explain why there is no intro under it, so a plain indexOf finds
+       the explanation rather than the heading and the assertion reads the comment
+       prose as page copy. Strip, then search. */
+    const markup = html.replace(/<!--[\s\S]*?-->/g, '');
+    const at = markup.indexOf('Catch Up From the Capitol');
+    assert.ok(at > -1, `${out} has no library heading`);
+    const after = textOf(markup.slice(at, at + 400));
+    assert.match(after, /Catch Up From the Capitol\s*The list below is a live query in WordPress/,
+      `${out} has something between the library heading and the placeholder note — ` +
+      `the roadmap gives this section no intro paragraph`);
+  }
+});
+
+test('the C readings put a working rail on the work areas', () => {
+  /* The one thing the A and B readings lack: five work areas (four on safety) is
+     more than anyone will scroll to survey, so the C pair carries a real anchor
+     rail. Real anchors, so it works with no JavaScript — and every href has to
+     resolve to an id that exists, or the rail is four dead links in a review. */
+  for (const out of ['dist/work-c.html', 'dist/safety-c.html']) {
+    const html = readFileSync(out, 'utf8');
+    const nav = html.match(/<nav class="[a-z]+-rail"[\s\S]*?<\/nav>/);
+    assert.ok(nav, `${out} has no rail`);
+    assert.match(nav[0], /aria-label="/, `${out}'s rail has no accessible name`);
+
+    const targets = [...nav[0].matchAll(/href="#([^"]+)"/g)].map(m => m[1]);
+    assert.ok(targets.length >= 4, `${out}'s rail has ${targets.length} links, expected one per area`);
+    for (const id of targets) {
+      assert.ok(html.includes(`id="${id}"`), `${out}'s rail links #${id}, which is not on the page`);
+    }
+
+    /* A rail that jumps behind the sticky header lands the reader on a heading
+       they cannot see. scroll-margin-top on the target is the fix. */
+    const slug = out.replace('dist/', '').replace('.html', '');
+    const css = readFileSync(`css/${slug}.css`, 'utf8');
+    assert.match(css, /scroll-margin-top:/,
+      `${slug}.css sets no scroll-margin-top, so the sticky header will cover every rail destination`);
+  }
+});
+
+test('every auto-populated block is marked as a feed and says so in words', () => {
+  /* Sections 6 and 7 of both roadmap tabs end in a bracketed instruction to
+     auto-populate. Nothing in them is copy, so nothing in them may look like
+     copy: no invented headline, no plausible article title. The blocks are grey
+     bars behind a data-placeholder mark, and a note above each one says in words
+     that it is a feed — the same treatment the team pages give the missing
+     headshots, and for the same reason: a page showing stand-ins has to admit it
+     in review or the stand-ins ship. */
+  for (const { out, html } of DETAILPAGES) {
+    const feeds = (html.match(/data-placeholder="feed"/g) || []).length;
+    assert.ok(feeds >= 6,
+      `${out} marks only ${feeds} feed placeholders — expected at least six (three stories, three articles)`);
+    const notes = (html.match(/live feed in WordPress/g) || []).length;
+    assert.equal(notes, 2,
+      `${out} has ${notes} feed notes, expected two — one over each auto-populated block`);
+  }
+});
+
+test('every solution detail reading routes back to the landing page and the feeds', () => {
+  for (const { out, html } of DETAILPAGES) {
+    assert.ok(html.includes('href="/solutions"'),
+      `${out} does not link back to the Solutions landing page`);
+    assert.ok(html.includes('href="/latest"'),
+      `${out} does not link the destination its two feeds resolve to`);
+  }
+});
+
 test('the About pages use the agreed build’s header, not the mega-menu one', () => {
   // The agreed homepage runs header-2 (utility strip + plain dropdowns). An
   // About page on the mega-menu header would put two different navigations in
@@ -1775,7 +2428,24 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'what-we-do-a': 'da', 'what-we-do-b': 'db', 'what-we-do-c': 'dc',
     'team-a': 'ta', 'team-b': 'tb', 'team-c': 'tc', 'team-bio': 'tp',
     'solutions-a': 'sa', 'solutions-b': 'sb', 'solutions-c': 'sc',
+    'work-b': 'wrb', 'work-c': 'wkc',
+    'safety-a': 'psa', 'safety-b': 'psb', 'safety-c': 'sfc',
+    'podcast-a': 'pca', 'podcast-b': 'pcb',
+    'capitol-a': 'cca', 'capitol-b': 'ccb',
   };
+
+  /* The map has to be written by hand — a slug does not imply a prefix — but its
+     COVERAGE does not. Every About page must appear here, and a page added
+     without an entry fails loudly instead of quietly opting out of the check.
+     This test, the side-stripe sweep and the hang-out-of-section sweep all
+     shipped with hand-written page lists that stopped matching the build; the
+     other two now derive from PAGES, and this is the same fix in the only shape
+     an arbitrary mapping allows. */
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const slug = page.out.replace('dist/', '').replace('.html', '');
+    assert.ok(PREFIX[slug], `${slug} has no namespace prefix registered in this test`);
+  }
+
   const all = Object.values(PREFIX);
   for (const [slug, mine] of Object.entries(PREFIX)) {
     const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -1798,10 +2468,14 @@ test('the About pages hang no element out of its own section', () => {
      The check is narrow on purpose: a rule that is BOTH position:absolute and
      given a negative `bottom` is the shape that reaches downward out of its
      own box. Absolute positioning inside a section is fine and used here. */
-  for (const slug of ['who-we-are-a', 'who-we-are-b', 'who-we-are-c',
-                      'what-we-do-a', 'what-we-do-b', 'what-we-do-c',
-                      'team-a', 'team-b', 'team-c', 'team-bio',
-                      'solutions-a', 'solutions-b', 'solutions-c']) {
+  /* Derived from PAGES, never listed by hand. The hand-written list this replaced
+     named thirteen slugs because thirteen was all there was when it was written;
+     four pages added later were never added to it, and one of them shipped the
+     exact defect this sweep exists to catch while the sweep passed green. A list
+     that has to be extended by hand stops covering the build the first time
+     somebody forgets. */
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const slug = page.out.replace('dist/', '').replace('.html', '');
     const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const block of css.split('}')) {
       const [selector, body] = block.split('{');
@@ -1864,7 +2538,11 @@ test('no About page repeats a kicker above every section', () => {
      mark. Variation B is allowed none at all — its chapter rail is the label
      system. */
   for (const { out, html } of ABOUTPAGES) {
-    const kickers = html.match(/class="[a-z]{2}-kicker/g) || [];
+    /* The pattern has to match every namespace in the build, not the two-letter
+       ones it was written against, and the label is called a kicker on the older
+       pages and an eyebrow on the newer ones. Both are the same object: a small
+       label above a heading. */
+    const kickers = html.match(/class="[a-z]{2,4}-(kicker|eyebrow|hero__eyebrow)/g) || [];
     assert.ok(kickers.length <= 1,
       `${out} has ${kickers.length} kickers — one per page, in the hero`);
   }
@@ -1875,19 +2553,28 @@ test('no About stylesheet uses a coloured side stripe as an accent', () => {
      accent on a card or a pull quote, is the callout-bar reflex. Where these
      pages want to mark a block they use the 56x4 orange rule above it, which
      is the brand's own motif. */
-  for (const slug of ['who-we-are-a', 'who-we-are-b', 'who-we-are-c',
-                      'what-we-do-a', 'what-we-do-b', 'what-we-do-c',
-                      'team-a', 'team-b', 'team-c', 'team-bio',
-                      'solutions-a', 'solutions-b', 'solutions-c']) {
+  /* Derived from PAGES, never listed by hand. The hand-written list this replaced
+     named thirteen slugs because thirteen was all there was when it was written;
+     four pages added later were never added to it, and one of them shipped the
+     exact defect this sweep exists to catch while the sweep passed green. A list
+     that has to be extended by hand stops covering the build the first time
+     somebody forgets. */
+  for (const page of PAGES.filter(p => p.kind === 'about')) {
+    const slug = page.out.replace('dist/', '').replace('.html', '');
     const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const block of css.split('}')) {
       const [selector, body] = block.split('{');
       if (!body) continue;
       const m = body.match(/border-(left|right):\s*(\d+)px/);
-      if (m && Number(m[2]) > 1) {
-        assert.fail(`css/${slug}.css puts a ${m[2]}px ${m[1]} border on ` +
-          `${selector.trim().slice(0, 50)} — use the orange mark above the block instead`);
-      }
+      if (!m || Number(m[2]) <= 1) continue;
+      /* A LONE side border is the callout bar. A side border declared together
+         with an adjacent top or bottom border is a corner — the two-border
+         chevron that draws every caret in this build, including the one in
+         components.css. Flagging that would be a false positive, and designing
+         around a false positive is worse than the rule it enforces. */
+      if (/border-(top|bottom):\s*\d+px/.test(body)) continue;
+      assert.fail(`css/${slug}.css puts a ${m[2]}px ${m[1]} border on ` +
+        `${selector.trim().slice(0, 50)} — use the orange mark above the block instead`);
     }
   }
 });

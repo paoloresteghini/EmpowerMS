@@ -1,0 +1,102 @@
+<!-- "Catch Up From the Capitol", and the roadmap gives this section no intro
+     paragraph, so none is invented.
+
+     GROUPED BY SESSION, which is the difference from variation A’s flat list: a
+     weekly show accumulates by session, and a listener catching up thinks in
+     sessions. The session filter therefore hides whole GROUPS rather than
+     individual rows, which is the filter doing something a flat list cannot show.
+
+     Six rows, three per session and all three topics inside each group, so no
+     combination of ticks can empty a visible group or the list. No episode titles,
+     dates or numbers are invented. -->
+<section class="ccb-library" aria-labelledby="library-title">
+  <div class="em-container">
+    <h2 class="ccb-library__head" id="library-title" data-reveal="rise">Catch Up From the Capitol</h2>
+
+    <p class="ccb-libnote">The list below is a live query in WordPress. The six rows are placeholders — no episode titles, dates or numbers are invented here — but the filter is real: it is the tag search the roadmap asks for, working without JavaScript. Session is a stand-in vocabulary until Empower supply the real tags; ticking one hides the whole group.</p>
+
+    <form class="ccb-filter">
+      <fieldset class="ccb-filter__group">
+        <legend>Topic</legend>
+        <div class="ccb-filter__row">
+          <div class="ccb-tag">
+            <input class="ccb-tag__input ccb-topic" type="checkbox" id="cb-t-education">
+            <label class="ccb-tag__label" for="cb-t-education">Quality Education</label>
+          </div>
+          <div class="ccb-tag">
+            <input class="ccb-tag__input ccb-topic" type="checkbox" id="cb-t-work">
+            <label class="ccb-tag__label" for="cb-t-work">Meaningful Work</label>
+          </div>
+          <div class="ccb-tag">
+            <input class="ccb-tag__input ccb-topic" type="checkbox" id="cb-t-safety">
+            <label class="ccb-tag__label" for="cb-t-safety">Public Safety</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="ccb-filter__group">
+        <legend>Session</legend>
+        <div class="ccb-filter__row">
+          <div class="ccb-tag">
+            <input class="ccb-tag__input ccb-session" type="checkbox" id="cb-s-2026">
+            <label class="ccb-tag__label" for="cb-s-2026">2026 session</label>
+          </div>
+          <div class="ccb-tag">
+            <input class="ccb-tag__input ccb-session" type="checkbox" id="cb-s-2025">
+            <label class="ccb-tag__label" for="cb-s-2025">2025 session</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <button class="ccb-filter__clear" type="reset">Clear filters</button>
+    </form>
+
+    <div class="ccb-group" data-session="2026">
+      <h3 class="ccb-group__head" data-reveal="rise">2026 session</h3>
+      <ol class="ccb-eps" data-reveal-group>
+        <li class="ccb-ep" data-topic="education" data-session="2026" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Quality Education</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+        <li class="ccb-ep" data-topic="work" data-session="2026" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Meaningful Work</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+        <li class="ccb-ep" data-topic="safety" data-session="2026" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Public Safety</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="ccb-group" data-session="2025">
+      <h3 class="ccb-group__head" data-reveal="rise">2025 session</h3>
+      <ol class="ccb-eps" data-reveal-group>
+        <li class="ccb-ep" data-topic="education" data-session="2025" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Quality Education</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+        <li class="ccb-ep" data-topic="work" data-session="2025" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Meaningful Work</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+        <li class="ccb-ep" data-topic="safety" data-session="2025" data-placeholder="episode" data-reveal="rise">
+          <span class="ccb-ep__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+          <span class="ccb-ep__title" aria-hidden="true"><i></i></span>
+          <span class="ccb-ep__tag">Public Safety</span>
+          <span class="ccb-ep__date" data-placeholder="date" aria-hidden="true"><i></i></span>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>

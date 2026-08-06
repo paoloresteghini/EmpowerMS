@@ -1,0 +1,366 @@
+/* Public Safety — variation C, "The Watch".
+
+   Built with the impeccable craft flow on 2026-08-05, in the same lane as
+   work-c and deliberately NOT the same composition: Paolo chose six distinct
+   pages over a shared template. It keeps the same three sections of work-b that
+   work-c keeps (the mosaic, the story columns, the article stubs) and replaces
+   everything above them with the inverse of work-c's upper half.
+
+   THE ARGUMENT: work-c is white plates on a navy field. This is one navy plate on
+   a white field. The hero is that plate, with the photograph as a column inside it
+   clipped by its own radius; the rail to the four work areas runs beneath it on
+   white, divided by hairlines; the vision is a second navy plate split by a single
+   hairline; and the problem is the only section on the page set directly on the
+   page with no plate at all, which is what makes the plates above and below it
+   read as objects.
+
+   COLOUR STRATEGY: committed, inverted from work-c. Navy arrives as discrete
+   objects rather than as ground. Orange is structural only — the 56x4 mark, the
+   chips, the rail's hover state, one filled button. No third colour.
+
+   WHY IT IS NOT VARIATION A OR B OR WORK-C: A lays the four approaches as an
+   offset course of brick and stands the areas up as capped posts; B is
+   dark-dominant with numbered discs and lit cards; work-c quarters the approaches
+   inside a navy plate. This runs them as four wide rows with the name at display
+   size in the left column, which none of the others do.
+
+   NO NUMERALS. Four simultaneous commitments, not a sequence.
+
+   NO SIDE STRIPES. Blocks are marked with the 56x4 orange rule above them.
+
+   TEXT OVER PHOTOGRAPHY: never. The photograph is a column beside the words
+   inside the hero plate.
+
+   NO NEW SCRIPTS. Reveals are the existing layer, which ships visible. Nothing
+   carrying data-reveal declares its own transition — motion.css would replace it;
+   the rail links, which do own a transition, are outside the reveal system.
+
+   ELEMENTOR NOTE: no element crosses a section boundary. Every plate is a child
+   inside its own section.
+
+   Namespaced .sfc- throughout. */
+
+/* ------------------------------- Shared ---------------------------------- */
+
+.sfc-lede{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.4;color:var(--text-strong)}
+
+.sfc-feednote{margin:clamp(var(--space-9),5vw,var(--space-12)) 0 var(--space-6);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-muted)}
+.sfc-feednote::before{content:"";display:block;width:56px;height:4px;
+  margin-bottom:var(--space-4);border-radius:var(--radius-pill);
+  background:var(--em-orange)}
+
+/* ============================== 1 · Hero ================================= */
+
+.sfc-hero{padding:clamp(var(--space-9),5vw,var(--space-11)) 0
+  clamp(var(--space-11),6vw,var(--space-13));background:var(--surface-page)}
+
+/* One plate. The photograph is a grid cell inside it with no padding of its own,
+   so it runs to the plate's edge and the plate's radius clips it — overflow
+   hidden on the plate is what makes that work without a second radius to keep in
+   step. */
+.sfc-hero__plate{display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
+  align-items:stretch;overflow:hidden;
+  border-radius:var(--radius-panel);
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.sfc-hero__copy{display:flex;flex-direction:column;justify-content:center;
+  min-width:0;padding:clamp(var(--space-9),5vw,var(--space-13))}
+
+/* One eyebrow, on the hero only. */
+.sfc-hero__eyebrow{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+/* Measure on the h1, where `ch` resolves against the type it describes. */
+.sfc-hero h1{margin:0;max-width:19ch;
+  font-size:clamp(2.1rem,1.1rem + 3.6vw,3.75rem);
+  font-weight:var(--fw-black);line-height:1;letter-spacing:-.035em;
+  color:var(--white);text-wrap:balance}
+
+.sfc-hero__media{margin:0;min-height:100%}
+.sfc-hero__media img{display:block;width:100%;height:100%;
+  min-height:clamp(260px,26vw,380px);object-fit:cover;object-position:50% 32%}
+
+/* ---- The rail: on white, divided by hairlines ---- */
+
+.sfc-rail{margin-top:clamp(var(--space-8),4vw,var(--space-10))}
+.sfc-rail ul{display:flex;flex-wrap:wrap;list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+.sfc-rail li{flex:1 1 220px;border-bottom:1px solid var(--border-default)}
+.sfc-rail li + li{border-left:1px solid var(--border-default)}
+
+/* 24px minimum target (SC 2.5.8). The whole cell is the target, not just the
+   words, so a four-across rail is still comfortable on a touch screen. */
+.sfc-rail a{display:flex;align-items:center;gap:var(--space-3);
+  min-height:56px;padding:var(--space-4) var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);line-height:1.35;
+  color:var(--text-strong);text-decoration:none;
+  transition:background var(--dur) var(--ease-out),color var(--dur) var(--ease-out)}
+.sfc-rail a::before{content:"";flex:none;width:8px;height:8px;
+  border-radius:var(--radius-pill);background:var(--em-orange);
+  transition:transform var(--dur) var(--ease-out)}
+.sfc-rail a:hover{background:var(--surface-subtle);color:var(--em-orange-ink)}
+.sfc-rail a:hover::before{transform:scale(1.5)}
+
+@media (prefers-reduced-motion:reduce){
+  .sfc-rail a,.sfc-rail a::before{transition:none}
+  .sfc-rail a:hover::before{transform:none}
+}
+
+@media (max-width:900px){
+  .sfc-hero__plate{grid-template-columns:minmax(0,1fr)}
+  /* Picture first at narrow widths would push the headline below the fold, so the
+     order is kept and the image takes a shorter box instead. */
+  .sfc-hero__media img{min-height:0;aspect-ratio:16/9;height:auto}
+  /* A hairline between every cell reads as a table on one column. */
+  .sfc-rail li + li{border-left:0}
+}
+
+/* ============================= 2 · Vision ================================ */
+
+.sfc-vision{padding:0 0 clamp(var(--space-11),6vw,var(--space-13));
+  background:var(--surface-page)}
+
+/* The second navy plate, split by one white hairline. */
+.sfc-vision__plate{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+  gap:clamp(var(--space-7),4vw,var(--space-11));
+  padding:clamp(var(--space-8),4.4vw,var(--space-12));
+  border-radius:var(--radius-panel);
+  background:var(--surface-navy);color:var(--text-inverse)}
+
+.sfc-vision__plate h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--white)}
+
+.sfc-vision__copy{min-width:0;
+  padding-left:clamp(var(--space-7),4vw,var(--space-11));
+  border-left:1px solid var(--border-inverse)}
+.sfc-vision__copy p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-inverse-muted)}
+/* Scoped to its parent, not left as a bare class with !important behind it: the
+   `.sfc-vision__copy p` rule above is a descendant selector and out-ranks a
+   single class, which is the trap that flattened three numerals on the A and B
+   pages. Scope beats importance. */
+.sfc-vision__copy .sfc-vision__lede{margin-bottom:var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);line-height:1.35;
+  color:var(--white)}
+
+@media (max-width:900px){
+  .sfc-vision__plate{grid-template-columns:minmax(0,1fr)}
+  /* The hairline becomes horizontal when the split does. */
+  .sfc-vision__copy{padding-left:0;padding-top:clamp(var(--space-6),3vw,var(--space-8));
+    border-left:0;border-top:1px solid var(--border-inverse)}
+}
+
+/* ============================ 3 · The problem ============================ */
+
+/* The one section with no plate. */
+.sfc-problem{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
+  background:var(--surface-subtle)}
+
+.sfc-problem__inner{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start}
+
+.sfc-problem__inner h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+.sfc-problem__copy{min-width:0}
+.sfc-problem__copy p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.sfc-problem__copy p:last-child{margin-bottom:0}
+/* Out-ranks the paragraph rule above it, or the lede flattens to body size. */
+.sfc-problem__copy .sfc-lede{margin-bottom:var(--space-6)}
+
+.sfc-turn{margin:clamp(var(--space-9),5vw,var(--space-11)) 0 0;
+  padding-top:clamp(var(--space-7),3.4vw,var(--space-9));
+  border-top:1px solid var(--border-default);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.5rem,1.1rem + 1.4vw,2.25rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--em-orange-ink)}
+
+@media (max-width:900px){
+  .sfc-problem__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+
+/* ========================= 4 · The four rows ============================= */
+
+.sfc-rows{padding:clamp(var(--space-11),6vw,var(--space-13)) 0;
+  background:var(--surface-page)}
+
+.sfc-rows__head{margin:0 0 clamp(var(--space-8),4vw,var(--space-10));
+  max-width:26ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+
+.sfc-rows__list{list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+
+.sfc-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  column-gap:clamp(var(--space-7),4vw,var(--space-11));align-items:start;
+  padding:clamp(var(--space-7),3.4vw,var(--space-9)) 0;
+  border-bottom:1px solid var(--border-default)}
+
+/* The name carries the weight here, not a numeral or a marker. */
+.sfc-row h3{margin:0;max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .9vw,1.875rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--text-strong)}
+.sfc-row p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+@media (max-width:760px){
+  .sfc-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-4)}
+}
+
+/* ============= 5 · The work mosaic (kept from work-b) =================== */
+
+.sfc-mosaic{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-subtle)}
+
+.sfc-mosaic__head{display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:start;
+  margin-bottom:clamp(var(--space-9),5vw,var(--space-11))}
+.sfc-mosaic__head h2{margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.sfc-mosaic__intro{min-width:0}
+.sfc-mosaic__intro p{margin:0 0 var(--space-5);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-body)}
+.sfc-mosaic__intro p:last-child{margin-bottom:0}
+.sfc-mosaic__intro .sfc-lede{margin-bottom:var(--space-6)}
+
+/* THREE columns, not work-c's two, because this page has four areas rather than
+   five: the lead plate spans the row and the remaining three sit under it as one
+   band. On two columns the fourth area either leaves a hole beside it or takes
+   the full width on its own, and a full-width plate holding two lines of copy
+   reads as a mistake. */
+.sfc-mosaic__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));
+  list-style:none;margin:0;padding:0}
+
+.sfc-plate-area{display:flex;flex-direction:column;
+  padding:clamp(var(--space-7),3.2vw,var(--space-9));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-page);
+  scroll-margin-top:clamp(80px,12vh,132px)}
+
+.sfc-plate-area--lead{grid-column:1 / -1;border-color:transparent;
+  background:var(--surface-navy)}
+
+.sfc-chip{margin:0 0 var(--space-5);align-self:flex-start;
+  padding:6px 14px;border-radius:var(--radius-pill);
+  background:var(--orange-700);color:var(--white);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase}
+
+.sfc-plate-area h3{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);line-height:1.15;
+  letter-spacing:-.02em;color:var(--text-strong)}
+
+.sfc-area__body{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+.sfc-area__toward{margin:var(--space-6) 0 0;padding-top:var(--space-6);
+  border-top:1px solid var(--border-default);
+  font-size:var(--fs-small);line-height:var(--lh-body);color:var(--text-body)}
+.sfc-area__toward strong{color:var(--em-orange-ink);font-weight:var(--fw-bold)}
+
+.sfc-plate-area--lead h3{color:var(--white)}
+.sfc-plate-area--lead .sfc-area__body{color:var(--text-inverse);
+  font-size:var(--fs-lead);line-height:1.5}
+.sfc-plate-area--lead .sfc-area__toward{border-top-color:var(--border-inverse);
+  color:var(--text-inverse-muted)}
+.sfc-plate-area--lead .sfc-area__toward strong{color:var(--orange-300)}
+
+@media (max-width:900px){
+  .sfc-mosaic__head{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+@media (max-width:720px){
+  .sfc-mosaic__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ========== 6 · Community stories (kept from work-b) ==================== */
+
+.sfc-stories{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-page)}
+
+.sfc-stories__panel{max-width:62ch}
+.sfc-stories__panel h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.sfc-stories__panel p{margin:0 0 var(--space-7);font-size:var(--fs-lead);
+  line-height:1.5;color:var(--text-body)}
+
+.sfc-feed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(var(--space-6),3vw,var(--space-9));list-style:none;margin:0;padding:0}
+
+.sfc-feed__col{display:flex;flex-direction:column;gap:var(--space-4);
+  padding-top:var(--space-5);border-top:2px dashed var(--border-default)}
+
+.sfc-feed__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.sfc-feed__lines{display:flex;flex-direction:column;gap:var(--space-2)}
+.sfc-feed__lines i{display:block;height:10px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.sfc-feed__lines i:nth-child(2){width:92%}
+.sfc-feed__lines i:nth-child(3){width:78%}
+.sfc-feed__lines i:nth-child(4){width:46%}
+
+@media (max-width:780px){
+  .sfc-feed{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ======= 7 · Articles and research (kept from work-b) =================== */
+
+.sfc-latest{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+  background:var(--surface-subtle)}
+
+.sfc-latest__head{max-width:62ch}
+.sfc-latest__head h2{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2vw,2.75rem);line-height:1.05;
+  letter-spacing:-.03em;color:var(--text-strong)}
+.sfc-latest__head p{margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-body)}
+
+.sfc-stubs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+
+.sfc-stub{display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6);border:1px dashed var(--border-default);
+  border-radius:var(--radius-md);background:var(--surface-page)}
+
+.sfc-stub__kind{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.sfc-stub__lines{display:flex;flex-direction:column;gap:var(--space-3)}
+.sfc-stub__lines i{display:block;height:12px;border-radius:var(--radius-xs);
+  background:var(--grey-300)}
+.sfc-stub__lines i:nth-child(1){width:76%}
+.sfc-stub__lines i:nth-child(2){width:42%}
+
+.sfc-latest__more{margin:clamp(var(--space-8),4vw,var(--space-10)) 0 0}
+
+@media (max-width:620px){
+  .sfc-stubs{grid-template-columns:minmax(0,1fr)}
+}

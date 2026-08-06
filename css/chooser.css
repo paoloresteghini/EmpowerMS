@@ -23,7 +23,13 @@
    Every control in the rail is a real form control: checkboxes for the facets,
    a native <button type="reset"> to clear them, and a <details> so the rail
    folds away on a phone. The filtering itself is :has(). */
-.ch__layout{display:grid;grid-template-columns:minmax(0,264px) minmax(0,1fr);
+/* 320px, not 264: the longest set name ("The Empower Podcast") now sits
+   alongside a New badge and a count, and at 264 it wrapped to a second line
+   while its neighbours did not. 300 left it a few pixels short of fitting,
+   which is worse than either — it wrapped only on the fonts that rendered
+   slightly wide. The 56px comes off the results column, which is fluid and
+   does not notice it. */
+.ch__layout{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);
   align-items:start;gap:clamp(var(--space-7),3vw,var(--space-10));
   /* The grey starts at the header's bottom border. Without this the rail and
      the first heading both sit against that edge, which reads as the layout
@@ -94,6 +100,27 @@
   border-color:var(--em-orange)}
 .ch__check__input:checked + .ch__check__label .ch__check__box::after{opacity:1;
   transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+
+/* Marks the sets whose pages arrived in the latest drop, so a returning client
+   can see what is new without re-reading the whole catalogue. It sits between
+   the set name and the count, and the count's own margin-left:auto still holds
+   the far edge of the row.
+
+   Navy on brand orange rather than white on it: 8.1:1, and it repeats the rail's
+   own checked-checkbox language (an orange chip with a navy mark in it) instead
+   of introducing a second treatment. White at this size would need --orange-700,
+   which reads muddy against the navy rail.
+
+   The date is spelled out for a screen reader — "New" alone in a list of set
+   names does not say new WHAT, and the badge is not a link it can follow to
+   find out. Sighted readers get the same answer from the lede above. */
+.ch__new{flex:0 0 auto;display:inline-flex;align-items:center;
+  height:18px;padding:0 7px;
+  border-radius:var(--radius-pill);background:var(--em-orange);
+  color:var(--surface-navy-deep);
+  font-family:var(--font-display);font-size:11px;
+  font-weight:var(--fw-bold);letter-spacing:.04em;
+  text-transform:uppercase;line-height:1}
 
 /* The count sits at the end of the row, as a catalogue's does. --orange-300 on
    navy is 7:1; the brand orange at this size would not clear 4.5. */

@@ -120,19 +120,30 @@ homepage's "Behind every solution is a real person." Two tabs of the same
 document, two sentences; the test carries both so neither drifts into the other.
 
 The three "Explore" links point at `/solutions/education`, `/solutions/work` and
-`/solutions/safety`. Two of those three are now built (below); Education is not.
+`/solutions/safety`. All three are now built (below).
 
-**The solution detail pages.** Two of the three, three readings each. Copy is the
-roadmap's own **Meaningful Work** and **Public Safety** tabs: its "Standard
-Solution Page Flow", all seven sections, in the order the document states them.
-Nothing is chosen yet.
+**The solution detail pages.** All three of them, on one shared template. Copy is
+the roadmap's own **Quality Education**, **Meaningful Work** and **Public Safety**
+tabs: its "Standard Solution Page Flow", all seven sections, in the order the
+document states them. Empower chose Public Safety B, The Streetlight, on
+2026-08-07 and asked for all three pages to be built on it, with the numbered rows
+in section 4 replaced by the capped columns from Public Safety A. The four
+readings they did not choose still build, so the decision can be re-read.
+
+The three that ship:
 
 | Page | What it is |
 | --- | --- |
-| `dist/work-a.html` | **Meaningful Work A — The Open Door** — navy hero with the photograph pushed through its right edge, sections hung off numerals in a left gutter, four approaches cut from one block by hairlines, five work areas each closed by a navy commitment strip |
+| `dist/safety.html` | **Public Safety: The Streetlight.** The shared solution template. Dark page, light in sections: no photograph until the stories band, four of seven sections navy, the four approaches as capped columns on the first light break, four work areas as lit cards on navy |
+| `dist/work.html` | **Meaningful Work, on the shared template.** The same seven blocks and the same stylesheet, carrying the Meaningful Work tab: five lit work areas rather than four, and a workshop photograph on the stories band |
+| `dist/education.html` | **Quality Education, on the shared template.** Four lit work areas, a library photograph on the stories band, and the one thing only this tab has: a closing statement after the work areas rather than a fifth card |
+
+The four readings Empower did not choose:
+
+| Page | What it is |
+| --- | --- |
 | `dist/work-b.html` | **Meaningful Work B — The Sidelines** — near-monochrome editorial: the headline is the first screen on white, one window-wide photograph under it, the problem the only dark section, four approaches on one horizontal track, five areas as a mosaic led by a double-width navy plate |
 | `dist/safety-a.html` | **Public Safety A — The Neighbourhood** — photograph with the headline on a navy panel set inside it, vision and problem as two orange-edged panels facing each other, four approaches laid as an offset course of brick, four work areas as capped posts |
-| `dist/safety.html` | **Public Safety B — The Streetlight** — dark page, light in sections: no photograph until the stories band, four of seven sections navy, four approaches as numbered rows on the first light break, four work areas as lit cards on navy |
 | `dist/work-c.html` | **Meaningful Work C — The Plate** — navy holds the top third with the photograph inset beside the headline and a rail to the five areas on its bottom edge; white plates climb that edge; the four approaches are quartered inside one navy plate |
 | `dist/safety-c.html` | **Public Safety C — The Watch** — the inverse: one navy plate on a white field with the photograph as a column inside it, the rail beneath on white, a second navy plate for the vision, and the four approaches as wide rows |
 
@@ -147,25 +158,30 @@ scroll to survey. Every rail target carries `scroll-margin-top` so the sticky
 header does not cover the heading it just jumped to; a test checks that every
 rail href resolves to an id that exists.
 
-Unlike the Solutions landing set, these are **six independently composed pages,
-not one template filled repeatedly** — Paolo's call on 2026-08-05, reaffirmed when
-the C pair was added. A test asserts all six keep their own signature composition
-and carry none of the other five's, so the six stay six. The consequence to be aware of: there is no single
-solution-page template to hand off yet, and **Quality Education is still
-unbuilt**. Whichever reading Empower prefer is what it should be cut from.
+The readings were built as **independently composed pages, not one template
+filled repeatedly**: Paolo's call on 2026-08-05, reaffirmed when the C pair was
+added. That still holds for the four Empower did not choose, and a test asserts
+each of those four keeps its own signature composition and carries none of the
+other three's. What changed on 2026-08-07 is that Empower chose one of them, so
+**there is now a single solution-page template to hand off**: `css/solution.css`,
+with the seven `sol-*` blocks. A test asserts the three shipping pages carry the
+same seven blocks and link the same stylesheet, which is the opposite check to
+the one above it, and another asserts the two axes the template flexes on (five
+work areas on Meaningful Work against four, and Education's closing statement).
 
-Two things on all six are unfinished, and both are marked in the markup rather
+Two things on all seven are unfinished, and both are marked in the markup rather
 than left to be noticed:
 
-- **Sections 6 and 7 are feeds, not content.** Both roadmap tabs end those
-  sections with a bracketed instruction to auto-populate, so the blocks carry no
-  headlines at all: grey bars behind `data-placeholder="feed"`, with a note in
-  words above each block saying it is a live query in WordPress. **No headline on
-  any of the six pages is invented** — a plausible article title is exactly the
-  kind of thing that reads as approved copy and survives review.
+- **Sections 6 and 7 are feeds, not content.** All three roadmap tabs end those
+  sections with a bracketed instruction to auto-populate, so in WordPress they
+  become live queries. Until then the blocks carry real posts from empowerms.org,
+  every headline an `<a>` to the post it names, so the client reviews the shape
+  with content in it. **No headline on any of the seven pages is invented**, and a
+  test enforces it: a plausible article title is exactly the kind of thing that
+  reads as approved copy and survives review.
 - **The photography is stand-in and its filenames lie.** `young-man-portrait-bw.jpg`
   is a colour classroom scene; `family-outdoors-park.jpg` is a boy reading in a
-  library. Every image on these six pages was opened and looked at before its
+  library. Every image on these seven pages was opened and looked at before its
   alt text was written, and one was swapped after a render showed a classroom
   where a workplace was meant to be. Do not pick one of these files by name.
 
@@ -191,7 +207,8 @@ their page list from `PAGES`. Where those pages need a block marked they use the
 
 **The Empower Podcast.** The show page, in two readings. Copy is the roadmap's
 Podcast tab: the three-sentence hero, both of its buttons, "Go Beyond the
-Headlines." and the episode library. Nothing is chosen yet.
+Headlines." and the episode library. Empower chose **The Studio** on 2026-08-07;
+On the Record still builds so the decision can be re-read.
 
 | Page | What it is |
 | --- | --- |
@@ -213,7 +230,10 @@ Three things about this set are unlike anything else in the build:
   pages use hide-only rules instead — "this group is in use and this value is not
   ticked, so hide the cards carrying it" — six rules that intersect by
   construction. Verified in the browser, not just asserted: 9 episodes → 3 (one
-  topic) → 6 (two topics) → 2 (× one guest) → 4 (× two guests) → 9 cleared.
+  topic) → 6 (two topics) → 2 (× one guest) → 4 (× two guests) → 9 cleared. That
+  was with both groups on both pages. Empower dropped the Topic facet from The
+  Studio on 2026-08-07, so it now filters by Guest alone; On the Record keeps
+  both groups, and the composition matters there.
 - **There are nine placeholder episodes because that is every topic-and-guest
   pair.** With a gap in that matrix some combination of ticks would show a
   reviewer an empty grid the real library would never produce. A test asserts the
@@ -236,7 +256,8 @@ No episode titles, dates or guest names are invented anywhere.
 
 **Capitol Chat.** The other show in the same dropdown, in two readings. Copy is
 the roadmap's Capitol Chat tab: the hero question, "The Capitol Moves Fast. We
-Help You Keep Up." and the episode library. Nothing is chosen yet.
+Help You Keep Up." and the episode library. Empower chose **The Dome** on
+2026-08-07; The Session still builds so the decision can be re-read.
 
 | Page | What it is |
 | --- | --- |
@@ -259,9 +280,14 @@ it, and each one is a test:
   library one; this tab gives only "Catch Up From the Capitol". None is invented,
   and a test asserts nothing sits between that heading and the placeholder note.
 
-The library filters by **topic and legislative session** — there are no guests to
-filter by, Wil Ervin presents every week. Six rows, one per topic-and-session
-pair, so no combination of ticks can empty the list. On The Session the session
+The library filters by **legislative session** on The Dome and by **topic and
+legislative session** on The Session. There are no guests to filter by, Wil Ervin
+presents every week. Empower dropped the Topic facet from The Dome on 2026-08-07,
+and the topic label went from its rows with it: those labels were ours, because
+Capitol Chat carries no topic taxonomy upstream, so with the filter gone they
+would have been unsourced decoration on a client's page. Six rows, one per
+topic-and-session pair, so no combination of ticks can empty the list. On The
+Session the session
 facet hides whole **groups**, heading included, which is the one thing a flat list
 cannot demonstrate; verified in the browser at 2 groups/6 rows → 1 group/3 rows →
 1 group/1 row → 2 groups/2 rows → cleared. No episode titles, dates or numbers are

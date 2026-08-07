@@ -1890,6 +1890,78 @@ const SAFETY_COPY = [
   'Explore the latest research, ideas, and policies shaping public safety, effective justice, and stronger communities across Mississippi.',
 ];
 
+/* Quality Education, from the roadmap's third solution tab. This is the one
+   page whose copy has never been through client review, which is the reason it
+   most needs the sweep rather than least. Extracted the same way the two lists
+   above were: pdftotext -layout, the Quality Education tab, stopping at
+   "Current Content". */
+const EDUCATION_COPY = [
+  /* Section 1. */
+  'Every Child Deserves the Opportunity to Succeed',
+
+  /* Section 2, the vision. Note the lowercase "is": the roadmap writes
+     "What is Education Freedom?" and the copy rule is verbatim. */
+  'What is Education Freedom?',
+  'A quality education should open doors to opportunity.',
+  'That means empowering parents to make the best decisions for their children, giving educators the freedom to meet students’ needs, and creating more pathways for every child to learn, grow, and succeed.',
+
+  /* Section 3, the problem, closing on its own paragraph. */
+  'One Size Doesn’t Fit Every Child',
+  'Every child learns differently, but families don’t always have access to the educational opportunities that best meet their child’s needs.',
+  'Where a family lives, what they can afford, or the options available in their community can determine the education a child receives.',
+  'Parents may find the right school or learning environment for their child, only to discover they can’t access it.',
+  'Mississippi can do better.',
+
+  /* Section 4, the four approaches. */
+  'Practical Solutions for Mississippi Students',
+  'Expand Educational Options',
+  'Families should have access to more high-quality options and the freedom to choose the learning environment that works best for their child.',
+  'Empower Parents',
+  'Parents know their children best. They deserve meaningful choices and a voice in their child’s education.',
+  'Support Educators and Innovation',
+  'Teachers and school leaders should have the freedom to innovate, meet students’ needs, and focus on helping them succeed.',
+  'Prepare Students for Life',
+  'Education should prepare students with the knowledge, skills, and confidence to succeed in college, a career, and life.',
+
+  /* Section 5, the intro and all four work areas. */
+  'Every Family Deserves Meaningful Choices',
+  'Every child is different, and families should have the freedom to choose the educational path that gives their child the best opportunity to succeed.',
+  'Mississippi has several education options, but access often depends on where a family lives, what they can afford, or whether their child qualifies for a limited program.',
+  'That’s the gap we’re working to close.',
+
+  'Public School Choice',
+  'Limited by Where You Live',
+  'Most Mississippi students attend a public school based on where they live. Transfers to other districts are restricted, and public charter schools are only available in a small number of communities.',
+  'Expanding open enrollment and access to high-quality charter schools so more families can choose the public school that works best for their child.',
+
+  'Private Education & Education Scholarship Accounts',
+  'Limited by Cost and Eligibility',
+  'Families can choose private education, but cost puts that option out of reach for many. Education Scholarship Accounts (ESAs) can help families pay for educational expenses, but Mississippi’s current program is limited to eligible students with special needs.',
+  'Expanding ESAs so more families have the resources and flexibility to choose an education that meets their child’s needs.',
+
+  'Options for Unique Learning Needs',
+  'Available to Eligible Students',
+  'Mississippi offers programs including the Special Needs ESA, Nate Rogers Scholarship, and Dyslexia Therapy Scholarship to help eligible students access specialized education. However, eligibility and availability remain limited.',
+  'Protecting and strengthening these programs while expanding access to educational opportunities that meet students’ individual needs.',
+
+  'Homeschooling & Innovative Education',
+  'Available, but Access Varies',
+  'Homeschooling gives families flexibility to personalize their child’s education, while growing models like microschools create new ways for students to learn. But these options may not be practical or available for every family.',
+  'Supporting educational innovation so more families have access to learning environments that work for their children.',
+
+  /* The closing statement, which only this tab has. */
+  'Real Choice for Every Family',
+  'Education freedom should mean more than having options on paper.',
+  'A family’s choices shouldn’t be determined by their ZIP code, income, or eligibility for a limited program. We’re working to ensure more Mississippi families have meaningful access to an education that works for their child.',
+  'We don’t tell families which school to choose. We work to make sure they have a choice.',
+
+  /* Sections 6 and 7. */
+  'Voices of Education',
+  'Behind every policy are students, parents, and educators with real experiences. Hear from Mississippians about the challenges they’ve faced, the opportunities that made a difference, and what they want for the future of education.',
+  'The Latest on Education',
+  'Stay up to date on the ideas, policies, and conversations shaping education in Mississippi and the work underway to create more opportunity for every student.',
+];
+
 const WORKPAGES = ABOUTPAGES.filter(p => p.out.includes('work-'));
 /* dist/safety.html dropped its letter on 2026-08-07, when Empower chose it as
    the shared template for all three solution pages, so it is no longer one of
@@ -1899,6 +1971,22 @@ const WORKPAGES = ABOUTPAGES.filter(p => p.out.includes('work-'));
 const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.includes('safety-'));
 const DETAILPAGES = [...WORKPAGES, ...SAFETYPAGES];
 
+/* The three pages that actually ship, listed by name rather than caught by a
+   substring. They have to be a separate list because they carry no letter, so
+   'work-' and 'safety-' miss all three: when dist/safety-b.html was renamed to
+   dist/safety.html on 2026-08-07 it silently dropped out of DETAILPAGES and
+   took six sweeps with it, including the one that makes an invented feed
+   headline impossible to ship. Named explicitly, and the count asserted below,
+   so the next rename fails loudly instead of quietly emptying the set. */
+const TEMPLATEPAGES = ABOUTPAGES.filter(p =>
+  ['dist/education.html', 'dist/work.html', 'dist/safety.html'].includes(p.out));
+const templatePage = out => TEMPLATEPAGES.filter(p => p.out === out);
+/* Everything with a solution page's copy on it, shipping or still under
+   comparison. The sweeps that are about the copy and the feeds run over all of
+   them; only the SIGNATURE sweep, which is about the readings being held apart
+   from each other, stays on DETAILPAGES. */
+const ALLDETAILPAGES = [...DETAILPAGES, ...TEMPLATEPAGES];
+
 /* Meaningful Work lost its A reading (The Open Door) on 2026-08-05, and Public
    Safety B left the readings pool entirely on 2026-08-07 when it became the
    shared template, so the two sets are back to the same size. The counts stay
@@ -1907,10 +1995,11 @@ const DETAILPAGES = [...WORKPAGES, ...SAFETYPAGES];
 test('both solution detail pages build in the readings that survived', () => {
   assert.equal(WORKPAGES.length, 2, `expected two Meaningful Work readings, found ${WORKPAGES.length}`);
   assert.equal(SAFETYPAGES.length, 2, `expected two Public Safety readings, found ${SAFETYPAGES.length}`);
+  assert.equal(TEMPLATEPAGES.length, 3, `expected three shipping solution pages, found ${TEMPLATEPAGES.length}`);
 });
 
 test('every Meaningful Work reading carries the roadmap copy verbatim', () => {
-  for (const { out, html } of WORKPAGES) {
+  for (const { out, html } of [...WORKPAGES, ...templatePage('dist/work.html')]) {
     const text = textOf(html);
     for (const line of WORK_COPY) {
       assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
@@ -1919,7 +2008,7 @@ test('every Meaningful Work reading carries the roadmap copy verbatim', () => {
 });
 
 test('every Public Safety reading carries the roadmap copy verbatim', () => {
-  for (const { out, html } of SAFETYPAGES) {
+  for (const { out, html } of [...SAFETYPAGES, ...templatePage('dist/safety.html')]) {
     const text = textOf(html);
     for (const line of SAFETY_COPY) {
       assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
@@ -1927,22 +2016,41 @@ test('every Public Safety reading carries the roadmap copy verbatim', () => {
   }
 });
 
-test('neither page carries the other page’s copy', () => {
-  /* Two pages, one document, seven identically named sections. The failure mode
-     is a paragraph copied across while a variation was being built and never
-     changed — which would read as approved copy on a page it was never written
-     for. Checked on the two sentences that are unmistakably one page's: the
-     hero, and the closing feed heading. */
-  const WORK_ONLY = ['Work Should Open Doors to Opportunity', 'The Latest on Meaningful Work'];
-  const SAFETY_ONLY = ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Public Safety'];
-  for (const { out, html } of WORKPAGES) {
-    for (const line of SAFETY_ONLY) {
-      assert.ok(!textOf(html).includes(line), `${out} carries Public Safety copy: "${line}"`);
+test('Quality Education carries the roadmap copy verbatim', () => {
+  /* One page rather than a set of readings, but the same contract, and the one
+     that needs it most: this copy has not been through client review, so the
+     roadmap PDF is the only thing it can be checked against. */
+  for (const { out, html } of templatePage('dist/education.html')) {
+    const text = textOf(html);
+    for (const line of EDUCATION_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
     }
   }
-  for (const { out, html } of SAFETYPAGES) {
-    for (const line of WORK_ONLY) {
-      assert.ok(!textOf(html).includes(line), `${out} carries Meaningful Work copy: "${line}"`);
+});
+
+test('no solution page carries another solution page’s copy', () => {
+  /* Three pages, one document, seven identically named sections. The failure
+     mode is a paragraph copied across while a page was being built and never
+     changed, which would read as approved copy on a page it was never written
+     for. src/work/ and src/education/ were both created by copying
+     src/safety/sections/*.html, so this is the sweep that covers the way they
+     were made. Checked on the two sentences that are unmistakably one tab's:
+     the hero, and the closing feed heading. */
+  const EXCLUSIVE = {
+    work: ['Work Should Open Doors to Opportunity', 'The Latest on Meaningful Work'],
+    safety: ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Public Safety'],
+    education: ['Every Child Deserves the Opportunity to Succeed', 'The Latest on Education'],
+  };
+  const tabOf = out =>
+    out.includes('education') ? 'education' : out.includes('safety') ? 'safety' : 'work';
+
+  for (const { out, html } of ALLDETAILPAGES) {
+    const text = textOf(html);
+    for (const [tab, lines] of Object.entries(EXCLUSIVE)) {
+      if (tab === tabOf(out)) continue;
+      for (const line of lines) {
+        assert.ok(!text.includes(line), `${out} carries ${tab} copy: "${line}"`);
+      }
     }
   }
 });
@@ -2464,7 +2572,7 @@ test('every auto-populated block shows published posts, not invented headlines',
      content in it. Nothing here may be written by us: every headline in both
      blocks has to link to the post it names, which is what makes a plausible
      but invented article title impossible to ship. */
-  for (const { out, html } of DETAILPAGES) {
+  for (const { out, html } of ALLDETAILPAGES) {
     assert.doesNotMatch(html, /data-placeholder="feed"/,
       `${out} still carries grey-bar feed placeholders`);
     assert.doesNotMatch(html, /live feed in WordPress/,
@@ -2495,7 +2603,7 @@ test('every auto-populated block shows published posts, not invented headlines',
 });
 
 test('every solution detail reading routes back to the landing page and the feeds', () => {
-  for (const { out, html } of DETAILPAGES) {
+  for (const { out, html } of ALLDETAILPAGES) {
     assert.ok(html.includes('href="/solutions"'),
       `${out} does not link back to the Solutions landing page`);
     assert.ok(html.includes('href="/latest"'),
@@ -2577,6 +2685,22 @@ test('each solution page carries the right number of work areas', () => {
     const toward = (html.match(/What We’re Working Toward:/g) || []).length;
     assert.equal(toward, n, `${out} has ${toward} commitment lines for ${areas} work areas`);
   }
+});
+
+test('every solution page closes on three article stubs', () => {
+  /* Section 7 is not an axis the template flexes on. .sol-stubs is a three
+     column grid with one breakpoint, at 780px, so a fourth stub sits alone
+     across a third of the width at every width above that. Work and Education
+     shipped four (carried over from work-b, where they were a 2x2) until
+     2026-08-07. Counted so the grid and the content cannot drift apart again. */
+  for (const out of ['dist/education.html', 'dist/work.html', 'dist/safety.html']) {
+    const html = readFileSync(out, 'utf8');
+    const stubs = (html.match(/<li class="sol-stub"/g) || []).length;
+    assert.equal(stubs, 3, `${out} has ${stubs} article stubs, expected three to fill the row`);
+  }
+  const css = readFileSync('css/solution.css', 'utf8');
+  assert.match(css, /\.sol-stubs\{[^}]*grid-template-columns:repeat\(3,/,
+    'css/solution.css no longer lays the article stubs out three up');
 });
 
 test('Quality Education closes its work areas with the roadmap’s statement', () => {

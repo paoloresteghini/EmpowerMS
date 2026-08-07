@@ -64,6 +64,7 @@ Only two axes, both absorbed by the CSS rather than by per-page overrides:
 | Solutions (§4) | 4 | 4 | 4 |
 | Work areas (§5) | 4 | **5** | 4 |
 | Closing block after §5 areas | **yes** | no | no |
+| Article stubs (§7) | 3 | 3 | 3 |
 
 - **§4 is always 4**, so the capped columns are a 4-up at desktop on every
   page. They must still degrade cleanly, because §5 needs the same column
@@ -73,6 +74,12 @@ Only two axes, both absorbed by the CSS rather than by per-page overrides:
 - **Education's §5 ends with a closing statement** ("Real Choice for Every
   Family") that Work and Safety do not have. It is an optional trailing block,
   not a variant of the card.
+- **§7 is always 3 stubs**, so it is not an axis at all. It is in the table
+  because it looked like one: `.sol-stubs` is a three-column grid with a single
+  breakpoint at 780px, and Work and Education shipped four stubs each on
+  2026-08-07, leaving the fourth alone across a third of the width at every
+  width above that. Corrected to 3 on both, and asserted, so the grid and the
+  content cannot drift apart again.
 
 ## Section 4, the changed one
 

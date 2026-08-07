@@ -1,21 +1,26 @@
-/* Public Safety — variation B, "The Streetlight".
+/* The shared solution template, "The Streetlight".
 
-   The argument this variation makes: the page starts dark and the light arrives
-   in sections. Hero and vision are navy with no photograph at all; the problem
-   is the first light break and lands harder for having been withheld; the four
-   approaches run down that light as numbered rows opened by an outlined orange
-   disc; the four work areas go back to the dark as four lit cards; the page's
-   one photograph arrives at the stories section, after four sections of policy,
-   as the turn to people.
+   One stylesheet, three pages: Quality Education, Meaningful Work and Public
+   Safety. Empower chose Public Safety B on 2026-08-07 and asked for all three
+   solution pages to be built on it, so this file is the contract the Elementor
+   conversion reads from, not one reading among several.
 
-   SIGNATURE, so the two variations cannot be mistaken for each other: the
-   numbered discs and the lit cards on a dark field. Variation A has an offset
-   course of brick plates and four capped white posts, and it is light all the way
-   through.
+   The argument it makes: the page starts dark and the light arrives in
+   sections. Hero and vision are navy with no photograph at all; the problem is
+   the first light break and lands harder for having been withheld; the four
+   approaches run down that light as capped columns, the layout Empower picked
+   out of Public Safety A on the same day; the work areas go back to the dark as
+   lit cards; the page's one photograph arrives at the stories section, after
+   four sections of policy, as the turn to people.
 
-   COLOUR: dark-dominant, which is the inverse of variation A. Four of the seven
-   sections are navy. Orange is the only other colour and it is doing one job —
-   marking where the eye should go next.
+   TWO AXES, and only two. Meaningful Work carries five work areas where the
+   other two carry four, and Quality Education alone closes that section with a
+   statement (.sol-grid__closer). Everything else is identical across the three,
+   and test.mjs asserts both the sharing and the two exceptions.
+
+   COLOUR: dark-dominant, which is the inverse of Public Safety A. Four of the
+   seven sections are navy. Orange is the only other colour and it is doing one
+   job: marking where the eye should go next.
 
    TEXT OVER PHOTOGRAPHY: never. The one photograph is a band with no words on
    it; every word in that section is on the panel beneath.
@@ -23,12 +28,7 @@
    ORANGE AND CONTRAST, from css/site.css:
      - Orange on navy is --orange-300 (5.44:1), which the accessibility overrides
        deliberately leave at the brand value.
-     - The disc numerals are brand orange on white and are large text (40px+,
-       800), so the 3:1 threshold applies. aria-hidden as well.
      - Small orange text on white uses --em-orange-ink (5.17:1).
-     - The dark feed note uses --text-inverse-muted, not orange, because a 15px
-       orange line on navy would be the one thing on the page asking to be read
-       first, and it is a caveat.
 
    NO NEW SCRIPTS. The glow behind the hero and the highlight on each lit card
    are CSS gradients, not images and not canvas. Reveals are the existing layer,

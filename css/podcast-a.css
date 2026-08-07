@@ -231,22 +231,20 @@
 
 /* ---- The filtering itself ----
 
-   AND across the two groups, OR inside each one, in six rules and no script.
+   One group, OR inside it, in three rules and no script.
 
    The shape is "if this group is in use and THIS value is not ticked, hide the
-   cards carrying it". That composes correctly by construction: each group
-   contributes only hides, so two active groups intersect instead of fighting.
-   The hide-everything-then-reveal shape used on the review index cannot do this —
+   cards carrying it". That composes correctly by construction, and stays
+   correct if a second group is ever added back: each group contributes only
+   hides, so active groups intersect instead of fighting. The
+   hide-everything-then-reveal shape used on the review index cannot do this —
    a second group's reveals would un-hide what the first group hid, turning AND
-   into OR — and this page needs two groups.
+   into OR.
 
    Nothing ticked means no rule matches and the whole library shows.
 
    The trade, the same one the review index carries: the state does not survive a
    reload and a filtered view cannot be linked to. */
-body:has(.pca-topic:checked):not(:has(#pa-t-education:checked)) .pca-ep[data-topic="education"],
-body:has(.pca-topic:checked):not(:has(#pa-t-work:checked)) .pca-ep[data-topic="work"],
-body:has(.pca-topic:checked):not(:has(#pa-t-safety:checked)) .pca-ep[data-topic="safety"],
 body:has(.pca-guest:checked):not(:has(#pa-g-lawmaker:checked)) .pca-ep[data-guest="lawmaker"],
 body:has(.pca-guest:checked):not(:has(#pa-g-expert:checked)) .pca-ep[data-guest="expert"],
 body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-ep[data-guest="leader"]{

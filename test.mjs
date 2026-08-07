@@ -2108,10 +2108,13 @@ test('the episode library filters without a script, and every control is real', 
       `${slug}.css does not hide the filter where :has() is missing`);
 
     /* Every facet is an input with a label bound by id: a label that has drifted
-       off its input is a filter a keyboard cannot reach. */
+       off its input is a filter a keyboard cannot reach.
+       podcast-a lost its Topic facet on 2026-08-07, so it has three controls
+       (Guest only) where every other reading still has six. */
     const ids = [...html.matchAll(/<input class="[^"]*(?:check|chip)__input[^"]*" type="checkbox" id="([^"]+)"/g)]
       .map(m => m[1]);
-    assert.equal(ids.length, 6, `${out} has ${ids.length} facet controls, expected six`);
+    const expected = out === 'dist/podcast-a.html' ? 3 : 6;
+    assert.equal(ids.length, expected, `${out} has ${ids.length} facet controls, expected ${expected}`);
     for (const id of ids) {
       assert.ok(html.includes(`for="${id}"`), `${out}: the ${id} facet has no label bound to it`);
     }
@@ -2152,6 +2155,32 @@ test('the episode library cannot filter itself empty, and every episode is real'
   }
 });
 
+test('the podcast library filters by guest only', () => {
+  /* Empower removed Filter by Topic on 2026-08-07. Guest stays, and more guest
+     categories are coming, so the facet has to remain a list of values rather
+     than three hard-coded rules. */
+  const html = readFileSync('dist/podcast-a.html', 'utf8');
+  const css = readFileSync('css/podcast-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  assert.doesNotMatch(html, /pca-topic/, 'dist/podcast-a.html still has the topic facet');
+  assert.doesNotMatch(css, /pca-topic/, 'css/podcast-a.css still has topic hide rules');
+  assert.ok(!/<legend>Topic<\/legend>/.test(html), 'dist/podcast-a.html still shows a Topic legend');
+
+  /* Guest survives intact, and every guest value still hides only its own. */
+  for (const g of ['lawmaker', 'expert', 'leader']) {
+    assert.ok(css.includes(
+      `body:has(.pca-guest:checked):not(:has(#pa-g-${g}:checked)) .pca-ep[data-guest="${g}"]`),
+      `css/podcast-a.css has no hide rule for the ${g} guest facet`);
+  }
+
+  /* No combination of ticks may empty the grid. */
+  const guests = [...html.matchAll(/data-guest="([a-z]+)"/g)].map(m => m[1]);
+  for (const g of ['lawmaker', 'expert', 'leader']) {
+    assert.ok(guests.filter(x => x === g).length >= 1,
+      `dist/podcast-a.html has no ${g} episode, so that filter returns nothing`);
+  }
+});
+
 test('the library filter composes AND across groups, not OR', () => {
   /* The bug this exists to catch is silent and specific: the hide-everything-
      then-reveal shape used on the review index works for one facet group and
@@ -2161,7 +2190,8 @@ test('the library filter composes AND across groups, not OR', () => {
      facet value must contribute a rule of the form "group in use AND this value
      unticked -> hide", and no rule may reveal a card. */
   const VALUES = {
-    'podcast-a': { ns: 'pca', prefix: 'pa', topics: ['education', 'work', 'safety'],
+    /* podcast-a lost its Topic facet on 2026-08-07; Guest is now its only group. */
+    'podcast-a': { ns: 'pca', prefix: 'pa', topics: [],
                    guests: ['lawmaker', 'expert', 'leader'] },
     'podcast-b': { ns: 'pcb', prefix: 'pb', topics: ['education', 'work', 'safety'],
                    guests: ['lawmaker', 'expert', 'leader'] },

@@ -85,7 +85,12 @@ export const PAGES = [
      to bring it back. */
   { src: 'work-b/index.html', out: 'dist/work-b.html', title: 'Meaningful Work B — The Sidelines', kind: 'about' },
   { src: 'safety-a/index.html', out: 'dist/safety-a.html', title: 'Public Safety A — The Neighbourhood', kind: 'about' },
-  { src: 'safety-b/index.html', out: 'dist/safety-b.html', title: 'Public Safety B — The Streetlight', kind: 'about' },
+  /* Public Safety, built on the shared solution template. Empower chose "The
+     Streetlight" on 2026-08-07 and asked for one template across all three
+     solution pages, so this page, work and education are the same blocks in
+     the same order with different copy. They share css/solution.css; the
+     unpicked readings keep their own stylesheets. */
+  { src: 'safety/index.html', out: 'dist/safety.html', title: 'Public Safety', kind: 'about' },
 
   /* A third reading of each, built with the impeccable craft flow on 2026-08-05.
      These two keep three sections of work-b that Paolo picked out — the work-area

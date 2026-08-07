@@ -30,6 +30,14 @@ const ABOUTPAGES = PAGES
 const ALLPAGES = [...HOMEPAGES, ...ABOUTPAGES];
 const html = readFileSync('dist/current.html', 'utf8');
 
+/* About pages own their stylesheet by default (css/<slug>.css). Public Safety
+   moved onto css/solution.css on 2026-08-07 as the first page built on the
+   shared solution template; Task 3 and Task 4 add work and education onto
+   the same file. Every sweep below that reads a page's stylesheet by slug
+   goes through this so the exemption lives in one place. */
+const SHARED_CSS = { safety: 'solution.css' };
+const cssFileFor = slug => `css/${SHARED_CSS[slug] || `${slug}.css`}`;
+
 test('build resolves every include marker', () => {
   assert.ok(!html.includes('@include'), 'unresolved @include marker in output');
 });
@@ -1128,7 +1136,8 @@ test('every page carries the skip link, and it targets the main landmark', () =>
 
 test('every page loads the shared chrome before its own stylesheet', () => {
   for (const { out, html, src } of ALLPAGES) {
-    const own = `css/${src.split('/')[0] === 'index.html' ? 'homepage' : src.split('/')[0]}.css`;
+    const ownSlug = src.split('/')[0] === 'index.html' ? 'homepage' : src.split('/')[0];
+    const own = cssFileFor(ownSlug);
     const siteAt = html.indexOf('css/site.css');
     assert.ok(siteAt > -1, `${out} does not load css/site.css`);
     assert.ok(html.indexOf('components/components.css') < siteAt,
@@ -1884,7 +1893,10 @@ const SAFETY_COPY = [
 ];
 
 const WORKPAGES = ABOUTPAGES.filter(p => p.out.includes('work-'));
-const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.includes('safety-'));
+/* 'safety-' would not catch dist/safety.html once the B reading dropped its
+   letter and became the shared template's page, so this matches the whole
+   family by its stem instead. */
+const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.startsWith('dist/safety'));
 const DETAILPAGES = [...WORKPAGES, ...SAFETYPAGES];
 
 /* Meaningful Work lost its A reading (The Open Door) on 2026-08-05, so the two
@@ -1952,7 +1964,7 @@ test('the six solution detail readings do not repeat each other’s composition'
     'dist/work-b.html': ['wrb-track__list', 'wrb-plate--lead'],
     'dist/work-c.html': ['wkc-quarters__grid', 'wkc-rail'],
     'dist/safety-a.html': ['psa-bricks__grid', 'psa-post__label'],
-    'dist/safety-b.html': ['psb-steps__list', 'psb-lit'],
+    'dist/safety.html': ['sol-steps__list', 'sol-lit'],
     'dist/safety-c.html': ['sfc-rows__list', 'sfc-rail'],
   };
   assert.equal(Object.keys(SIGNATURE).length, DETAILPAGES.length,
@@ -2438,19 +2450,24 @@ test('every About section partial uses curly apostrophes and quotes', () => {
 });
 
 test('every About variation has its own stylesheet and no other variation’s', () => {
-  /* The six pages are deliberately not sharing a stylesheet. Each one is a
-     candidate for conversion into Elementor blocks on its own, and a shared
-     "about.css" would mean converting the winner drags in rules written for
-     two designs the client rejected. */
+  /* The six independent readings are deliberately not sharing a stylesheet.
+     Each one is a candidate for conversion into Elementor blocks on its own,
+     and a shared "about.css" would mean converting the winner drags in rules
+     written for designs the client rejected. Public Safety is exempted from
+     that rule via SHARED_CSS: it is built on the solution template on
+     purpose, and Task 3/4 add work and education to the same exemption. */
   for (const page of PAGES.filter(p => p.kind === 'about')) {
     const slug = page.out.replace('dist/', '').replace('.html', '');
     const shell = readFileSync(`src/${page.src}`, 'utf8');
-    assert.ok(existsSync(`css/${slug}.css`), `css/${slug}.css does not exist`);
-    assert.ok(shell.includes(`css/${slug}.css`), `${page.src} does not link its own stylesheet`);
+    const cssFile = cssFileFor(slug);
+    assert.ok(existsSync(cssFile), `${cssFile} does not exist`);
+    assert.ok(shell.includes(cssFile), `${page.src} does not link its stylesheet`);
     for (const other of PAGES.filter(p => p.kind === 'about' && p.out !== page.out)) {
       const otherSlug = other.out.replace('dist/', '').replace('.html', '');
-      assert.ok(!shell.includes(`css/${otherSlug}.css`),
-        `${page.src} also links ${otherSlug}.css — the variations must stay separable`);
+      const otherCssFile = cssFileFor(otherSlug);
+      if (otherCssFile === cssFile) continue; // deliberately shared, see SHARED_CSS
+      assert.ok(!shell.includes(otherCssFile),
+        `${page.src} also links ${otherCssFile}, the variations must stay separable`);
     }
   }
 });
@@ -2465,7 +2482,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'team-a': 'ta', 'team-b': 'tb', 'team-c': 'tc', 'team-bio': 'tp',
     'solutions-a': 'sa', 'solutions-b': 'sb', 'solutions-c': 'sc',
     'work-b': 'wrb', 'work-c': 'wkc',
-    'safety-a': 'psa', 'safety-b': 'psb', 'safety-c': 'sfc',
+    'safety-a': 'psa', 'safety': 'sol', 'safety-c': 'sfc',
     'podcast-a': 'pca', 'podcast-b': 'pcb',
     'capitol-a': 'cca', 'capitol-b': 'ccb',
   };
@@ -2484,11 +2501,12 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
 
   const all = Object.values(PREFIX);
   for (const [slug, mine] of Object.entries(PREFIX)) {
-    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const cssFile = cssFileFor(slug);
+    const css = readFileSync(cssFile, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const other of all) {
       if (other === mine) continue;
       assert.ok(!css.includes(`.${other}-`),
-        `css/${slug}.css uses the .${other}- namespace, which belongs to another variation`);
+        `${cssFile} uses the .${other}- namespace, which belongs to another variation`);
     }
   }
 });
@@ -2512,12 +2530,13 @@ test('the About pages hang no element out of its own section', () => {
      somebody forgets. */
   for (const page of PAGES.filter(p => p.kind === 'about')) {
     const slug = page.out.replace('dist/', '').replace('.html', '');
-    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const cssFile = cssFileFor(slug);
+    const css = readFileSync(cssFile, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const block of css.split('}')) {
       const [selector, body] = block.split('{');
       if (!body || !/position:\s*absolute/.test(body)) continue;
       assert.ok(!/bottom:\s*calc\(\s*-|bottom:\s*-/.test(body),
-        `css/${slug}.css hangs ${selector.trim().slice(0, 60)} below its own box — ` +
+        `${cssFile} hangs ${selector.trim().slice(0, 60)} below its own box — ` +
         `use a negative margin on a child instead, so the section keeps its height`);
     }
   }
@@ -2597,7 +2616,8 @@ test('no About stylesheet uses a coloured side stripe as an accent', () => {
      somebody forgets. */
   for (const page of PAGES.filter(p => p.kind === 'about')) {
     const slug = page.out.replace('dist/', '').replace('.html', '');
-    const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const cssFile = cssFileFor(slug);
+    const css = readFileSync(cssFile, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     for (const block of css.split('}')) {
       const [selector, body] = block.split('{');
       if (!body) continue;
@@ -2609,7 +2629,7 @@ test('no About stylesheet uses a coloured side stripe as an accent', () => {
          components.css. Flagging that would be a false positive, and designing
          around a false positive is worse than the rule it enforces. */
       if (/border-(top|bottom):\s*\d+px/.test(body)) continue;
-      assert.fail(`css/${slug}.css puts a ${m[2]}px ${m[1]} border on ` +
+      assert.fail(`${cssFile} puts a ${m[2]}px ${m[1]} border on ` +
         `${selector.trim().slice(0, 50)} — use the orange mark above the block instead`);
     }
   }

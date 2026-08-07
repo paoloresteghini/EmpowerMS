@@ -2303,36 +2303,50 @@ test('Wil Ervin’s name is not a link on either Capitol Chat reading', () => {
 
 test('the Capitol Chat library filters by session and every row is a real episode', () => {
   const SHAPE = {
-    'capitol-a': { ns: 'cca', prefix: 'ca', groups: false },
-    'capitol-b': { ns: 'ccb', prefix: 'cb', groups: true },
+    'capitol-a': { ns: 'cca', prefix: 'ca', groups: false, hasTopic: false },
+    'capitol-b': { ns: 'ccb', prefix: 'cb', groups: true, hasTopic: true },
   };
   const TOPICS = ['education', 'work', 'safety'];
   const SESSIONS = ['2026', '2025'];
 
-  for (const [slug, { ns, prefix, groups }] of Object.entries(SHAPE)) {
+  for (const [slug, { ns, prefix, groups, hasTopic }] of Object.entries(SHAPE)) {
     const html = readFileSync(`dist/${slug}.html`, 'utf8');
     const css = readFileSync(`css/${slug}.css`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
-    /* Six rows, one per topic-and-session pair, so no combination of ticks can
-       empty the list. */
-    const rows = [...html.matchAll(/data-topic="([a-z]+)" data-session="(\d+)"/g)]
-      .map(m => `${m[1]}/${m[2]}`);
-    assert.equal(rows.length, 6, `${slug} has ${rows.length} episode rows, expected six`);
-    for (const t of TOPICS) {
+    if (hasTopic) {
+      /* Six rows, one per topic-and-session pair, so no combination of ticks can
+         empty the list. */
+      const rows = [...html.matchAll(/data-topic="([a-z]+)" data-session="(\d+)"/g)]
+        .map(m => `${m[1]}/${m[2]}`);
+      assert.equal(rows.length, 6, `${slug} has ${rows.length} episode rows, expected six`);
+      for (const t of TOPICS) {
+        for (const se of SESSIONS) {
+          assert.ok(rows.includes(`${t}/${se}`),
+            `${slug} has no ${t}/${se} row — that combination of filters would return nothing`);
+        }
+      }
+
+      /* Topic hides rows here; capitol-a lost this facet on 2026-08-07 and is
+         asserted separately below. */
+      for (const t of TOPICS) {
+        assert.ok(css.includes(
+          `body:has(.${ns}-topic:checked):not(:has(#${prefix}-t-${t}:checked)) .${ns}-ep[data-topic="${t}"]`),
+          `css/${slug}.css has no hide rule for the ${t} topic`);
+      }
+    } else {
+      /* capitol-a dropped Filter by Topic on 2026-08-07: six rows, three per
+         session, so session alone can never empty the list. */
+      const rows = [...html.matchAll(/data-session="(\d+)"/g)].map(m => m[1]);
+      assert.equal(rows.length, 6, `${slug} has ${rows.length} episode rows, expected six`);
       for (const se of SESSIONS) {
-        assert.ok(rows.includes(`${t}/${se}`),
-          `${slug} has no ${t}/${se} row — that combination of filters would return nothing`);
+        const n = rows.filter(x => x === se).length;
+        assert.equal(n, 3, `${slug} has ${n} rows for the ${se} session, expected three`);
       }
     }
 
-    /* Topic hides rows on both. Session hides ROWS on the flat list and whole
-       GROUPS on the grouped one — a hidden group whose heading stayed behind
-       would be a lie about what is in the list. */
-    for (const t of TOPICS) {
-      assert.ok(css.includes(
-        `body:has(.${ns}-topic:checked):not(:has(#${prefix}-t-${t}:checked)) .${ns}-ep[data-topic="${t}"]`),
-        `css/${slug}.css has no hide rule for the ${t} topic`);
-    }
+    /* Session hides ROWS on the flat list and whole GROUPS on the grouped one —
+       a hidden group whose heading stayed behind would be a lie about what is in
+       the list. */
     const target = groups ? `.${ns}-group[data-session=` : `.${ns}-ep[data-session=`;
     for (const se of SESSIONS) {
       assert.ok(css.includes(
@@ -2367,6 +2381,34 @@ test('the Capitol Chat library filters by session and every row is a real episod
   }
 });
 
+test('Capitol Chat filters by session only, and shows no invented topic', () => {
+  /* The topic labels on these rows were ours: Capitol Chat has no topic
+     taxonomy on the live site. With the filter gone they would be unsourced
+     decoration on a client's page, so they go too. */
+  const html = readFileSync('dist/capitol-a.html', 'utf8');
+  const css = readFileSync('css/capitol-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  assert.doesNotMatch(html, /cca-topic/, 'dist/capitol-a.html still has the topic facet');
+  assert.doesNotMatch(css, /cca-topic/, 'css/capitol-a.css still has topic hide rules');
+  assert.doesNotMatch(html, /cca-ep__tag/, 'dist/capitol-a.html still shows a topic chip');
+  /* Scoped to the library section: "Quality Education" etc. are legitimate
+     elsewhere on the page as Our Solutions nav links, which are not the
+     invented row label this check is guarding against. */
+  const library = html.slice(html.indexOf('<section class="cca-library"'), html.indexOf('</section>', html.indexOf('<section class="cca-library"')));
+  for (const t of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+    assert.ok(!library.includes(`>${t}<`),
+      `dist/capitol-a.html still labels a row "${t}", which Empower never tagged`);
+  }
+
+  for (const s of ['2026', '2025']) {
+    assert.ok(css.includes(
+      `body:has(.cca-session:checked):not(:has(#ca-s-${s}:checked)) .cca-ep[data-session="${s}"]`),
+      `css/capitol-a.css has no hide rule for the ${s} session`);
+    const rows = (html.match(new RegExp(`data-session="${s}"`, 'g')) || []).length;
+    assert.ok(rows >= 1, `dist/capitol-a.html has no ${s} row, so that filter returns nothing`);
+  }
+});
+
 test('neither Capitol Chat reading invents an intro under the library heading', () => {
   /* The roadmap gives the podcast library an intro paragraph and gives this one
      only a heading. What must not appear between the heading and the filter is a
@@ -2380,7 +2422,10 @@ test('neither Capitol Chat reading invents an intro under the library heading', 
     const at = markup.indexOf('Catch Up From the Capitol');
     assert.ok(at > -1, `${out} has no library heading`);
     const after = textOf(markup.slice(at, at + 400));
-    assert.match(after, /Catch Up From the Capitol\s*Topic/,
+    /* capitol-a's first (and, since 2026-08-07, only) legend is Session; the
+       other reading still leads with Topic. Either is the filter, not an
+       intro. */
+    assert.match(after, /Catch Up From the Capitol\s*(Topic|Session)/,
       `${out} has something between the library heading and the filter — ` +
       `the roadmap gives this section no intro paragraph`);
   }

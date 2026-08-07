@@ -188,16 +188,12 @@
 
 /* ---- The filtering ----
 
-   The same shape as the podcast pages: AND across the two groups, OR inside each,
-   hide-only rules so two active groups intersect instead of fighting. Six rules,
-   no script. A hide-everything-then-reveal shape would turn the second group's
-   reveals into an OR.
+   One group, OR inside it, hide-only rules, no script. Empower dropped Filter by
+   Topic on 2026-08-07; Session stays alone in the shape that let a second group
+   intersect rather than fight, in case one returns.
 
    Trade, as everywhere else here: the state does not survive a reload and a
    filtered view cannot be linked to. */
-body:has(.cca-topic:checked):not(:has(#ca-t-education:checked)) .cca-ep[data-topic="education"],
-body:has(.cca-topic:checked):not(:has(#ca-t-work:checked)) .cca-ep[data-topic="work"],
-body:has(.cca-topic:checked):not(:has(#ca-t-safety:checked)) .cca-ep[data-topic="safety"],
 body:has(.cca-session:checked):not(:has(#ca-s-2026:checked)) .cca-ep[data-session="2026"],
 body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-session="2025"]{
   display:none}
@@ -211,10 +207,10 @@ body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-sessio
 .cca-eps{list-style:none;margin:clamp(var(--space-7),3.4vw,var(--space-9)) 0 0;
   padding:0;border-top:1px solid var(--border-default)}
 
-/* One row, five columns: play, title, topic, date, session. The title column is
-   the flexible one because it is the only one whose content varies in length. */
+/* One row, four columns: play, title, date, session. The title column is the
+   flexible one because it is the only one whose content varies in length. */
 .cca-ep{display:grid;
-  grid-template-columns:auto minmax(0,1fr) auto auto auto;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
   gap:var(--space-5);align-items:center;
   padding:var(--space-5) var(--space-4);
   border-bottom:1px solid var(--border-default);
@@ -232,9 +228,6 @@ body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-sessio
 .cca-ep__title:hover,.cca-ep__title:focus-visible{text-decoration:underline;
   text-underline-offset:3px}
 
-.cca-ep__tag{font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-caption);color:var(--em-orange-ink);white-space:nowrap}
-
 .cca-ep__date{font-size:var(--fs-caption);color:var(--text-muted);
   white-space:nowrap}
 
@@ -245,13 +238,12 @@ body:has(.cca-session:checked):not(:has(#ca-s-2025:checked)) .cca-ep[data-sessio
 @media (max-width:860px){
   .cca-filter{grid-template-columns:minmax(0,1fr)}
   .cca-filter__clear{justify-self:stretch}
-  /* Five columns do not fit a phone. Play stays with the title, the metadata
+  /* Four columns do not fit a phone. Play stays with the title, the metadata
      drops to a second line under them. */
   .cca-ep{grid-template-columns:auto minmax(0,1fr);gap:var(--space-4) var(--space-5)}
-  .cca-ep__tag{grid-column:2}
   .cca-ep__date{grid-column:2}
   .cca-ep__session{grid-column:2}
-  .cca-ep__play{grid-row:1 / span 4}
+  .cca-ep__play{grid-row:1 / span 3}
 }
 
 @media (prefers-reduced-motion:reduce){

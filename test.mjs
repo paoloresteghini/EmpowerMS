@@ -35,7 +35,7 @@ const html = readFileSync('dist/current.html', 'utf8');
    shared solution template; Task 3 and Task 4 add work and education onto
    the same file. Every sweep below that reads a page's stylesheet by slug
    goes through this so the exemption lives in one place. */
-const SHARED_CSS = { safety: 'solution.css' };
+const SHARED_CSS = { safety: 'solution.css', work: 'solution.css' };
 const cssFileFor = slug => `css/${SHARED_CSS[slug] || `${slug}.css`}`;
 
 test('build resolves every include marker', () => {
@@ -2458,6 +2458,46 @@ test('the solutions section is capped columns, not numbered rows', () => {
     'css/solution.css does not stretch the cap bodies to a common height');
 });
 
+test('all three solution pages are the same template', () => {
+  /* The point of the 2026-08-07 decision: one set of blocks, three sets of
+     copy. Asserted as shared structure, which is the opposite of the
+     SIGNATURE check the six independent readings used to carry. */
+  const PAGES = ['dist/education.html', 'dist/work.html', 'dist/safety.html'];
+  const BLOCKS = ['sol-hero', 'sol-vision', 'sol-problem', 'sol-caps',
+                  'sol-grid', 'sol-stories', 'sol-latest'];
+
+  for (const out of PAGES) {
+    const html = readFileSync(out, 'utf8');
+    for (const b of BLOCKS) {
+      assert.match(html, new RegExp(`class="${b}[ "]`), `${out} is missing the ${b} block`);
+    }
+    assert.match(html, /href="\.\.\/css\/solution\.css"/,
+      `${out} does not link the shared solution stylesheet`);
+    /* No page may carry a rejected reading's namespace. */
+    assert.doesNotMatch(html, /class="(psa|psb|wra|wrb|wkc|sfc)-/,
+      `${out} still carries a namespace from a reading Empower did not choose`);
+  }
+});
+
+test('each solution page carries the right number of work areas', () => {
+  /* The one axis the template flexes on. Safety and Education have four work
+     areas, Meaningful Work has five, and Education alone closes the section
+     with a statement. Counted so a copy-paste between pages cannot silently
+     give a page the wrong set. */
+  const EXPECTED = {
+    'dist/education.html': 4,
+    'dist/work.html': 5,
+    'dist/safety.html': 4,
+  };
+  for (const [out, n] of Object.entries(EXPECTED)) {
+    const html = readFileSync(out, 'utf8');
+    const areas = (html.match(/<li class="sol-lit"/g) || []).length;
+    assert.equal(areas, n, `${out} has ${areas} work areas, expected ${n}`);
+    const toward = (html.match(/What We’re Working Toward:/g) || []).length;
+    assert.equal(toward, n, `${out} has ${toward} commitment lines for ${areas} work areas`);
+  }
+});
+
 test('the About pages use the agreed build’s header, not the mega-menu one', () => {
   // The agreed homepage runs header-2 (utility strip + plain dropdowns). An
   // About page on the mega-menu header would put two different navigations in
@@ -2517,7 +2557,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'what-we-do-a': 'da', 'what-we-do-b': 'db', 'what-we-do-c': 'dc',
     'team-a': 'ta', 'team-b': 'tb', 'team-c': 'tc', 'team-bio': 'tp',
     'solutions-a': 'sa', 'solutions-b': 'sb', 'solutions-c': 'sc',
-    'work-b': 'wrb', 'work-c': 'wkc',
+    'work-b': 'wrb', 'work-c': 'wkc', 'work': 'sol',
     'safety-a': 'psa', 'safety': 'sol', 'safety-c': 'sfc',
     'podcast-a': 'pca', 'podcast-b': 'pcb',
     'capitol-a': 'cca', 'capitol-b': 'ccb',

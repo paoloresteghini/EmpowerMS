@@ -1964,7 +1964,7 @@ test('the six solution detail readings do not repeat each other’s composition'
     'dist/work-b.html': ['wrb-track__list', 'wrb-plate--lead'],
     'dist/work-c.html': ['wkc-quarters__grid', 'wkc-rail'],
     'dist/safety-a.html': ['psa-bricks__grid', 'psa-post__label'],
-    'dist/safety.html': ['sol-steps__list', 'sol-lit'],
+    'dist/safety.html': ['sol-caps__grid', 'sol-lit'],
     'dist/safety-c.html': ['sfc-rows__list', 'sfc-rail'],
   };
   assert.equal(Object.keys(SIGNATURE).length, DETAILPAGES.length,
@@ -2420,6 +2420,42 @@ test('every solution detail reading routes back to the landing page and the feed
     assert.ok(html.includes('href="/latest"'),
       `${out} does not link the destination its two feeds resolve to`);
   }
+});
+
+test('the solutions section is capped columns, not numbered rows', () => {
+  /* Empower asked on 2026-08-07 for the numbered section to be drawn with the
+     capped-column layout from Public Safety A. The numerals go entirely: a
+     digit kept in the cap reads as not having made the change. The cap carries
+     the solution title, because Practical Solutions has no eyebrow label and
+     no "What We're Working Toward" line, so the four-part column from section
+     5 collapses to two parts here. */
+  for (const out of ['dist/safety.html']) {
+    const html = readFileSync(out, 'utf8');
+    const markup = html.replace(/<!--[\s\S]*?-->/g, '');
+
+    assert.match(markup, /<section class="sol-caps"/, `${out} has no capped-column solutions section`);
+    assert.doesNotMatch(markup, /sol-steps|sol-step__disc/,
+      `${out} still carries the numbered-row solutions block`);
+
+    const caps = [...markup.matchAll(/<p class="sol-cap__title">([^<]+)<\/p>/g)].map(m => m[1]);
+    assert.equal(caps.length, 4, `${out} has ${caps.length} solution caps, expected four`);
+    for (const c of caps) {
+      assert.doesNotMatch(c, /^\s*\d/, `${out} has a numeral in a cap: "${c}"`);
+    }
+
+    /* Every cap needs a body, or a column is a heading over nothing. */
+    const bodies = (markup.match(/<div class="sol-cap__body">/g) || []).length;
+    assert.equal(bodies, 4, `${out} has ${bodies} cap bodies for ${caps.length} caps`);
+  }
+
+  /* The caps must share a row so their bottoms line up. A column each would
+     let the four rag against one another, which is the fault the layout
+     exists to avoid. */
+  const css = readFileSync('css/solution.css', 'utf8');
+  assert.match(css, /\.sol-caps__grid\{[^}]*grid-template-columns:repeat\(4,/,
+    'css/solution.css does not lay the caps out as four columns');
+  assert.match(css, /\.sol-cap\{[^}]*display:flex[^}]*flex-direction:column/,
+    'css/solution.css does not stretch the cap bodies to a common height');
 });
 
 test('the About pages use the agreed build’s header, not the mega-menu one', () => {

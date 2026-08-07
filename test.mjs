@@ -1295,12 +1295,10 @@ test('every build on the chooser is filterable, and every set has exactly one pi
   assert.equal(tagged.length, cards.length,
     `${cards.length - tagged.length} cards have no data-set and would vanish when the Set facet is used`);
 
-  /* UNDECIDED sets are named, not inferred. A set awaiting a decision has zero
-     picks and disappears from the signed-off view, which is correct — but the
-     same shape is what a set whose pick was accidentally deleted looks like, so
-     the exemption is a list here rather than a rule that tolerates zero. Moving
-     a set off this list is the commit that records Empower's choice. */
-  const UNDECIDED = ['education', 'work', 'safety', 'podcast', 'capitol'];
+  /* Empower chose every remaining set on 2026-08-07: Streetlight as the single
+     solution template, The Studio for the podcast, The Dome for Capitol Chat.
+     Nothing is awaiting a decision, so every set on the chooser carries a pick. */
+  const UNDECIDED = [];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
   assert.equal(sections.length, 10, `expected ten sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
@@ -1893,19 +1891,22 @@ const SAFETY_COPY = [
 ];
 
 const WORKPAGES = ABOUTPAGES.filter(p => p.out.includes('work-'));
-/* 'safety-' would not catch dist/safety.html once the B reading dropped its
-   letter and became the shared template's page, so this matches the whole
-   family by its stem instead. */
-const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.startsWith('dist/safety'));
+/* dist/safety.html dropped its letter on 2026-08-07, when Empower chose it as
+   the shared template for all three solution pages, so it is no longer one of
+   the readings under comparison here, the same way dist/work.html and
+   dist/education.html never were. 'safety-' catches only the two that are
+   still being weighed against each other. */
+const SAFETYPAGES = ABOUTPAGES.filter(p => p.out.includes('safety-'));
 const DETAILPAGES = [...WORKPAGES, ...SAFETYPAGES];
 
-/* Meaningful Work lost its A reading (The Open Door) on 2026-08-05, so the two
-   sets are no longer the same size. The counts stay asserted rather than
-   derived: a page that stops building should fail here, not silently shrink
-   the set the SIGNATURE and copy sweeps run over. */
+/* Meaningful Work lost its A reading (The Open Door) on 2026-08-05, and Public
+   Safety B left the readings pool entirely on 2026-08-07 when it became the
+   shared template, so the two sets are back to the same size. The counts stay
+   asserted rather than derived: a page that stops building should fail here,
+   not silently shrink the set the SIGNATURE and copy sweeps run over. */
 test('both solution detail pages build in the readings that survived', () => {
   assert.equal(WORKPAGES.length, 2, `expected two Meaningful Work readings, found ${WORKPAGES.length}`);
-  assert.equal(SAFETYPAGES.length, 3, `expected three Public Safety readings, found ${SAFETYPAGES.length}`);
+  assert.equal(SAFETYPAGES.length, 2, `expected two Public Safety readings, found ${SAFETYPAGES.length}`);
 });
 
 test('every Meaningful Work reading carries the roadmap copy verbatim', () => {
@@ -1946,13 +1947,19 @@ test('neither page carries the other page’s copy', () => {
   }
 });
 
-test('the six solution detail readings do not repeat each other’s composition', () => {
+test('the four remaining solution detail readings do not repeat each other’s composition', () => {
   /* Paolo chose independently composed pages on 2026-08-05 rather than one
      template filled repeatedly, and reaffirmed it when the C pair was added, so
-     all six have to stay distinct — not just the readings of a given page. Each
-     signature is the shape that page's own load-bearing sections take: the four
-     approaches, and the work areas. If any two pages share one, the choice they
-     were built to offer is gone.
+     the readings still on the table have to stay distinct, not just the
+     readings of a given page. Each signature is the shape that page's own
+     load-bearing sections take: the four approaches, and the work areas. If
+     any two pages share one, the choice they were built to offer is gone.
+
+     Public Safety B is not in this map. Empower chose it on 2026-08-07 and
+     made it the shared template for all three solution pages, so its
+     composition is deliberately the one the other two now repeat: the
+     opposite of what this test checks for. The 'all three solution pages are
+     the same template' test further down covers it instead.
 
      The C pair is the case that needs stating: work-c and safety-c deliberately
      REUSE work-b's mosaic, story columns and article stubs (Paolo picked those
@@ -1964,7 +1971,6 @@ test('the six solution detail readings do not repeat each other’s composition'
     'dist/work-b.html': ['wrb-track__list', 'wrb-plate--lead'],
     'dist/work-c.html': ['wkc-quarters__grid', 'wkc-rail'],
     'dist/safety-a.html': ['psa-bricks__grid', 'psa-post__label'],
-    'dist/safety.html': ['sol-caps__grid', 'sol-lit'],
     'dist/safety-c.html': ['sfc-rows__list', 'sfc-rail'],
   };
   assert.equal(Object.keys(SIGNATURE).length, DETAILPAGES.length,

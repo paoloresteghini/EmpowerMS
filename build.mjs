@@ -90,6 +90,7 @@ export const PAGES = [
      across all three solution pages, so this page, safety and education are
      the same blocks in the same order with different copy. They share
      css/solution.css; the unpicked readings keep their own stylesheets. */
+  { src: 'education/index.html', out: 'dist/education.html', title: 'Quality Education', kind: 'about' },
   { src: 'work/index.html', out: 'dist/work.html', title: 'Meaningful Work', kind: 'about' },
   { src: 'safety/index.html', out: 'dist/safety.html', title: 'Public Safety', kind: 'about' },
 

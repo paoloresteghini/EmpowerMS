@@ -35,7 +35,7 @@ const html = readFileSync('dist/current.html', 'utf8');
    shared solution template; Task 3 and Task 4 add work and education onto
    the same file. Every sweep below that reads a page's stylesheet by slug
    goes through this so the exemption lives in one place. */
-const SHARED_CSS = { safety: 'solution.css', work: 'solution.css' };
+const SHARED_CSS = { safety: 'solution.css', work: 'solution.css', education: 'solution.css' };
 const cssFileFor = slug => `css/${SHARED_CSS[slug] || `${slug}.css`}`;
 
 test('build resolves every include marker', () => {
@@ -1272,8 +1272,8 @@ test('the chooser filters without a script, and every control is a real one', ()
     .map(m => m[1]);
   assert.deepEqual(ids,
     ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
-     'set-work', 'set-safety', 'set-podcast', 'set-capitol'],
-    'the facets in the rail are not the ten expected controls');
+     'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol'],
+    'the facets in the rail are not the eleven expected controls');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1300,9 +1300,9 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      same shape is what a set whose pick was accidentally deleted looks like, so
      the exemption is a list here rather than a rule that tolerates zero. Moving
      a set off this list is the commit that records Empower's choice. */
-  const UNDECIDED = ['work', 'safety', 'podcast', 'capitol'];
+  const UNDECIDED = ['education', 'work', 'safety', 'podcast', 'capitol'];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 9, `expected nine sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 10, `expected ten sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -2498,6 +2498,24 @@ test('each solution page carries the right number of work areas', () => {
   }
 });
 
+test('Quality Education closes its work areas with the roadmap’s statement', () => {
+  /* Education's section 5 ends with a statement the other two tabs do not
+     have. It is a trailing block, not a fifth work area, so it must not be
+     counted as one by the work-area sweep. */
+  const html = readFileSync('dist/education.html', 'utf8');
+  assert.match(html, /class="sol-grid__closer"/,
+    'dist/education.html has no closing block after its work areas');
+  assert.ok(html.includes('Real Choice for Every Family'),
+    'dist/education.html has lost the closing block’s heading');
+  assert.ok(html.includes('We don’t tell families which school to choose. We work to make sure they have a choice.'),
+    'dist/education.html has lost the closing block’s final line');
+
+  for (const out of ['dist/work.html', 'dist/safety.html']) {
+    assert.doesNotMatch(readFileSync(out, 'utf8'), /class="sol-grid__closer"/,
+      `${out} has a closing block, which only Quality Education has`);
+  }
+});
+
 test('the About pages use the agreed build’s header, not the mega-menu one', () => {
   // The agreed homepage runs header-2 (utility strip + plain dropdowns). An
   // About page on the mega-menu header would put two different navigations in
@@ -2559,6 +2577,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'solutions-a': 'sa', 'solutions-b': 'sb', 'solutions-c': 'sc',
     'work-b': 'wrb', 'work-c': 'wkc', 'work': 'sol',
     'safety-a': 'psa', 'safety': 'sol', 'safety-c': 'sfc',
+    'education': 'sol',
     'podcast-a': 'pca', 'podcast-b': 'pcb',
     'capitol-a': 'cca', 'capitol-b': 'ccb',
   };

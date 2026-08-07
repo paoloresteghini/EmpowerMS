@@ -262,6 +262,21 @@
   .sol-grid__list{grid-template-columns:minmax(0,1fr)}
 }
 
+/* Quality Education alone closes its work areas with a statement. A trailing
+   block on the same dark field, not a fifth card: it answers the four above it
+   rather than standing beside them. */
+.sol-grid__closer{max-width:64ch;
+  margin:clamp(var(--space-9),5vw,var(--space-11)) 0 0}
+.sol-grid__closer h3{margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.4rem,1.05rem + 1.2vw,2rem);line-height:1.1;
+  letter-spacing:-.02em;color:var(--white)}
+.sol-grid__closer p{margin:0 0 var(--space-4);font-size:var(--fs-body);
+  line-height:var(--lh-body);color:var(--text-inverse-muted)}
+.sol-grid__closer-line{margin-bottom:0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.4;color:var(--orange-300)}
+
 /* ========================= 6 · Community stories ========================= */
 
 .sol-stories{padding:0 0 clamp(var(--space-11),6vw,var(--space-13));

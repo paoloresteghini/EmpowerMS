@@ -1,0 +1,72 @@
+<!-- Join Our Ambassador Network. The interest form the roadmap tab asks for.
+
+     Reading A puts the form beside the copy; this one puts the copy above it
+     and lets the form take the full measure, so the last screen is the thing
+     being asked for and nothing else.
+
+     Ashley Green is named because the roadmap names her, and her name is NOT a
+     link: only the CEO’s bio page exists, and a name that opens somebody else’s
+     bio is the exact failure Empower flagged on 2026-08-05. -->
+<section class="abb-join" id="join" aria-labelledby="join-title">
+  <div class="em-container">
+    <div class="abb-join__head">
+      <h2 class="abb-join__title" id="join-title" data-reveal="rise">Join Our Ambassador Network</h2>
+      <p class="abb-join__first" data-reveal="rise">Every great movement begins with people who are willing to take the first step.</p>
+      <div class="abb-join__say" data-reveal-group>
+        <p data-reveal="rise">Join a growing network of Mississippians committed to creating more opportunity across our state. Whether you share your story, attend an event, or connect others with our work, your voice can make a difference.</p>
+        <p data-reveal="rise">Getting started is easy. Complete the short interest form below, and Ashley Green, our Director of Outreach, will reach out to answer your questions and help you get connected.</p>
+      </div>
+    </div>
+
+    <form class="abb-form" method="post" action="#join" novalidate>
+      <div class="abb-form__grid">
+        <div class="em-field">
+          <label class="em-field__label" for="abb-first">First name<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="text" id="abb-first" name="first_name" autocomplete="given-name" required>
+        </div>
+        <div class="em-field">
+          <label class="em-field__label" for="abb-last">Last name<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="text" id="abb-last" name="last_name" autocomplete="family-name" required>
+        </div>
+        <div class="em-field">
+          <label class="em-field__label" for="abb-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="email" id="abb-email" name="email" autocomplete="email" required>
+        </div>
+        <div class="em-field">
+          <label class="em-field__label" for="abb-county">County</label>
+          <input class="em-input" type="text" id="abb-county" name="county" autocomplete="address-level2">
+        </div>
+      </div>
+
+      <fieldset class="abb-form__set">
+        <legend class="abb-form__legend">How would you like to get involved?</legend>
+        <p class="abb-form__hint">Tick as many as you like. Nothing here commits you to anything.</p>
+        <div class="abb-form__checks">
+          <div class="abb-check">
+            <input type="checkbox" id="abb-way-story" name="ways" value="story">
+            <label for="abb-way-story">Share my story</label>
+          </div>
+          <div class="abb-check">
+            <input type="checkbox" id="abb-way-events" name="ways" value="events">
+            <label for="abb-way-events">Attend events and Capitol Days</label>
+          </div>
+          <div class="abb-check">
+            <input type="checkbox" id="abb-way-connect" name="ways" value="connect">
+            <label for="abb-way-connect">Connect others with the research</label>
+          </div>
+          <div class="abb-check">
+            <input type="checkbox" id="abb-way-grow" name="ways" value="grow">
+            <label for="abb-way-grow">Help grow the network</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="em-field">
+        <label class="em-field__label" for="abb-message">Anything you would like Ashley to know?</label>
+        <textarea class="em-textarea" id="abb-message" name="message" rows="4"></textarea>
+      </div>
+
+      <button class="em-btn em-btn--primary em-btn--lg" type="submit">Join the Ambassador Network</button>
+    </form>
+  </div>
+</section>

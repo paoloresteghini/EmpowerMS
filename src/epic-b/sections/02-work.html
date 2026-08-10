@@ -1,0 +1,32 @@
+<!-- What We Do. A navy plate pulled up over the hero’s lower edge by a negative
+     margin on the plate itself — never an absolutely positioned element
+     crossing a section boundary, which is the shape that breaks in Elementor
+     and disappears the moment a later section is given position.
+
+     The statement takes the top of the plate at full measure; the three
+     paragraphs run beneath it as two columns and a hanging third, so the block
+     is read as one passage rather than as three equal cards. -->
+<section class="epb-work" aria-labelledby="work-title">
+  <div class="em-container">
+    <div class="epb-work__plate">
+      <h2 class="epb-work__title" id="work-title" data-reveal="rise">We work with real people to understand real problems and craft real solutions.</h2>
+
+      <div class="epb-work__prose" data-reveal-group>
+        <p class="epb-work__claim" data-reveal="rise">Mississippi’s biggest challenges require solutions built around our state’s people, data, and realities.</p>
+        <p data-reveal="rise">EPIC combines rigorous, credible, Mississippi-specific research with the experiences of the people most affected by public policy. We examine what is happening, why it is happening, and what could work better.</p>
+        <p data-reveal="rise">We turn those insights into practical, Mississippi-made policy solutions that help leaders make better decisions and create more opportunity across our state.</p>
+      </div>
+
+      <!-- The photograph is the second half of the sentence beside it: "the
+           experiences of the people most affected by public policy". It hangs
+           off the bottom of the plate on a negative margin so the image is the
+           thing that crosses into the next section, which is the same overlap
+           move the plate itself makes on the hero. -->
+      <figure class="epb-work__figure" data-reveal="clip">
+        <img src="../assets/photography/worker-workshop-bw.jpg" width="918" height="620"
+             loading="lazy" decoding="async"
+             alt="A young man on a shop floor, head down over the machine he is working at.">
+      </figure>
+    </div>
+  </div>
+</section>

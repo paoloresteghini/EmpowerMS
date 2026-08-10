@@ -1,0 +1,47 @@
+<!-- The form, as the destination. A full-bleed navy band split in two: an actual
+     Empower email on the left, so the last thing seen before the address field
+     is the thing being subscribed to, and the fields on the right.
+
+     No JavaScript. Real labels, real autocomplete tokens, native required
+     validation. At hand-off the action becomes the WordPress or Mailchimp
+     endpoint and nothing else about this changes. -->
+<section class="mlb-signup" id="signup" aria-labelledby="signup-title">
+  <div class="em-container mlb-signup__grid">
+    <div class="mlb-signup__aside">
+      <h2 class="mlb-signup__title" id="signup-title" data-reveal="rise">Join Our Email List</h2>
+      <p class="mlb-signup__note" data-reveal="rise">One email a month, plus legislative updates while the session runs. Unsubscribe in one click, any time.</p>
+      <figure class="mlb-signup__mock" data-reveal="clip">
+        <img src="../assets/photography/esa-email-mockup.jpg" width="1000" height="1555"
+             loading="lazy" decoding="async"
+             alt="An Empower Mississippi campaign email, headed Save Our ESA, above a photograph of a classroom.">
+      </figure>
+    </div>
+
+    <form class="mlb-form" method="post" action="#signup" novalidate>
+      <div class="mlb-form__row">
+        <div class="em-field em-field--light">
+          <label class="em-field__label" for="mlb-first">First name</label>
+          <input class="em-input" type="text" id="mlb-first" name="first_name" autocomplete="given-name">
+        </div>
+        <div class="em-field em-field--light">
+          <label class="em-field__label" for="mlb-last">Last name</label>
+          <input class="em-input" type="text" id="mlb-last" name="last_name" autocomplete="family-name">
+        </div>
+      </div>
+
+      <div class="em-field em-field--light">
+        <label class="em-field__label" for="mlb-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
+        <input class="em-input" type="email" id="mlb-email" name="email" autocomplete="email" required>
+      </div>
+
+      <div class="em-field em-field--light">
+        <label class="em-field__label" for="mlb-county">County</label>
+        <input class="em-input" type="text" id="mlb-county" name="county" autocomplete="address-level2"
+               aria-describedby="mlb-county-hint">
+        <p class="em-field__hint" id="mlb-county-hint">Optional. It helps us send you what is happening near you.</p>
+      </div>
+
+      <button class="em-btn em-btn--primary em-btn--lg em-btn--block" type="submit">Join Our Email List</button>
+    </form>
+  </div>
+</section>

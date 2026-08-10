@@ -1272,8 +1272,9 @@ test('the chooser filters without a script, and every control is a real one', ()
     .map(m => m[1]);
   assert.deepEqual(ids,
     ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
-     'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol'],
-    'the facets in the rail are not the eleven expected controls');
+     'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
+     'set-mail', 'set-amb', 'set-give'],
+    'the facets in the rail are not the fifteen expected controls');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1295,12 +1296,14 @@ test('every build on the chooser is filterable, and every set has exactly one pi
   assert.equal(tagged.length, cards.length,
     `${cards.length - tagged.length} cards have no data-set and would vanish when the Set facet is used`);
 
-  /* Empower chose every remaining set on 2026-08-07: Streetlight as the single
-     solution template, The Studio for the podcast, The Dome for Capitol Chat.
-     Nothing is awaiting a decision, so every set on the chooser carries a pick. */
-  const UNDECIDED = [];
+  /* Empower chose every set on the chooser except EPIC on 2026-08-07:
+     Streetlight as the single solution template, The Studio for the podcast,
+     The Dome for Capitol Chat. EPIC's three readings went up the same day and
+     have not been chosen from, so it is the one set with no pick — moving it
+     off this list is the commit that records Empower's choice. */
+  const UNDECIDED = ['epic', 'mail', 'amb', 'give'];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 10, `expected ten sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 14, `expected fourteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -2539,6 +2542,457 @@ test('neither Capitol Chat reading invents an intro under the library heading', 
   }
 });
 
+/* ---------- EPIC (Research) landing page ---------- */
+
+const EPIC_COPY = [
+  /* Section 1, the hero, its button and its secondary link. The headline is
+     three sentences set on three lines, so it is asserted against the page's
+     normalised text rather than against its markup. */
+  'Better Data. Better Ideas. Better Solutions.',
+  'The Empower Policy & Innovation Center (EPIC) is the research arm of Empower Mississippi. EPIC identifies Mississippi’s biggest challenges and produces the research to develop innovative public policy solutions.',
+  'Dive Into the Research',
+  'Why Empower Mississippi created EPIC',
+
+  /* Section 2, What We Do. */
+  'We work with real people to understand real problems and craft real solutions.',
+  'Mississippi’s biggest challenges require solutions built around our state’s people, data, and realities.',
+  'EPIC combines rigorous, credible, Mississippi-specific research with the experiences of the people most affected by public policy. We examine what is happening, why it is happening, and what could work better.',
+  'We turn those insights into practical, Mississippi-made policy solutions that help leaders make better decisions and create more opportunity across our state.',
+
+  /* Section 3, How We Work. The roadmap sets the three step names in capitals;
+     every page in this build renders roadmap capitals as title case, the same
+     way the solution pages render PUBLIC SCHOOL CHOICE. */
+  'How EPIC Turns Research Into Solutions',
+  'Listen & Define',
+  'Hear from Mississippians and use available data to clearly define the problem.',
+  'Research',
+  /* The roadmap leaves this one without a full stop. The pages add it, so the
+     assertion stops one character short rather than asserting a typo. */
+  'Produce credible, state-specific research that explains what is happening, why it matters, and what the evidence shows',
+  'Design Solutions',
+  'Turn those findings into practical policy solutions designed for Mississippi’s needs and realities.',
+
+  /* Section 4, Explore Our Research, and the second button. */
+  'Research Designed to Lead Somewhere',
+  'Explore reports, data, policy briefs, and practical recommendations on the issues shaping opportunity in Mississippi.',
+  'Quality Education',
+  'Meaningful Work',
+  'Public Safety',
+  'View Research & Reports',
+];
+
+const EPICPAGES = ABOUTPAGES.filter(p => p.out.includes('epic-'));
+
+test('all three EPIC readings build', () => {
+  assert.equal(EPICPAGES.length, 3, `expected three EPIC readings, found ${EPICPAGES.length}`);
+});
+
+test('every EPIC reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of EPICPAGES) {
+    const text = textOf(html);
+    for (const line of EPIC_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('the EPIC hero keeps both roadmap buttons and fills only the first', () => {
+  /* The roadmap gives this page two buttons and the brand rule gives it one
+     orange action. Demoting the wrong one, or deleting the second outright,
+     both pass the one-orange-action sweep; only one of the three is correct. */
+  for (const { out, html } of EPICPAGES) {
+    const dive = html.match(/<a class="em-btn([^"]*)"[^>]*>\s*Dive Into the Research/);
+    assert.ok(dive, `${out} has no Dive Into the Research button`);
+    assert.match(dive[1], /em-btn--primary/,
+      `${out}: the roadmap's first button is not the page's orange action`);
+
+    const view = html.match(/<a class="em-btn([^"]*)"[^>]*>\s*View Research &amp; Reports/);
+    assert.ok(view, `${out} has lost the roadmap's second button`);
+    assert.ok(!/em-btn--primary/.test(view[1]),
+      `${out}: View Research & Reports is a second orange fill`);
+  }
+});
+
+test('every EPIC reading names the three focus areas above its research index', () => {
+  /* Keri's comms note on this tab asks for the focus areas "more often and
+     higher up on the page to make the Center's focus clear". Each reading puts
+     them in the hero as real links to the three groups in the last section. */
+  for (const { out, html } of EPICPAGES) {
+    for (const id of ['area-education', 'area-work', 'area-safety']) {
+      assert.ok(html.includes(`id="${id}"`), `${out} has no #${id} target`);
+      assert.ok(html.includes(`href="#${id}"`), `${out} never links to #${id}`);
+    }
+    const hero = html.slice(0, html.indexOf('id="research"'));
+    for (const area of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+      assert.ok(hero.includes(area),
+        `${out} does not name ${area} before the research section`);
+    }
+  }
+});
+
+test('no EPIC reading invents a statistic to decorate itself', () => {
+  /* A research page is the one page where a made-up number would be read as a
+     finding. The drawn plot on epic-b has no axis, no scale and no value on it,
+     and nothing in this set may grow one. The check is deliberately blunt: no
+     percentage, and no bare number set as display type. */
+  for (const { out, html } of EPICPAGES) {
+    const text = textOf(html.slice(html.indexOf('<main'), html.indexOf('</main>')));
+    assert.ok(!/\d+(\.\d+)?\s?%/.test(text), `${out} states a percentage`);
+    assert.ok(!/em-stat__value/.test(html), `${out} uses the big-number stat component`);
+  }
+});
+
+test('every EPIC report link is a real empowerms.org post', () => {
+  /* The index on all three readings is real content, not lorem headlines. The
+     three posts below were pulled from the WordPress REST API on 2026-08-07 —
+     one per focus area, each the most recent report carrying that category. */
+  const REPORTS = [
+    'https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/',
+    'https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/',
+    'https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/',
+  ];
+  for (const { out, html } of EPICPAGES) {
+    for (const href of REPORTS) {
+      assert.ok(html.includes(href), `${out} is missing the real report at ${href}`);
+    }
+  }
+});
+
+test('EPIC motion is progressive: no page depends on scroll-driven animation', () => {
+  /* Every scroll-driven rule in this set sits inside BOTH @supports and
+     prefers-reduced-motion:no-preference, and the composition underneath it is
+     static. The failure this guards against is the one the motion layer has
+     already caused three times in this build: a start state that hides content
+     and a trigger that never fires. */
+  for (const slug of ['epic-a', 'epic-b', 'epic-c']) {
+    /* The @supports condition itself contains the property name, so strip the
+       guards before looking for declarations or the guard reads as the thing it
+       is guarding. */
+    const css = readFileSync(`css/${slug}.css`, 'utf8');
+    const guards = [...css.matchAll(/@supports \(animation-timeline[^)]*\)\)?/g)];
+    assert.ok(guards.length > 0, `${slug}.css has no @supports guard for scroll-driven motion`);
+
+    const declarations = css.replace(/@supports \(animation-timeline[^)]*\)\)?/g, '@supports (X)');
+    const uses = [...declarations.matchAll(/animation-timeline:/g)];
+    assert.ok(uses.length > 0, `${slug}.css no longer uses a scroll-driven animation`);
+
+    /* Every animation-timeline declaration must sit after an @supports guard. */
+    for (const m of uses) {
+      const opened = (declarations.slice(0, m.index).match(/@supports \(X\)/g) || []).length;
+      assert.ok(opened > 0,
+        `${slug}.css declares animation-timeline outside an @supports guard`);
+    }
+    assert.match(css, /@media \(prefers-reduced-motion: no-preference\)/,
+      `${slug}.css does not gate its motion on prefers-reduced-motion`);
+  }
+});
+
+test('the EPIC readings add no JavaScript of their own', () => {
+  /* The motion on these three pages is the most visible in the build, and it is
+     entirely CSS. That matters for the Elementor conversion: custom CSS travels,
+     a bespoke scroll library does not. The check is the whole script set — three
+     shared chrome files, nothing else, and no inline script. */
+  const SHARED = ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'];
+  for (const { out, html } of EPICPAGES) {
+    const srcs = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map(m => m[1]);
+    assert.deepEqual(srcs, SHARED,
+      `${out} links ${srcs.join(', ')} — the EPIC readings ship the shared chrome and nothing else`);
+    assert.ok(!/<script(?![^>]*\ssrc=)[^>]*>[\s\S]*?<\/script>/.test(html),
+      `${out} has an inline script`);
+  }
+});
+
+test('every EPIC reading carries photography, and no text sits on a photograph', () => {
+  /* Zero imagery on a page about the people most affected by public policy is a
+     defect, not restraint.
+
+     These photographs ARE stand-ins — the supplied library was shot for the
+     solution pages — but that is recorded on the chooser, in the README and in
+     the hand-off notes, not on the page. Paolo took the on-page notices off on
+     2026-08-07: the page is what Empower show people, and production caveats do
+     not belong in front of their audience. */
+  for (const { out, html } of EPICPAGES) {
+    const imgs = [...html.matchAll(/<img[^>]*>/g)]
+      .map(m => m[0])
+      .filter(tag => tag.includes('assets/photography/'));
+    assert.ok(imgs.length >= 2,
+      `${out} carries ${imgs.length} photographs — imagery is how this page connects`);
+    for (const tag of imgs) {
+      assert.match(tag, /\salt="[^"]{20,}"/, `${out} has a photograph with thin or missing alt text`);
+      assert.match(tag, /\swidth="\d+"[^>]*\sheight="\d+"/, `${out} has a photograph with no intrinsic size`);
+      assert.match(tag, /\sloading="lazy"/, `${out} has a photograph that is not lazily loaded`);
+    }
+    assert.ok(!/stands in here|Stand-in photography|Empower owe/.test(textOf(html)),
+      `${out} has a production caveat about its photography in front of the reader`);
+  }
+});
+
+/* ---------- The two Join Us destinations ---------- */
+
+const MAIL_COPY = [
+  /* Section 1, the hero, and the roadmap's one button. */
+  'Stay Connected',
+  'Get the latest from Empower Mississippi delivered straight to your inbox.',
+  'From monthly updates to important news from the Capitol, we’ll help you stay informed in five minutes or less.',
+  'Join Our Email List',
+
+  /* Section 2, About. */
+  'Stay Informed, Not Overwhelmed',
+  'Keeping up with what’s happening shouldn’t feel like another full-time job.',
+  'Our emails bring you the highlights—clear, concise, and easy to read in just a few minutes.',
+  'No clutter. No inbox overload. Just practical updates when they matter most.',
+
+  /* Section 3, What You'll Receive, and its four items. */
+  'What You’ll Receive',
+  'Monthly news and updates',
+  'Legislative highlights during the session',
+  'New articles, research, and podcasts',
+  'Opportunities to get involved',
+];
+
+const AMB_COPY = [
+  /* Section 1, the hero, and the roadmap's one button. */
+  'Be Part of the Solution',
+  'You’ve seen the challenges. You’ve seen the potential. Now you can be part of the solution.',
+  'Whether you’ve experienced these issues firsthand or simply care about Mississippi’s future, your voice matters. Join a community of Mississippians working together to advance practical solutions that expand opportunity through better education, meaningful work, and safer communities.',
+  'Join Our Ambassador Network',
+
+  /* Section 2, Who Are Our Ambassadors? */
+  'Who Are Our Ambassadors?',
+  'Our Ambassadors are parents, educators, business owners, community leaders, and citizens from every corner of Mississippi.',
+  'Many have been directly impacted by the issues we work on. Others have seen the challenges facing their communities and want to be part of the solution.',
+  'They share one thing in common: a desire to help create more opportunity for Mississippi.',
+
+  /* Section 3, What Do Ambassadors Do?, and the four ways. */
+  'What Do Ambassadors Do?',
+  'Every Ambassador gets involved in different ways. You might:',
+  'Share your story and advocate for practical solutions.',
+  'Attend Capitol Days, listening tours, and community events.',
+  'Connect others with Empower’s research and resources.',
+  'Help grow a network of citizens committed to Mississippi’s future.',
+
+  /* Section 4, Join Our Ambassador Network. */
+  'Every great movement begins with people who are willing to take the first step.',
+  'Join a growing network of Mississippians committed to creating more opportunity across our state. Whether you share your story, attend an event, or connect others with our work, your voice can make a difference.',
+  'Getting started is easy. Complete the short interest form below, and Ashley Green, our Director of Outreach, will reach out to answer your questions and help you get connected.',
+];
+
+const MAILPAGES = ABOUTPAGES.filter(p => p.out.includes('mail-'));
+const AMBPAGES = ABOUTPAGES.filter(p => p.out.includes('amb-'));
+const JOINPAGES = [...MAILPAGES, ...AMBPAGES];
+
+test('both Join Us destinations build in two readings each', () => {
+  assert.equal(MAILPAGES.length, 2, `expected two Email Sign Up readings, found ${MAILPAGES.length}`);
+  assert.equal(AMBPAGES.length, 2, `expected two Ambassador readings, found ${AMBPAGES.length}`);
+});
+
+test('every Email Sign Up reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of MAILPAGES) {
+    const text = textOf(html);
+    for (const line of MAIL_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('every Ambassador reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of AMBPAGES) {
+    const text = textOf(html);
+    for (const line of AMB_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('both Join Us tabs are built around a real form, not a picture of one', () => {
+  /* These two tabs are the only ones in the roadmap that end on an instruction
+     rather than a paragraph: "Insert signup form on webpage" and "Include
+     interest form for joining the ambassador program". A page that draws a
+     field and a button without a <form> around them satisfies a screenshot and
+     nothing else. */
+  for (const { out, html } of JOINPAGES) {
+    assert.match(html, /<form[^>]*method="post"/, `${out} has no posting form`);
+
+    /* Every control is labelled. A placeholder is not a label and neither is a
+       heading that happens to sit above the field. */
+    const ids = [...html.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map(m => m[1]);
+    assert.ok(ids.length >= 4, `${out} has ${ids.length} form controls, expected at least four`);
+    for (const id of ids) {
+      assert.ok(html.includes(`for="${id}"`), `${out}: the ${id} control has no label bound to it`);
+    }
+
+    /* The email field is a real email input, required, and autocompletes. */
+    const email = html.match(/<input[^>]*type="email"[^>]*>/);
+    assert.ok(email, `${out} has no email input`);
+    assert.match(email[0], /\srequired/, `${out}: the email field is not required`);
+    assert.match(email[0], /autocomplete="email"/, `${out}: the email field has no autocomplete token`);
+
+    /* And the submit is the page's one orange action. */
+    const submit = html.match(/<button[^>]*type="submit"[^>]*>/);
+    assert.ok(submit, `${out} has no submit button`);
+    assert.match(submit[0], /em-btn--primary/,
+      `${out}: the form's submit is not the page's orange action`);
+  }
+});
+
+test('neither Ambassador reading links Ashley Green’s name', () => {
+  /* Same rule as Wil Ervin on the Capitol Chat pages: only the CEO's bio page
+     exists, so a linked name here would open somebody else's. And the name must
+     still be present — not-a-link must not quietly become not-there. */
+  for (const { out, html } of AMBPAGES) {
+    const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
+    for (const inner of anchors) {
+      assert.ok(!/Ashley Green/.test(inner),
+        `${out} links Ashley Green’s name — her bio page does not exist`);
+    }
+    assert.ok(!html.includes('href="team-bio.html"'),
+      `${out} links the CEO’s bio from a page hosted by somebody else`);
+    assert.ok(textOf(html).includes('Ashley Green, our Director of Outreach'),
+      `${out} has lost the name the roadmap gives this section`);
+  }
+});
+
+test('the Join Us readings add no JavaScript of their own', () => {
+  /* Four pages built around forms and not one line of script: native
+     validation, native autocomplete, no framework. That is what converts. */
+  const SHARED = ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'];
+  for (const { out, html } of JOINPAGES) {
+    const srcs = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map(m => m[1]);
+    assert.deepEqual(srcs, SHARED, `${out} links ${srcs.join(', ')}`);
+    assert.ok(!/<script(?![^>]*\ssrc=)[^>]*>[\s\S]*?<\/script>/.test(html), `${out} has an inline script`);
+    assert.ok(!/\son(click|submit|change|input)=/.test(html), `${out} has an inline event handler`);
+  }
+});
+
+test('every Join Us reading carries photography with honest alt text', () => {
+  for (const { out, html } of JOINPAGES) {
+    const imgs = [...html.matchAll(/<img[^>]*>/g)]
+      .map(m => m[0])
+      .filter(tag => tag.includes('assets/photography/'));
+    assert.ok(imgs.length >= 1, `${out} carries no photography`);
+    for (const tag of imgs) {
+      assert.match(tag, /\salt="[^"]{20,}"/, `${out} has a photograph with thin or missing alt text`);
+      assert.match(tag, /\swidth="\d+"[^>]*\sheight="\d+"/, `${out} has a photograph with no intrinsic size`);
+    }
+  }
+});
+
+/* ---------- Donate ---------- */
+
+const GIVE_COPY = [
+  /* Section 1, Why care?, and the roadmap's first button. */
+  'Help Build a Mississippi Where Opportunity Is Within Reach',
+  'You want Mississippi to be a place where children can succeed, families can thrive, and opportunity is within reach.',
+  'So do we.',
+  'That’s why we’re working every day to advance practical solutions that expand educational opportunity, strengthen our workforce, and build safer communities.',
+  'When you give, you become part of creating a path to generational prosperity for Mississippi’s children, workers, and families.',
+  'Donate Today',
+
+  /* Section 2, Why Your Gift Matters. */
+  'You’re Investing in Mississippi’s Future',
+  'A stronger Mississippi isn’t built overnight. It’s built one opportunity, one family, and one generation at a time.',
+  'Your generosity helps create the conditions that allow people to flourish: a quality education, meaningful work, strong families, and safe communities.',
+  'Together, we’re helping ensure the next generation has even greater opportunities than the one before it.',
+
+  /* Section 3, Donate Today!, including the line that has to survive verbatim
+     because it is a legal statement, not marketing copy. */
+  'Help Write Mississippi’s Next Chapter',
+  'Mississippi’s story is changing, and you can help shape what comes next.',
+  'Together, we’re creating a future where more children can succeed, more families can thrive, and more communities can prosper.',
+  'Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.',
+];
+
+const GIVEPAGES = ABOUTPAGES.filter(p => p.out.includes('give-'));
+
+test('both Donate readings build', () => {
+  assert.equal(GIVEPAGES.length, 2, `expected two Donate readings, found ${GIVEPAGES.length}`);
+});
+
+test('every Donate reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of GIVEPAGES) {
+    const text = textOf(html);
+    for (const line of GIVE_COPY) {
+      assert.ok(text.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('no Donate reading collects payment details', () => {
+  /* The one place in this build where a design decision is also a safety
+     decision. Card numbers, expiry dates, security codes and bank details
+     belong to the donation processor and must never be typed into a page we
+     hand over as static HTML — a field here would be collecting real card data
+     on a page with no endpoint behind it. The amount choices are links. */
+  const FORBIDDEN = /\b(card[\s_-]?number|cardnumber|cc[\s_-]?num|cvv|cvc|security[\s_-]?code|expiry|exp[\s_-]?date|sort[\s_-]?code|account[\s_-]?number|iban|routing)\b/i;
+  for (const { out, html } of GIVEPAGES) {
+    assert.ok(!/<input[^>]*type="(?:password|tel)"[^>]*>/.test(html),
+      `${out} has a password or tel input on a donation page`);
+    assert.ok(!FORBIDDEN.test(html), `${out} names a payment field`);
+    assert.ok(!/autocomplete="cc-/.test(html), `${out} has a credit-card autocomplete token`);
+
+    /* And no form at all: this page hands off, it does not post. */
+    assert.ok(!/<form/.test(html.slice(html.indexOf('<main'), html.indexOf('</main>'))),
+      `${out} has a form in its main content — the processor owns the transaction`);
+
+    /* Every amount is a link, and every one of them goes to the hand-off. */
+    const amounts = [...html.matchAll(/<a class="gv[ab]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
+    assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
+    for (const href of amounts) {
+      assert.match(href, /^\/donate\/give/, `${out} sends an amount to ${href}`);
+    }
+  }
+});
+
+test('no Donate reading invents a number', () => {
+  /* A donation page is where a fabricated total, donor count or progress bar
+     would be most tempting and most damaging. The only figures allowed on
+     these two are the amounts a visitor might give and the roadmap's own
+     501(c)(3) line. */
+  for (const { out, html } of GIVEPAGES) {
+    const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    const text = textOf(body);
+    assert.ok(!/\d+(\.\d+)?\s?%/.test(text), `${out} states a percentage`);
+    assert.ok(!/em-stat__value/.test(body), `${out} uses the big-number stat component`);
+    /* Money on the page is only ever a suggested gift: $25 through $500. */
+    const money = [...text.matchAll(/\$[\d,]+/g)].map(m => m[0]);
+    for (const figure of money) {
+      assert.ok(['$25', '$50', '$100', '$250', '$500'].includes(figure),
+        `${out} shows the figure ${figure}, which is not one of the suggested amounts`);
+    }
+  }
+});
+
+test('the Donate readings keep both roadmap buttons and fill only the first', () => {
+  for (const { out, html } of GIVEPAGES) {
+    const buttons = [...html.matchAll(/<a class="em-btn([^"]*)"[^>]*>\s*Donate Today/g)].map(m => m[1]);
+    assert.equal(buttons.length, 2, `${out} has ${buttons.length} Donate Today buttons, the roadmap gives two`);
+    assert.match(buttons[0], /em-btn--primary/, `${out}: the hero button is not the orange action`);
+    assert.ok(!/em-btn--primary/.test(buttons[1]), `${out}: the closing button is a second orange fill`);
+  }
+});
+
+test('the Donate readings add no JavaScript of their own', () => {
+  const SHARED = ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'];
+  for (const { out, html } of GIVEPAGES) {
+    const srcs = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map(m => m[1]);
+    assert.deepEqual(srcs, SHARED, `${out} links ${srcs.join(', ')}`);
+    assert.ok(!/<script(?![^>]*\ssrc=)[^>]*>[\s\S]*?<\/script>/.test(html), `${out} has an inline script`);
+  }
+});
+
+test('every Donate reading carries photography with honest alt text', () => {
+  for (const { out, html } of GIVEPAGES) {
+    const imgs = [...html.matchAll(/<img[^>]*>/g)]
+      .map(m => m[0])
+      .filter(tag => tag.includes('assets/photography/'));
+    assert.ok(imgs.length >= 2, `${out} carries ${imgs.length} photographs`);
+    for (const tag of imgs) {
+      assert.match(tag, /\salt="[^"]{20,}"/, `${out} has a photograph with thin or missing alt text`);
+      assert.match(tag, /\swidth="\d+"[^>]*\sheight="\d+"/, `${out} has a photograph with no intrinsic size`);
+    }
+  }
+});
+
 test('the C readings put a working rail on the work areas', () => {
   /* The one thing the A and B readings lack: five work areas (four on safety) is
      more than anyone will scroll to survey, so the C pair carries a real anchor
@@ -2785,6 +3239,9 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'education': 'sol',
     'podcast-a': 'pca', 'podcast-b': 'pcb',
     'capitol-a': 'cca', 'capitol-b': 'ccb',
+    'epic-a': 'epa', 'epic-b': 'epb', 'epic-c': 'epc',
+    'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
+    'give-a': 'gva', 'give-b': 'gvb',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its

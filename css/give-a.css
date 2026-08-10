@@ -1,0 +1,180 @@
+/* Donate — reading A, "Generational".
+   Namespace: .gva-
+
+   The copy's own picture of what a gift does is incremental: "one opportunity,
+   one family, and one generation at a time". So the middle of this page is
+   built as a staircase — three plates stepping down and across with two
+   photographs among them — rather than as a block of text with a picture beside
+   it. The page reads as accumulation, which is what the sentence claims.
+
+   Nothing on this page collects payment details. The amount tiles are links
+   that carry a figure to the donation processor; card details belong to the
+   processor and never to this page. */
+
+/* ---------- Hero ---------- */
+.gva-hero{background:var(--surface-page);overflow-x:clip}
+.gva-hero__band img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:16/9;max-height:58vh;object-fit:cover;object-position:center 30%;
+}
+.gva-hero__plate{
+  display:grid;grid-template-columns:minmax(0,6fr) minmax(0,6fr);
+  gap:clamp(24px,4vw,72px);align-items:start;
+  position:relative;
+  background:var(--surface-page);
+  border-radius:var(--radius-card) var(--radius-card) 0 0;
+  margin-top:calc(-1 * clamp(24px,4vw,56px));
+  padding-top:clamp(32px,4.5vw,64px);
+  padding-bottom:clamp(48px,7vw,104px);
+}
+.gva-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.15rem + 3.4vw,3.5rem);
+  line-height:1.02;letter-spacing:-.032em;
+  color:var(--text-strong);
+}
+.gva-hero__say p{
+  margin:0;max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.gva-hero__say p + p{margin-top:var(--space-5)}
+.gva-hero__you{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--text-strong)!important;max-width:40ch!important;
+}
+/* Two words, and the turn of the whole page. They get their own line and the
+   accent, because a paragraph that swallows them loses the answer. */
+.gva-hero__so{
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.5rem,1.1rem + 1.6vw,2.25rem)!important;
+  line-height:1.1!important;letter-spacing:var(--ls-heading);
+  color:var(--em-orange-ink)!important;
+  margin-top:var(--space-6)!important;
+}
+.gva-hero__act{margin-top:clamp(28px,3.5vw,44px)!important}
+
+/* ---------- Why Your Gift Matters ---------- */
+.gva-matters{background:var(--surface-subtle);padding-block:clamp(56px,8vw,120px)}
+.gva-matters__title{
+  margin:0 0 clamp(32px,5vw,72px);max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+/* The staircase. Twelve columns, five rows, each plate one step right and one
+   step down from the last, with the photographs filling the gaps they leave. */
+.gva-steps{
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--gutter);row-gap:clamp(24px,3.5vw,56px);
+  align-items:start;
+}
+.gva-step{
+  margin:0;
+  padding-top:var(--space-6);
+  border-top:4px solid var(--em-orange);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .55vw,1.4375rem);
+  line-height:1.4;color:var(--text-strong);
+}
+.gva-step--1{grid-column:1/6;grid-row:1}
+.gva-step--2{grid-column:4/9;grid-row:2}
+.gva-step--3{grid-column:7/12;grid-row:3}
+.gva-shot{margin:0}
+.gva-shot img{display:block;width:100%;height:auto;object-fit:cover;border-radius:var(--radius-card)}
+.gva-shot--1{grid-column:7/13;grid-row:1/2}
+.gva-shot--1 img{aspect-ratio:4/3}
+.gva-shot--2{grid-column:1/4;grid-row:2/4}
+.gva-shot--2 img{aspect-ratio:3/4}
+
+/* ---------- Donate Today ---------- */
+.gva-give{
+  background:var(--surface-navy);color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,120px);scroll-margin-top:100px;
+}
+.gva-give__grid{
+  display:grid;grid-template-columns:minmax(0,6fr) minmax(0,6fr);
+  gap:clamp(32px,5vw,88px);align-items:start;
+}
+.gva-give__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.gva-give__say p{
+  margin:clamp(18px,2.2vw,28px) 0 0;max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.gva-give__lead{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--white)!important;max-width:34ch!important;
+}
+.gva-give__legal{
+  margin-top:clamp(28px,3.5vw,44px)!important;
+  padding-top:var(--space-5);
+  border-top:1px solid var(--border-inverse);
+  font-size:var(--fs-caption)!important;line-height:1.55!important;
+}
+
+/* The ladder. Six tiles, no card fields: each is a link that carries its figure
+   to the processor. Big targets, one row of three at desktop. */
+.gva-ladder{
+  background:rgba(255,255,255,.06);
+  border-radius:var(--radius-card);
+  padding:clamp(24px,3vw,40px);
+}
+.gva-ladder__title{
+  margin:0 0 var(--space-5);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--orange-300);
+}
+.gva-ladder__list{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-4);
+}
+.gva-amount{
+  display:flex;align-items:center;justify-content:center;
+  min-height:72px;padding:var(--space-4);
+  border:2px solid var(--border-inverse);border-radius:var(--radius-card);
+  text-decoration:none;
+  transition:border-color var(--dur) var(--ease-out),background var(--dur) var(--ease-out),
+             transform var(--dur-fast) var(--ease-out);
+}
+.gva-amount__figure{
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.25rem,1.05rem + .8vw,1.75rem);
+  letter-spacing:var(--ls-heading);color:var(--white);
+}
+.gva-amount:hover{background:rgba(255,255,255,.1);border-color:var(--white);transform:translateY(var(--lift-hover))}
+.gva-amount:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+.gva-amount--other .gva-amount__figure{font-size:var(--fs-body);text-transform:uppercase;letter-spacing:var(--ls-caps)}
+.gva-ladder__monthly{margin:var(--space-5) 0 0}
+.gva-ladder__monthly a{
+  display:inline-flex;align-items:center;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--orange-300);text-underline-offset:4px;
+}
+.gva-ladder__monthly a:hover{color:var(--white)}
+.gva-ladder__act{margin:clamp(20px,2.5vw,32px) 0 0}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .gva-hero__plate{grid-template-columns:minmax(0,1fr);gap:clamp(20px,4vw,32px)}
+  .gva-give__grid{grid-template-columns:minmax(0,1fr)}
+  /* The staircase stops being a staircase: below this width every step would be
+     one word wide. One column, photographs between the plates. */
+  .gva-steps{grid-template-columns:minmax(0,1fr);row-gap:clamp(20px,4vw,36px)}
+  .gva-step--1,.gva-step--2,.gva-step--3,
+  .gva-shot--1,.gva-shot--2{grid-column:1;grid-row:auto}
+  .gva-shot--1 img,.gva-shot--2 img{aspect-ratio:16/10}
+}
+
+@media (max-width:520px){
+  .gva-ladder__list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

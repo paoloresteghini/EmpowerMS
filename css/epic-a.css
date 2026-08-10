@@ -1,0 +1,358 @@
+/* EPIC (Research) landing page — reading A, "The Pinned Method".
+   Namespace: .epa-
+
+   The argument of this reading is that EPIC is a METHOD, not a library. So the
+   page opens on a drenched navy statement, states what EPIC does once, and then
+   spends its centre section turning the three-step process into something that
+   moves sideways while the page scrolls down. Everything else is quiet so that
+   one move can be loud.
+
+   Motion here is CSS scroll-driven animation, not script. That matters twice:
+   the page needs no new JavaScript, and it still behaves when the modules fail
+   to load (opening a built page over file:// blocks them on CORS grounds). Every
+   scroll-driven rule sits inside @supports AND inside
+   prefers-reduced-motion:no-preference, and the layout underneath it is a plain
+   three-column grid that needs nothing at all. */
+
+/* ---------- Hero ---------- */
+/* Drenched: the deepest navy in the ramp, edge to edge, with the whole first
+   viewport given to one three-beat sentence. */
+.epa-hero{
+  background:var(--surface-navy-deep);
+  color:var(--text-inverse);
+  padding-block:clamp(64px,10vw,140px) clamp(48px,7vw,96px);
+}
+.epa-hero__inner{display:flex;flex-direction:column;align-items:flex-start}
+
+.epa-hero__title{
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:var(--fw-black);
+  font-size:clamp(2.4rem,1.1rem + 5.6vw,5.5rem);
+  line-height:1;
+  letter-spacing:-.035em;
+  color:var(--text-inverse);
+  /* The three sentences are the three lines. Balancing would undo that. */
+  text-wrap:initial;
+}
+.epa-hero__line{display:block}
+.epa-hero__line--accent{color:var(--orange-300)}
+
+.epa-hero__lead{
+  margin:clamp(24px,3vw,40px) 0 0;
+  max-width:56ch;
+  font-size:var(--fs-lead);
+  line-height:1.5;
+  color:var(--text-inverse-muted);
+}
+
+.epa-hero__actions{
+  display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-6) var(--space-8);
+  margin-top:clamp(28px,3.5vw,44px);
+}
+.epa-hero__aside{
+  display:inline-flex;align-items:center;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);
+  color:var(--orange-300);
+  text-underline-offset:4px;
+}
+.epa-hero__aside:hover{color:var(--white)}
+
+/* The focus areas, as high on the page as the buttons. Three real links to the
+   three groups in section 4, drawn as a single ruled row rather than as three
+   more pills — the point is that they are one set. */
+.epa-hero__areas{width:100%;margin-top:clamp(40px,6vw,80px)}
+.epa-hero__arealist{
+  display:flex;flex-wrap:wrap;gap:0;
+  list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-inverse);
+}
+.epa-hero__arealist li{flex:1 1 220px;border-bottom:1px solid var(--border-inverse)}
+.epa-hero__arealist a{
+  display:flex;align-items:center;gap:var(--space-3);
+  min-height:64px;padding:var(--space-4) 0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);letter-spacing:var(--ls-heading);
+  color:var(--white);text-decoration:none;
+  transition:color var(--dur) var(--ease-out),gap var(--dur) var(--ease-out);
+}
+.epa-hero__arealist a::after{
+  content:"";width:26px;height:4px;border-radius:2px;
+  background:var(--em-orange);flex:0 0 auto;
+  transition:width var(--dur) var(--ease-out);
+}
+.epa-hero__arealist a:hover{color:var(--orange-300)}
+.epa-hero__arealist a:hover::after{width:40px}
+
+/* ---------- What We Do ---------- */
+.epa-work{background:var(--surface-page);padding-block:clamp(64px,9vw,128px)}
+.epa-work__title{
+  margin:0;max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epa-work__body{
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(32px,5vw,72px);
+  align-items:start;
+  margin-top:clamp(36px,5vw,64px);
+}
+.epa-work__figure{margin:0}
+.epa-work__figure img{
+  display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+.epa-work__prose{display:grid;gap:var(--space-6)}
+.epa-work__prose p{
+  margin:0;max-width:62ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+/* The first paragraph is the claim the other two support; give it the weight. */
+.epa-work__prose p:first-child{
+  font-size:var(--fs-lead);line-height:1.45;color:var(--text-strong);
+  font-weight:var(--fw-semibold);
+}
+
+/* ---------- How We Work: the pinned track ---------- */
+.epa-method{
+  background:var(--surface-navy);
+  color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,112px) 0;
+  /* The track is wider than the viewport by design; clip it here rather than
+     letting it put a horizontal scrollbar on the document. clip, not hidden,
+     so the sticky stage inside still works. */
+  overflow-x:clip;
+}
+.epa-method__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);max-width:18ch;
+}
+
+.epa-method__scroll{padding-bottom:clamp(56px,8vw,112px)}
+.epa-method__stage{display:block}
+.epa-method__head{
+  max-width:var(--container-max);
+  margin:0 auto clamp(40px,6vw,80px);
+  padding-inline:var(--gutter);
+}
+
+/* The rule is the progress indicator for the sideways move. Without the
+   scroll-driven layer it has nothing to say, so it is hidden by default and
+   only brought back inside the enhanced block below. */
+.epa-method__rule{display:none}
+
+.epa-method__track{
+  list-style:none;margin:0;padding:0 var(--gutter);
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(20px,3vw,40px);
+  max-width:var(--container-max);
+  margin-inline:auto;
+}
+.epa-method__step{
+  padding-top:var(--space-6);
+  border-top:4px solid var(--em-orange);
+}
+.epa-method__step-title{
+  margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--white);
+}
+.epa-method__step p{
+  margin:0;max-width:44ch;
+  font-size:var(--fs-body);line-height:1.65;color:var(--text-inverse-muted);
+}
+
+/* ---------- Explore Our Research ---------- */
+.epa-research{background:var(--surface-page);padding-block:clamp(64px,9vw,128px);scroll-margin-top:100px}
+.epa-research__head{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(24px,4vw,64px);align-items:end;
+}
+.epa-research__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epa-research__lead{
+  margin:0;max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+
+/* Three tall panels. Not cards: no border box, no shadow, no rounded corner.
+   Each area is a column of the same field, separated by the grid gap and
+   marked from above by the orange rule this build uses everywhere. */
+.epa-research__areas{
+  list-style:none;margin:clamp(40px,6vw,80px) 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:clamp(24px,3vw,48px);
+}
+.epa-area{
+  display:flex;flex-direction:column;
+  padding:var(--space-7) 0 var(--space-8);
+  border-top:4px solid var(--em-orange);
+  /* scroll-margin so the hero's area links do not land under the sticky header */
+  scroll-margin-top:120px;
+}
+/* The photograph leads each column. It sits above the orange rule's text, not
+   under it, so the eye meets a person before it meets a report title. No text
+   is set over any of these; the rule holds across the whole build. */
+.epa-area__photo{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/3;object-fit:cover;
+  border-radius:var(--radius-card);
+  margin-bottom:var(--space-6);
+}
+.epa-area__name{
+  margin:0 0 var(--space-6);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epa-area__latest-label{
+  margin:0 0 var(--space-2);
+  font-size:var(--fs-caption);color:var(--text-muted);
+}
+.epa-area__latest{
+  display:inline-flex;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.4;
+  color:var(--text-strong);text-decoration:none;
+  text-underline-offset:3px;
+}
+.epa-area__latest:hover{color:var(--em-orange-ink);text-decoration:underline}
+.epa-area__date{
+  margin:var(--space-3) 0 0;
+  font-size:var(--fs-caption);color:var(--text-muted);
+}
+.epa-research__cta{margin:clamp(40px,5vw,64px) 0 0}
+
+/* ---------- Motion ---------- */
+/* Page-load entrance for the three hero lines. An animation, not a transition
+   on a class: it always runs, so the text is never left invisible if a script
+   never arrives. */
+@media (prefers-reduced-motion: no-preference){
+  .epa-hero__line{
+    animation:epa-line 700ms var(--ease-entrance) both;
+  }
+  .epa-hero__line:nth-child(2){animation-delay:90ms}
+  .epa-hero__line:nth-child(3){animation-delay:180ms}
+}
+@keyframes epa-line{
+  from{opacity:0;transform:translateY(.35em)}
+  to{opacity:1;transform:none}
+}
+
+/* The sideways move. Enhancement only, three conditions deep:
+     1. the browser has scroll-driven animations,
+     2. the visitor has not asked for reduced motion,
+     3. the viewport is wide enough for a pinned stage to make sense.
+   Fail any one and the markup above is a normal three-column section. */
+@media (prefers-reduced-motion: no-preference) and (min-width:961px){
+  @supports (animation-timeline: view()){
+    .epa-method{
+      /* Two steps and the edge of a third are visible at once, which is what
+         makes the move read as a track rather than as a slideshow. */
+      --epa-step:clamp(20rem,46vw,40rem);
+      --epa-gap:clamp(24px,4vw,64px);
+      --epa-inset:clamp(24px,8vw,140px);
+    }
+    .epa-method__scroll{
+      height:240vh;
+      view-timeline:--epa-method block;
+      padding-bottom:0;
+    }
+    .epa-method__stage{
+      position:sticky;top:0;
+      height:100vh;
+      display:grid;
+      /* One column at exactly the stage width. Without this the track's
+         max-content width sizes the column, the stage grows wider than the
+         viewport, and everything else in it (the heading, the rule) is laid
+         out against that phantom width. */
+      grid-template-columns:100%;
+      align-content:center;
+      row-gap:clamp(32px,6vh,72px);
+    }
+    .epa-method__head{
+      /* Aligned to the track's inset, not to the page container, so the
+         heading and the first step share one left edge. */
+      max-width:none;margin:0;
+      padding-inline:var(--epa-inset);
+      display:grid;row-gap:clamp(20px,3vh,36px);
+    }
+
+    .epa-method__track{
+      display:flex;flex-wrap:nowrap;
+      width:max-content;max-width:none;margin-inline:0;
+      gap:var(--epa-gap);
+      padding-inline:var(--epa-inset);
+      animation:epa-track linear both;
+      animation-timeline:--epa-method;
+      animation-range:contain 0% contain 100%;
+      will-change:transform;
+    }
+    .epa-method__step{
+      flex:0 0 var(--epa-step);
+      padding-top:var(--space-8);
+    }
+    /* A pinned viewport is a lot of room for three short paragraphs. The type
+       steps up here rather than leaving the stage two thirds empty. */
+    .epa-method__step-title{
+      font-size:clamp(1.5rem,1rem + 1.6vw,2.25rem);
+      margin-bottom:var(--space-5);
+    }
+    .epa-method__step p{max-width:none;font-size:var(--fs-lead);line-height:1.5}
+
+    .epa-method__rule{
+      display:block;
+      height:4px;border-radius:2px;
+      background:var(--border-inverse);
+      overflow:hidden;
+    }
+    .epa-method__rule-fill{
+      display:block;height:100%;width:100%;border-radius:inherit;
+      background:var(--em-orange);
+      transform-origin:left center;
+      animation:epa-fill linear both;
+      animation-timeline:--epa-method;
+      animation-range:contain 0% contain 100%;
+    }
+  }
+}
+/* -100% is the track's own width, so this lands its right edge (padding
+   included) on the right edge of the viewport: the exact distance needed to
+   bring the last step into view, whatever the step width resolves to. */
+@keyframes epa-track{
+  to{transform:translateX(calc(-100% + 100vw))}
+}
+@keyframes epa-fill{
+  from{transform:scaleX(.08)}
+  to{transform:scaleX(1)}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .epa-work__body{grid-template-columns:minmax(0,1fr)}
+  .epa-work__figure{order:2}
+  .epa-research__head{grid-template-columns:minmax(0,1fr);align-items:start}
+}
+
+@media (max-width:720px){
+  .epa-method__track{grid-template-columns:minmax(0,1fr);gap:var(--space-8)}
+  .epa-hero__arealist li{flex:1 1 100%}
+}
+
+@media (max-width:420px){
+  .epa-hero__actions{gap:var(--space-5);flex-direction:column;align-items:stretch}
+  .epa-hero__aside{justify-content:flex-start}
+}

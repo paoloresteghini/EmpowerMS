@@ -1,0 +1,177 @@
+/* Ambassador Landing Page — reading B, "The First Step".
+   Namespace: .abb-
+
+   Where reading A answers "who are they" with a mosaic of faces, this one is
+   built around a single held frame: a sticky left column that stays in view
+   while both of the roadmap's questions are answered on the right. The reader
+   is looking at one person for as long as the page describes a network, which
+   is the argument the copy makes — a movement is people, one at a time.
+
+   That is position:sticky and nothing else. Where sticky is unavailable the
+   column simply scrolls with the page. No script anywhere on this page. */
+
+/* ---------- Hero ---------- */
+.abb-hero{background:var(--surface-navy-deep);color:var(--text-inverse)}
+.abb-hero__inner{padding-block:clamp(48px,7vw,112px) clamp(40px,6vw,88px)}
+.abb-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.2rem,1.15rem + 4.4vw,4.25rem);
+  line-height:1;letter-spacing:-.035em;
+  color:var(--text-inverse);
+}
+/* The three beats. Each on its own line at display size: the copy is a turn,
+   and a turn set as one wrapped paragraph stops being one. */
+/* Each beat gets a measure wide enough to hold it on one line at desktop. The
+   first attempt capped this at 26ch, which broke three sentences into six
+   ragged lines and destroyed the thing that makes the copy a turn. */
+.abb-hero__turn{margin:clamp(28px,4vw,52px) 0 0;max-width:42ch}
+.abb-hero__beat{
+  display:block;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.1875rem,1rem + .95vw,1.75rem);
+  line-height:1.28;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse-muted);
+  text-wrap:balance;
+}
+.abb-hero__beat--now{color:var(--orange-300)}
+
+/* One column. Splitting the lead and the button into two left the action
+   stranded on the far right of an otherwise empty half. */
+.abb-hero__foot{
+  display:grid;justify-items:start;
+  gap:clamp(24px,3vw,40px);
+  margin-top:clamp(32px,4.5vw,64px);
+}
+.abb-hero__lead{
+  margin:0;max-width:62ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.abb-hero__act{margin:0}
+
+.abb-hero__band img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:21/8;max-height:56vh;object-fit:cover;object-position:center 35%;
+}
+
+/* ---------- The held frame ---------- */
+.abb-story{background:var(--surface-page);padding-block:clamp(56px,8vw,120px)}
+.abb-story__grid{
+  display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);
+  gap:clamp(32px,5vw,88px);
+  align-items:start;
+}
+.abb-story__hold{position:sticky;top:calc(var(--space-13) + 24px)}
+.abb-story__figure{margin:0}
+.abb-story__figure img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/5;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+.abb-story__common{
+  margin:clamp(20px,2.5vw,32px) 0 0;max-width:34ch;
+  padding-top:var(--space-5);
+  border-top:4px solid var(--em-orange);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .45vw,1.375rem);
+  line-height:1.35;color:var(--text-strong);
+}
+
+.abb-story__run>p{
+  margin:var(--space-5) 0 0;max-width:60ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.abb-story__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.abb-story__title--second{margin-top:clamp(48px,7vw,104px)}
+.abb-story__intro{
+  font-size:var(--fs-lead)!important;line-height:1.45!important;color:var(--text-body)!important;
+  max-width:44ch!important;
+}
+
+/* The four ways, stepped. Two of them carry a photograph, so the list keeps
+   showing people while it describes what people do. */
+.abb-ways{list-style:none;margin:clamp(28px,4vw,48px) 0 0;padding:0;display:grid;gap:clamp(20px,2.6vw,36px)}
+.abb-way{
+  padding-top:var(--space-5);
+  border-top:1px solid var(--border-default);
+}
+.abb-way__text{
+  margin:0;max-width:36ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .5vw,1.4375rem);
+  line-height:1.35;color:var(--text-strong);
+}
+.abb-way--pic{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,180px);
+  gap:clamp(16px,2.5vw,36px);align-items:center;
+}
+.abb-way__photo{
+  display:block;width:100%;height:auto;
+  aspect-ratio:1/1;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+
+/* ---------- Join ---------- */
+.abb-join{background:var(--surface-subtle);padding-block:clamp(56px,8vw,120px);scroll-margin-top:100px}
+.abb-join__head{max-width:var(--container-narrow)}
+.abb-join__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.abb-join__first{
+  margin:clamp(20px,2.5vw,32px) 0 0;max-width:32ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--em-orange-ink);
+}
+.abb-join__say p{
+  margin:var(--space-5) 0 0;max-width:62ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+
+.abb-form{
+  margin-top:clamp(32px,4.5vw,64px);
+  display:grid;gap:clamp(20px,2.5vw,32px);
+  background:var(--surface-page);
+  border-radius:var(--radius-card);
+  padding:clamp(24px,3.5vw,56px);
+  box-shadow:var(--shadow-sm);
+}
+.abb-form__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-5)}
+.abb-form__set{border:0;margin:0;padding:0}
+.abb-form__legend{
+  padding:0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--text-strong);
+}
+.abb-form__hint{margin:var(--space-2) 0 var(--space-4);font-size:var(--fs-caption);color:var(--text-muted)}
+.abb-form__checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-5)}
+.abb-check{display:flex;align-items:center;gap:var(--space-3);min-height:44px}
+.abb-check input{width:20px;height:20px;flex:0 0 auto;accent-color:var(--em-orange);cursor:pointer}
+.abb-check input:focus-visible{outline:2px solid var(--em-orange);outline-offset:2px}
+.abb-check label{font-size:var(--fs-small);line-height:1.35;color:var(--text-body);cursor:pointer}
+
+/* ---------- Responsive ---------- */
+@media (max-width:960px){
+  /* The held frame stops holding: below this width the two columns are stacked
+     and a sticky photograph would occupy most of a phone screen. */
+  .abb-story__grid{grid-template-columns:minmax(0,1fr)}
+  .abb-story__hold{position:static;max-width:520px}
+}
+
+
+@media (max-width:560px){
+  .abb-form__grid{grid-template-columns:minmax(0,1fr)}
+  .abb-form__checks{grid-template-columns:minmax(0,1fr)}
+  .abb-way--pic{grid-template-columns:minmax(0,1fr)}
+  .abb-way__photo{max-width:200px}
+  .abb-hero__band img{aspect-ratio:4/3}
+}

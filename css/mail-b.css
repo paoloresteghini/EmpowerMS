@@ -1,0 +1,177 @@
+/* Email Sign Up — reading B, "The Issue".
+   Namespace: .mlb-
+
+   The opposite bet to reading A. A puts the form in the hero because the page
+   has one job; B treats the page as a piece of publishing and makes the form
+   the destination, so the four things you receive are set like the contents of
+   an issue rather than like a checklist.
+
+   Where A is quiet on a light field, B is a sequence of full-width bands —
+   photograph, navy argument, white contents, navy form — so the page reads as
+   something assembled rather than as a column of text. */
+
+/* ---------- Hero ---------- */
+.mlb-hero{background:var(--surface-page);overflow-x:clip}
+/* 16/9, not a letterbox. The source is a tall portrait and every subject's head
+   sits in its upper third; a 21/8 slice of it cropped the man's head off. The
+   focal point is set high for the same reason. */
+.mlb-hero__band img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:16/9;max-height:60vh;object-fit:cover;object-position:center 22%;
+}
+/* The title plate sits UNDER the photograph and pulls up over its lower edge on
+   a negative margin. No word is ever set on the image. */
+/* Both columns start at the same top. The first version aligned them to the
+   bottom, which dropped a 4.75rem headline BELOW the paragraph explaining it. */
+.mlb-hero__plate{
+  display:grid;grid-template-columns:minmax(0,6fr) minmax(0,6fr);
+  gap:clamp(24px,4vw,72px);
+  align-items:start;
+  position:relative;
+  background:var(--surface-page);
+  border-radius:var(--radius-card) var(--radius-card) 0 0;
+  margin-top:calc(-1 * clamp(24px,4vw,56px));
+  padding-top:clamp(32px,4.5vw,64px);
+  padding-bottom:clamp(40px,6vw,88px);
+}
+.mlb-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.4rem,1.2rem + 4.8vw,4.75rem);
+  line-height:.98;letter-spacing:-.035em;
+  color:var(--text-strong);
+}
+.mlb-hero__lead{
+  margin:0;max-width:38ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--text-strong);
+}
+.mlb-hero__sub{
+  margin:var(--space-4) 0 0;max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.mlb-hero__act{margin:clamp(20px,2.5vw,32px) 0 0}
+
+/* ---------- Stay Informed, Not Overwhelmed ---------- */
+.mlb-about{
+  background:var(--surface-navy);color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,120px);
+}
+.mlb-about__grid{
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(28px,5vw,88px);align-items:start;
+}
+.mlb-about__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+  text-wrap:initial;
+}
+.mlb-about__say p{
+  margin:0;max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.mlb-about__say p + p{margin-top:clamp(20px,2.5vw,32px)}
+/* The one sentence that says what the emails actually are. */
+.mlb-about__pull{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.25rem,1rem + 1.1vw,1.875rem)!important;
+  line-height:1.3!important;color:var(--white)!important;
+  max-width:24ch!important;
+}
+
+/* ---------- What You'll Receive ---------- */
+.mlb-receive{background:var(--surface-page);padding-block:clamp(56px,8vw,120px)}
+/* The four items are the display element here, so the section heading is set as
+   an eyebrow rather than competing with them at half their size. It stays an h2
+   for the section's accessible name; only its appearance is that of a label. */
+.mlb-receive__title{
+  margin:0 0 clamp(20px,2.4vw,32px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  line-height:1.3;text-transform:uppercase;
+  color:var(--em-orange-ink);
+}
+.mlb-index{list-style:none;margin:0;padding:0}
+.mlb-index__row{display:block;padding-bottom:clamp(20px,2.6vw,36px)}
+.mlb-index__rule{
+  display:block;height:3px;width:100%;
+  background:var(--em-orange);
+  transform-origin:left center;
+  margin-bottom:clamp(14px,1.8vw,22px);
+}
+.mlb-index__text{
+  display:block;max-width:22ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.5rem,1rem + 2.2vw,3.25rem);
+  line-height:1.05;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+/* The four items share one left edge. They are peers, and a stepped indent
+   reads as nesting depth, which they do not have. */
+
+/* ---------- The form ---------- */
+.mlb-signup{
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,120px);
+  scroll-margin-top:100px;
+}
+.mlb-signup__grid{
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(32px,5vw,88px);align-items:start;
+}
+.mlb-signup__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.mlb-signup__note{
+  margin:var(--space-5) 0 0;max-width:44ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.mlb-signup__mock{margin:clamp(28px,4vw,48px) 0 0;max-width:340px}
+.mlb-signup__mock img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/5;object-fit:cover;object-position:top center;
+  border-radius:var(--radius-card);
+  box-shadow:var(--shadow-lg);
+}
+
+.mlb-form{display:grid;gap:var(--space-5)}
+.mlb-form__row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}
+.mlb-form .em-input:focus{box-shadow:var(--shadow-focus-inverse)}
+
+/* ---------- Motion ---------- */
+/* Each contents rule draws across as its row arrives. Base state is a full
+   rule, so nothing is missing without the animation. */
+@media (prefers-reduced-motion: no-preference){
+  @supports (animation-timeline: view()){
+    .mlb-index__rule{
+      animation:mlb-rule linear both;
+      animation-timeline:view();
+      animation-range:entry 20% entry 90%;
+    }
+  }
+}
+@keyframes mlb-rule{
+  from{transform:scaleX(0)}
+  to{transform:scaleX(1)}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .mlb-hero__plate{grid-template-columns:minmax(0,1fr);gap:clamp(20px,4vw,32px)}
+  .mlb-about__grid{grid-template-columns:minmax(0,1fr)}
+  .mlb-signup__grid{grid-template-columns:minmax(0,1fr)}
+  .mlb-signup__mock{max-width:260px}
+  .mlb-index__text{max-width:none}
+}
+
+@media (max-width:520px){
+  .mlb-form__row{grid-template-columns:minmax(0,1fr)}
+  .mlb-hero__band img{aspect-ratio:4/3}
+}

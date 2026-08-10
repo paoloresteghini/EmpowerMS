@@ -1,0 +1,369 @@
+/* EPIC (Research) landing page — reading B, "The Plotted Field".
+   Namespace: .epb-
+
+   Where A argues that EPIC is a method, B argues that EPIC is EVIDENCE: the
+   page is a white field with marks on it, and the composition is a broken grid
+   rather than a stack of bands. The headline holds the left columns, a drawn
+   plot runs under and past it on the right, the What We Do plate is pulled up
+   over the hero's lower edge, and the three steps stagger down and across with
+   a thread drawn through them.
+
+   Two things this reading will not do. It does not put a number on the plot:
+   an invented statistic decorating a research page would be the worst thing on
+   this site, so the drawing has no axis, no scale and no value, and it is
+   aria-hidden. And it does not hang anything out of its own section with
+   position:absolute — every overlap here is a negative margin on a child, which
+   is what survives the Elementor conversion. */
+
+/* ---------- Hero ---------- */
+.epb-hero{
+  background:var(--surface-page);
+  padding-block:clamp(48px,7vw,104px) clamp(72px,10vw,160px);
+  /* The plot is allowed to run to the edge of the grid cell; nothing may run
+     to the edge of the document. */
+  overflow-x:clip;
+}
+.epb-hero__grid{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--gutter);
+  align-items:start;
+}
+
+.epb-hero__title{
+  grid-column:1/9;grid-row:1;z-index:2;
+  margin:0;
+  font-family:var(--font-display);
+  font-weight:var(--fw-black);
+  font-size:clamp(2.2rem,1.2rem + 4.2vw,4rem);
+  line-height:1.02;
+  letter-spacing:-.032em;
+  color:var(--text-strong);
+  text-wrap:initial;
+}
+.epb-hero__line{display:block}
+.epb-hero__line--accent{color:var(--em-orange-ink)}
+
+/* The mark: an outlined wordmark with the plot drawn beneath it. Decorative,
+   aria-hidden, and sized in vw so it can never outgrow its column. */
+.epb-hero__mark{
+  /* Starts at column 8 so the plot never runs through the lead paragraph or
+     the secondary link. The overlap that makes this a broken grid is vertical
+     — the plot spans both rows — not a collision with the type. */
+  grid-column:8/13;grid-row:1/3;z-index:1;
+  align-self:start;
+  margin-top:clamp(-16px,-1vw,0px);
+  pointer-events:none;
+}
+.epb-hero__wordmark{
+  display:block;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(4rem,11vw,9.5rem);
+  line-height:.9;letter-spacing:-.04em;
+  /* Filled, pale, by default. The outline is an enhancement: setting the fill
+     transparent unconditionally would make the wordmark invisible anywhere
+     -webkit-text-stroke is missing. */
+  color:var(--blue-100);
+  text-align:right;
+}
+@supports (-webkit-text-stroke: 2px currentColor){
+  .epb-hero__wordmark{
+    color:transparent;
+    -webkit-text-stroke:2px var(--blue-200);
+  }
+}
+.epb-plot{display:block;width:100%;height:auto;margin-top:clamp(8px,1.5vw,24px)}
+.epb-plot__ticks path{stroke:var(--border-default);stroke-width:1}
+.epb-plot__line{
+  stroke:var(--em-orange);stroke-width:3;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.epb-plot__marks circle{fill:var(--em-blue)}
+.epb-plot__marks circle:last-child{fill:var(--em-orange)}
+
+.epb-hero__say{grid-column:1/8;grid-row:2;z-index:2;margin-top:clamp(24px,3.5vw,48px)}
+.epb-hero__lead{
+  margin:0;max-width:58ch;
+  font-size:var(--fs-lead);line-height:1.5;color:var(--text-body);
+}
+.epb-hero__actions{
+  display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-5) var(--space-8);
+  margin-top:clamp(24px,3vw,40px);
+}
+.epb-hero__aside{
+  display:inline-flex;align-items:center;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--em-orange-ink);
+  text-underline-offset:4px;
+}
+.epb-hero__aside:hover{color:var(--em-blue)}
+
+.epb-hero__areas{margin-top:clamp(32px,4vw,56px)}
+.epb-hero__arealist{
+  display:flex;flex-wrap:wrap;gap:var(--space-3) var(--space-6);
+  list-style:none;margin:0;padding:0;
+}
+.epb-hero__arealist a{
+  display:inline-flex;align-items:center;min-height:24px;
+  padding-top:var(--space-3);
+  border-top:4px solid var(--em-orange);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-small);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;
+  color:var(--em-blue);text-decoration:none;
+  transition:color var(--dur) var(--ease-out);
+}
+.epb-hero__arealist a:hover{color:var(--em-orange-ink)}
+
+/* ---------- What We Do ---------- */
+.epb-work{background:var(--surface-page);padding-bottom:clamp(64px,9vw,128px)}
+.epb-work__plate{
+  background:var(--surface-navy);color:var(--text-inverse);
+  border-radius:var(--radius-card);
+  padding:clamp(32px,5vw,80px);
+  /* The overlap. A negative margin on the plate, not an absolutely positioned
+     element reaching up out of the section below it. */
+  margin-top:calc(-1 * clamp(32px,5vw,88px));
+}
+.epb-work__title{
+  margin:0 0 clamp(28px,4vw,56px);
+  max-width:22ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2.1vw,2.75rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.epb-work__prose{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(20px,3vw,48px);
+}
+.epb-work__prose p{
+  margin:0;font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-inverse-muted);
+}
+.epb-work__claim{
+  grid-column:1/-1;max-width:34ch;
+  font-size:var(--fs-lead);line-height:1.4;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  color:var(--white);
+}
+/* The photograph leaves the plate at the bottom on a negative margin, the same
+   overlap the plate makes on the hero above it — a child pulled out of its
+   parent, never an absolutely positioned element crossing the boundary. */
+.epb-work__figure{
+  margin:clamp(28px,4vw,56px) 0 calc(-1 * clamp(48px,7vw,112px));
+  max-width:min(100%,720px);
+}
+.epb-work__figure img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:16/10;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+
+/* ---------- How We Work ---------- */
+.epb-method{background:var(--surface-page);padding-block:clamp(56px,8vw,112px)}
+.epb-method__title{
+  margin:0 0 clamp(32px,5vw,64px);
+  max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epb-method__field{position:relative}
+.epb-method__thread{
+  position:absolute;inset:0;width:100%;height:100%;
+  z-index:0;pointer-events:none;
+}
+.epb-method__thread-line{
+  stroke:var(--blue-400);stroke-width:2;
+}
+.epb-method__steps{
+  position:relative;z-index:1;
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  column-gap:var(--gutter);
+}
+.epb-method__step{
+  background:var(--surface-page);
+  padding:var(--space-6) var(--space-6) var(--space-7) 0;
+  border-top:4px solid var(--em-orange);
+}
+.epb-method__step--1{grid-column:1/6}
+.epb-method__step--2{grid-column:5/10;margin-top:clamp(48px,7vw,112px)}
+.epb-method__step--3{grid-column:8/13;margin-top:clamp(48px,7vw,112px)}
+.epb-method__step-title{
+  margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epb-method__step p{
+  margin:0;font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+
+/* ---------- Explore Our Research ---------- */
+.epb-research{background:var(--surface-page);padding-top:clamp(56px,8vw,112px);scroll-margin-top:100px}
+.epb-research__head{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(24px,4vw,64px);align-items:end;
+  margin-bottom:clamp(40px,6vw,72px);
+}
+.epb-research__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epb-research__lead{
+  margin:0;max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+
+/* Three doors, full bleed, splitting the viewport top to bottom. Three
+   surfaces, not three cards: no border, no shadow, no rounded corner. */
+.epb-doors{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.epb-door{
+  display:flex;flex-direction:column;
+  min-height:clamp(320px,44vh,460px);
+  padding:0 0 clamp(28px,3.5vw,56px);
+  scroll-margin-top:100px;
+}
+/* Full-bleed to the door's own edges: the photograph IS the top of the door. */
+.epb-door__photo{
+  display:block;width:100%;height:auto;
+  aspect-ratio:5/4;object-fit:cover;
+  margin-bottom:clamp(24px,3vw,40px);
+}
+.epb-door>:not(.epb-door__photo){
+  padding-inline:clamp(28px,3.5vw,56px);
+}
+.epb-door--pale{background:var(--surface-subtle)}
+.epb-door--tint{background:var(--surface-tint)}
+.epb-door--navy{background:var(--surface-navy);color:var(--text-inverse)}
+.epb-door__name{
+  margin:0 0 auto;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.epb-door--navy .epb-door__name{color:var(--white)}
+.epb-door__label{
+  margin:var(--space-8) 0 var(--space-2);
+  font-size:var(--fs-caption);color:var(--text-muted);
+}
+.epb-door--navy .epb-door__label{color:var(--text-inverse-muted)}
+.epb-door__latest{
+  display:inline-flex;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.4;
+  color:var(--text-strong);text-decoration:none;text-underline-offset:3px;
+}
+.epb-door__latest:hover{color:var(--em-orange-ink);text-decoration:underline}
+.epb-door--navy .epb-door__latest{color:var(--white)}
+.epb-door--navy .epb-door__latest:hover{color:var(--orange-300)}
+.epb-door__date{margin:var(--space-3) 0 0;font-size:var(--fs-caption);color:var(--text-muted)}
+.epb-door--navy .epb-door__date{color:var(--text-inverse-muted)}
+
+.epb-research__cta{margin:clamp(48px,6vw,80px) 0 clamp(64px,9vw,128px)}
+
+/* ---------- Motion ---------- */
+/* The hero plot draws itself on load: it is above the fold, so a scroll
+   trigger would never fire for it. The base state is a finished drawing —
+   the dash properties only exist inside the animation — so a browser that
+   ignores all of this still gets the complete plot. */
+@media (prefers-reduced-motion: no-preference){
+  .epb-hero__line{animation:epb-line 700ms var(--ease-entrance) both}
+  .epb-hero__line:nth-child(2){animation-delay:80ms}
+  .epb-hero__line:nth-child(3){animation-delay:160ms}
+
+  .epb-plot__line{animation:epb-draw 1400ms var(--ease-out) 260ms both}
+  .epb-plot__marks circle{animation:epb-pop 420ms var(--ease-entrance) both}
+  .epb-plot__marks circle:nth-child(1){animation-delay:380ms}
+  .epb-plot__marks circle:nth-child(2){animation-delay:560ms}
+  .epb-plot__marks circle:nth-child(3){animation-delay:740ms}
+  .epb-plot__marks circle:nth-child(4){animation-delay:920ms}
+  .epb-plot__marks circle:nth-child(5){animation-delay:1120ms}
+  .epb-hero__wordmark{animation:epb-mark 900ms var(--ease-out) both}
+}
+@keyframes epb-line{
+  from{opacity:0;transform:translateY(.3em)}
+  to{opacity:1;transform:none}
+}
+@keyframes epb-draw{
+  from{stroke-dasharray:1;stroke-dashoffset:1}
+  to{stroke-dasharray:1;stroke-dashoffset:0}
+}
+@keyframes epb-pop{
+  from{opacity:0;transform:scale(.4);transform-box:fill-box;transform-origin:center}
+  to{opacity:1;transform:scale(1);transform-box:fill-box;transform-origin:center}
+}
+@keyframes epb-mark{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+/* The thread through the three steps draws as the section passes the viewport.
+   Scroll-driven, no script, and complete by default.
+
+   It is wiped with clip-path rather than drawn with stroke-dasharray, and that
+   is not a preference. This SVG is stretched non-uniformly (preserveAspectRatio
+   is none, so the field's aspect is whatever the copy makes it), and a dash
+   pattern under a non-uniform scale is measured in the scaled space: the first
+   attempt at this rendered the thread as a row of disconnected ticks. A
+   clip-path wipe is immune to the scale, and because the path only ever
+   descends, wiping it downward reads exactly like drawing it. */
+.epb-method__thread{clip-path:inset(0 0 0 0)}
+@media (prefers-reduced-motion: no-preference){
+  @supports (animation-timeline: view()){
+    .epb-method__thread{
+      animation:epb-wipe linear both;
+      animation-timeline:view();
+      animation-range:entry 15% cover 78%;
+    }
+  }
+}
+@keyframes epb-wipe{
+  from{clip-path:inset(0 0 100% 0)}
+  to{clip-path:inset(0 0 0 0)}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1080px){
+  .epb-hero__title{grid-column:1/8}
+  .epb-hero__say{grid-column:1/10}
+}
+
+@media (max-width:900px){
+  /* The broken grid stops being an asset once the columns are this narrow:
+     the plot moves under the headline and the steps come back into one file. */
+  .epb-hero__grid{grid-template-columns:minmax(0,1fr)}
+  .epb-hero__title,.epb-hero__say,.epb-hero__mark{grid-column:1;grid-row:auto}
+  .epb-hero__mark{order:3;margin-top:clamp(24px,4vw,48px)}
+  .epb-hero__say{order:2;margin-top:var(--space-7)}
+  .epb-hero__wordmark{text-align:left;font-size:clamp(3.5rem,16vw,7rem)}
+
+  .epb-work__prose{grid-template-columns:minmax(0,1fr)}
+  .epb-research__head{grid-template-columns:minmax(0,1fr);align-items:start}
+
+  .epb-method__steps{grid-template-columns:minmax(0,1fr)}
+  .epb-method__step--1,.epb-method__step--2,.epb-method__step--3{grid-column:1}
+  .epb-method__step--2,.epb-method__step--3{margin-top:var(--space-8)}
+  .epb-method__step{padding-right:0}
+  .epb-method__thread{display:none}
+
+  .epb-doors{grid-template-columns:minmax(0,1fr)}
+  .epb-door{min-height:0}
+  .epb-door__name{margin-bottom:var(--space-6)}
+  .epb-door__label{margin-top:0}
+}
+
+@media (max-width:420px){
+  .epb-hero__actions{flex-direction:column;align-items:stretch;gap:var(--space-5)}
+  .epb-hero__arealist{flex-direction:column;gap:var(--space-4)}
+}

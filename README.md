@@ -1,24 +1,34 @@
 # Empower Mississippi — website build
 
 Static HTML + CSS builds for the Empower Mississippi refresh. The homepage is
-**settled** — `dist/final.html` is the agreed build, and the About Us, Team and
-Solutions sets were decided on 2026-08-05. Open: **two solution detail pages**
-(Meaningful Work and Public Safety, three readings each) and both shows in the
-Podcast dropdown — **The Empower Podcast** and **Capitol Chat**, two readings
-each. The alternatives every decision was made from still build, as reference.
+**settled** — `dist/final.html` is the agreed build, the About Us, Team and
+Solutions sets were decided on 2026-08-05, and on 2026-08-07 Empower chose one
+template for all three solution detail pages, The Studio for The Empower Podcast
+and The Dome for Capitol Chat. Four sets are open: **EPIC** (the research arm,
+three readings), the two Join Us destinations — **Email Sign Up** and the
+**Ambassador Landing Page** — and **Donate**, two readings each. The alternatives every decision
+was made from still build, as reference.
 
 Content is the *Empower Mississippi Website Refresh Roadmap* — the **Homepage**
 tab for the homepages, **Who We Are** / **What We Do** for the About pages, the
-**Meaningful Work** and **Public Safety** tabs for the solution detail pages, and
-the **Podcast** tab for the show page.
+**Meaningful Work** and **Public Safety** tabs for the solution detail pages,
+the **Podcast** and **Capitol Chat** tabs for the two shows, the **EPIC
+(Research) Landing Page** tab for the research pages, and the **Email Sign Up**
+and **Ambassador Landing Page** tabs for the two Join Us destinations, and the
+**Donate** tab for the giving page.
 Every headline, subhead, section intro and solution promise is that copy, used
 verbatim. What differs between builds is the composition.
 
 The document itself is committed at
 `docs/Empower Mississippi Design System/uploads/`, as both `.docx` and `.pdf`.
-**Read the PDF.** The `.docx` export carries the Homepage tab only — 99 lines
-against the PDF's 1,865 — so every other tab is missing from it without saying
-so.
+**Check the tab count before trusting an export.** The committed `.docx` carries
+the Homepage tab only — 99 lines against the PDF's 1,865 — and says nothing
+about what it is missing; the PDF beside it is complete. Later exports are
+complete too: the *final* `.docx` Empower sent on 2026-08-07 has all sixteen
+tabs, every one marked approved. Read a `.docx` by unzipping it and pulling the
+`<w:t>` runs out of `word/document.xml`, and read `word/comments.xml` as well —
+the client's margin comments live only there, and one of them is why the Quality
+Education tab was rewritten.
 
 This is a **reference implementation for hand-off to WordPress + Elementor**,
 not a production runtime.
@@ -293,6 +303,48 @@ cannot demonstrate; verified in the browser at 2 groups/6 rows → 1 group/3 row
 1 group/1 row → 2 groups/2 rows → cleared. No episode titles, dates or numbers are
 invented: the date column is a marked stub, because that column is where the real
 date goes.
+
+**EPIC (Research).** The research arm, in three readings, built 2026-08-07 and
+the one set still open. Copy is the roadmap's *EPIC (Research) Landing Page*
+tab: "Better Data. Better Ideas. Better Solutions.", the passage on what EPIC
+does, the three-step method and the research index.
+
+| Page | What it is |
+| --- | --- |
+| `dist/epic-a.html` | **The Pinned Method** — drenched navy statement, then the centre of the page pins to the viewport while the three steps travel *sideways*; three quiet columns close it |
+| `dist/epic-b.html` | **The Plotted Field** — a white broken grid with an outlined wordmark and a drawn plot, a navy plate pulled up over the hero, staggered steps threaded together, and three full-height doors |
+| `dist/epic-c.html` | **The Instrument** — navy end to end with one line down the left edge that fills as the page scrolls; the method is three ruled rows and the research is a dated index |
+
+Four things shaped this set rather than decorating it, and each one is a test:
+
+- **Two roadmap buttons, one orange fill.** The tab gives the page both "Dive
+  Into the Research" and "View Research & Reports"; the brand rule here is one
+  orange action per view. The hero keeps the fill and the closing CTA is
+  demoted, on all three. Deleting the second button would pass the
+  one-orange-action sweep just as happily, so the test checks both are present
+  and that only the first is primary.
+- **No invented statistic.** This is the one page in the build where a made-up
+  number would read as a finding. The drawn plot on The Plotted Field has no
+  axis, no scale and no value on it, and a test fails any of the three for a
+  percentage or a big-number stat.
+- **The focus areas, high.** Keri's comms notes ask for Quality Education,
+  Meaningful Work and Public Safety "more often and higher up on the page". All
+  three readings name them in the hero as real in-page links to the three groups
+  in the last section, and the test checks both ends of every link.
+- **Motion that nothing depends on.** These are the first pages here to use CSS
+  scroll-driven animation — the sideways track, the drawn thread, the filling
+  spine — and there is no new JavaScript behind any of it. Every rule sits inside
+  both `@supports` and `prefers-reduced-motion: no-preference`, with a static
+  composition underneath, and a test enforces that. The motion layer in this
+  build has already shipped a section that rendered blank because a start state
+  hid content and the trigger never fired.
+
+Every report named in all three indexes is a real post from empowerms.org,
+pulled from the WordPress REST API on 2026-08-07, one per focus area, each
+linked to the post it names. The roadmap offers a choice of URL, SEO title and
+SEO description for this page; all three builds use `/epic` and the first of
+each pair, which is the one naming all three focus areas. That choice is
+Empower's to confirm.
 
 ### What Empower asked for on 2026-08-05
 
@@ -846,11 +898,127 @@ header, a different script set and different partials. Per-page notes follow.
 | `team-bio.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `team-bio.css` |
 | `solutions-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `solutions-*.css` |
 | `current.html`, `homepage-a..d` | `header` | `js/megamenu.js` + `css/megamenu.css` | `homepage.css`, `motion.css`, `option-*.css` |
+| `epic-a/b/c.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `epic-*.css` |
+| `mail-a/b.html`, `amb-a/b.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `mail-*.css` / `amb-*.css` |
+| `give-a/b.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
 
 `css/header-2.css` is the header's own stylesheet — utility strip, centred nav,
 dropdown panels. In WordPress it is one global header block and this is the CSS
 that block needs. **A page that includes `header-2.html` without it renders five
 permanently open panels across its hero.** There is a test.
+
+**Email Sign Up** and the **Ambassador Landing Page**, two readings each, built
+2026-08-08. These two roadmap tabs are the only ones that end on an instruction
+rather than a paragraph — "Insert signup form on webpage" and "Include interest
+form for joining the ambassador program" — so unlike everything else in this
+build they are shaped around a real form.
+
+| Page | What it is |
+| --- | --- |
+| `dist/mail-a.html` | **Five Minutes** — the form is in the hero, on a navy plate, above the fold at every width; the case for filling it in runs underneath, beside an actual Empower email, and the four things you receive are a ticked list against a photograph |
+| `dist/mail-b.html` | **The Issue** — the form is the destination, so the page is a piece of publishing first: a photograph the width of the window, the argument on a navy band, and the four things you receive set like the contents of an issue, in display type on ruled lines that step in from the left |
+| `dist/amb-a.html` | **The Network** — the roadmap answers "who are our Ambassadors?" with a list of people, so this answers with faces: an offset mosaic of four photographs with the passage beside it, four ways as one band, and the interest form closing on navy |
+| `dist/amb-b.html` | **The First Step** — one held frame instead of a crowd: a sticky left column keeps a single face and one sentence in view while both questions are answered on the right, then the form takes the last screen on its own |
+
+The forms are real and there is no script behind them. Real `<label>` bound to
+every control, `autocomplete` tokens on the name, email and county fields,
+`type="email"` and native `required` on the address, a `<fieldset>` and
+`<legend>` around the four involvement tick boxes, and 44px targets on each one.
+At hand-off the `action` becomes the WordPress or Mailchimp endpoint and nothing
+else about them changes. Tests assert every control is labelled, that the email
+field is required and autocompletes, and that the submit is the page's single
+orange action.
+
+Two things to carry into the conversion:
+
+- **The submit is the orange action; the hero button is a link to it.** On the
+  two pages where the form sits at the foot (`mail-b`, both Ambassador
+  readings), the roadmap's hero button is an in-page link and the form's submit
+  takes the fill. Promoting both would put two orange actions on one page.
+- **Ashley Green's name is not a link.** The roadmap names her in the Ambassador
+  closing section. Her bio page does not exist, and a name that opens somebody
+  else's bio is the failure Empower flagged on 2026-08-05 — the same reason Wil
+  Ervin is not a link on Capitol Chat. A test checks every anchor on both
+  readings, and separately checks the name is still present.
+
+Photography on all four is stand-in, and the Ambassador tab explicitly asks to
+"Include ambassador photos", which Empower still owe. Both Email Sign Up
+readings also show a real Empower campaign email from the asset library, cropped
+to its masthead, so the page shows what arrives rather than describing it. No
+page invents a subscriber count, an open rate, or a testimonial.
+
+**Donate**, two readings, built 2026-08-08. The last tab in the roadmap and the
+only page in the build that asks for money.
+
+| Page | What it is |
+| --- | --- |
+| `dist/give-a.html` | **Generational** — a photograph the width of the window, then a staircase: three plates stepping down and across with two photographs filling the gaps, because the copy's own picture of a gift is "one opportunity, one family, and one generation at a time". Amounts as a grid of tiles |
+| `dist/give-b.html` | **Next Chapter** — navy from the header down, with the ask as the only thing that changes colour: a white plate at the end of a dark scroll. The first screen is type alone, the reader's sentence answered by ours, and all the photography lands at once as four edge-to-edge panels. Amounts as a ruled list |
+
+**Neither page collects payment details, and that is not a style choice.** Card
+numbers, expiry dates, security codes and bank details belong to the donation
+processor; a field for any of them on a static page we hand over would be
+collecting real card data with nothing behind it. The amount choices are links
+that carry a figure to `/donate/give`, which is where the processor's page or
+embed lives. `test.mjs` fails either page for a card, CVV, expiry or bank field,
+for a `cc-` autocomplete token, and for any `<form>` in the main content at all.
+
+Three things to settle before this ships:
+
+- **`/donate/give` is a placeholder route.** The live site's donate page does not
+  expose its processor in its markup, so the hand-off target is a guess. Point it
+  at the real one.
+- **The ladder is a proposal.** $25 / $50 / $100 / $250 / $500 and a monthly
+  option are ours, not Empower's. A test allows exactly those five figures and
+  fails any other number on the page, so changing the ladder means changing the
+  test — which is the point.
+- **No page invents a total raised, a donor count or a progress bar.** The only
+  figures on either reading are the suggested amounts and the roadmap's own
+  501(c)(3) line, which is reproduced verbatim because it is a legal statement
+  rather than marketing copy.
+
+### The EPIC pages: what converts, and what to watch
+
+These three carry the most visible motion in the build, so it is worth being
+exact about what is behind it. **They add no JavaScript.** The three scripts
+they link are the shared chrome every page links — `js/nav.js`, `js/reveal.js`,
+`js/dropdown.js` — and nothing in the sideways track, the drawn thread or the
+filling spine is scripted. Every one of those is a CSS scroll-driven animation
+(`animation-timeline`), which converts as **custom CSS**, not as a plugin, a
+widget setting or an embedded library.
+
+Each signature and what it becomes:
+
+| Reading | The move | In Elementor |
+| --- | --- | --- |
+| A | The pinned track | Three nested containers: an outer one with `height: 240vh`, an inner one set sticky at `top: 0` and `height: 100vh`, and a flex row inside it at `width: max-content`. Elementor's Flexbox containers nest natively and take custom classes; the animation itself is CSS on those classes. Elementor's own sticky effect is **not** needed and should not be added on top |
+| B | The staggered steps and the thread | A single container with a 12-column custom grid and one inline SVG in an HTML widget, positioned `inset: 0` behind the steps. The overlap of the navy plate on the hero is a negative top margin on the plate, which Elementor sets in the widget's own spacing controls |
+| C | The spine | One wrapper container around all four sections, with an absolutely positioned 2px child. The wrapper is why `<main>` cannot be the positioning context — the skip link asserts `<main id="main">` verbatim across the build |
+
+Three things to keep whoever does the conversion out of trouble:
+
+- **Do not "improve" the guards away.** Every scroll-driven rule sits inside
+  both `@supports (animation-timeline: …)` and
+  `@media (prefers-reduced-motion: no-preference)`, over a layout that is a
+  static composition without them. Strip either guard and the page stops being
+  safe in a browser that lacks the feature, or for a reader who has asked for
+  less motion. `test.mjs` fails the build if a declaration escapes its guard.
+- **Where scroll-driven animation is unsupported, all three are still whole
+  pages.** A becomes a normal three-column section, B's thread is simply drawn,
+  C's spine is simply full. Nothing is hidden waiting for a trigger — which is
+  the failure this build has already shipped once, and the reason
+  `css/motion.css` is gated the way it is.
+- **The `data-reveal` attributes are the existing motion layer, not new.** Same
+  choice as everywhere else: keep `css/motion.css` + `js/reveal.js`, or replace
+  each attribute with an Elementor entrance animation. The note further up about
+  not losing the header condense when you drop `reveal.js` applies here too.
+
+Photography on all three is from the supplied library and stands in: it was shot
+for the solution pages. Nothing in that library shows a neighbourhood, a street
+or a reentry programme, so the Public Safety frame is the loosest of the three
+and Empower owe a replacement. **That caveat lives here and on the chooser, not
+on the pages** — the pages are what Empower show people, and a test fails any of
+the three that grows a production notice in front of the reader.
 
 ### What the About pages are built to survive
 

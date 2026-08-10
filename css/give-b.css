@@ -1,0 +1,178 @@
+/* Donate — reading B, "Next Chapter".
+   Namespace: .gvb-
+
+   Navy from the header down, and the ask is the only thing on the page that
+   changes colour: a white plate at the end of a dark scroll. Where reading A
+   opens on a photograph and builds a staircase of plates, this one holds the
+   first screen for type alone and spends all of its photography at once — four
+   panels the full width of the window, one for each condition the copy names.
+
+   Nothing here collects payment details. The amounts are links that carry a
+   figure to the donation processor. */
+
+/* ---------- Hero ---------- */
+.gvb-hero{
+  background:var(--surface-navy-deep);color:var(--text-inverse);
+}
+.gvb-hero__inner{padding-block:clamp(48px,7vw,120px) clamp(48px,7vw,104px)}
+.gvb-hero__title{
+  margin:0;max-width:18ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.1rem + 3.8vw,3.75rem);
+  line-height:1.02;letter-spacing:-.032em;
+  color:var(--text-inverse);
+}
+
+/* The exchange: their sentence, then ours. Two lines, and the second one is
+   the reason the page works — so it is the largest thing after the headline. */
+.gvb-hero__exchange{
+  margin-top:clamp(32px,4.5vw,64px);
+  padding-top:clamp(24px,3vw,40px);
+  border-top:1px solid var(--border-inverse);
+  display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+  gap:clamp(20px,3vw,48px);align-items:baseline;
+}
+.gvb-hero__you{
+  margin:0;max-width:44ch;
+  font-size:var(--fs-lead);line-height:1.45;color:var(--text-inverse-muted);
+}
+.gvb-hero__so{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(1.75rem,1.1rem + 2.6vw,3.25rem);
+  line-height:1;letter-spacing:-.03em;
+  color:var(--orange-300);
+}
+
+.gvb-hero__foot{
+  margin-top:clamp(32px,4.5vw,64px);
+  display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+  gap:clamp(24px,4vw,64px);align-items:end;
+}
+.gvb-hero__say p{
+  margin:0;max-width:58ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.gvb-hero__say p + p{margin-top:var(--space-5)}
+.gvb-hero__act{margin:0}
+
+/* ---------- Why Your Gift Matters ---------- */
+.gvb-matters{background:var(--surface-navy);color:var(--text-inverse);padding-block:clamp(56px,8vw,112px) 0}
+.gvb-matters__title{
+  margin:0 0 clamp(28px,4vw,56px);max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.gvb-matters__say{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:clamp(24px,3vw,56px);
+  padding-bottom:clamp(48px,7vw,96px);
+}
+.gvb-matters__say p{
+  margin:0;font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.gvb-matters__lead{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--white)!important;
+}
+
+/* Four panels, edge to edge, no gap between them: one band of faces rather than
+   four cards on a field. */
+.gvb-panels{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.gvb-panel img{
+  display:block;width:100%;height:100%;
+  aspect-ratio:3/4;max-height:64vh;object-fit:cover;
+}
+
+/* ---------- Donate Today ---------- */
+.gvb-give{background:var(--surface-navy);padding-block:clamp(56px,8vw,120px);scroll-margin-top:100px}
+/* The one white thing on the page. */
+.gvb-give__plate{
+  background:var(--surface-page);
+  border-radius:var(--radius-card);
+  padding:clamp(28px,4vw,72px);
+  display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);
+  gap:clamp(32px,5vw,80px);align-items:start;
+}
+.gvb-give__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.gvb-give__say p{
+  margin:clamp(18px,2.2vw,28px) 0 0;max-width:50ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.gvb-give__lead{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--text-strong)!important;max-width:34ch!important;
+}
+.gvb-give__legal{
+  margin-top:clamp(24px,3vw,40px)!important;
+  padding-top:var(--space-5);
+  border-top:1px solid var(--border-subtle);
+  font-size:var(--fs-caption)!important;line-height:1.55!important;color:var(--text-muted)!important;
+}
+
+/* The ladder, as a list. One choice per line with a rule between, because this
+   page has been a column of type from the top. */
+.gvb-ladder__title{
+  margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;
+  color:var(--em-orange-ink);
+}
+.gvb-ladder__list{list-style:none;margin:0;padding:0;border-top:1px solid var(--border-default)}
+.gvb-ladder__list li{border-bottom:1px solid var(--border-default)}
+.gvb-amount{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);
+  min-height:64px;padding:var(--space-4) var(--space-2);
+  text-decoration:none;
+  transition:padding var(--dur) var(--ease-out),color var(--dur) var(--ease-out);
+}
+.gvb-amount__figure{
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.125rem,1rem + .7vw,1.625rem);
+  letter-spacing:var(--ls-heading);color:var(--text-strong);
+}
+.gvb-amount__go{
+  width:28px;height:4px;border-radius:2px;flex:0 0 auto;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out);
+}
+.gvb-amount:hover{padding-left:var(--space-4)}
+.gvb-amount:hover .gvb-amount__figure{color:var(--em-orange-ink)}
+.gvb-amount:hover .gvb-amount__go{width:44px}
+.gvb-amount:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
+.gvb-ladder__monthly{margin:var(--space-5) 0 0}
+.gvb-ladder__monthly a{
+  display:inline-flex;align-items:center;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--em-orange-ink);text-underline-offset:4px;
+}
+.gvb-ladder__monthly a:hover{color:var(--em-blue)}
+.gvb-ladder__act{margin:clamp(20px,2.5vw,32px) 0 0}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .gvb-hero__exchange{grid-template-columns:minmax(0,1fr);gap:var(--space-5)}
+  .gvb-hero__foot{grid-template-columns:minmax(0,1fr);align-items:start;gap:var(--space-7)}
+  .gvb-give__plate{grid-template-columns:minmax(0,1fr)}
+  /* Four panels at phone width would be four slivers. Two by two. */
+  .gvb-panels{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gvb-panel img{aspect-ratio:1/1}
+}
+
+@media (max-width:520px){
+  .gvb-panels{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gvb-panel img{aspect-ratio:4/5}
+}

@@ -1,0 +1,180 @@
+/* Ambassador Landing Page — reading A, "The Network".
+   Namespace: .aba-
+
+   The roadmap answers "Who Are Our Ambassadors?" with a list of people, so this
+   reading answers with faces: the centre of the page is a mosaic of
+   photographs at four different sizes with the passage threaded through it.
+   Equal tiles would say these are categories; the copy says they are people,
+   and the composition has to agree with the copy.
+
+   The page ends on the interest form, which is the one instruction the roadmap
+   tab carries. That form's submit is the page's single orange action; the hero
+   button is a link down to it. */
+
+/* ---------- Hero ---------- */
+.aba-hero{background:var(--surface-page);padding-block:clamp(40px,6vw,88px) clamp(48px,7vw,104px)}
+.aba-hero__grid{
+  display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+  gap:clamp(32px,5vw,80px);align-items:center;
+}
+.aba-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.2rem,1.15rem + 4.4vw,4.25rem);
+  line-height:1;letter-spacing:-.035em;
+  color:var(--text-strong);
+}
+/* The turn. The roadmap's three short sentences are the moment the page asks
+   for something, so they get display weight rather than body weight. */
+.aba-hero__turn{
+  margin:clamp(22px,3vw,36px) 0 0;max-width:34ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--em-orange-ink);
+}
+.aba-hero__lead{
+  margin:clamp(18px,2.2vw,28px) 0 0;max-width:62ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.aba-hero__act{margin:clamp(24px,3vw,40px) 0 0}
+.aba-hero__figure{margin:0}
+.aba-hero__figure img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/5;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+
+/* ---------- Who Are Our Ambassadors? ---------- */
+.aba-who{background:var(--surface-subtle);padding-block:clamp(56px,8vw,120px)}
+/* The heading and the passage are ONE column, not two rows of a shared grid.
+   Splitting them left a 250px hole between the heading and the first line,
+   because the mosaic beside them was sizing the row they sat in. */
+.aba-who__grid{
+  display:grid;
+  grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(28px,4vw,72px) clamp(32px,5vw,80px);
+  align-items:start;
+}
+.aba-who__col{display:grid;gap:clamp(24px,3vw,40px);align-content:start}
+.aba-who__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.aba-who__say{display:grid;gap:var(--space-5)}
+.aba-who__say p{
+  margin:0;max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.aba-who__close{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--text-strong)!important;
+}
+
+/* The mosaic. Four cells on a six-column grid, at three different heights and
+   two different widths, offset so no two tops line up. */
+.aba-mosaic{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:clamp(12px,1.6vw,24px);
+  align-items:start;
+}
+.aba-mosaic__cell{margin:0}
+.aba-mosaic__cell img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+.aba-mosaic__cell--1{grid-column:1/4;aspect-ratio:4/5}
+.aba-mosaic__cell--2{grid-column:4/7;aspect-ratio:1/1;margin-top:clamp(24px,4vw,64px)}
+.aba-mosaic__cell--3{grid-column:1/4;aspect-ratio:1/1}
+.aba-mosaic__cell--4{grid-column:4/7;aspect-ratio:4/5}
+
+/* ---------- What Do Ambassadors Do? ---------- */
+.aba-do{background:var(--surface-page);padding-block:clamp(56px,8vw,120px)}
+.aba-do__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.aba-do__intro{
+  margin:var(--space-5) 0 clamp(32px,4.5vw,64px);max-width:48ch;
+  font-size:var(--fs-lead);line-height:1.45;color:var(--text-body);
+}
+.aba-ways{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:clamp(24px,3vw,48px);
+}
+.aba-way{
+  padding-top:var(--space-6);
+  border-top:4px solid var(--em-orange);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .45vw,1.375rem);
+  line-height:1.35;color:var(--text-strong);
+}
+
+/* ---------- Join Our Ambassador Network ---------- */
+.aba-join{
+  background:var(--surface-navy);color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,120px);
+  scroll-margin-top:100px;
+}
+.aba-join__grid{
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(32px,5vw,88px);align-items:start;
+}
+.aba-join__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.08;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.aba-join__say p{
+  margin:clamp(18px,2.2vw,28px) 0 0;max-width:50ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.aba-join__first{
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead)!important;line-height:1.35!important;
+  color:var(--white)!important;max-width:32ch!important;
+}
+
+.aba-form{display:grid;gap:var(--space-6)}
+.aba-form__row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}
+.aba-form .em-input:focus,.aba-form .em-textarea:focus{box-shadow:var(--shadow-focus-inverse)}
+.aba-form__set{border:0;margin:0;padding:0}
+.aba-form__legend{
+  padding:0;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--white);
+}
+.aba-form__hint{margin:var(--space-2) 0 var(--space-4);font-size:var(--fs-caption);color:var(--text-inverse-muted)}
+.aba-form__checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-5)}
+.aba-check{display:flex;align-items:center;gap:var(--space-3);min-height:44px}
+.aba-check input{
+  width:20px;height:20px;flex:0 0 auto;accent-color:var(--em-orange);cursor:pointer;
+}
+.aba-check input:focus-visible{outline:2px solid var(--white);outline-offset:2px}
+.aba-check label{font-size:var(--fs-small);line-height:1.35;color:var(--text-inverse);cursor:pointer}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1000px){
+  .aba-who__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+@media (max-width:900px){
+  .aba-hero__grid{grid-template-columns:minmax(0,1fr)}
+  .aba-hero__figure{max-width:520px}
+  .aba-join__grid{grid-template-columns:minmax(0,1fr)}
+}
+
+@media (max-width:560px){
+  .aba-form__row{grid-template-columns:minmax(0,1fr)}
+  .aba-form__checks{grid-template-columns:minmax(0,1fr)}
+  .aba-mosaic__cell--2{margin-top:0}
+}

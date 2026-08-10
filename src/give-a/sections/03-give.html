@@ -1,0 +1,39 @@
+<!-- Donate Today. The roadmap’s closing section, and the place the page finally
+     asks.
+
+     The amount tiles are LINKS, not a payment form. Card details belong to the
+     donation processor and nothing on this page collects them; each tile carries
+     its amount to /donate/give, which is where the processor’s own page or
+     embed lives. The amounts themselves are a proposal — Empower set the real
+     ladder, and the note is on the chooser rather than on the page.
+
+     The roadmap gives this page two “Donate Today” buttons. The hero spends the
+     page’s one orange action, so this one is the inverse button — white on the
+     navy panel, because the navy secondary would be navy on navy. -->
+<section class="gva-give" id="give" aria-labelledby="give-now-title">
+  <div class="em-container gva-give__grid">
+    <div class="gva-give__say">
+      <h2 class="gva-give__title" id="give-now-title" data-reveal="rise">Help Write Mississippi’s Next Chapter</h2>
+      <p class="gva-give__lead" data-reveal="rise">Mississippi’s story is changing, and you can help shape what comes next.</p>
+      <p data-reveal="rise">Together, we’re creating a future where more children can succeed, more families can thrive, and more communities can prosper.</p>
+      <p class="gva-give__legal" data-reveal="rise">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
+    </div>
+
+    <div class="gva-ladder">
+      <h3 class="gva-ladder__title">Choose an amount</h3>
+      <ul class="gva-ladder__list">
+        <li><a class="gva-amount" href="/donate/give?amount=25"><span class="gva-amount__figure">$25</span></a></li>
+        <li><a class="gva-amount" href="/donate/give?amount=50"><span class="gva-amount__figure">$50</span></a></li>
+        <li><a class="gva-amount" href="/donate/give?amount=100"><span class="gva-amount__figure">$100</span></a></li>
+        <li><a class="gva-amount" href="/donate/give?amount=250"><span class="gva-amount__figure">$250</span></a></li>
+        <li><a class="gva-amount" href="/donate/give?amount=500"><span class="gva-amount__figure">$500</span></a></li>
+        <li><a class="gva-amount gva-amount--other" href="/donate/give"><span class="gva-amount__figure">Other</span></a></li>
+      </ul>
+      <p class="gva-ladder__monthly"><a href="/donate/give?frequency=monthly">Or give monthly</a></p>
+      <!-- Inverse, not the navy secondary: this sits on a navy panel on a navy
+           section, where the secondary is navy-on-navy and all but disappears.
+           Same call the Join Us slab makes on the homepage. -->
+      <p class="gva-ladder__act"><a class="em-btn em-btn--inverse em-btn--lg" href="/donate/give">Donate Today</a></p>
+    </div>
+  </div>
+</section>

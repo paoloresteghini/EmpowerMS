@@ -1,0 +1,175 @@
+/* Email Sign Up — reading A, "Five Minutes".
+   Namespace: .mla-
+
+   The argument of this reading is that the page has ONE job and should not make
+   anyone scroll to do it. The form is in the hero, on a navy plate, above the
+   fold at every width; everything below it is the case for having filled it in,
+   for the visitor who wants one before they commit.
+
+   The page is deliberately the quietest thing in this build. It promises an
+   email you can read in five minutes; a page that performed would be arguing
+   against its own copy. The only motion is a tick that draws next to each of
+   the four things you receive. */
+
+/* ---------- Hero ---------- */
+.mla-hero{
+  background:var(--surface-subtle);
+  padding-block:clamp(40px,6vw,88px) clamp(56px,8vw,112px);
+}
+.mla-hero__grid{
+  display:grid;
+  grid-template-columns:minmax(0,6fr) minmax(0,5fr);
+  gap:clamp(32px,5vw,80px);
+  align-items:center;
+}
+.mla-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2.4rem,1.2rem + 4.6vw,4.5rem);
+  line-height:1;letter-spacing:-.035em;
+  color:var(--text-strong);
+}
+.mla-hero__lead{
+  margin:clamp(20px,2.5vw,32px) 0 0;max-width:34ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--text-strong);
+}
+.mla-hero__sub{
+  margin:var(--space-5) 0 0;max-width:46ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.mla-hero__sub strong{color:var(--text-strong)}
+
+/* ---------- The form ---------- */
+/* One navy plate. Not a card in a grid of cards: it is the only object of its
+   kind on the page, which is what makes it read as the thing to do. */
+.mla-signup{scroll-margin-top:110px}
+.mla-form{
+  background:var(--surface-navy);
+  border-radius:var(--radius-card);
+  padding:clamp(24px,3.5vw,44px);
+  box-shadow:var(--shadow-md);
+  display:grid;gap:var(--space-5);
+}
+.mla-form__title{
+  margin:0 0 var(--space-2);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--white);
+}
+.mla-form__row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}
+.mla-form__small{
+  margin:0;text-align:center;
+  font-size:var(--fs-caption);color:var(--text-inverse-muted);
+}
+/* The focus ring on navy needs the inverse token; the shared one is tuned for
+   light surfaces and disappears here. */
+.mla-form .em-input:focus{box-shadow:var(--shadow-focus-inverse)}
+
+/* ---------- Stay Informed, Not Overwhelmed ---------- */
+.mla-about{background:var(--surface-page);padding-block:clamp(56px,8vw,120px)}
+.mla-about__grid{
+  display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);
+  gap:clamp(32px,5vw,88px);align-items:center;
+}
+.mla-about__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.mla-about__claim{
+  margin:clamp(24px,3vw,40px) 0 0;max-width:30ch;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-lead);line-height:1.35;color:var(--text-strong);
+}
+.mla-about__say p:not(.mla-about__claim){
+  margin:var(--space-5) 0 0;max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+/* The email is shown as an object on the page, so it gets an edge and a
+   shadow — the one place in this build where that reads as the subject rather
+   than as chrome. Cropped from the top: the template's lower half is filler
+   text and there is no reason to show it. */
+.mla-about__mock{margin:0}
+.mla-about__mock img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/5;object-fit:cover;object-position:top center;
+  border-radius:var(--radius-card);
+  box-shadow:var(--shadow-lg);
+}
+
+/* ---------- What You'll Receive ---------- */
+.mla-receive{background:var(--surface-tint);padding-block:clamp(56px,8vw,120px)}
+.mla-receive__grid{
+  display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);
+  gap:clamp(32px,5vw,80px);align-items:center;
+}
+.mla-receive__title{
+  margin:0 0 clamp(24px,3vw,40px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.75rem,1.1rem + 2.4vw,3rem);
+  line-height:1.1;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.mla-receive__list{list-style:none;margin:0;padding:0}
+.mla-item{
+  display:flex;align-items:center;gap:var(--space-4);
+  padding:clamp(16px,2vw,24px) 0;
+  border-bottom:1px solid var(--blue-200);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:clamp(1.0625rem,1rem + .4vw,1.375rem);
+  line-height:1.3;color:var(--text-strong);
+}
+.mla-item:first-child{border-top:1px solid var(--blue-200)}
+.mla-item__tick{
+  flex:0 0 auto;width:26px;height:26px;
+  stroke:var(--em-orange);stroke-width:2.75;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.mla-receive__back{margin:clamp(24px,3vw,40px) 0 0}
+.mla-receive__back a{
+  display:inline-flex;align-items:center;min-height:24px;
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--em-orange-ink);text-underline-offset:4px;
+}
+.mla-receive__back a:hover{color:var(--em-blue)}
+
+.mla-receive__figure{margin:0}
+.mla-receive__figure img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:3/4;object-fit:cover;
+  border-radius:var(--radius-card);
+}
+
+/* ---------- Motion ---------- */
+/* One idea: the tick draws beside each item as the list arrives. Base state is
+   a finished tick — the dash properties exist only inside the animation — so a
+   browser that ignores all of this still shows four ticked lines. */
+@media (prefers-reduced-motion: no-preference){
+  @supports (animation-timeline: view()){
+    .mla-item__tick path{
+      animation:mla-tick linear both;
+      animation-timeline:view();
+      animation-range:entry 25% entry 85%;
+    }
+  }
+}
+@keyframes mla-tick{
+  from{stroke-dasharray:1;stroke-dashoffset:1}
+  to{stroke-dasharray:1;stroke-dashoffset:0}
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .mla-hero__grid{grid-template-columns:minmax(0,1fr);gap:clamp(28px,5vw,48px)}
+  .mla-about__grid{grid-template-columns:minmax(0,1fr)}
+  .mla-about__mock{max-width:420px}
+  .mla-receive__grid{grid-template-columns:minmax(0,1fr)}
+  .mla-receive__figure{max-width:520px}
+}
+
+@media (max-width:520px){
+  .mla-form__row{grid-template-columns:minmax(0,1fr)}
+}

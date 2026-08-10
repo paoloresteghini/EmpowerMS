@@ -128,6 +128,42 @@ export const PAGES = [
      the filter, with topic and SESSION facets: there are no guests to filter by. */
   { src: 'capitol-a/index.html', out: 'dist/capitol-a.html', title: 'Capitol Chat A — The Dome', kind: 'about' },
   { src: 'capitol-b/index.html', out: 'dist/capitol-b.html', title: 'Capitol Chat B — The Session', kind: 'about' },
+
+  /* EPIC, the research arm, three readings. The roadmap tab is short — a hero,
+     one passage, a three-step method and a research index — so the readings are
+     held apart by STRUCTURE rather than by how much they say: A pins the method
+     and moves it sideways, B breaks the grid and draws its own plotted field, C
+     drenches the whole page in navy and runs one continuous line down it.
+
+     All three are the first pages in the build to use CSS scroll-driven
+     animation. Every use is wrapped in @supports and in
+     prefers-reduced-motion:no-preference, and the layout underneath each one is
+     a plain static composition, so nothing on these pages depends on the
+     animation running. */
+  { src: 'epic-a/index.html', out: 'dist/epic-a.html', title: 'EPIC A — The Pinned Method', kind: 'about' },
+  { src: 'epic-b/index.html', out: 'dist/epic-b.html', title: 'EPIC B — The Plotted Field', kind: 'about' },
+  { src: 'epic-c/index.html', out: 'dist/epic-c.html', title: 'EPIC C — The Instrument', kind: 'about' },
+
+  /* The two Join Us destinations, two readings each. Both roadmap tabs end on
+     an instruction rather than a paragraph — "Insert signup form on webpage",
+     "Include interest form for joining the ambassador program" — so unlike
+     every other page in this build these two are built around a real <form>,
+     with real labels, autocomplete tokens and native validation, and no script
+     behind any of it. The readings differ on where the form sits: A puts it
+     first because the page has one job, B makes it the destination. */
+  { src: 'mail-a/index.html', out: 'dist/mail-a.html', title: 'Email Sign Up A — Five Minutes', kind: 'about' },
+  { src: 'mail-b/index.html', out: 'dist/mail-b.html', title: 'Email Sign Up B — The Issue', kind: 'about' },
+  { src: 'amb-a/index.html', out: 'dist/amb-a.html', title: 'Ambassador A — The Network', kind: 'about' },
+  { src: 'amb-b/index.html', out: 'dist/amb-b.html', title: 'Ambassador B — The First Step', kind: 'about' },
+
+  /* Donate, the last tab in the roadmap, two readings. The one page in the
+     build that asks for money, and the one place a design decision is also a
+     safety decision: NOTHING here collects payment details. The amount choices
+     are links that carry a figure to /donate/give, where the processor's own
+     page or embed lives, and a test fails either page for a card, CVV, expiry
+     or bank field. */
+  { src: 'give-a/index.html', out: 'dist/give-a.html', title: 'Donate A — Generational', kind: 'about' },
+  { src: 'give-b/index.html', out: 'dist/give-b.html', title: 'Donate B — Next Chapter', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

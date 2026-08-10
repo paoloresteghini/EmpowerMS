@@ -1,0 +1,57 @@
+<!-- Hero. A broken grid on a white field: the headline sits in the left six
+     columns, the plotted field runs under and past it on the right, and the
+     lead paragraph drops below both and overlaps the field’s lower edge.
+
+     The plotted field is drawn, not photographed, and it is deliberately NOT a
+     chart: no axis, no scale, no numbers. Inventing a statistic to decorate a
+     research page would be the worst thing on this site. What it draws is a
+     field of marks with one line picked through them — evidence, and a reading
+     of it — and it is aria-hidden because it says nothing a screen reader
+     needs.
+
+     The three focus areas sit under the buttons, per Keri’s comms note asking
+     for them higher up the page. -->
+<section class="epb-hero" aria-labelledby="epic-title">
+  <div class="em-container epb-hero__grid">
+
+    <div class="epb-hero__mark" aria-hidden="true">
+      <span class="epb-hero__wordmark">EPIC</span>
+      <svg class="epb-plot" viewBox="0 0 620 380" fill="none" focusable="false">
+        <g class="epb-plot__ticks">
+          <path d="M40 340h540M40 260h540M40 180h540M40 100h540"/>
+        </g>
+        <path class="epb-plot__line" pathLength="1" d="M60 300 L180 250 L300 268 L420 150 L560 84"/>
+        <g class="epb-plot__marks">
+          <circle cx="60" cy="300" r="7"/>
+          <circle cx="180" cy="250" r="7"/>
+          <circle cx="300" cy="268" r="7"/>
+          <circle cx="420" cy="150" r="7"/>
+          <circle cx="560" cy="84" r="10"/>
+        </g>
+      </svg>
+    </div>
+
+    <h1 class="epb-hero__title" id="epic-title">
+      <span class="epb-hero__line">Better Data.</span>
+      <span class="epb-hero__line">Better Ideas.</span>
+      <span class="epb-hero__line epb-hero__line--accent">Better Solutions.</span>
+    </h1>
+
+    <div class="epb-hero__say">
+      <p class="epb-hero__lead" data-reveal="rise">The Empower Policy &amp; Innovation Center (EPIC) is the research arm of Empower Mississippi. EPIC identifies Mississippi’s biggest challenges and produces the research to develop innovative public policy solutions.</p>
+
+      <div class="epb-hero__actions" data-reveal="rise">
+        <a class="em-btn em-btn--primary em-btn--lg" href="#research">Dive Into the Research</a>
+        <a class="epb-hero__aside" href="https://empowerms.org/introducing-epic-a-new-investment-in-solution-development/">Why Empower Mississippi created EPIC</a>
+      </div>
+
+      <nav class="epb-hero__areas" aria-label="Research areas">
+        <ul class="epb-hero__arealist">
+          <li><a href="#area-education">Quality Education</a></li>
+          <li><a href="#area-work">Meaningful Work</a></li>
+          <li><a href="#area-safety">Public Safety</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</section>

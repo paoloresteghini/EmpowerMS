@@ -1,0 +1,44 @@
+<!-- How We Work. The signature of this reading.
+
+     The three steps are a sequence, so they are an <ol>. What makes them read
+     as a method rather than three more boxes is that they move SIDEWAYS: at
+     desktop widths the stage pins to the viewport and the track slides left as
+     the page scrolls down. That is a CSS scroll-driven animation with no
+     JavaScript behind it, wrapped in @supports — where the feature is missing,
+     or the visitor asks for reduced motion, or the viewport is narrow, the same
+     markup is a plain three-column layout that scrolls normally. Nothing here
+     is gated on the animation running.
+
+     The heading lives INSIDE the stage rather than above it, so it is still on
+     screen while the track is moving. Pinning a section and letting its own
+     title scroll away was the first version of this and it read as three
+     unlabelled panels.
+
+     No numerals. Empower asked to move away from that treatment on the solution
+     pages, so the order is carried by the track itself and by the rule that
+     fills across it. -->
+<section class="epa-method" aria-labelledby="method-title">
+  <div class="epa-method__scroll">
+    <div class="epa-method__stage">
+      <div class="epa-method__head">
+        <h2 class="epa-method__title" id="method-title" data-reveal="rise">How EPIC Turns Research Into Solutions</h2>
+        <div class="epa-method__rule" aria-hidden="true"><span class="epa-method__rule-fill"></span></div>
+      </div>
+
+      <ol class="epa-method__track">
+        <li class="epa-method__step">
+          <h3 class="epa-method__step-title">Listen &amp; Define</h3>
+          <p>Hear from Mississippians and use available data to clearly define the problem.</p>
+        </li>
+        <li class="epa-method__step">
+          <h3 class="epa-method__step-title">Research</h3>
+          <p>Produce credible, state-specific research that explains what is happening, why it matters, and what the evidence shows.</p>
+        </li>
+        <li class="epa-method__step">
+          <h3 class="epa-method__step-title">Design Solutions</h3>
+          <p>Turn those findings into practical policy solutions designed for Mississippi’s needs and realities.</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>

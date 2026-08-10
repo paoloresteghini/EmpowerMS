@@ -1,0 +1,44 @@
+<!-- How We Work. The three steps stagger across the grid rather than sitting in
+     a row: the first holds the left, the second drops and moves right, the
+     third drops again and finishes at the right margin. A drawn rule runs
+     behind them and connects the three, and it draws itself as the section
+     comes through the viewport — a CSS scroll-driven animation, no script, and
+     the rule is simply already complete where that is unsupported or where
+     reduced motion is asked for.
+
+     No numerals: the stagger is the order. Empower asked to move away from
+     decorative numbering on the solution pages. -->
+<section class="epb-method" aria-labelledby="method-title">
+  <div class="em-container">
+    <h2 class="epb-method__title" id="method-title" data-reveal="rise">How EPIC Turns Research Into Solutions</h2>
+
+    <div class="epb-method__field">
+      <!-- The thread is drawn in a 0-100 viewBox with preserveAspectRatio="none",
+           so every coordinate is a percentage of the field and the corners land
+           on the step columns whatever the viewport does: down the left of step
+           one, across and down into step two, across and down into step three.
+           Straight segments only — under a non-uniform scale a curve would
+           distort, a straight line cannot. vector-effect keeps the stroke an
+           even weight through that same scale. -->
+      <svg class="epb-method__thread" viewBox="0 0 100 100" fill="none" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path class="epb-method__thread-line" vector-effect="non-scaling-stroke"
+              d="M1 10 V34 H35 V60 H60 V97"/>
+      </svg>
+
+      <ol class="epb-method__steps">
+        <li class="epb-method__step epb-method__step--1" data-reveal="slide-r">
+          <h3 class="epb-method__step-title">Listen &amp; Define</h3>
+          <p>Hear from Mississippians and use available data to clearly define the problem.</p>
+        </li>
+        <li class="epb-method__step epb-method__step--2" data-reveal="slide-r">
+          <h3 class="epb-method__step-title">Research</h3>
+          <p>Produce credible, state-specific research that explains what is happening, why it matters, and what the evidence shows.</p>
+        </li>
+        <li class="epb-method__step epb-method__step--3" data-reveal="slide-r">
+          <h3 class="epb-method__step-title">Design Solutions</h3>
+          <p>Turn those findings into practical policy solutions designed for Mississippi’s needs and realities.</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>

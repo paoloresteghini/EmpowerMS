@@ -304,14 +304,16 @@ cannot demonstrate; verified in the browser at 2 groups/6 rows → 1 group/3 row
 invented: the date column is a marked stub, because that column is where the real
 date goes.
 
-**EPIC (Research).** The research arm, in three readings, built 2026-08-07 and
-the one set still open. Copy is the roadmap's *EPIC (Research) Landing Page*
+**EPIC (Research).** The research arm, in three readings, built 2026-08-07.
+Empower chose The Pinned Method on 2026-08-11, with one change: its method
+section is now The Instrument's ruled rows rather than the sideways track, and
+the EPIC lockup sits beside the hero headline. Copy is the roadmap's *EPIC (Research) Landing Page*
 tab: "Better Data. Better Ideas. Better Solutions.", the passage on what EPIC
 does, the three-step method and the research index.
 
 | Page | What it is |
 | --- | --- |
-| `dist/epic-a.html` | **The Pinned Method** — drenched navy statement, then the centre of the page pins to the viewport while the three steps travel *sideways*; three quiet columns close it |
+| `dist/epic-a.html` | **The Pinned Method** (*chosen 2026-08-11*). Drenched navy statement with the EPIC lockup beside it, then the method as three ruled rows against a rail that fills as the section crosses the screen; three quiet columns close it |
 | `dist/epic-b.html` | **The Plotted Field** — a white broken grid with an outlined wordmark and a drawn plot, a navy plate pulled up over the hero, staggered steps threaded together, and three full-height doors |
 | `dist/epic-c.html` | **The Instrument** — navy end to end with one line down the left edge that fills as the page scrolls; the method is three ruled rows and the research is a dated index |
 
@@ -900,7 +902,7 @@ header, a different script set and different partials. Per-page notes follow.
 | `current.html`, `homepage-a..d` | `header` | `js/megamenu.js` + `css/megamenu.css` | `homepage.css`, `motion.css`, `option-*.css` |
 | `epic-a/b/c.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `epic-*.css` |
 | `mail-a/b.html`, `amb-a/b.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `mail-*.css` / `amb-*.css` |
-| `give-a/b.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
+| `give-a/b/c.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
 
 `css/header-2.css` is the header's own stylesheet — utility strip, centred nav,
 dropdown panels. In WordPress it is one global header block and this is the CSS
@@ -908,16 +910,16 @@ that block needs. **A page that includes `header-2.html` without it renders five
 permanently open panels across its hero.** There is a test.
 
 **Email Sign Up** and the **Ambassador Landing Page**, two readings each, built
-2026-08-08. These two roadmap tabs are the only ones that end on an instruction
+2026-08-08. Empower chose Five Minutes and The Network on 2026-08-11. These two roadmap tabs are the only ones that end on an instruction
 rather than a paragraph — "Insert signup form on webpage" and "Include interest
 form for joining the ambassador program" — so unlike everything else in this
 build they are shaped around a real form.
 
 | Page | What it is |
 | --- | --- |
-| `dist/mail-a.html` | **Five Minutes** — the form is in the hero, on a navy plate, above the fold at every width; the case for filling it in runs underneath, beside an actual Empower email, and the four things you receive are a ticked list against a photograph |
+| `dist/mail-a.html` | **Five Minutes** (*chosen 2026-08-11*). The form is in the hero, on a navy plate, above the fold at every width; the case for filling it in runs underneath, beside an actual Empower email, and the four things you receive are a ticked list against a photograph |
 | `dist/mail-b.html` | **The Issue** — the form is the destination, so the page is a piece of publishing first: a photograph the width of the window, the argument on a navy band, and the four things you receive set like the contents of an issue, in display type on ruled lines that step in from the left |
-| `dist/amb-a.html` | **The Network** — the roadmap answers "who are our Ambassadors?" with a list of people, so this answers with faces: an offset mosaic of four photographs with the passage beside it, four ways as one band, and the interest form closing on navy |
+| `dist/amb-a.html` | **The Network** (*chosen 2026-08-11*). The roadmap answers "who are our Ambassadors?" with a list of people, so this answers with faces: an offset mosaic of four photographs with the passage beside it, four ways as one band, and the interest form closing on navy |
 | `dist/amb-b.html` | **The First Step** — one held frame instead of a crowd: a sticky left column keeps a single face and one sentence in view while both questions are answered on the right, then the form takes the last screen on its own |
 
 The forms are real and there is no script behind them. Real `<label>` bound to
@@ -947,31 +949,42 @@ readings also show a real Empower campaign email from the asset library, cropped
 to its masthead, so the page shows what arrives rather than describing it. No
 page invents a subscriber count, an open rate, or a testimonial.
 
-**Donate**, two readings, built 2026-08-08. The last tab in the roadmap and the
-only page in the build that asks for money.
+**Donate**, three readings. A and B were built 2026-08-08; Empower said neither
+landed and asked for something simpler with the giving form higher up the page
+and fewer clicks, so **One Screen** was built 2026-08-11. The last tab in the
+roadmap and the only page in the build that asks for money.
 
 | Page | What it is |
 | --- | --- |
 | `dist/give-a.html` | **Generational** — a photograph the width of the window, then a staircase: three plates stepping down and across with two photographs filling the gaps, because the copy's own picture of a gift is "one opportunity, one family, and one generation at a time". Amounts as a grid of tiles |
+| `dist/give-c.html` | **One Screen** (*built to Empower's 2026-08-11 note*). The hero and the ask share the first screen: headline, the reader's sentence and "So do we." on the left, the gift panel on the right: how often, how much, then a marked slot for Empower's own donation form. Everything the other two put *before* the ask now sits after it, and on a phone the panel moves above the headline |
 | `dist/give-b.html` | **Next Chapter** — navy from the header down, with the ask as the only thing that changes colour: a white plate at the end of a dark scroll. The first screen is type alone, the reader's sentence answered by ours, and all the photography lands at once as four edge-to-edge panels. Amounts as a ruled list |
 
-**Neither page collects payment details, and that is not a style choice.** Card
+**No reading collects payment details, and that is not a style choice.** Card
 numbers, expiry dates, security codes and bank details belong to the donation
 processor; a field for any of them on a static page we hand over would be
 collecting real card data with nothing behind it. The amount choices are links
 that carry a figure to `/donate/give`, which is where the processor's page or
-embed lives. `test.mjs` fails either page for a card, CVV, expiry or bank field,
-for a `cc-` autocomplete token, and for any `<form>` in the main content at all.
+embed lives. On One Screen the dashed box inside the panel is a deliberate
+placeholder for that embed, drawn at roughly the height the real form occupies;
+it is a `<div>` with a name and a note, never a field. `test.mjs` fails any of
+the three for a card, CVV, expiry or bank field, for a `cc-` autocomplete token,
+and for any `<form>` in the main content at all, and separately fails One Screen
+if it grows an `<input>`, `<select>`, `<textarea>` or `<button>`.
 
 Three things to settle before this ships:
 
-- **`/donate/give` is a placeholder route.** The live site's donate page does not
-  expose its processor in its markup, so the hand-off target is a guess. Point it
-  at the real one.
-- **The ladder is a proposal.** $25 / $50 / $100 / $250 / $500 and a monthly
-  option are ours, not Empower's. A test allows exactly those five figures and
-  fails any other number on the page, so changing the ladder means changing the
-  test — which is the point.
+- **`/donate/give` is a placeholder route.** Every amount, frequency and Donate
+  Today link on all three readings goes there, and a test enforces it. The real
+  target is the Gravity Forms donate page itself (or the anchor of the embedded
+  form on it). Point it at the real one.
+- **The ladder is a proposal, and it does not match the live form.** $25 / $50 /
+  $100 / $250 / $500 are ours. Empower's live donate page runs a Gravity Forms
+  form with a Stripe payment element, and its own ladder is a free-entry box for
+  a one-time gift, $15 / $25 / $50 / $100 monthly, and $100 / $250 / $500 /
+  $1,000 annually. Kienna said on 2026-08-11 that she liked the amounts we
+  showed, so ours are what is built; switching to the live ladder means changing
+  the figure allow-list in `test.mjs`, which is the point.
 - **No page invents a total raised, a donor count or a progress bar.** The only
   figures on either reading are the suggested amounts and the roadmap's own
   501(c)(3) line, which is reproduced verbatim because it is a legal statement

@@ -1,0 +1,278 @@
+/* Donate, reading C: "One Screen".
+   Namespace: .gvc-
+
+   Built 2026-08-11 after Empower said neither of the first two readings landed:
+   "simpler and more streamlined… as easy as possible for someone to give with
+   fewer clicks", with the giving form "higher up on the page, potentially right
+   after a simple hero".
+
+   So the composition is one decision, not a journey. The hero and the gift share
+   the first screen (words left, panel right), and everything the other two
+   readings put before the ask now sits after it. The page has exactly one job
+   and the job is visible without scrolling.
+
+   The panel is a PANEL, not a form. Frequency and amount are links that carry the
+   choice to /donate/give; the details-and-card step is a marked slot for
+   Empower's existing donation form (Gravity Forms with a Stripe payment element
+   on their live page). Nothing here collects a payment detail, because this build
+   is handed over as static HTML with nothing behind it. */
+
+/* ---------- Hero and gift ---------- */
+.gvc-hero{
+  background:var(--surface-navy-deep);
+  color:var(--text-inverse);
+  padding-block:clamp(48px,7vw,104px) clamp(48px,7vw,96px);
+}
+/* Two columns, and the panel column is fixed rather than fluid: a gift panel
+   that grows with the viewport stops looking like a thing you fill in. The
+   under-fold paragraphs sit in the words column only, so they never run under
+   the panel and leave it stranded. */
+.gvc-hero__grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) clamp(340px,32vw,440px);
+  /* The first row is exactly as tall as the headline block; the second takes
+     whatever the panel leaves. Without that split the panel, which is taller
+     than both text blocks together, stretches the row it shares with the
+     headline and opens a hole between "So do we." and the paragraph after it. */
+  grid-template-rows:max-content 1fr;
+  column-gap:clamp(32px,5vw,88px);
+  row-gap:clamp(32px,5vw,64px);
+  align-items:start;
+}
+.gvc-hero__say{grid-column:1}
+.gvc-give{grid-column:2;grid-row:1 / span 2}
+.gvc-hero__under{grid-column:1;align-self:start}
+
+.gvc-hero__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.1rem + 3.4vw,3.6rem);
+  line-height:1.03;letter-spacing:-.032em;
+  color:var(--text-inverse);
+  max-width:16ch;
+}
+.gvc-hero__you{
+  margin:clamp(24px,3vw,40px) 0 0;
+  max-width:46ch;
+  font-size:var(--fs-lead);line-height:1.5;
+  color:var(--text-inverse-muted);
+}
+/* The hinge of the roadmap's opening. Two words, so they get the weight rather
+   than a size that would out-shout the headline above them. */
+.gvc-hero__so{
+  margin:clamp(12px,1.5vw,20px) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.4rem,1rem + 1.4vw,2.1rem);
+  letter-spacing:var(--ls-heading);
+  color:var(--orange-300);
+}
+.gvc-hero__under p{
+  margin:0 0 var(--space-5);max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text-inverse-muted);
+}
+.gvc-hero__under p:last-child{margin-bottom:0}
+
+/* ---------- The gift panel ---------- */
+.gvc-give{
+  background:var(--white);
+  border-radius:var(--radius-card);
+  padding:clamp(24px,2.6vw,36px);
+  box-shadow:var(--shadow-lg);
+  /* Sticks while the reassurance below scrolls past, so the ask never leaves the
+     screen on a long viewport. Nothing depends on it: without position:sticky
+     support the panel is simply where it was. */
+  position:sticky;top:clamp(88px,10vh,120px);
+}
+.gvc-give__title{
+  margin:0 0 clamp(20px,2.4vw,28px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+
+.gvc-field{margin-bottom:clamp(20px,2.4vw,28px)}
+/* An eyebrow, not a heading at heading size: these label a row of controls, and
+   a label set larger than the thing it labels is the inversion this build has
+   already had to fix once. */
+.gvc-field__label{
+  margin:0 0 var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted);
+}
+
+/* Frequency: three segments in one track, so they read as one choice with three
+   settings rather than as three separate buttons. */
+.gvc-freq{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  list-style:none;margin:0;padding:4px;gap:4px;
+  background:var(--surface-muted);
+  border-radius:var(--radius-pill);
+}
+.gvc-freq__opt{
+  display:flex;align-items:center;justify-content:center;
+  min-height:44px;padding-inline:var(--space-2);
+  border-radius:var(--radius-pill);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);color:var(--text-body);
+  text-align:center;text-decoration:none;
+  transition:background-color var(--dur-fast) var(--ease-out),
+             color var(--dur-fast) var(--ease-out);
+}
+.gvc-freq__opt:hover{background:var(--white);color:var(--text-strong)}
+
+/* Amounts: three across, two down. A single row of six makes each tile too
+   narrow to be a comfortable target, and a column of six pushes the details slot
+   off the screen, which is the whole point of this reading. */
+.gvc-ladder{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:var(--space-3);
+  list-style:none;margin:0;padding:0;
+}
+.gvc-amount{
+  display:flex;align-items:center;justify-content:center;
+  min-height:56px;
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-md);
+  background:var(--white);
+  text-decoration:none;
+  transition:border-color var(--dur-fast) var(--ease-out),
+             background-color var(--dur-fast) var(--ease-out);
+}
+.gvc-amount__figure{
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h4);color:var(--text-strong);
+  letter-spacing:var(--ls-heading);
+}
+.gvc-amount:hover{border-color:var(--em-orange);background:var(--orange-100)}
+.gvc-amount--other .gvc-amount__figure{font-size:var(--fs-body);color:var(--text-body)}
+
+/* The slot. Dashed and named, at roughly the height Empower's own form occupies,
+   so the panel is honest about how tall the finished page is. An unlabelled grey
+   box in a review reads as an unfinished design; this one says what it is. */
+.gvc-slot{
+  margin:clamp(20px,2.4vw,28px) 0;
+  padding:clamp(20px,2.4vw,28px);
+  min-height:180px;
+  display:flex;flex-direction:column;justify-content:center;
+  border:2px dashed var(--border-strong);
+  border-radius:var(--radius-md);
+  background:var(--surface-subtle);
+}
+.gvc-slot__name{
+  margin:0 0 var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-body);color:var(--text-strong);
+}
+.gvc-slot__note{
+  margin:0;
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
+}
+
+.gvc-give__act{margin:0}
+.gvc-give__act .em-btn{width:100%}
+.gvc-give__legal{
+  margin:var(--space-5) 0 0;
+  font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted);
+}
+
+/* ---------- Why Your Gift Matters ---------- */
+.gvc-matters{
+  background:var(--surface-page);
+  padding-block:clamp(56px,8vw,112px);
+}
+.gvc-matters__grid{
+  display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);
+  gap:clamp(32px,5vw,80px);align-items:start;
+}
+.gvc-matters__title{
+  margin:0 0 clamp(20px,2.6vw,32px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.gvc-matters__say p{
+  margin:0 0 var(--space-5);max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.gvc-matters__say p:last-child{margin-bottom:0}
+.gvc-matters__say .gvc-matters__lead{
+  font-size:var(--fs-lead);line-height:1.45;
+  color:var(--text-strong);font-weight:var(--fw-semibold);
+}
+/* Two photographs, offset rather than stacked square: the second drops to break
+   the seam a pair of equal rectangles makes. */
+.gvc-matters__figures{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(16px,2vw,28px);align-items:start;
+}
+.gvc-figure{margin:0}
+.gvc-figure:last-child{margin-top:clamp(24px,4vw,56px)}
+.gvc-figure img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:4/5;object-fit:cover;
+  border-radius:var(--radius-media);
+}
+
+/* ---------- Help Write Mississippi's Next Chapter ---------- */
+/* A plate, not a band. The footer is the same navy, so a full-bleed navy section
+   here shares an edge with it and the last thing the page says gets absorbed into
+   the chrome. The plate keeps a white margin between the two. */
+.gvc-next{
+  background:var(--surface-page);
+  padding-block:0 clamp(56px,8vw,112px);
+}
+.gvc-next__plate{
+  background:var(--surface-navy);
+  color:var(--text-inverse);
+  border-radius:var(--radius-panel);
+  padding:clamp(36px,5vw,72px);
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:clamp(28px,4vw,64px);align-items:end;
+}
+.gvc-next__title{
+  margin:0;max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.gvc-next__lead{
+  margin:clamp(20px,2.6vw,32px) 0 0;max-width:52ch;
+  font-size:var(--fs-lead);line-height:1.45;color:var(--white);
+}
+.gvc-next__body{
+  margin:var(--space-5) 0 0;max-width:60ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.gvc-next__act{margin:0;white-space:nowrap}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1024px){
+  .gvc-hero__grid{grid-template-columns:minmax(0,1fr) clamp(320px,38vw,400px)}
+  .gvc-matters__grid{grid-template-columns:minmax(0,1fr);gap:clamp(28px,4vw,48px)}
+}
+
+@media (max-width:900px){
+  .gvc-next__plate{grid-template-columns:minmax(0,1fr);align-items:start}
+  .gvc-next__act{white-space:normal}
+  /* One column, and the gift goes FIRST: above the headline, not below the
+     copy. On a page with one job, a donor on a phone should not have to scroll
+     past an argument to reach the thing they came to do. The words follow as
+     the reason to have done it. */
+  .gvc-hero__grid{grid-template-columns:minmax(0,1fr)}
+  .gvc-give{grid-column:1;grid-row:auto;order:-1;position:static}
+  .gvc-hero__say,.gvc-hero__under{grid-column:1}
+  .gvc-hero__title{max-width:20ch}
+}
+
+@media (max-width:520px){
+  /* The frequency track stays three-across at every width. Stacked, the pill
+     radius wraps a tall column and the control stops reading as one switch with
+     three settings; the three labels are short enough to hold their row. */
+  .gvc-ladder{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gvc-matters__figures{grid-template-columns:minmax(0,1fr)}
+  .gvc-figure:last-child{margin-top:0}
+}

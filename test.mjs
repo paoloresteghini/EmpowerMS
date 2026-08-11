@@ -1296,12 +1296,17 @@ test('every build on the chooser is filterable, and every set has exactly one pi
   assert.equal(tagged.length, cards.length,
     `${cards.length - tagged.length} cards have no data-set and would vanish when the Set facet is used`);
 
-  /* Empower chose every set on the chooser except EPIC on 2026-08-07:
-     Streetlight as the single solution template, The Studio for the podcast,
-     The Dome for Capitol Chat. EPIC's three readings went up the same day and
-     have not been chosen from, so it is the one set with no pick — moving it
-     off this list is the commit that records Empower's choice. */
-  const UNDECIDED = ['epic', 'mail', 'amb', 'give'];
+  /* Empower chose every set on the chooser except Donate. On 2026-08-07 they
+     took Streetlight as the single solution template, The Studio for the
+     podcast and The Dome for Capitol Chat; on 2026-08-11 they took The Pinned
+     Method for EPIC (with the method section swapped for The Instrument's),
+     Five Minutes for Email Sign Up and The Network for Ambassador.
+
+     Donate is the one set still open, and it is open for a different reason
+     from the others: Empower did not pick between A and B, they asked for a
+     third direction. C is that direction, and it has not been chosen yet, so
+     moving 'give' off this list is the commit that records the decision. */
+  const UNDECIDED = ['give'];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
   assert.equal(sections.length, 14, `expected fourteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
@@ -2687,6 +2692,36 @@ test('EPIC motion is progressive: no page depends on scroll-driven animation', (
   }
 });
 
+test('The Pinned Method carries the method section Empower chose', () => {
+  /* Empower picked reading A on 2026-08-11 and asked for one change: the
+     "How EPIC Turns Research Into Solutions" section swapped for reading C's.
+     That swap is a decision, not a detail, so it is held here. Otherwise a
+     later tidy-up that restores the sideways track quietly reverses a client
+     instruction and nothing fails.
+
+     The rows are A's OWN copy of the composition, in A's namespace: one
+     stylesheet per reading, so converting the winner to Elementor never drags
+     in a rejected design's CSS. */
+  const html = readFileSync('dist/epic-a.html', 'utf8');
+  const css = readFileSync('css/epic-a.css', 'utf8');
+
+  assert.ok(html.includes('epa-method__rows'), 'epic-a has lost the ruled method rows');
+  assert.ok(html.includes('epa-method__rail'), 'epic-a has lost the rail the rows are marked against');
+  assert.ok(!html.includes('epa-method__track'), 'epic-a is back on the sideways track');
+  assert.ok(!css.includes('epa-method__stage'), 'epic-a.css still carries the pinned stage');
+
+  /* The rail is local to this section. In reading C the same marks ran against a
+     line down the whole page, which only worked because every section there was
+     navy; A is navy in one section, so a page-length line would run through
+     white. */
+  assert.ok(!html.includes('epc-spine'), 'epic-a is using The Instrument\u2019s page spine');
+
+  /* And the logo Empower asked for, on its plate rather than recoloured. */
+  assert.match(html, /<img src="\.\.\/assets\/epic-logo\.png"[^>]*alt=""/,
+    'the EPIC lockup is missing from the hero, or is no longer decorative');
+  assert.ok(html.includes('epa-hero__mark'), 'the EPIC lockup has lost its plate');
+});
+
 test('the EPIC readings add no JavaScript of their own', () => {
   /* The motion on these three pages is the most visible in the build, and it is
      entirely CSS. That matters for the Elementor conversion: custom CSS travels,
@@ -2904,8 +2939,8 @@ const GIVE_COPY = [
 
 const GIVEPAGES = ABOUTPAGES.filter(p => p.out.includes('give-'));
 
-test('both Donate readings build', () => {
-  assert.equal(GIVEPAGES.length, 2, `expected two Donate readings, found ${GIVEPAGES.length}`);
+test('all three Donate readings build', () => {
+  assert.equal(GIVEPAGES.length, 3, `expected three Donate readings, found ${GIVEPAGES.length}`);
 });
 
 test('every Donate reading carries the roadmap copy verbatim', () => {
@@ -2935,12 +2970,58 @@ test('no Donate reading collects payment details', () => {
       `${out} has a form in its main content — the processor owns the transaction`);
 
     /* Every amount is a link, and every one of them goes to the hand-off. */
-    const amounts = [...html.matchAll(/<a class="gv[ab]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
+    const amounts = [...html.matchAll(/<a class="gv[abc]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
     assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
     for (const href of amounts) {
       assert.match(href, /^\/donate\/give/, `${out} sends an amount to ${href}`);
     }
   }
+});
+
+test('every hand-off link on a Donate page goes to the processor route', () => {
+  /* The amount tiles are covered above; One Screen adds a frequency choice, and
+     the panel's own Donate Today is a link rather than a submit. All of them
+     leave this site the same way. A link here that went anywhere else would be a
+     giving journey with a hole in the middle of it. */
+  for (const { out, html } of GIVEPAGES) {
+    const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    const hrefs = [...body.matchAll(/href="(\/donate[^"]*)"/g)].map(m => m[1]);
+    assert.ok(hrefs.length >= 5, `${out} has ${hrefs.length} hand-off links`);
+    for (const href of hrefs) {
+      assert.match(href, /^\/donate\/give/, `${out} sends a donor to ${href}`);
+    }
+  }
+});
+
+test('One Screen puts the ask on the first screen and marks the processor slot', () => {
+  /* The whole reason this reading exists. Empower asked for the giving form
+     higher up the page with fewer clicks, so the contract is positional: the
+     gift panel must appear in the source BEFORE the reassurance copy and before
+     the second section, or the page has quietly become the two readings it was
+     built to replace.
+
+     And the slot is a slot: a named placeholder for Empower's own form, never a
+     form of ours. A future edit that "finishes" it by adding real fields would
+     be collecting donor details into nothing. */
+  const html = readFileSync('dist/give-c.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+  const panel = body.indexOf('class="gvc-give" id="give"');
+  const under = body.indexOf('gvc-hero__under');
+  const matters = body.indexOf('gvc-matters');
+  assert.ok(panel > -1, 'give-c has lost its gift panel');
+  assert.ok(panel < under, 'the gift panel now sits below the copy it was moved above');
+  assert.ok(panel < matters, 'the gift panel now sits below Why Your Gift Matters');
+
+  /* The panel's action is the page's one orange fill, and it is the first
+     Donate Today in the document, and the closing section keeps the inverse. */
+  assert.match(body.slice(panel, matters), /em-btn--primary[^>]*>\s*Donate Today/,
+    'the gift panel has lost the orange action');
+
+  assert.ok(body.includes('gvc-slot__name'), 'the processor slot is no longer named');
+  assert.ok(body.includes('gvc-slot__note'), 'the processor slot has lost the note that says what it is');
+  assert.ok(!/<input|<select|<textarea|<button/.test(body),
+    'give-c has grown a real control; the processor owns every field on this page');
 });
 
 test('no Donate reading invents a number', () => {
@@ -3241,7 +3322,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'capitol-a': 'cca', 'capitol-b': 'ccb',
     'epic-a': 'epa', 'epic-b': 'epb', 'epic-c': 'epc',
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
-    'give-a': 'gva', 'give-b': 'gvb',
+    'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its

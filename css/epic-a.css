@@ -22,7 +22,31 @@
   color:var(--text-inverse);
   padding-block:clamp(64px,10vw,140px) clamp(48px,7vw,96px);
 }
-.epa-hero__inner{display:flex;flex-direction:column;align-items:flex-start}
+/* Two columns above the ruled row of areas, which still spans the full width.
+   The mark column is `auto` and the words take the rest, so the headline keeps
+   its own measure and the logo never squeezes it. */
+.epa-hero__inner{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  column-gap:clamp(32px,5vw,88px);
+  align-items:start;
+}
+.epa-hero__say{grid-column:1}
+.epa-hero__areas{grid-column:1 / -1}
+
+/* The EPIC lockup. Empower publish it navy-and-orange on white, so it gets a
+   white plate to stand on rather than a recolour: a mark redrawn in somebody
+   else's colours is a different mark. The plate is deliberately quiet, because the
+   headline is the loud thing on this hero and the logo is identification. */
+.epa-hero__mark{
+  grid-column:2;
+  justify-self:end;
+  background:var(--white);
+  border-radius:var(--radius-md);
+  padding:clamp(16px,2vw,28px) clamp(20px,2.4vw,34px);
+  width:clamp(200px,22vw,320px);
+}
+.epa-hero__mark img{display:block;width:100%;height:auto}
 
 .epa-hero__title{
   margin:0;
@@ -117,57 +141,70 @@
   font-weight:var(--fw-semibold);
 }
 
-/* ---------- How We Work: the pinned track ---------- */
+/* ---------- How We Work: the rows ---------- */
+/* Empower chose this composition on 2026-08-11, out of reading C. --epa-rail is
+   the distance between the rail and the text, and it is used three times: to
+   inset the content, to place the row nodes, and to keep the rail itself in an
+   empty column so nothing is drawn over. */
 .epa-method{
+  --epa-rail:clamp(20px,3vw,56px);
   background:var(--surface-navy);
   color:var(--text-inverse);
-  padding-block:clamp(56px,8vw,112px) 0;
-  /* The track is wider than the viewport by design; clip it here rather than
-     letting it put a horizontal scrollbar on the document. clip, not hidden,
-     so the sticky stage inside still works. */
-  overflow-x:clip;
+  padding-block:clamp(56px,8vw,112px);
 }
+.epa-method__inner{position:relative;padding-left:calc(var(--gutter) + var(--epa-rail))}
+
+/* The rail is local to this section: it starts level with the heading and stops
+   with the last row. In reading C this was one line down the whole page, which
+   only worked because every section there was navy; here the section above and
+   the section below are white, so a page-length line would have nothing to run
+   through. */
+.epa-method__rail{
+  position:absolute;top:0;bottom:0;width:2px;
+  left:var(--gutter);
+  background:rgba(255,255,255,.16);
+  overflow:hidden;
+}
+.epa-method__rail-fill{
+  display:block;width:100%;height:100%;
+  background:var(--em-orange);
+  transform-origin:top center;
+}
+
 .epa-method__title{
-  margin:0;
+  margin:0 0 clamp(28px,4vw,56px);
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
   line-height:1.12;letter-spacing:var(--ls-heading);
   color:var(--text-inverse);max-width:18ch;
 }
 
-.epa-method__scroll{padding-bottom:clamp(56px,8vw,112px)}
-.epa-method__stage{display:block}
-.epa-method__head{
-  max-width:var(--container-max);
-  margin:0 auto clamp(40px,6vw,80px);
-  padding-inline:var(--gutter);
+.epa-method__rows{list-style:none;margin:0;padding:0}
+.epa-method__row{
+  position:relative;
+  display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);
+  gap:clamp(16px,3vw,48px);
+  padding:clamp(22px,3vw,36px) 0;
+  border-top:1px solid var(--border-inverse);
 }
-
-/* The rule is the progress indicator for the sideways move. Without the
-   scroll-driven layer it has nothing to say, so it is hidden by default and
-   only brought back inside the enhanced block below. */
-.epa-method__rule{display:none}
-
-.epa-method__track{
-  list-style:none;margin:0;padding:0 var(--gutter);
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:clamp(20px,3vw,40px);
-  max-width:var(--container-max);
-  margin-inline:auto;
+.epa-method__row:last-child{border-bottom:1px solid var(--border-inverse)}
+/* The node: a mark on the rail at the start of every step. Placed from the row's
+   own left edge, so it stays registered to the rail at any width. */
+.epa-method__row::before{
+  content:"";position:absolute;top:calc(clamp(22px,3vw,36px) - 5px);
+  left:calc(-1 * var(--epa-rail) - 3px);
+  width:8px;height:8px;border-radius:50%;
+  background:var(--em-orange);
 }
 .epa-method__step{
-  padding-top:var(--space-6);
-  border-top:4px solid var(--em-orange);
-}
-.epa-method__step-title{
-  margin:0 0 var(--space-4);
+  margin:0;
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
   color:var(--white);
 }
-.epa-method__step p{
-  margin:0;max-width:44ch;
-  font-size:var(--fs-body);line-height:1.65;color:var(--text-inverse-muted);
+.epa-method__row p{
+  margin:0;max-width:60ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
 }
 
 /* ---------- Explore Our Research ---------- */
@@ -252,103 +289,55 @@
   to{opacity:1;transform:none}
 }
 
-/* The sideways move. Enhancement only, three conditions deep:
-     1. the browser has scroll-driven animations,
-     2. the visitor has not asked for reduced motion,
-     3. the viewport is wide enough for a pinned stage to make sense.
-   Fail any one and the markup above is a normal three-column section. */
-@media (prefers-reduced-motion: no-preference) and (min-width:961px){
+/* The rail fill. Enhancement only, two conditions deep: the browser has
+   scroll-driven animations, and the visitor has not asked for reduced motion.
+   Fail either and the base state above stands: a rail already filled orange,
+   which is the finished state rather than an empty one. The failure this shape
+   is chosen to avoid is the one the motion layer has caused three times in this
+   build: a start state that hides something and a trigger that never fires.
+
+   The window is "this section is on screen": fully entered to just beginning to
+   leave. A cover-length range would leave the rail unfinished at the moment the
+   last row is read, which is exactly when it should be full. */
+@media (prefers-reduced-motion: no-preference){
   @supports (animation-timeline: view()){
-    .epa-method{
-      /* Two steps and the edge of a third are visible at once, which is what
-         makes the move read as a track rather than as a slideshow. */
-      --epa-step:clamp(20rem,46vw,40rem);
-      --epa-gap:clamp(24px,4vw,64px);
-      --epa-inset:clamp(24px,8vw,140px);
-    }
-    .epa-method__scroll{
-      height:240vh;
-      view-timeline:--epa-method block;
-      padding-bottom:0;
-    }
-    .epa-method__stage{
-      position:sticky;top:0;
-      height:100vh;
-      display:grid;
-      /* One column at exactly the stage width. Without this the track's
-         max-content width sizes the column, the stage grows wider than the
-         viewport, and everything else in it (the heading, the rule) is laid
-         out against that phantom width. */
-      grid-template-columns:100%;
-      align-content:center;
-      row-gap:clamp(32px,6vh,72px);
-    }
-    .epa-method__head{
-      /* Aligned to the track's inset, not to the page container, so the
-         heading and the first step share one left edge. */
-      max-width:none;margin:0;
-      padding-inline:var(--epa-inset);
-      display:grid;row-gap:clamp(20px,3vh,36px);
-    }
-
-    .epa-method__track{
-      display:flex;flex-wrap:nowrap;
-      width:max-content;max-width:none;margin-inline:0;
-      gap:var(--epa-gap);
-      padding-inline:var(--epa-inset);
-      animation:epa-track linear both;
-      animation-timeline:--epa-method;
-      animation-range:contain 0% contain 100%;
-      will-change:transform;
-    }
-    .epa-method__step{
-      flex:0 0 var(--epa-step);
-      padding-top:var(--space-8);
-    }
-    /* A pinned viewport is a lot of room for three short paragraphs. The type
-       steps up here rather than leaving the stage two thirds empty. */
-    .epa-method__step-title{
-      font-size:clamp(1.5rem,1rem + 1.6vw,2.25rem);
-      margin-bottom:var(--space-5);
-    }
-    .epa-method__step p{max-width:none;font-size:var(--fs-lead);line-height:1.5}
-
-    .epa-method__rule{
-      display:block;
-      height:4px;border-radius:2px;
-      background:var(--border-inverse);
-      overflow:hidden;
-    }
-    .epa-method__rule-fill{
-      display:block;height:100%;width:100%;border-radius:inherit;
-      background:var(--em-orange);
-      transform-origin:left center;
+    .epa-method__inner{view-timeline:--epa-method block}
+    .epa-method__rail-fill{
       animation:epa-fill linear both;
       animation-timeline:--epa-method;
-      animation-range:contain 0% contain 100%;
+      animation-range:entry 100% exit 0%;
     }
   }
 }
-/* -100% is the track's own width, so this lands its right edge (padding
-   included) on the right edge of the viewport: the exact distance needed to
-   bring the last step into view, whatever the step width resolves to. */
-@keyframes epa-track{
-  to{transform:translateX(calc(-100% + 100vw))}
-}
 @keyframes epa-fill{
-  from{transform:scaleX(.08)}
-  to{transform:scaleX(1)}
+  from{transform:scaleY(0)}
+  to{transform:scaleY(1)}
 }
 
 /* ---------- Responsive ---------- */
 @media (max-width:900px){
+  /* One column, and the mark moves above the headline rather than beside it:
+     a logo squeezed into a narrow right-hand column reads as an afterthought,
+     where at the top it reads as the masthead it is. */
+  .epa-hero__inner{grid-template-columns:minmax(0,1fr)}
+  .epa-hero__say,.epa-hero__mark{grid-column:1}
+  .epa-hero__mark{
+    order:-1;justify-self:start;
+    width:clamp(180px,44vw,260px);
+    margin-bottom:clamp(24px,4vw,40px);
+  }
   .epa-work__body{grid-template-columns:minmax(0,1fr)}
   .epa-work__figure{order:2}
+  .epa-method__row{grid-template-columns:minmax(0,1fr);gap:var(--space-4)}
   .epa-research__head{grid-template-columns:minmax(0,1fr);align-items:start}
 }
 
 @media (max-width:720px){
-  .epa-method__track{grid-template-columns:minmax(0,1fr);gap:var(--space-8)}
+  /* The rail costs more than it earns once the measure is this narrow: it goes
+     and the rows take the full gutter back. */
+  .epa-method__rail{display:none}
+  .epa-method__inner{padding-left:var(--gutter)}
+  .epa-method__row::before{display:none}
   .epa-hero__arealist li{flex:1 1 100%}
 }
 

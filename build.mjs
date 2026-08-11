@@ -156,14 +156,21 @@ export const PAGES = [
   { src: 'amb-a/index.html', out: 'dist/amb-a.html', title: 'Ambassador A — The Network', kind: 'about' },
   { src: 'amb-b/index.html', out: 'dist/amb-b.html', title: 'Ambassador B — The First Step', kind: 'about' },
 
-  /* Donate, the last tab in the roadmap, two readings. The one page in the
+  /* Donate, the last tab in the roadmap, now three readings. The one page in the
      build that asks for money, and the one place a design decision is also a
      safety decision: NOTHING here collects payment details. The amount choices
      are links that carry a figure to /donate/give, where the processor's own
-     page or embed lives, and a test fails either page for a card, CVV, expiry
-     or bank field. */
+     page or embed lives, and a test fails any of them for a card, CVV, expiry
+     or bank field.
+
+     C was built on 2026-08-11, after Empower said neither A nor B landed and
+     asked for something simpler with the giving form high on the page. It is the
+     only one of the three where the ask shares the first screen with the hero,
+     and the only one that draws the processor's form as a marked slot rather
+     than sending the visitor away to it. */
   { src: 'give-a/index.html', out: 'dist/give-a.html', title: 'Donate A — Generational', kind: 'about' },
   { src: 'give-b/index.html', out: 'dist/give-b.html', title: 'Donate B — Next Chapter', kind: 'about' },
+  { src: 'give-c/index.html', out: 'dist/give-c.html', title: 'Donate C: One Screen', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

@@ -1,44 +1,37 @@
-<!-- How We Work. The signature of this reading.
+<!-- How We Work. Empower picked this reading on 2026-08-11: the rows composition
+     from reading C, brought across into A.
 
-     The three steps are a sequence, so they are an <ol>. What makes them read
-     as a method rather than three more boxes is that they move SIDEWAYS: at
-     desktop widths the stage pins to the viewport and the track slides left as
-     the page scrolls down. That is a CSS scroll-driven animation with no
-     JavaScript behind it, wrapped in @supports — where the feature is missing,
-     or the visitor asks for reduced motion, or the viewport is narrow, the same
-     markup is a plain three-column layout that scrolls normally. Nothing here
-     is gated on the animation running.
+     Three rows, not three columns. The step name holds a narrow left measure and
+     its description runs across the rest, separated by hairlines. Read down, the
+     three names line up in a single column, which is what makes the order legible
+     without a numeral against it. Empower asked to move away from decorative
+     numerals on the solution pages and the same rule holds here.
 
-     The heading lives INSIDE the stage rather than above it, so it is still on
-     screen while the track is moving. Pinning a section and letting its own
-     title scroll away was the first version of this and it read as three
-     unlabelled panels.
-
-     No numerals. Empower asked to move away from that treatment on the solution
-     pages, so the order is carried by the track itself and by the rule that
-     fills across it. -->
+     In reading C the nodes registered against a spine that ran the whole page.
+     There is no page-length spine in this reading, so the rail is local to this
+     section: it starts at the heading and ends with the last row, and the orange
+     fill travels it as the section passes through the viewport. That fill is the
+     one scroll-driven move left on this page, and like everything else in this
+     set it is enhancement only: the section is a static list of rows without it. -->
 <section class="epa-method" aria-labelledby="method-title">
-  <div class="epa-method__scroll">
-    <div class="epa-method__stage">
-      <div class="epa-method__head">
-        <h2 class="epa-method__title" id="method-title" data-reveal="rise">How EPIC Turns Research Into Solutions</h2>
-        <div class="epa-method__rule" aria-hidden="true"><span class="epa-method__rule-fill"></span></div>
-      </div>
+  <div class="em-container epa-method__inner">
+    <span class="epa-method__rail" aria-hidden="true"><span class="epa-method__rail-fill"></span></span>
 
-      <ol class="epa-method__track">
-        <li class="epa-method__step">
-          <h3 class="epa-method__step-title">Listen &amp; Define</h3>
-          <p>Hear from Mississippians and use available data to clearly define the problem.</p>
-        </li>
-        <li class="epa-method__step">
-          <h3 class="epa-method__step-title">Research</h3>
-          <p>Produce credible, state-specific research that explains what is happening, why it matters, and what the evidence shows.</p>
-        </li>
-        <li class="epa-method__step">
-          <h3 class="epa-method__step-title">Design Solutions</h3>
-          <p>Turn those findings into practical policy solutions designed for Mississippi’s needs and realities.</p>
-        </li>
-      </ol>
-    </div>
+    <h2 class="epa-method__title" id="method-title" data-reveal="rise">How EPIC Turns Research Into Solutions</h2>
+
+    <ol class="epa-method__rows">
+      <li class="epa-method__row" data-reveal="rise">
+        <h3 class="epa-method__step">Listen &amp; Define</h3>
+        <p>Hear from Mississippians and use available data to clearly define the problem.</p>
+      </li>
+      <li class="epa-method__row" data-reveal="rise">
+        <h3 class="epa-method__step">Research</h3>
+        <p>Produce credible, state-specific research that explains what is happening, why it matters, and what the evidence shows.</p>
+      </li>
+      <li class="epa-method__row" data-reveal="rise">
+        <h3 class="epa-method__step">Design Solutions</h3>
+        <p>Turn those findings into practical policy solutions designed for Mississippi’s needs and realities.</p>
+      </li>
+    </ol>
   </div>
 </section>

@@ -23,7 +23,7 @@
   <div class="em-container">
     <img class="ch__logo" src="../assets/logo-primary.png" alt="Empower Mississippi" width="1053" height="491">
     <h1>Build review</h1>
-    <p class="ch__lede">Every set on this page has been chosen from except Donate, and each choice is marked: the homepage is the agreed build, Empower picked The Table, Three Doors, The Roster and The Through Line Down on 5 August; on 7 August they picked Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast, and The Dome for Capitol Chat; and on 11 August they picked The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador. Donate is the open one, and it is open differently: Empower asked for a third direction rather than choosing between the two, so One Screen is new here and waiting. The pages that were not picked still build, so every decision can be re-read. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
+    <p class="ch__lede">Most sets on this page have been chosen from, and each choice is marked: the homepage is the agreed build, Empower picked The Table, Three Doors, The Roster and The Through Line Down on 5 August; on 7 August they picked Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast, and The Dome for Capitol Chat; and on 11 August they picked The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador. Three sets are open: Donate, where Empower asked for a different direction rather than choosing between the first two; and All Content and the landing page template, both new here today. The pages that were not picked still build, so every decision can be re-read. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
     <p class="ch__note">This page is a review tool. It is never part of the hand-off.</p>
   </div>
 </header>
@@ -169,8 +169,25 @@
             <label class="ch__check__label" for="set-give">
               <span class="ch__check__box" aria-hidden="true"></span>
               Donate
-              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
               <span class="ch__check__n">4</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-content">
+            <label class="ch__check__label" for="set-content">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              All Content
+              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+              <span class="ch__check__n">2</span>
+            </label>
+          </div>
+          <div class="ch__check">
+            <input class="ch__check__input ch__set" type="checkbox" id="set-landing">
+            <label class="ch__check__label" for="set-landing">
+              <span class="ch__check__box" aria-hidden="true"></span>
+              Landing page template
+              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+              <span class="ch__check__n">1</span>
             </label>
           </div>
         </fieldset>
@@ -717,6 +734,56 @@
     <p class="ch__groupnote"><strong>What the live form actually is.</strong> Gravity Forms with the Stripe add-on, and the Stripe payment element sits inside your own page: nothing redirects to stripe.com. That is why One Screen has no hand-off in it. The tiles link to <code>/donate/</code> with the choice in the address, and the form fills in from it. Two consequences worth knowing: the card field will always look like Stripe rather than like the rest of the form, because Stripe owns what is inside it; and the amount tiles are a <em>shortcut into</em> your form, not a replacement for it, so nothing about how giving works has to change.</p>
     <p class="ch__groupnote"><strong>None of the four collects a payment detail.</strong> Card numbers, expiry dates and bank details belong to the processor, and a test fails every one of these pages for a card, CVV, expiry or bank field. On One Screen and The Card that goes further: each field drawn on them is a picture rather than a control, because a real name-and-address form on a page with nothing behind it would be collecting real personal data into nothing. No reading invents a total raised, a donor count or a progress bar.</p>
     <p class="ch__groupnote"><strong>Three things we need from Empower.</strong> <strong>1.</strong> Switch on “Allow field to be populated dynamically” for the gift type and amount fields on form 4, and tell us the parameter names. That is the whole mechanism behind One Screen; it is not on today, and the names in the build are ours as a stand-in. <strong>2.</strong> The amounts. One Screen offers $25 through $500, where the live form offers an open box for a one-time gift, $15/$25/$50/$100 monthly and $100/$250/$500/$1,000 annually. <strong>3.</strong> Confirm the donate page URL, which the build assumes is <code>/donate/</code>. A and B still hand off to a placeholder route, <code>/donate/give</code>, because they were built before we knew any of this.</p>
+  </section>
+
+  <section data-set="content" aria-labelledby="group-content">
+    <h2 class="ch__group" id="group-content">All Content</h2>
+    <p class="ch__groupnote"><strong>New.</strong> The page Kienna asked for after the Georgia Center for Opportunity’s, where a visitor can browse and filter everything Empower publishes. The roadmap’s All Content tab gives four content types with a sentence each and a topic list, and nothing else — no headline, no hero — so the four sentences and the five topic labels are carried word for word and everything above the filter is ours, written to be replaced. The two readings are opposite answers: one keeps the four types as the structure of the page, the other dissolves them into a single dated stream.</p>
+    <ul class="ch__list">
+      <li data-set="content" class="ch__opt">
+        <p class="ch__tag">All Content A, new</p>
+        <h3><a href="content-a.html">The Four Doors</a></h3>
+        <p class="ch__desc">The roadmap’s own four-column block, standing up and working. Articles, Community Stories, Research &amp; Reports and Press Releases are bands down the page, each under its own sentence, and choosing one narrows the page to it instead of sending you somewhere else. Topic filters across all four. Nobody arrives at a page like this wanting “content” — they arrive wanting a report, or a story, or the press release they were sent.</p>
+        <dl class="ch__meta">
+          <div><dt>Feels like</dt><dd>A table of contents. Four doors, marked</dd></div>
+          <div><dt>Signature</dt><dd>Type tabs, bands, a wide lead card per band</dd></div>
+          <div><dt>Best for</dt><dd>Visitors who know what kind of thing they want</dd></div>
+        </dl>
+      </li>
+
+      <li data-set="content" class="ch__opt">
+        <p class="ch__tag">All Content B, new</p>
+        <h3><a href="content-b.html">The Stream</a></h3>
+        <p class="ch__desc">No bands and no doors: everything in one dated spine, newest first, with the most recent piece given the weight of a front page and the rest set as a record rather than as more cards. Type becomes a filter in a held rail alongside topic, and the roadmap’s four sentences sit under the four type checkboxes. This is the shape the archive actually has, and the closest of the two to the page Kienna sent.</p>
+        <dl class="ch__meta">
+          <div><dt>Feels like</dt><dd>A record. Chronological, unfussy</dd></div>
+          <div><dt>Signature</dt><dd>Sticky facet rail, one lead, ruled dated rows</dd></div>
+          <div><dt>Best for</dt><dd>Visitors who want to know what is new</dd></div>
+        </dl>
+      </li>
+    </ul>
+    <p class="ch__groupnote"><strong>The content on both pages is real.</strong> Twenty-three live posts from empowerms.org — real titles, real dates, real links — rather than invented headlines. Two things in it are ours and need your word: your WordPress has no <em>Research &amp; Reports</em> category yet, so those four were gathered by hand from your report posts; and <em>Bill Summaries</em> is a category there but a topic here, which is what the roadmap asks for. That second one has a visible consequence, and both pages answer it in words rather than with a blank screen: bill summaries are written as articles, so pairing that topic with any other type returns nothing.</p>
+    <p class="ch__groupnote"><strong>The filter runs with no JavaScript at all</strong> — the same mechanism as the podcast libraries. Two things follow: a filtered view cannot be linked to or bookmarked, and the counts in B’s rail are of what is on this page rather than of your archive. Both are fixable in WordPress with a small script; neither is worth one here.</p>
+    <p class="ch__groupnote"><strong>One question for Empower.</strong> The roadmap heads this tab “ALL CONTENT” and then names the page “Empower Mississippi Commentary” at <code>/empower-commentary</code>. Those describe two different pages, and the header nav shipped on every build in this set says All Content. Both readings use <strong>All Content</strong> at <code>/content</code>. Tell us which you want and it is a one-line change. The SEO title and description are blank in the roadmap for this page, so they are still owed.</p>
+  </section>
+
+  <section data-set="landing" aria-labelledby="group-landing">
+    <h2 class="ch__group" id="group-landing">Landing page template</h2>
+    <p class="ch__groupnote"><strong>New.</strong> Kienna asked to be able to start with a blank page in Elementor and build a campaign or event page as needed. Elementor already gives you the blank page; what it cannot give you is this build’s decisions. So this is the other half of that: the blocks a campaign page actually needs, drawn in this design language and sized, to be duplicated and cut down. Not a wireframe of a campaign — a kit.</p>
+    <ul class="ch__list">
+      <li data-set="landing" class="ch__opt">
+        <p class="ch__tag">Template, new</p>
+        <h3><a href="landing.html">The campaign kit</a></h3>
+        <p class="ch__desc">Six independent blocks: a campaign hero with one action, the ask with a three-point summary beside it, an image-and-text pair that can be flipped and run twice, a voice, the action band, and three links out. Delete any of them, reorder them, run one twice — nothing depends on what sits above or below it. The one orange filled button is the campaign’s ask, which is the whole reason this page type exists.</p>
+        <dl class="ch__meta">
+          <div><dt>Feels like</dt><dd>A single-purpose page. One ask, held</dd></div>
+          <div><dt>Signature</dt><dd>Six removable blocks, one navy action band</dd></div>
+          <div><dt>Best for</dt><dd>Campaigns, events, anything with a deadline</dd></div>
+        </dl>
+      </li>
+    </ul>
+    <p class="ch__groupnote"><strong>The sample is your own Save Our ESA campaign</strong>, which closed when the waitlist was funded in May 2025 — real name, real posts linked from it, so nothing on the page reads as an invented programme. A strip at the top says so, and that strip is review-only chrome that is deleted at hand-off. The Save Our ESA artwork in your media library is not used: it is an email mock-up set in lorem ipsum, so the hero carries a photograph instead.</p>
+    <p class="ch__groupnote"><strong>Two blocks are drawn as empty slots on purpose.</strong> The quotation, because it belongs to a real person and inventing one — or lifting somebody’s words out of an article to decorate a demo — is the placeholder that would read as finished work while being false. And the campaign form, because there is no endpoint behind this page; whatever a campaign runs on, a petition, a legislator lookup, a sign-up, embeds there. No page in this build collects anything.</p>
   </section>
 
   <section class="ch__shared" aria-labelledby="shared-title">

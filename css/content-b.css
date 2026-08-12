@@ -1,0 +1,304 @@
+/* All Content — reading B, "The Stream".
+
+   THE ARGUMENT: reading A believes you arrive knowing what kind of thing you
+   want. This one believes you arrive wanting to know what Empower has been
+   saying. So there are no bands and no doors — one dated spine, newest first,
+   with the most recent piece given the weight of a front page and everything
+   behind it set as a record rather than as more cards. Type becomes a filter
+   instead of a heading, which is the shape their archive actually has and the
+   shape of the Georgia Center for Opportunity page Kienna sent.
+
+   COLOUR STRATEGY: restrained. White field throughout, navy for type, one
+   photograph at the top and none below it. The rail is the only furniture. That
+   is deliberate — a list of 900 things cannot afford decoration per row, and a
+   thumbnail beside every headline is the thing that makes an archive look like
+   a content farm.
+
+   NO SIDE STRIPES anywhere, including on the rows: a hovered row is marked by
+   its date going orange and its title underlining, never by a bar down its
+   left edge.
+
+   NO SCRIPT. Checkboxes, a native <button type="reset">, and :has(). Read the
+   filter block at the bottom before editing it — the two facets use OPPOSITE
+   shapes for a reason that is written out there.
+
+   COUNTS are of what is on this page, not of their archive, and they do not
+   recalculate as filters are applied. That needs a script; this page has none.
+
+   THE MOTION TRAP: motion.css sets a transition on every data-reveal element
+   and would silently replace one declared here. So the hover work is on links
+   and on the date, never on the row itself, and the lead photograph — which
+   carries data-reveal="clip" — has no hover state at all.
+
+   ELEMENTOR NOTE: hero and stream are two sections; the stream is a two-column
+   section with a sticky column. The filter is the part that does not convert —
+   it needs the <form> and :has() — so in WordPress it becomes the theme's
+   filter widget over the same rows.
+
+   Namespaced .cst- throughout. */
+
+/* ============================== 1 · Hero ================================= */
+
+/* Light, not navy. The loudest thing on this page should be the newest post,
+   and a navy hero above it would take that. */
+.cst-hero{padding:clamp(var(--space-10),5.5vw,var(--space-12)) 0 clamp(var(--space-7),3.5vw,var(--space-9));
+  background:var(--surface-page)}
+
+.cst-hero__inner{max-width:70ch}
+.cst-hero h1{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-6) + 4px);
+  font-size:var(--fs-hero);line-height:var(--lh-hero);letter-spacing:var(--ls-hero);
+  color:var(--text-strong)}
+/* Marked from above. 56 x 4. */
+.cst-hero h1::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.cst-hero__lede{margin:0;max-width:52ch;
+  font-size:var(--fs-lead);line-height:1.65;color:var(--text-body)}
+
+/* ============================== 2 · Frame =============================== */
+
+.cst-stream{padding-bottom:clamp(var(--space-11),6vw,var(--space-14));
+  background:var(--surface-page)}
+
+.cst-grid{display:grid;grid-template-columns:minmax(0,248px) minmax(0,1fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start}
+
+@media (max-width:960px){
+  .cst-grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-8)}
+}
+
+/* =============================== 3 · Rail =============================== */
+
+/* Sticky under the site header — 113px is the whole header when scrolled (45px
+   contact strip plus .em-header__bar's 68px min-height from css/site.css),
+   measured rather than guessed, plus air. Held rather than scrolled away
+   because the whole point of the reading is that the list is long. */
+.cst-rail{align-self:start;position:sticky;top:calc(113px + var(--space-5))}
+.cst-rail__inner{padding:var(--space-6);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-panel);background:var(--surface-subtle)}
+
+.cst-facet{border:0;margin:0;padding:0;min-width:0}
+.cst-facet + .cst-facet{margin-top:var(--space-6);padding-top:var(--space-6);
+  border-top:1px solid var(--border-subtle)}
+.cst-facet__legend{padding:0;margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.cst-check + .cst-check{margin-top:var(--space-4)}
+.cst-check--tight + .cst-check--tight{margin-top:var(--space-3)}
+
+/* Clipped, not display:none — the input must stay focusable and stay on the
+   accessibility tree; the drawn box is the label's. */
+.cst-check__input{position:absolute;width:1px;height:1px;margin:0;opacity:0;
+  pointer-events:none}
+
+.cst-check__label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;gap:var(--space-3);cursor:pointer;
+  font-size:var(--fs-small);font-weight:var(--fw-semibold);color:var(--text-strong)}
+
+/* The same drawn box as the podcast library's facets rather than a second one:
+   two borders rotated into a tick, orange fill when checked. A graphic, so the
+   3:1 non-text threshold applies and brand orange clears it on white. */
+.cst-check__box{position:relative;flex:none;width:18px;height:18px;
+  border:2px solid var(--border-default);
+  border-radius:var(--radius-xs);background:var(--surface-page);
+  transition:background-color var(--dur) var(--ease-out),
+             border-color var(--dur) var(--ease-out)}
+.cst-check__box::after{content:"";position:absolute;inset:0;margin:auto;
+  width:9px;height:5px;border-left:2px solid var(--white);
+  border-bottom:2px solid var(--white);transform:rotate(-45deg) scale(.6);
+  opacity:0;transition:opacity var(--dur-fast) var(--ease-out),
+                       transform var(--dur-fast) var(--ease-out)}
+.cst-check__label:hover .cst-check__box{border-color:var(--border-strong)}
+.cst-check__input:checked + .cst-check__label .cst-check__box{
+  background:var(--em-orange);border-color:var(--em-orange)}
+.cst-check__input:checked + .cst-check__label .cst-check__box::after{
+  opacity:1;transform:rotate(-45deg) scale(1)}
+.cst-check__input:focus-visible + .cst-check__label .cst-check__box{
+  outline:3px solid var(--focus-ring);outline-offset:3px}
+
+.cst-check__n{font-size:var(--fs-caption);font-weight:var(--fw-bold);
+  color:var(--text-muted);font-variant-numeric:tabular-nums}
+
+/* The roadmap's four sentences, kept with the four types they describe. */
+.cst-check__blurb{margin:var(--space-2) 0 0 calc(18px + var(--space-3));
+  font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted)}
+
+.cst-clear{margin-top:var(--space-6);width:100%;min-height:40px;
+  border:1px solid var(--border-default);border-radius:var(--radius-button);
+  background:var(--surface-page);cursor:pointer;
+  font-family:var(--type-button-family);font-weight:var(--type-button-weight);
+  font-size:var(--fs-small);color:var(--text-strong);
+  transition:border-color var(--dur) var(--ease-out),
+             background-color var(--dur) var(--ease-out)}
+.cst-clear:hover{border-color:var(--border-strong);background:var(--surface-muted)}
+.cst-clear:focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px}
+
+@media (max-width:960px){
+  .cst-rail{position:static}
+  .cst-rail__inner{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
+    gap:var(--space-6)}
+  .cst-facet + .cst-facet{margin-top:0;padding-top:0;border-top:0}
+  .cst-clear{grid-column:1/-1;margin-top:0}
+}
+
+/* =============================== 4 · Lead =============================== */
+
+/* display:grid rather than block because the filter block below restores
+   exactly this value when a topic reveals an item. One display value for the
+   lead and the rows keeps that to a single rule. */
+.cst-lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+  align-items:center;column-gap:clamp(var(--space-6),3vw,var(--space-9));
+  padding-bottom:clamp(var(--space-8),4vw,var(--space-10));
+  border-bottom:1px solid var(--border-subtle)}
+
+.cst-lead__photo{display:block;width:100%;height:clamp(240px,26vw,340px);
+  object-fit:cover;border-radius:var(--radius-media)}
+
+.cst-lead__flag{display:inline-block;margin-bottom:var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.cst-lead__title{margin:0 0 var(--space-5);font-size:var(--fs-h3);line-height:1.22;
+  color:var(--text-strong)}
+.cst-lead__title a{color:inherit;text-decoration:none;
+  text-decoration-color:transparent;text-underline-offset:6px;
+  transition:text-decoration-color var(--dur) var(--ease-out)}
+.cst-lead__title a:hover{text-decoration:underline;text-decoration-color:var(--em-orange);
+  text-decoration-thickness:3px}
+.cst-lead__title a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+.cst-lead__meta{display:flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);
+  font-size:var(--fs-caption);color:var(--text-muted)}
+.cst-lead__meta span{font-weight:var(--fw-semibold);letter-spacing:var(--ls-caps);
+  text-transform:uppercase;color:var(--text-body)}
+
+@media (max-width:820px){
+  .cst-lead{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
+}
+
+/* =============================== 5 · Rows =============================== */
+
+.cst-rows{list-style:none;margin:0;padding:0}
+
+/* The spine. Date column is fixed and tabular so the dates line up down the
+   page — that column IS the chronology, and a ragged one would not read as
+   one. */
+.cst-row{display:grid;grid-template-columns:7.5rem minmax(0,1fr) minmax(0,10rem);
+  align-items:baseline;column-gap:clamp(var(--space-5),2.5vw,var(--space-8));
+  padding:clamp(var(--space-5),2.4vw,var(--space-6)) 0;
+  border-bottom:1px solid var(--border-subtle)}
+
+.cst-row__date{font-size:var(--fs-caption);font-weight:var(--fw-semibold);
+  font-variant-numeric:tabular-nums;color:var(--text-muted);white-space:nowrap;
+  transition:color var(--dur) var(--ease-out)}
+.cst-row:hover .cst-row__date{color:var(--em-orange-ink)}
+
+.cst-row__body{min-width:0}
+.cst-row__title{margin:0;font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
+
+/* Topics sit under the headline as a plain interpuncted string, not as a stack
+   of uppercase tags in a narrow right-hand column — an item carrying three of
+   them (an impact report does) turned that column into three lines of shouting
+   beside a one-line headline. */
+.cst-row__topics{display:block;margin-top:var(--space-2);
+  font-size:var(--fs-caption);color:var(--text-muted)}
+.cst-row__title a{color:inherit;text-decoration:none;
+  text-decoration-color:transparent;text-underline-offset:5px;
+  transition:text-decoration-color var(--dur) var(--ease-out)}
+.cst-row:hover .cst-row__title a{text-decoration:underline;
+  text-decoration-color:var(--em-orange);text-decoration-thickness:2px}
+.cst-row__title a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+/* The one thing that stays on the right: which of the four kinds this is. It is
+   the column the eye runs down when scanning a mixed list. */
+.cst-row__type{justify-self:end;text-align:right;
+  font-size:var(--fs-caption);font-weight:var(--fw-bold);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-strong)}
+
+@media (max-width:820px){
+  .cst-row{grid-template-columns:minmax(0,1fr);row-gap:var(--space-2)}
+  .cst-row__type{justify-self:start;text-align:left;order:-1}
+}
+
+.cst-more{margin:var(--space-7) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
+
+/* ============================ 6 · Empty state ============================ */
+
+.cst-empty{display:none;position:relative;margin:var(--space-8) 0 0;
+  padding:calc(var(--space-7) + 4px) var(--space-7) var(--space-7);
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-subtle);
+  font-size:var(--fs-lead);line-height:1.6;color:var(--text-body)}
+.cst-empty::before{content:"";position:absolute;left:var(--space-7);top:var(--space-6);
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* ============================== 7 · Filter =============================== */
+
+/* THE TWO FACETS USE OPPOSITE SHAPES, and that is not an accident.
+
+   TYPE is single-valued: a post is an article or a story, never both. So type
+   can use the hide-only shape from the podcast pages — "if this facet is in use
+   and THIS value is not ticked, hide the items carrying it" — which composes
+   with any other hide-only facet by construction.
+
+   TOPIC is multi-valued: an impact report carries all three solution areas. The
+   hide-only shape is WRONG for it — it would hide that report whenever any one
+   of its three topics was left unticked, turning OR into AND within the facet.
+   So topic uses the other shape: hide everything the moment the facet is in
+   use, then reveal what carries a ticked value.
+
+   Those two shapes fight. A topic REVEAL can un-hide a row that the type facet
+   hid, which would turn the two facets from AND into OR. Two things stop it,
+   and both are deliberate:
+
+     1 · the type rules come LAST in this file;
+     2 · they are also more specific — two :has() arguments carrying ids and a
+         class-plus-pseudo, against the reveal's single id.
+
+   Either alone would do it. Both are here because this is the one place in the
+   build where rule order carries behaviour, and a later edit that reorders the
+   block would silently change what the page does.
+
+   The reveal restores `display:grid` rather than `block` because both the lead
+   and the rows are grids — one value serves both, and `revert` would give the
+   rows list-item and collapse the columns.
+
+   The trade, the same one every filter in this build carries: the state does
+   not survive a reload, and a filtered view cannot be linked to. */
+
+body:has(.cst-topic:checked) .cst-results [data-topic]{display:none}
+
+body:has(#cb-p-education:checked) .cst-results [data-topic~="education"],
+body:has(#cb-p-work:checked) .cst-results [data-topic~="work"],
+body:has(#cb-p-safety:checked) .cst-results [data-topic~="safety"],
+body:has(#cb-p-bills:checked) .cst-results [data-topic~="bills"]{display:grid}
+
+body:has(.cst-type:checked):not(:has(#cb-t-article:checked)) .cst-results [data-type="article"],
+body:has(.cst-type:checked):not(:has(#cb-t-story:checked)) .cst-results [data-type="story"],
+body:has(.cst-type:checked):not(:has(#cb-t-research:checked)) .cst-results [data-type="research"],
+body:has(.cst-type:checked):not(:has(#cb-t-press:checked)) .cst-results [data-type="press"]{display:none}
+
+/* The one dead end this archive has: Bill Summaries is the only topic carried
+   by a single type, so ticking it alongside a type selection that excludes
+   Articles can return nothing. One selector, because "no topic but bills" and
+   "some type but not articles" is the whole of it. */
+body:has(#cb-p-bills:checked):not(:has(#cb-p-education:checked)):not(:has(#cb-p-work:checked)):not(:has(#cb-p-safety:checked)):has(.cst-type:checked):not(:has(#cb-t-article:checked)) .cst-empty{
+  display:block}
+
+/* No :has(), no rail. The list itself is unaffected — all 23 items stay. */
+@supports not selector(body:has(a)){
+  .cst-rail{display:none}
+  .cst-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ============================== 8 · Motion =============================== */
+
+@media (prefers-reduced-motion: reduce){
+  .cst-check__box,.cst-check__box::after,.cst-clear,.cst-row__date,
+  .cst-row__title a,.cst-lead__title a{transition:none}
+}

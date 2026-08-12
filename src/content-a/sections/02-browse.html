@@ -1,0 +1,247 @@
+<!-- All Content A, "The Four Doors" — the browse section, and the whole page
+     below the hero.
+
+     THE ROADMAP’S OWN BLOCK, ALIVE. Its All Content tab draws four columns —
+     Articles, Community Stories, Research & Reports, Press Releases — each with
+     a sentence under it, then a topic list headed "Filter by Topic:". Those four
+     sentences are carried verbatim as the standing introduction to each band,
+     so the page reads as that block does when nothing is filtered, and narrows
+     to one band when a type is chosen.
+
+     NO SCRIPT. Two radio groups; the type group hides the bands it is not, the
+     topic group hides the cards that do not carry it, and "Everything" / "All"
+     are the do-nothing states rather than special cases. Radios, not
+     checkboxes, because the roadmap’s own list starts with "All" — that is
+     single-choice — and because five-by-five is a state space small enough to
+     enumerate, which is what lets the three genuinely empty pairs get a written
+     answer instead of a blank grid.
+
+     THE CONTENT IS REAL. Every card is a live empowerms.org post with its real
+     title, date and URL, pulled from the site’s REST API. Nothing here is an
+     invented headline. What IS ours is the sorting: their WordPress has no
+     "Research & Reports" category yet, so the report posts were gathered by
+     hand, and Bill Summaries is a category there but a topic here, which is
+     what the roadmap asks for. Both are flagged on the chooser. -->
+<section class="cad-browse" aria-labelledby="browse-title">
+  <h2 class="em-visually-hidden" id="browse-title">Browse all content</h2>
+
+  <form class="cad-controls">
+    <div class="em-container cad-controls__inner">
+      <fieldset class="cad-group">
+        <legend class="cad-group__label">Browse</legend>
+        <div class="cad-tabs">
+          <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-all" checked>
+          <label class="cad-tab" for="ca-t-all">Everything</label>
+          <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-article">
+          <label class="cad-tab" for="ca-t-article">Articles</label>
+          <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-story">
+          <label class="cad-tab" for="ca-t-story">Community Stories</label>
+          <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-research">
+          <label class="cad-tab" for="ca-t-research">Research &amp; Reports</label>
+          <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-press">
+          <label class="cad-tab" for="ca-t-press">Press Releases</label>
+        </div>
+      </fieldset>
+
+      <fieldset class="cad-group cad-group--topics">
+        <legend class="cad-group__label">Filter by Topic:</legend>
+        <div class="cad-chips">
+          <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-all" checked>
+          <label class="cad-chip" for="ca-p-all">All</label>
+          <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-education">
+          <label class="cad-chip" for="ca-p-education">Quality Education</label>
+          <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-work">
+          <label class="cad-chip" for="ca-p-work">Meaningful Work</label>
+          <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-safety">
+          <label class="cad-chip" for="ca-p-safety">Public Safety</label>
+          <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-bills">
+          <label class="cad-chip" for="ca-p-bills">Bill Summaries</label>
+        </div>
+      </fieldset>
+    </div>
+  </form>
+
+  <div class="em-container cad-results">
+    <!-- Shown by CSS for the three type-and-topic pairs that hold nothing:
+         bill summaries are written as articles, so no community story, report
+         or press release carries that topic. A filter that can return nothing
+         needs to say so in words. -->
+    <p class="cad-empty" role="status">Nothing here yet. Bill summaries are published as articles, so try
+      <span class="cad-empty__hint">Articles</span> above, or set the topic back to All.</p>
+
+      <section class="cad-band" data-type="article" aria-labelledby="band-article">
+        <div class="cad-band__head" data-reveal-group>
+          <h2 class="cad-band__title" id="band-article" data-reveal="rise">Articles</h2>
+          <p class="cad-band__blurb" data-reveal="rise">Explore the latest ideas, insights, and updates on the issues shaping opportunity in Mississippi.</p>
+        </div>
+        <ul class="cad-cards" data-reveal-group>
+          <li class="cad-card cad-card--lead" data-type="article" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/photography/young-man-portrait-bw.jpg" alt="Students seated at desks in a classroom, facing an adult standing near the front" width="1243" height="1580" loading="lazy" decoding="async">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-06-24">June 24, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/">Charter Schools Outperform Districts on 3rd Grade Reading Test Initial Results</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="education" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-02-05">February 5, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/education-is-economic-development-why-business-leaders-should-support-house-bill/">Education Is Economic Development: Why Business Leaders Should Support House Bill</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-10-16">October 16, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/accountability-and-action-the-path-to-safer-communities/">Accountability and Action: The Path to Safer Communities</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2026-03-27">March 27, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/from-incarceration-to-impact-how-karl-hampton-found-freedom-through-opportunity/">From Incarceration to Impact: How Karl Hampton Found Freedom Through Opportunity</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2024-08-30">August 30, 2024</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/labor-day-a-call-to-strengthen-mississippis-workforce/">Labor Day: A Call to Strengthen Mississippi’s Workforce</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2023-09-19">September 19, 2023</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/whats-next-capitalizing-on-mississippis-pro-growth-momentum/">What’s Next? Capitalizing on Mississippi’s Pro-Growth Momentum</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-02-24">February 24, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/hb-1072-voluntary-portable-benefit-plan-act/">HB 1072 — Voluntary Portable Benefit Plan Act</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-01-12">January 12, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/hb-2-mississippi-education-freedom-act/">HB 2: Mississippi Education Freedom Act</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-01-28">January 28, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/sb-2771-expanding-fresh-start/">SB 2771: Expanding Fresh Start</a></h3>
+            </div>
+          </li>
+        </ul>
+      </section>
+      <section class="cad-band" data-type="story" aria-labelledby="band-story">
+        <div class="cad-band__head" data-reveal-group>
+          <h2 class="cad-band__title" id="band-story" data-reveal="rise">Community Stories</h2>
+          <p class="cad-band__blurb" data-reveal="rise">Meet the people behind the issues and see how policy and opportunity impact real lives across Mississippi.</p>
+        </div>
+        <ul class="cad-cards" data-reveal-group>
+          <li class="cad-card cad-card--lead" data-type="story" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/photography/grandparents-grandchild.jpg" alt="A mother, a father and their young son crouched together on the grass in a park" width="922" height="617" loading="lazy" decoding="async">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-01-31">January 31, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/from-a-mothers-struggle-to-a-thriving-academy-the-story-of-knox-academy/">From a Mother’s Struggle to a Thriving Academy: The Story of Knox Academy</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="story" data-topic="education" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-01-27">January 27, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/unlimited-dreams-gives-laurel-students-another-education-option-hope/">Unlimited Dreams Gives Laurel Students Another Education Option, Hope</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="story" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-05-02">May 2, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/kyle-jackson-a-fathers-footsteps/">Kyle Jackson: A Father’s Footsteps</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="story" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2024-10-15">October 15, 2024</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/kayla-hulett-finding-freedom-after-addiction/">Kayla Hulett: Finding Freedom After Addiction</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="story" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2022-08-22">August 22, 2022</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/state-removes-regulation-entrepreneur-follows-her-dreams/">State removes regulation. Entrepreneur follows her dreams.</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="story" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2022-02-21">February 21, 2022</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/home-based-business-provides-new-career-for-entrepreneur/">Home-based business provides new career for entrepreneur</a></h3>
+            </div>
+          </li>
+        </ul>
+      </section>
+      <section class="cad-band" data-type="research" aria-labelledby="band-research">
+        <div class="cad-band__head" data-reveal-group>
+          <h2 class="cad-band__title" id="band-research" data-reveal="rise">Research &amp; Reports</h2>
+          <p class="cad-band__blurb" data-reveal="rise">Explore Mississippi-specific research, data, and policy solutions designed to turn ideas into action.</p>
+        </div>
+        <ul class="cad-cards" data-reveal-group>
+          <li class="cad-card cad-card--lead" data-type="research" data-topic="education work safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/photography/girl-writing-bw.jpg" alt="An adult writing in a spiral notebook at an office desk, black and white" width="1243" height="1580" loading="lazy" decoding="async">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2026-03-02">March 2, 2026</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/empower-ms-releases-2025-impact-report/">Empower MS Releases 2025 Impact Report</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="research" data-topic="education work safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-02-18">February 18, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/2024-impact-report-celebrating-10-years-of-service-in-mississippi/">2024 Impact Report: Celebrating 10 Years Of Service In Mississippi</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="research" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2025-01-16">January 16, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/">New Empower Mississippi Report Highlights Growth in Labor Force Participation Rate, Outlines Recommendations for Continued Improvement</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="research" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2022-12-08">December 8, 2022</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/">Empower releases report on violent crime in Mississippi</a></h3>
+            </div>
+          </li>
+        </ul>
+      </section>
+      <section class="cad-band" data-type="press" aria-labelledby="band-press">
+        <div class="cad-band__head" data-reveal-group>
+          <h2 class="cad-band__title" id="band-press" data-reveal="rise">Press Releases</h2>
+          <p class="cad-band__blurb" data-reveal="rise">Get the latest news, announcements, and updates from Empower Mississippi.</p>
+        </div>
+        <ul class="cad-cards" data-reveal-group>
+          <li class="cad-card cad-card--lead" data-type="press" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/photography/family-outdoors-park.jpg" alt="A boy reading a book at a table in a school library" width="1243" height="1580" loading="lazy" decoding="async">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-05-29">May 29, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/waitlist-funded-lawmakers-increase-funding-for-special-needs-esa/">WAITLIST FUNDED: Lawmakers Increase Funding for Special Needs ESA</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="press" data-topic="education" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-01-26">January 26, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/governor-proclaims-mississippi-school-choice-week-as-annual-celebration-of-education-expands-nationwide/">Governor Proclaims ‘Mississippi School Choice Week’ as Annual Celebration of Education Expands Nationwide</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="press" data-topic="work" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2025-03-20">March 20, 2025</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/mississippi-legislature-passes-historic-legislation-to-phase-out-mississippis-income-tax/">Mississippi Legislature Passes Historic Legislation To Phase Out Mississippi’s Income Tax</a></h3>
+            </div>
+          </li>
+          <li class="cad-card" data-type="press" data-topic="safety" data-reveal="rise">
+            <div class="cad-card__body">
+              <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2024-04-01">April 1, 2024</time></span></span>
+              <h3 class="cad-card__title"><a href="https://empowerms.org/mississippi-governor-tate-reeves-proclaims-april-second-chance-month/">Mississippi Governor Tate Reeves Proclaims April “Second Chance Month”</a></h3>
+            </div>
+          </li>
+        </ul>
+      </section>
+  </div>
+</section>

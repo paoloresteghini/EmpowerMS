@@ -1044,12 +1044,21 @@ test('every page has exactly one h1 and no skipped heading levels', () => {
    WHICH action it is is page-specific: the homepages all lead with the
    roadmap's "Explore Our Work", the About pages lead into the team page or
    the solutions. So the count is asserted for everything and the label only
-   where the roadmap fixes it. */
+   where the roadmap fixes it.
+
+   THE TWO ALL CONTENT READINGS CARRY NONE, and that is asserted rather than
+   waived: an index of everything Empower has published has nothing to ask for
+   — the filter is the action — and a filled orange button on it would have to
+   point somewhere the page is not about. Naming them here means a page that
+   loses its action fails, and so does one of these two if it grows one. */
+const NO_PRIMARY = ['dist/content-a.html', 'dist/content-b.html'];
+
 test('one orange filled button per page', () => {
   for (const { out, html } of ALLPAGES) {
     const primaries = html.match(/em-btn--primary/g) || [];
-    assert.equal(primaries.length, 1,
-      `${out}: brand rule is one orange action per view, found ${primaries.length}`);
+    const expected = NO_PRIMARY.includes(out) ? 0 : 1;
+    assert.equal(primaries.length, expected,
+      `${out}: brand rule is one orange action per view, expected ${expected}, found ${primaries.length}`);
   }
 });
 
@@ -1273,8 +1282,8 @@ test('the chooser filters without a script, and every control is a real one', ()
   assert.deepEqual(ids,
     ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
      'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
-     'set-mail', 'set-amb', 'set-give'],
-    'the facets in the rail are not the fifteen expected controls');
+     'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing'],
+    'the facets in the rail are not the seventeen expected controls');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1302,13 +1311,18 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      Method for EPIC (with the method section swapped for The Instrument's),
      Five Minutes for Email Sign Up and The Network for Ambassador.
 
-     Donate is the one set still open, and it is open for a different reason
-     from the others: Empower did not pick between A and B, they asked for a
-     third direction. C is that direction, and it has not been chosen yet, so
-     moving 'give' off this list is the commit that records the decision. */
-  const UNDECIDED = ['give'];
+     Three sets are still open. Donate is open for a different reason from the
+     others: Empower did not pick between A and B, they asked for a different
+     direction, and C and D are the two answers to that. All Content went up on
+     2026-08-12 with two readings and has not been seen yet. The landing page
+     template is open in a third sense — it is a template rather than a set of
+     options, so there is nothing to choose between, and it stays here until
+     Empower say it is right.
+
+     Moving a key off this list is the commit that records the decision. */
+  const UNDECIDED = ['give', 'content', 'landing'];
   const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 14, `expected fourteen sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 16, `expected sixteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -3458,6 +3472,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'epic-a': 'epa', 'epic-b': 'epb', 'epic-c': 'epc',
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
     'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc', 'give-d': 'gvd',
+    'content-a': 'cad', 'content-b': 'cst', 'landing': 'lnd',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its
@@ -3606,4 +3621,229 @@ test('no About stylesheet uses a coloured side stripe as an accent', () => {
         `${selector.trim().slice(0, 50)} — use the orange mark above the block instead`);
     }
   }
+});
+
+/* ===========================================================================
+   ALL CONTENT, and the landing page template.
+
+   Added 2026-08-12. The two All Content readings share a copy contract — the
+   roadmap's four type sentences and its five topic labels — and diverge on
+   everything else, so the mechanism checks are written per reading. The landing
+   page is not a reading of anything; it is checked as a template, which means
+   checking the properties that make it one.
+   ======================================================================== */
+
+/* The roadmap's All Content tab, whole. Four content types, a sentence under
+   each, and the topic list under the heading "Filter by Topic:". That is all it
+   gives — no hero, no headline — which is why the pages' own words are marked
+   as ours in the section files rather than passed off as approved copy. */
+const CONTENT_COPY = [
+  'Articles',
+  'Explore the latest ideas, insights, and updates on the issues shaping opportunity in Mississippi.',
+  'Community Stories',
+  'Meet the people behind the issues and see how policy and opportunity impact real lives across Mississippi.',
+  'Research &amp; Reports',
+  'Explore Mississippi-specific research, data, and policy solutions designed to turn ideas into action.',
+  'Press Releases',
+  'Get the latest news, announcements, and updates from Empower Mississippi.',
+  'Filter by Topic:',
+  'Quality Education',
+  'Meaningful Work',
+  'Public Safety',
+  'Bill Summaries',
+];
+
+const CONTENTPAGES = ABOUTPAGES.filter(p => p.out.includes('content-'));
+
+test('both All Content readings build', () => {
+  assert.equal(CONTENTPAGES.length, 2, `expected two All Content readings, found ${CONTENTPAGES.length}`);
+});
+
+test('every All Content reading carries the roadmap copy verbatim', () => {
+  for (const { out, html } of CONTENTPAGES) {
+    for (const line of CONTENT_COPY) {
+      /* The type names are matched against the MARKUP rather than the text, so
+         "Research & Reports" is checked as the entity the roadmap's ampersand
+         has to become. */
+      assert.ok(html.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
+    }
+  }
+});
+
+test('both All Content readings are titled All Content, not Commentary', () => {
+  /* The roadmap heads the tab "ALL CONTENT" and then names the page "Empower
+     Mississippi Commentary" at /empower-commentary. The header nav shipped on
+     every page in this build says All Content, so that is what both readings
+     use — and this test is where the decision is recorded. If Empower answer
+     the question the other way, this is the line that changes with the h1. */
+  for (const { out, html } of CONTENTPAGES) {
+    assert.match(html, /<h1[^>]*>All Content<\/h1>/, `${out}'s h1 is not "All Content"`);
+    /* Comments first. The section files DISCUSS /empower-commentary at length —
+       that is where the decision is written down — and a search over raw markup
+       would fail on the explanation rather than on a link. */
+    const markup = html.replace(/<!--[\s\S]*?-->/g, '');
+    assert.ok(!markup.includes('empower-commentary'),
+      `${out} links the roadmap's /empower-commentary URL, which this build has not adopted`);
+  }
+});
+
+test('neither All Content reading ships a filter that needs a script', () => {
+  /* The filtering is :has() over real inputs, and both stylesheets gate the
+     controls behind an @supports test so that a browser without :has() gets the
+     full unfiltered list rather than a dead panel. */
+  for (const { out, html } of CONTENTPAGES) {
+    const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
+    assert.deepEqual(scripts, ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'],
+      `${out} loads something beyond the three shared behaviour modules: ${scripts.join(', ')}`);
+    assert.match(html, /<form class="c(ad-controls|st-rail)"/,
+      `${out}'s filter is not wrapped in a form`);
+  }
+  for (const file of ['css/content-a.css', 'css/content-b.css']) {
+    const css = readFileSync(file, 'utf8');
+    assert.match(css, /@supports not selector\(body:has\(a\)\)/,
+      `${file} does not gate its filter behind an @supports test for :has()`);
+  }
+});
+
+test('every item on both All Content readings is a real empowerms.org post', () => {
+  /* An invented headline is the placeholder that reads as finished work. Every
+     card and row links out to the live site, and both readings carry the same
+     twenty-three posts, so the two can be compared without the content being a
+     variable. */
+  for (const { out, html } of CONTENTPAGES) {
+    const links = [...html.matchAll(/href="(https:\/\/empowerms\.org\/[^"]+)"/g)].map(m => m[1]);
+    const unique = new Set(links);
+    assert.equal(unique.size, 23, `${out} shows ${unique.size} posts, expected 23`);
+  }
+  const [a, b] = CONTENTPAGES;
+  const posts = page => new Set([...page.html.matchAll(/href="(https:\/\/empowerms\.org\/[^"]+)"/g)].map(m => m[1]));
+  assert.deepEqual([...posts(a)].sort(), [...posts(b)].sort(),
+    'the two All Content readings do not show the same posts, so they cannot be compared');
+});
+
+test('both All Content readings answer their one dead end in words', () => {
+  /* Bill Summaries is a topic here and a category in their WordPress, and every
+     bill summary is written as an article. So pairing that topic with any other
+     type returns nothing, and both pages have a written answer for it rather
+     than a blank grid. The rule that shows it is enumerated in CSS — there is
+     no script to count what is left. */
+  for (const { out, html } of CONTENTPAGES) {
+    assert.match(html, /class="c(ad|st)-empty" role="status"/,
+      `${out} has no empty state for the Bill Summaries pairing`);
+    assert.match(textOf(html), /bill summaries are published as articles/i,
+      `${out}'s empty state does not say why nothing matched`);
+  }
+  const a = readFileSync('css/content-a.css', 'utf8');
+  assert.match(a, /#ca-p-bills:checked\)[\s\S]{0,400}\.cad-empty/,
+    'content-a never shows its empty state');
+  const b = readFileSync('css/content-b.css', 'utf8');
+  assert.match(b, /#cb-p-bills:checked\)[\s\S]{0,600}\.cst-empty/,
+    'content-b never shows its empty state');
+});
+
+test('content-b keeps its type hides after its topic reveals', () => {
+  /* The one place in this build where rule ORDER carries behaviour. Topic is
+     multi-valued, so it uses the hide-everything-then-reveal shape; type is
+     single-valued and uses hide-only. A topic reveal can un-hide a row the type
+     facet hid, which would turn AND into OR across the two facets. The type
+     rules win because they are both later and more specific — this asserts the
+     first half, which is the half an edit can silently break. */
+  const css = readFileSync('css/content-b.css', 'utf8');
+  const reveal = css.indexOf('#cb-p-education:checked');
+  const hide = css.indexOf(':not(:has(#cb-t-article:checked))');
+  assert.ok(reveal > 0 && hide > 0, 'content-b is missing one of its two filter shapes');
+  assert.ok(hide > reveal,
+    'content-b declares its type hides BEFORE its topic reveals — the two facets now OR instead of AND');
+});
+
+test('content-a states each type once as a band and filters within it', () => {
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
+  const bands = [...html.matchAll(/<section class="cad-band" data-type="([a-z]+)"/g)].map(m => m[1]);
+  assert.deepEqual(bands, ['article', 'story', 'research', 'press'],
+    'content-a does not carry the roadmap’s four types as four bands, in its order');
+  const cards = html.match(/class="cad-card[^"]*" data-type=/g) || [];
+  assert.equal(cards.length, 23, `content-a shows ${cards.length} cards, expected 23`);
+});
+
+test('content-b is one list, newest first', () => {
+  /* The whole argument of the reading. A row out of order is not a styling slip,
+     it is the reading not being what it says it is. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
+  const dates = [...html.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})"/g)].map(m => m[1]);
+  assert.equal(dates.length, 23, `content-b shows ${dates.length} dated items, expected 23`);
+  assert.deepEqual(dates, [...dates].sort().reverse(), 'content-b is not in date order, newest first');
+  assert.equal((html.match(/class="cst-lead"/g) || []).length, 1,
+    'content-b does not have exactly one lead item');
+});
+
+test('content-b’s facet counts match what is on the page', () => {
+  /* Hand-written numbers that nobody checks quietly become wrong; this build has
+     been bitten by that twice. The counts are of this page, not of their
+     archive — that is said on the page and in the chooser — but they have to be
+     right about this page. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
+  const items = [...html.matchAll(/data-type="([a-z]+)" data-topic="([^"]*)"/g)]
+    .map(m => ({ type: m[1], topics: m[2].split(' ') }));
+  assert.equal(items.length, 23, `expected 23 items, found ${items.length}`);
+
+  for (const [id, key] of [['cb-t-article', 'article'], ['cb-t-story', 'story'],
+                           ['cb-t-research', 'research'], ['cb-t-press', 'press']]) {
+    const shown = Number(html.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="cst-check__n">(\\d+)</span>`))[1]);
+    const real = items.filter(i => i.type === key).length;
+    assert.equal(shown, real, `the ${key} facet says ${shown}, the page holds ${real}`);
+  }
+  for (const [id, key] of [['cb-p-education', 'education'], ['cb-p-work', 'work'],
+                           ['cb-p-safety', 'safety'], ['cb-p-bills', 'bills']]) {
+    const shown = Number(html.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="cst-check__n">(\\d+)</span>`))[1]);
+    const real = items.filter(i => i.topics.includes(key)).length;
+    assert.equal(shown, real, `the ${key} facet says ${shown}, the page holds ${real}`);
+  }
+});
+
+test('the landing template is six independent blocks', () => {
+  /* The property that makes it a template rather than a page: every block is a
+     section that can be deleted, reordered or repeated without taking anything
+     else with it. Six sections, six section files, and no id referenced across
+     a boundary except the hero's own link to the action band. */
+  const html = readFileSync('dist/landing.html', 'utf8');
+  const sections = html.match(/<section class="lnd-[a-z]+"/g) || [];
+  assert.equal(sections.length, 6, `expected six blocks on the landing template, found ${sections.length}`);
+  const files = readdirSync('src/landing/sections').sort();
+  assert.deepEqual(files,
+    ['00-note.html', '01-hero.html', '02-ask.html', '03-pair.html',
+     '04-voice.html', '05-act.html', '06-reading.html'],
+    'the landing template’s blocks are not one file each');
+});
+
+test('the landing template collects nothing and invents nothing', () => {
+  /* There is no endpoint behind this page, so the campaign form is a marked
+     slot rather than a drawn form — the same decision the Donate readings make
+     about the processor's fields. And no statistic: a campaign's numbers are
+     the first thing to go stale, and this build does not invent them. */
+  const html = readFileSync('dist/landing.html', 'utf8');
+  for (const tag of ['<input', '<select', '<textarea', '<form']) {
+    assert.ok(!html.slice(html.indexOf('<main')).includes(tag),
+      `the landing template’s body contains ${tag} — it has no endpoint and must collect nothing`);
+  }
+  assert.match(html, /class="lnd-act__slot" data-placeholder="form"/,
+    'the landing template has no marked slot for the campaign’s own form');
+  assert.match(html, /data-placeholder="quote"/,
+    'the landing template fills the quotation instead of holding the space for a real one');
+
+  /* Comments and markup out first, then look for the shapes a claimed statistic
+     actually takes: a percentage, a money amount, or a number written with
+     thousands separators. Bare four-digit years are not claims — the sample
+     campaign is dated, and dates are the one number this page is allowed. */
+  const prose = textOf(html.slice(html.indexOf('<main')).replace(/<!--[\s\S]*?-->/g, ''));
+  const figures = prose.match(/\d+(\.\d+)?\s?%|\$\s?\d|\b\d{1,3}(,\d{3})+\b/g) || [];
+  assert.deepEqual(figures, [], `the landing template states a figure: ${figures.join(', ')}`);
+});
+
+test('the landing template says it is a template', () => {
+  /* Review-only chrome, and the thing that stops a worked example being read as
+     a live campaign or as approved copy. It is deleted at hand-off; until then
+     it has to be there. */
+  const html = readFileSync('dist/landing.html', 'utf8');
+  assert.match(html, /<div class="lnd-note" role="note">/, 'the landing template has lost its review strip');
+  assert.match(textOf(html), /This page is a template/, 'the review strip no longer says what it is');
 });

@@ -598,7 +598,7 @@ Requires Node ≥18. No dependencies, no install step.
 node --test test.mjs
 ```
 
-116 tests. They come in two halves.
+215 tests. They come in two halves.
 
 Everything up to the divider comment near the end of `test.mjs` is about the
 **original reference build** specifically — it names `.em-*` section classes
@@ -610,7 +610,10 @@ different brands:
 
 - every line of the roadmap's approved copy appears verbatim on all four options
 - one `h1` per page, no skipped heading levels
-- exactly one orange filled button per page, and it is the hero CTA
+- exactly one orange filled button per page, and it is the hero CTA — except the
+  two All Content readings, which carry none by name: an index of everything
+  published has nothing to ask for, and the exception is asserted rather than
+  waived
 - exactly one email input per page, and it has a label
 - every image has `alt`, intrinsic dimensions and a loading strategy
 - every referenced asset exists on disk
@@ -1029,6 +1032,93 @@ Three things to settle before this ships:
   figures on either reading are the suggested amounts and the roadmap's own
   501(c)(3) line, which is reproduced verbatim because it is a legal statement
   rather than marketing copy.
+
+**All Content**, two readings, built 2026-08-12 after Kienna asked for a page
+like the Georgia Center for Opportunity's (`foropportunity.org/content`) where a
+visitor can browse and filter everything Empower publishes.
+
+The roadmap's All Content tab is unusually thin: four content types with a
+sentence under each, and a topic list headed "Filter by Topic:". No hero, no
+headline, no image note. So both readings carry those four sentences and the
+five topic labels word for word, and **every word above the filter on either
+page is ours**, written to be replaced.
+
+| Page | What it is |
+| --- | --- |
+| `dist/content-a.html` | **The Four Doors** — the roadmap's own four-column block standing up and working. The four types are bands down the page, each under its own sentence; choosing one narrows the page to it rather than sending you elsewhere. Type as tabs, topic as chips, a wide lead card with the photograph at the head of each band |
+| `dist/content-b.html` | **The Stream** — no bands. Everything in one dated spine, newest first, with the most recent piece given the weight of a front page and the rest set as ruled rows. Type becomes a facet in a held rail beside topic, and the roadmap's four sentences sit under the four type checkboxes |
+
+**The content is real.** Twenty-three live empowerms.org posts with their real
+titles, dates and URLs, pulled from the site's REST API, on both pages. A test
+asserts the two show the *same* twenty-three, so the readings can be compared
+without the content being a variable, and a second test asserts every link is an
+empowerms.org URL rather than an invented headline.
+
+Two things about that content are ours and need Empower's word:
+
+- **There is no Research & Reports category in their WordPress.** Those four
+  items were gathered by hand from their report posts. The new site needs the
+  category (or a tag) before this page can populate itself.
+- **Bill Summaries is a category there and a topic here**, which is what the
+  roadmap asks for. It has a visible consequence: every bill summary is written
+  as an article, so pairing that topic with any other type returns nothing. Both
+  readings answer that in words rather than with a blank grid, and a test fails
+  either of them if the empty state disappears.
+
+**Both filters run with no JavaScript**, the same `:has()`-over-real-inputs
+mechanism as the podcast libraries, and both stylesheets gate the controls
+behind `@supports` so a browser without `:has()` gets the full unfiltered list
+instead of a dead panel. Two consequences, both stated on the chooser: a
+filtered view cannot be linked to or bookmarked, and B's facet counts are of
+what is on the page rather than of their archive. Both are a small script's work
+in WordPress and neither is worth one here.
+
+**The two facets in B use opposite shapes, and the order of the rules carries
+the behaviour.** Type is single-valued per item, so it uses the hide-only shape
+that composes with anything. Topic is multi-valued (an impact report carries all
+three solution areas), so hide-only would turn OR into AND within the facet; it
+uses hide-everything-then-reveal instead. A topic reveal can un-hide a row the
+type facet hid, which would turn AND into OR across the two — the type rules
+come last and are more specific, and a test fails the file if they are ever
+reordered. Reading A sidesteps all of this by using radios, which is also what
+the roadmap's own "All"-first list implies.
+
+**The name is an open question.** The roadmap heads the tab "ALL CONTENT" and
+then gives "Page Title: Empower Mississippi Commentary" at `/empower-commentary`.
+Those describe two different pages, and the header nav shipped on all 45 builds
+says All Content. Both readings use **All Content** at `/content`; the question
+is on the chooser for Empower to answer, and the test that records the decision
+is the line to change if they answer the other way. The roadmap leaves the SEO
+title and description blank for this page, so both are still owed.
+
+**The landing page template**, built 2026-08-12. Kienna asked to be able to
+start with a blank page in Elementor and build a campaign or event page as
+needed. Elementor already gives her the blank page; what it cannot give her is
+this build's decisions, so `dist/landing.html` is the other half of that ask: a
+kit rather than a wireframe of a campaign.
+
+Six independent blocks, one section file each — campaign hero with one action,
+the ask with a three-point summary beside it, an image-and-text pair that flips
+and can run twice, a voice, the action band, three links out. Delete any of
+them, reorder them, run one twice; nothing depends on what sits above or below
+it, and a test asserts the count and the one-file-per-block structure.
+
+- **The sample is Empower's own Save Our ESA campaign**, which closed when the
+  waitlist was funded in May 2025 — real name, real posts linked from it, so
+  nothing reads as an invented programme. A strip at the top of the page says
+  so; that strip is review-only chrome and is deleted at hand-off.
+- **The Save Our ESA artwork is not used.** The file in their media library
+  (`esa-email-mockup.jpg`) is an email mock-up whose body text is lorem ipsum.
+  The hero carries a photograph instead. Note that the same file is captioned
+  "Research report cover" on `dist/current.html`, which is wrong and predates
+  this work.
+- **Two blocks are drawn as empty slots on purpose**: the quotation, because it
+  belongs to a real person and inventing one — or lifting somebody's words out
+  of an article to decorate a demo — is the placeholder that reads as finished
+  work while being false; and the campaign form, because there is no endpoint
+  behind the page. A test fails the page for any `<input>`, `<select>`,
+  `<textarea>` or `<form>` in its body, and for any figure written as a
+  percentage, a money amount or a thousands-separated number.
 
 ### The EPIC pages: what converts, and what to watch
 

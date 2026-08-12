@@ -1,0 +1,237 @@
+/* Campaign landing page — the template.
+
+   WHAT THIS IS. Kienna asked to be able to "start with a blank page in
+   Elementor and build something as needed" for future campaigns and events.
+   Elementor already gives her the blank page; what it does not give her is this
+   build's decisions. So this page is the other half of that ask: six blocks a
+   campaign page actually needs, in this design language, sized and spaced, to
+   be duplicated and cut down.
+
+   Every block is independent. Delete block 4, reorder 3 and 5, run block 3
+   twice with the photograph on alternating sides — nothing here depends on
+   what sits above or below it. That is the whole point of a template and it is
+   the one property worth protecting in every edit to this file.
+
+   THE SAMPLE IS REAL. Save Our ESA was Empower's own campaign and it closed
+   when the waitlist was funded in May 2025. Its name and its posts are used
+   here rather than an invented programme, and the strip at the top of the page
+   says so. Its artwork is NOT: the Save Our ESA file in their media library is
+   an email mock-up set in lorem ipsum, so the hero carries a photograph
+   instead. NO INVENTED STATISTICS — where a campaign's figure belongs, the
+   sample says so in words.
+
+   COLOUR STRATEGY: white and the subtle grey for the argument, ONE navy field
+   and it is the action. Orange is the single filled button and the 56x4 marks.
+   A campaign page is allowed the button that the content pages are not.
+
+   TWO SLOTS ARE DRAWN AS SLOTS on purpose — the quotation (block 4) and the
+   form (block 5). See the notes in those section files.
+
+   ELEMENTOR NOTE: six sections, six Elementor sections, plus the review strip
+   which is deleted at hand-off. Nothing on this page needs :has(), a script or
+   a scroll timeline.
+
+   Namespaced .lnd- throughout. */
+
+/* =========================== 0 · Review strip ============================ */
+
+/* Not part of the design. Review-only chrome, deliberately looking like a
+   note rather than like a band of the page. */
+.lnd-note{background:var(--status-warning-bg);border-bottom:1px solid #E7D3A6}
+.lnd-note p{max-width:var(--container-max);margin:0 auto;
+  padding:var(--space-4) var(--gutter);
+  font-size:var(--fs-small);line-height:1.55;color:#6A4906}
+
+/* ============================== 1 · Hero ================================= */
+
+.lnd-hero{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0
+  clamp(var(--space-9),5vw,var(--space-12));background:var(--surface-page)}
+
+.lnd-hero__grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:center}
+
+.lnd-eyebrow{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+
+.lnd-hero h1{position:relative;margin:0 0 var(--space-5);
+  font-size:var(--fs-hero);line-height:var(--lh-hero);letter-spacing:var(--ls-hero);
+  color:var(--text-strong)}
+
+.lnd-hero__lede{margin:0 0 var(--space-7);max-width:44ch;
+  font-size:var(--fs-lead);line-height:1.6;color:var(--text-body)}
+
+.lnd-hero__actions{display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-4) var(--space-7);margin:0}
+.lnd-hero__aside{font-weight:var(--fw-semibold);color:var(--em-orange-ink);
+  text-underline-offset:4px}
+
+/* One image, whatever the campaign has: a photograph here, a badge or a poster
+   just as easily. A campaign with no image deletes this column and the copy
+   runs the full width. */
+.lnd-hero__mark img{display:block;width:100%;height:clamp(280px,30vw,420px);
+  object-fit:cover;border-radius:var(--radius-media)}
+
+@media (max-width:900px){
+  .lnd-hero__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-8)}
+  .lnd-hero__mark img{height:clamp(220px,45vw,300px)}
+}
+
+/* =============================== 2 · Ask ================================= */
+
+.lnd-ask{padding:clamp(var(--space-9),4.5vw,var(--space-12)) 0;
+  background:var(--surface-subtle)}
+
+.lnd-ask__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+  column-gap:clamp(var(--space-8),4.5vw,var(--space-12));align-items:start}
+
+.lnd-ask__copy h2{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-strong)}
+.lnd-ask__copy h2::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.lnd-ask__copy p{margin:0 0 var(--space-5);max-width:56ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body)}
+.lnd-ask__copy p:last-child{margin-bottom:0}
+
+.lnd-points{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-5)}
+.lnd-point{padding:var(--space-6);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-card);background:var(--surface-page)}
+.lnd-point h3{margin:0 0 var(--space-2);font-size:var(--fs-h5);line-height:1.3;
+  color:var(--text-strong)}
+.lnd-point p{margin:0;font-size:var(--fs-small);line-height:1.55;color:var(--text-body)}
+
+@media (max-width:900px){
+  .lnd-ask__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-8)}
+}
+
+/* =============================== 3 · Pair ================================ */
+
+.lnd-pair{padding:clamp(var(--space-10),5vw,var(--space-13)) 0;
+  background:var(--surface-page)}
+
+.lnd-pair__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:center}
+/* Flip the sides for a second instance of this block on the same page. */
+.lnd-pair--flip .lnd-pair__photo{order:2}
+
+.lnd-pair__photo{display:block;width:100%;height:clamp(300px,32vw,460px);
+  object-fit:cover;border-radius:var(--radius-media)}
+
+.lnd-pair__copy h2{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-strong)}
+.lnd-pair__copy h2::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.lnd-pair__copy p{margin:0 0 var(--space-5);max-width:52ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body)}
+.lnd-pair__link{margin:0}
+.lnd-pair__link a{font-weight:var(--fw-semibold);color:var(--em-orange-ink);
+  text-underline-offset:4px}
+
+@media (max-width:820px){
+  .lnd-pair__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-7)}
+  .lnd-pair--flip .lnd-pair__photo{order:0}
+}
+
+/* ============================== 4 · Voice ================================ */
+
+/* LIGHT, not navy. The action band below is navy and it is the one dark field
+   on the page — two navy sections touching would blunt the only moment the page
+   is asking for something. */
+.lnd-voice{padding:clamp(var(--space-10),5vw,var(--space-13)) 0;
+  background:var(--surface-subtle)}
+
+/* Centred as a block, left-aligned as text. A quotation held to a reading
+   measure against the left edge of a wide section leaves the other half of the
+   row empty and reads as a layout accident. */
+.lnd-quote{margin:0 auto;max-width:64ch}
+
+/* Drawn as a slot: a dashed rule and muted type, so it reads as a space held
+   open rather than as a quotation nobody said. */
+.lnd-quote__slot{margin:0 0 var(--space-6);padding:var(--space-8) var(--space-7);
+  border:2px dashed var(--border-default);border-radius:var(--radius-panel);
+  background:var(--surface-page)}
+.lnd-quote__slot p{margin:0;font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:var(--fs-h4);line-height:1.4;
+  color:var(--text-muted)}
+
+.lnd-quote__by{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--space-2) var(--space-4)}
+.lnd-quote__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-body);color:var(--text-strong)}
+.lnd-quote__role{font-size:var(--fs-small);color:var(--text-muted)}
+
+/* ================================ 5 · Act ================================ */
+
+.lnd-act{padding:clamp(var(--space-10),5vw,var(--space-13)) 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+.lnd-act__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.95fr);
+  column-gap:clamp(var(--space-8),4.5vw,var(--space-12));align-items:center}
+
+.lnd-act__copy h2{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-inverse)}
+.lnd-act__copy h2::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.lnd-act__copy p{margin:0;max-width:44ch;font-size:var(--fs-lead);line-height:1.6;
+  color:var(--text-inverse-muted)}
+
+/* The same held space the Donate reading uses for the processor's form: drawn
+   at roughly the height the real embed occupies, marked as a slot, and
+   collecting nothing. */
+.lnd-act__slot{display:grid;align-content:center;gap:var(--space-3);
+  min-height:280px;padding:var(--space-7);
+  border:2px dashed var(--border-inverse);border-radius:var(--radius-panel);
+  background:rgba(255,255,255,.04)}
+.lnd-act__slotlabel{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.lnd-act__slotnote{margin:0;max-width:40ch;font-size:var(--fs-small);line-height:1.55;
+  color:var(--text-inverse-muted)}
+
+@media (max-width:900px){
+  .lnd-act__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-7)}
+}
+
+/* ============================== 6 · Reading ============================== */
+
+.lnd-reading{padding:clamp(var(--space-10),5vw,var(--space-12)) 0;
+  background:var(--surface-page)}
+
+.lnd-reading__head h2{position:relative;margin:0 0 var(--space-7);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h3);line-height:var(--lh-heading);color:var(--text-strong)}
+.lnd-reading__head h2::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+.lnd-reading__list{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7))}
+
+.lnd-read{position:relative;display:flex;flex-direction:column;gap:var(--space-3);
+  padding:var(--space-6);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-card);background:var(--surface-page)}
+.lnd-read__date{font-size:var(--fs-caption);font-weight:var(--fw-semibold);
+  color:var(--text-muted)}
+.lnd-read__title{margin:0;font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
+.lnd-read__title a{color:inherit;text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+.lnd-read__title a::before{content:"";position:absolute;inset:0}
+.lnd-read:hover .lnd-read__title a{color:var(--em-orange-ink)}
+.lnd-read__title a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+/* The mark, growing from the bottom-left on hover. A pseudo-element because the
+   card itself carries data-reveal and motion.css owns its transition. */
+.lnd-read::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:0;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out)}
+.lnd-read:hover::after,.lnd-read:focus-within::after{width:56px}
+
+/* ============================== 7 · Motion =============================== */
+
+@media (prefers-reduced-motion: reduce){
+  .lnd-read::after,.lnd-read__title a{transition:none}
+}

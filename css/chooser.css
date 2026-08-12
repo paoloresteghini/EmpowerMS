@@ -169,7 +169,9 @@ body:has(#set-capitol:checked) .ch__opt[data-set="capitol"],
 body:has(#set-epic:checked) .ch__opt[data-set="epic"],
 body:has(#set-mail:checked) .ch__opt[data-set="mail"],
 body:has(#set-amb:checked) .ch__opt[data-set="amb"],
-body:has(#set-give:checked) .ch__opt[data-set="give"]{display:flex}
+body:has(#set-give:checked) .ch__opt[data-set="give"],
+body:has(#set-content:checked) .ch__opt[data-set="content"],
+body:has(#set-landing:checked) .ch__opt[data-set="landing"]{display:flex}
 body:has(#set-home:checked) .ch__results > section[data-set="home"],
 body:has(#set-who:checked) .ch__results > section[data-set="who"],
 body:has(#set-do:checked) .ch__results > section[data-set="do"],
@@ -183,7 +185,9 @@ body:has(#set-capitol:checked) .ch__results > section[data-set="capitol"],
 body:has(#set-epic:checked) .ch__results > section[data-set="epic"],
 body:has(#set-mail:checked) .ch__results > section[data-set="mail"],
 body:has(#set-amb:checked) .ch__results > section[data-set="amb"],
-body:has(#set-give:checked) .ch__results > section[data-set="give"]{display:block}
+body:has(#set-give:checked) .ch__results > section[data-set="give"],
+body:has(#set-content:checked) .ch__results > section[data-set="content"],
+body:has(#set-landing:checked) .ch__results > section[data-set="landing"]{display:block}
 
 /* Status. Carries one more element on the left than the reveal rules above, so
    it outranks them when both facets are on: a card has to satisfy BOTH, and the

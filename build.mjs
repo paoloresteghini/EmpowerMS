@@ -178,6 +178,37 @@ export const PAGES = [
      is a facsimile, drawn in divs, for exactly the reason the rest of the set
      hands off rather than collects. */
   { src: 'give-d/index.html', out: 'dist/give-d.html', title: 'Donate D: The Card', kind: 'about' },
+
+  /* All Content, two readings, added 2026-08-12 after Kienna asked for a page
+     like the Georgia Center for Opportunity's and pointed at foropportunity.org
+     /content. The roadmap's own All Content tab gives four content types with a
+     sentence each and a topic list, and nothing else — no hero, no headline —
+     so every word above the filter on both pages is ours and marked as such.
+
+     The two readings answer the same page in opposite ways. A keeps the four
+     types as the structure of the page and filters within them; B dissolves
+     them into one dated stream and makes type a facet. Both run on :has() over
+     real inputs with no script, and both are populated with live empowerms.org
+     posts rather than invented headlines.
+
+     The roadmap also names this page "Empower Mississippi Commentary" at
+     /empower-commentary while heading the tab "ALL CONTENT" — and the header
+     nav shipped on every page in this build says All Content. Both readings use
+     All Content; the disagreement is a question for Empower, not a decision for
+     us. */
+  { src: 'content-a/index.html', out: 'dist/content-a.html', title: 'All Content A — The Four Doors', kind: 'about' },
+  { src: 'content-b/index.html', out: 'dist/content-b.html', title: 'All Content B — The Stream', kind: 'about' },
+
+  /* The flexible landing page. Kienna asked only for "the ability to start with
+     a blank page in Elementor and build something as needed" — which is what
+     Elementor already does — so what is built here is the other half of that
+     ask: a page whose blocks are the ones a campaign actually needs, in this
+     design language, ready to duplicate and cut down.
+
+     It is a TEMPLATE, and the sample it is dressed in is a real Empower
+     campaign (the Special Needs ESA waitlist) with real posts linked from it,
+     so nothing on it reads as an invented programme or an approved headline. */
+  { src: 'landing/index.html', out: 'dist/landing.html', title: 'Flexible landing page — the template', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

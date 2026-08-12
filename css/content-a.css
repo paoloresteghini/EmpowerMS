@@ -1,0 +1,295 @@
+/* All Content — reading A, "The Four Doors".
+
+   THE ARGUMENT: their archive is roughly 900 posts of four different kinds, and
+   the roadmap already says what those kinds are and what each one is for. So
+   the page is those four kinds, standing, with their own sentences over them —
+   and choosing one narrows the page to it rather than sending you somewhere
+   else. Nobody arrives at an All Content page wanting "content"; they arrive
+   wanting a report, or a story, or the press release they were sent.
+
+   COLOUR STRATEGY: one navy hero, then a single quiet grey field for the whole
+   browse. Not alternating bands — a type filter can hide any band, and
+   alternating backgrounds by position turn that into a page that changes colour
+   when you click a tab. Cards are white plates on the grey; navy carries the
+   selected state; orange is structural only, in the 56x4 rule over each band,
+   the mark that grows under a card on hover, and the focus ring.
+
+   NO SIDE STRIPES: every band is marked from above with the 56x4 orange rule,
+   which is this build's motif.
+
+   NO SCRIPT, and no state that outlives a reload. Two radio groups, five
+   choices each, and the whole behaviour is fourteen selectors at the bottom of
+   this file. Radios rather than checkboxes because the roadmap's own topic list
+   starts with "All", and because a five-by-five state space is small enough to
+   enumerate — which is what lets the empty pairs get an answer in words.
+
+   THE MOTION TRAP, written down because it has cost this project three bugs:
+   anything carrying data-reveal has its transition set by motion.css, and an
+   element's own `transition` loses to it. So nothing here that animates on
+   hover is a data-reveal element — the hover work is done by ::after (a
+   pseudo-element motion.css cannot reach), by the photo inside the card, and by
+   the link inside the heading.
+
+   ELEMENTOR NOTE: hero and browse are two sections. The filter will not survive
+   the conversion as-is — it needs a <form> wrapping the controls and :has()
+   reaching from body to the cards — so in WordPress this becomes the theme's
+   own filter widget or a small script over the same markup. The four blurbs,
+   the five topic labels and the card shape all convert unchanged.
+
+   Namespaced .cad- throughout. */
+
+/* ============================== 1 · Hero ================================= */
+
+.cad-hero{position:relative;isolation:isolate;overflow:hidden;
+  padding:clamp(var(--space-10),6vw,var(--space-13)) 0 clamp(var(--space-9),5vw,var(--space-12));
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+/* The brand honeycomb, same mask-not-image treatment as the homepage slab, run
+   on the diagonal so it is densest in the empty right of the hero and gone
+   under the headline. Contrast over a lattice stroke stays above AA for both
+   the white h1 and the muted lede — the ink is --blue-700 on --blue-900. */
+.cad-hero::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(to top left,
+    var(--blue-700) 0%, var(--blue-700) 16%, transparent 62%);
+  opacity:.75;
+  -webkit-mask-image:url('../patterns/hex-lattice.svg');
+  mask-image:url('../patterns/hex-lattice.svg');
+  -webkit-mask-size:78px;mask-size:78px;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+
+.cad-hero__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:end}
+
+.cad-eyebrow{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+/* tokens/base.css colours headings --text-strong, which is the same navy this
+   hero is painted in; the inverse has to be said out loud. */
+.cad-hero h1{margin:0;font-size:var(--fs-hero);line-height:var(--lh-hero);
+  letter-spacing:var(--ls-hero);color:var(--text-inverse)}
+
+.cad-hero__lede{margin:0;max-width:46ch;
+  font-size:var(--fs-lead);line-height:1.65;color:var(--text-inverse-muted)}
+
+@media (max-width:900px){
+  .cad-hero__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6);align-items:start}
+  .cad-hero__lede{max-width:60ch}
+}
+
+/* ============================= 2 · Controls ============================== */
+
+.cad-browse{background:var(--surface-subtle)}
+
+/* Sticky UNDER the sticky site header. The whole header is the sticky element,
+   not just its bar: 45px of contact strip plus .em-header__bar's scrolled
+   min-height of 68px from css/site.css, measured in the browser rather than
+   guessed. z-index sits below the header's 40 and above the cards. */
+.cad-controls{position:sticky;top:113px;z-index:30;
+  background:var(--surface-page);
+  border-bottom:1px solid var(--border-subtle);
+  box-shadow:var(--shadow-xs)}
+
+.cad-controls__inner{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
+  column-gap:clamp(var(--space-6),3vw,var(--space-10));row-gap:var(--space-4);
+  align-items:center;padding-top:var(--space-4);padding-bottom:var(--space-4)}
+
+.cad-group{border:0;margin:0;padding:0;min-width:0}
+.cad-group__label{padding:0;margin:0 0 var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted)}
+.cad-group--topics{justify-self:end}
+
+/* The radios themselves are never seen; the labels are the control. Not
+   display:none — that takes them out of the tab order and off the a11y tree
+   with them. Clipped to a pixel behind their own label instead, so focus lands
+   somewhere sensible and :focus-visible can be styled through the label. */
+.cad-radio{position:absolute;width:1px;height:1px;margin:0;opacity:0;
+  pointer-events:none}
+
+.cad-tabs,.cad-chips{display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-2) clamp(var(--space-4),2vw,var(--space-6))}
+
+.cad-tab{position:relative;cursor:pointer;padding:var(--space-2) 0 calc(var(--space-3) + 4px);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);line-height:1.2;color:var(--text-body);
+  transition:color var(--dur) var(--ease-out)}
+.cad-tab:hover{color:var(--text-strong)}
+
+/* The 56x4 mark, doing the selected-tab job it does everywhere else in this
+   build — it grows from the left rather than appearing. */
+.cad-tab::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:0;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out)}
+.cad-radio:checked + .cad-tab{color:var(--text-strong);font-weight:var(--fw-bold)}
+.cad-radio:checked + .cad-tab::after{width:100%}
+.cad-radio:focus-visible + .cad-tab{outline:3px solid var(--focus-ring);outline-offset:3px;border-radius:2px}
+
+.cad-chip{cursor:pointer;display:inline-flex;align-items:center;min-height:36px;
+  padding:0 var(--space-4);border:1px solid var(--border-default);
+  border-radius:var(--radius-pill);background:var(--surface-page);
+  font-size:var(--fs-small);font-weight:var(--fw-semibold);color:var(--text-body);
+  transition:background-color var(--dur) var(--ease-out),
+             border-color var(--dur) var(--ease-out),
+             color var(--dur) var(--ease-out)}
+.cad-chip:hover{border-color:var(--border-strong);color:var(--text-strong)}
+/* Navy fill for the selected chip, not orange: brand orange under white type is
+   3.59:1, and these labels are small. Navy is 12.6:1. */
+.cad-radio:checked + .cad-chip{background:var(--surface-navy);border-color:var(--surface-navy);
+  color:var(--text-inverse)}
+.cad-radio:focus-visible + .cad-chip{outline:3px solid var(--focus-ring);outline-offset:3px}
+
+@media (max-width:1080px){
+  .cad-controls__inner{grid-template-columns:minmax(0,1fr)}
+  .cad-group--topics{justify-self:start}
+}
+/* A filter bar that occupies half a phone screen is worse than one that
+   scrolls away with the page. */
+@media (max-width:720px){
+  .cad-controls{position:static}
+}
+
+/* ============================== 3 · Bands ================================ */
+
+.cad-results{padding-top:clamp(var(--space-9),5vw,var(--space-12));
+  padding-bottom:clamp(var(--space-10),6vw,var(--space-13))}
+
+.cad-band + .cad-band{margin-top:clamp(var(--space-8),3.5vw,var(--space-10));
+  padding-top:clamp(var(--space-8),3.5vw,var(--space-10));
+  border-top:1px solid var(--border-subtle)}
+
+.cad-band__head{max-width:62ch;margin-bottom:clamp(var(--space-6),3vw,var(--space-8))}
+.cad-band__title{position:relative;margin:0 0 var(--space-4);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-strong)}
+/* Marked from above. 56 x 4, the build's motif. */
+.cad-band__title::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.cad-band__blurb{margin:0;font-size:var(--fs-lead);line-height:1.6;color:var(--text-body)}
+
+/* ============================== 4 · Cards ================================ */
+
+.cad-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
+
+.cad-card{position:relative;overflow:hidden;display:flex;flex-direction:column;
+  padding:var(--space-6);
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-card)}
+
+/* The copy of a card is one box, not two siblings. On the lead that is what
+   lets the photograph fill the card's height while the meta line and the
+   headline stay together beside it: a photograph spanning two grid ROWS forces
+   its height into both of them, and the pair drifts apart to the top and the
+   bottom of the card. It has to be a wrapper — align-content cannot pack rows
+   that a spanning item has already stretched. */
+.cad-card__body{display:flex;flex-direction:column;gap:var(--space-4)}
+
+/* The lead of each band takes the whole first row and turns sideways —
+   photograph on the left, headline on the right. Spanning two of three columns
+   instead would leave one card stretched to the lead's height with half of it
+   empty, which is what the first draft of this did. */
+.cad-card--lead{grid-column:1/-1;display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+  align-items:center;padding:0}
+.cad-card--lead .cad-card__body{padding:var(--space-7) var(--space-7) var(--space-7) var(--space-3)}
+.cad-card--lead .cad-card__photo{align-self:stretch;height:100%;
+  min-height:clamp(240px,21vw,320px)}
+
+@media (max-width:720px){
+  .cad-card--lead{grid-template-columns:minmax(0,1fr)}
+  .cad-card--lead .cad-card__body{padding:var(--space-6)}
+}
+
+.cad-card__photo{display:block;width:100%;height:clamp(200px,22vw,272px);object-fit:cover;
+  transition:transform var(--dur-slow) var(--ease-out)}
+.cad-card:hover .cad-card__photo{transform:scale(1.035)}
+
+.cad-card__meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-4);
+  font-size:var(--fs-caption);font-weight:var(--fw-semibold);
+  letter-spacing:var(--ls-caps);text-transform:uppercase}
+.cad-card__topic{color:var(--em-orange-ink)}
+.cad-card__date{color:var(--text-muted);font-weight:var(--fw-medium);letter-spacing:normal;
+  text-transform:none}
+
+.cad-card__title{margin:0;font-size:var(--fs-h5);line-height:1.3;color:var(--text-strong)}
+.cad-card--lead .cad-card__title{font-size:var(--fs-h3)}
+.cad-card__title a{color:inherit;text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+/* The whole plate is the target; the heading link is what carries the
+   accessible name and the focus ring. */
+.cad-card__title a::before{content:"";position:absolute;inset:0}
+.cad-card:hover .cad-card__title a{color:var(--em-orange-ink)}
+.cad-card__title a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+/* The mark again, at card scale: 56 x 4, growing from the bottom-left corner on
+   hover. A pseudo-element on purpose — the card itself carries data-reveal, and
+   motion.css would replace any transition declared on it. */
+.cad-card::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:0;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out)}
+.cad-card:hover::after,.cad-card:focus-within::after{width:56px}
+
+/* ============================ 5 · Empty state ============================ */
+
+/* Marked from above like everything else, never down the side. */
+.cad-empty{display:none;position:relative;margin:0;
+  padding:calc(var(--space-7) + 4px) var(--space-7) var(--space-7);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-card);background:var(--surface-page);
+  font-size:var(--fs-lead);line-height:1.6;color:var(--text-body)}
+.cad-empty::before{content:"";position:absolute;left:var(--space-7);top:var(--space-6);
+  width:56px;height:4px;background:var(--em-orange)}
+.cad-empty__hint{font-weight:var(--fw-bold);color:var(--text-strong)}
+
+/* ============================== 6 · Filter =============================== */
+
+/* THE WHOLE BEHAVIOUR. Fourteen selectors, no script.
+
+   Shape: each group contributes HIDES only. "Everything" and "All" match
+   nothing here, so the unfiltered page is the page with no rule applied — the
+   default state is not a special case, it is the absence of one.
+
+   1 · a chosen type hides the other three bands.
+   2 · a chosen topic hides the cards that do not carry it.
+   3 · Bill Summaries hides three whole bands, because bill summaries are
+       written as articles: no story, report or press release carries that
+       topic, and a band head over an empty grid is worse than no band.
+   4 · which leaves exactly three dead ends — one of those three types with
+       Bill Summaries — and those get the message rather than a blank page. */
+
+body:has(#ca-t-article:checked) .cad-band:not([data-type="article"]),
+body:has(#ca-t-story:checked) .cad-band:not([data-type="story"]),
+body:has(#ca-t-research:checked) .cad-band:not([data-type="research"]),
+body:has(#ca-t-press:checked) .cad-band:not([data-type="press"]){display:none}
+
+body:has(#ca-p-education:checked) .cad-card:not([data-topic~="education"]),
+body:has(#ca-p-work:checked) .cad-card:not([data-topic~="work"]),
+body:has(#ca-p-safety:checked) .cad-card:not([data-topic~="safety"]),
+body:has(#ca-p-bills:checked) .cad-card:not([data-topic~="bills"]){display:none}
+
+body:has(#ca-p-bills:checked) .cad-band:not([data-type="article"]){display:none}
+
+body:has(#ca-p-bills:checked):has(#ca-t-story:checked) .cad-empty,
+body:has(#ca-p-bills:checked):has(#ca-t-research:checked) .cad-empty,
+body:has(#ca-p-bills:checked):has(#ca-t-press:checked) .cad-empty{display:block}
+
+/* No :has(), no controls. A filter bar that does nothing is worse than none,
+   and everything below it is unaffected — all 23 items stay on the page. */
+@supports not selector(body:has(a)){
+  .cad-controls{display:none}
+}
+
+/* ============================== 7 · Motion =============================== */
+
+/* Everything above that moves does so on hover and is a pseudo-element, a photo
+   or a link — never a data-reveal element. This is the only place the two
+   systems meet, and it is a stop rather than a start. */
+@media (prefers-reduced-motion: reduce){
+  .cad-tab::after,.cad-chip,.cad-card::after,.cad-card__photo,.cad-card__title a{
+    transition:none}
+  .cad-card:hover .cad-card__photo{transform:none}
+}

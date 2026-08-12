@@ -171,6 +171,13 @@ export const PAGES = [
   { src: 'give-a/index.html', out: 'dist/give-a.html', title: 'Donate A — Generational', kind: 'about' },
   { src: 'give-b/index.html', out: 'dist/give-b.html', title: 'Donate B — Next Chapter', kind: 'about' },
   { src: 'give-c/index.html', out: 'dist/give-c.html', title: 'Donate C: One Screen', kind: 'about' },
+  /* D is the second answer to the same note, built 2026-08-12. Where C redesigns
+     the giving decision and slabs the processor's part, D copies Empower's own
+     form field for field and gives it somewhere to sit: a navy banner carrying
+     the EM pattern, and a card lifting out of it into the white body. Its form
+     is a facsimile, drawn in divs, for exactly the reason the rest of the set
+     hands off rather than collects. */
+  { src: 'give-d/index.html', out: 'dist/give-d.html', title: 'Donate D: The Card', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

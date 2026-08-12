@@ -902,7 +902,7 @@ header, a different script set and different partials. Per-page notes follow.
 | `current.html`, `homepage-a..d` | `header` | `js/megamenu.js` + `css/megamenu.css` | `homepage.css`, `motion.css`, `option-*.css` |
 | `epic-a/b/c.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `epic-*.css` |
 | `mail-a/b.html`, `amb-a/b.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `mail-*.css` / `amb-*.css` |
-| `give-a/b/c.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
+| `give-a/b/c/d.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
 
 `css/header-2.css` is the header's own stylesheet — utility strip, centred nav,
 dropdown panels. In WordPress it is one global header block and this is the CSS
@@ -949,14 +949,19 @@ readings also show a real Empower campaign email from the asset library, cropped
 to its masthead, so the page shows what arrives rather than describing it. No
 page invents a subscriber count, an open rate, or a testimonial.
 
-**Donate**, three readings. A and B were built 2026-08-08; Empower said neither
+**Donate**, four readings. A and B were built 2026-08-08; Empower said neither
 landed and asked for something simpler with the giving form higher up the page
-and fewer clicks, so **One Screen** was built 2026-08-11. The last tab in the
-roadmap and the only page in the build that asks for money.
+and fewer clicks. There are two answers to that note, and they take opposite
+routes: **One Screen** (2026-08-11) redesigns the giving decision and holds the
+processor's part in a marked slot, **The Card** (2026-08-12) leaves the decision
+exactly as it is today and redesigns the setting, copying Empower's own form
+field for field. The last tab in the roadmap and the only page in the build that
+asks for money.
 
 | Page | What it is |
 | --- | --- |
 | `dist/give-a.html` | **Generational** — a photograph the width of the window, then a staircase: three plates stepping down and across with two photographs filling the gaps, because the copy's own picture of a gift is "one opportunity, one family, and one generation at a time". Amounts as a grid of tiles |
+| `dist/give-d.html` | **The Card** (*built 2026-08-12*). A short navy banner carrying the EM pattern, and one card lifting out of it, overlapping the banner's lower edge and running down into the white body. Inside the card is Empower's live donation form drawn field for field: name, email, cell, the full address, the three gift types, the credit card notice and the total. Everything else on the page is centred behind it |
 | `dist/give-c.html` | **One Screen** (*built to Empower's 2026-08-11 note*). The hero and the ask share the first screen: headline, the reader's sentence and "So do we." on the left, the gift panel on the right: how often, how much, then a marked slot for Empower's own donation form. Everything the other two put *before* the ask now sits after it, and on a phone the panel moves above the headline |
 | `dist/give-b.html` | **Next Chapter** — navy from the header down, with the ask as the only thing that changes colour: a white plate at the end of a dark scroll. The first screen is type alone, the reader's sentence answered by ours, and all the photography lands at once as four edge-to-edge panels. Amounts as a ruled list |
 
@@ -967,10 +972,24 @@ collecting real card data with nothing behind it. The amount choices are links
 that carry a figure to `/donate/give`, which is where the processor's page or
 embed lives. On One Screen the dashed box inside the panel is a deliberate
 placeholder for that embed, drawn at roughly the height the real form occupies;
-it is a `<div>` with a name and a note, never a field. `test.mjs` fails any of
-the three for a card, CVV, expiry or bank field, for a `cc-` autocomplete token,
-and for any `<form>` in the main content at all, and separately fails One Screen
-if it grows an `<input>`, `<select>`, `<textarea>` or `<button>`.
+it is a `<div>` with a name and a note, never a field.
+
+**The Card needs saying twice, because it looks like an exception and is not.**
+It reproduces the live form field for field, and every one of those fields is a
+styled `<div>` with its label as text. There is no `<input>`, `<select>`,
+`<textarea>`, `<button>`, `<label>` or `<form>` on the page. The facsimile is
+`aria-hidden` and introduced by a note saying what it is, so a screen reader is
+told about the card rather than walked through a form it cannot fill in. What
+ships is Empower's Gravity Form styled to that drawing and dropped into the
+card. Note that their own credit card row is already a notice rather than a
+field until the payment condition is met, so copying the form exactly means
+copying the notice.
+
+`test.mjs` fails any of the four for a card, CVV, expiry or bank field, for a
+`cc-` autocomplete token, and for any `<form>` in the main content at all; it
+separately fails One Screen or The Card for any real control, and fails The Card
+if it loses a field group, the credit card notice, the patterned banner or the
+overlap.
 
 Three things to settle before this ships:
 
@@ -979,7 +998,10 @@ Three things to settle before this ships:
   target is the Gravity Forms donate page itself (or the anchor of the embedded
   form on it). Point it at the real one.
 - **The ladder is a proposal, and it does not match the live form.** $25 / $50 /
-  $100 / $250 / $500 are ours. Empower's live donate page runs a Gravity Forms
+  $100 / $250 / $500 are ours, on A, B and One Screen. The Card shows no ladder
+  at all, and that is the reading rather than an omission: their form reveals the
+  suggested amounts only once a gift type is chosen, and a test fails The Card if
+  a ladder appears on it. Empower's live donate page runs a Gravity Forms
   form with a Stripe payment element, and its own ladder is a free-entry box for
   a one-time gift, $15 / $25 / $50 / $100 monthly, and $100 / $250 / $500 /
   $1,000 annually. Kienna said on 2026-08-11 that she liked the amounts we

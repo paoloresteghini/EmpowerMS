@@ -1,0 +1,139 @@
+<!-- Banner and card. Built 2026-08-12, the second answer to Empower’s note that
+     neither of the first two Donate readings landed.
+
+     Where One Screen redesigns the giving decision and slabs the processor’s
+     part, this reading does the opposite: it takes Empower’s OWN form, field for
+     field, and gives it a place to sit. A short navy banner carries the headline
+     and the roadmap’s two-beat opening, and the card lifts out of it, overlapping
+     the bottom edge and running down into the white body. The form is the page.
+
+     The card is a FACSIMILE, not a form. Every field here is a styled div with
+     its label as text: there is no input, select, textarea, button or form
+     element on this page. That is the same safety line every Donate reading
+     holds. This build is handed over as static HTML with no endpoint behind it,
+     so a real name-and-address form would collect real personal data into
+     nothing, and the card row on Empower’s own form is already a notice rather
+     than a field until the payment condition is met. What ships is their Gravity
+     Forms form, styled to this drawing, dropped into this card.
+
+     The facsimile is aria-hidden and introduced by a note above it, so a screen
+     reader is told what the card is instead of being walked through a form it
+     cannot fill in. -->
+<section class="gvd-top" aria-labelledby="give-title">
+
+  <div class="gvd-banner">
+    <div class="em-container gvd-banner__inner">
+      <h1 class="gvd-banner__title" id="give-title">Help Build a Mississippi Where Opportunity Is Within Reach</h1>
+      <p class="gvd-banner__you">You want Mississippi to be a place where children can succeed, families can thrive, and opportunity is within reach.</p>
+      <p class="gvd-banner__so">So do we.</p>
+    </div>
+  </div>
+
+  <div class="em-container gvd-stage">
+    <div class="gvd-card" id="give">
+      <h2 class="gvd-card__title">Make your gift</h2>
+      <p class="gvd-card__note">Empower’s existing donation form, drawn in the new design. On the built page this is the live form itself; here it is a picture of it, so nothing typed into it goes anywhere.</p>
+
+      <div class="gvd-form" aria-hidden="true">
+
+        <div class="gvd-group">
+          <p class="gvd-group__name">Name</p>
+          <div class="gvd-row gvd-row--2">
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">First</span>
+            </div>
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">Last</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gvd-group">
+          <p class="gvd-group__name">Email</p>
+          <div class="gvd-row gvd-row--half">
+            <div class="gvd-field"><span class="gvd-box"></span></div>
+          </div>
+        </div>
+
+        <div class="gvd-group">
+          <p class="gvd-group__name">Cell</p>
+          <div class="gvd-row gvd-row--half">
+            <div class="gvd-field"><span class="gvd-box gvd-box--hint">(999) 999-9999</span></div>
+          </div>
+        </div>
+
+        <div class="gvd-group">
+          <p class="gvd-group__name">Address</p>
+          <div class="gvd-row">
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">Street Address</span>
+            </div>
+          </div>
+          <div class="gvd-row">
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">Address Line 2</span>
+            </div>
+          </div>
+          <div class="gvd-row gvd-row--2">
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">City</span>
+            </div>
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">State / Province / Region</span>
+            </div>
+          </div>
+          <div class="gvd-row gvd-row--2">
+            <div class="gvd-field">
+              <span class="gvd-box"></span>
+              <span class="gvd-sub">Zip / Postal Code</span>
+            </div>
+            <div class="gvd-field">
+              <span class="gvd-box gvd-box--select"></span>
+              <span class="gvd-sub">Country</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="gvd-group">
+          <p class="gvd-group__name">Select Gift Type<span class="gvd-req">*</span></p>
+          <ul class="gvd-choices">
+            <li><span class="gvd-dot"></span>One Time Gift</li>
+            <li><span class="gvd-dot"></span>Monthly Gift</li>
+            <li><span class="gvd-dot"></span>Annual Gift</li>
+          </ul>
+          <p class="gvd-aside">Choosing a gift type reveals the suggested amounts for it, exactly as it does on the live form.</p>
+        </div>
+
+        <div class="gvd-group">
+          <p class="gvd-group__name gvd-group__name--alert">Credit Card</p>
+          <p class="gvd-alert">The credit card field will initiate once the payment condition is met.</p>
+        </div>
+
+        <div class="gvd-group gvd-group--total">
+          <p class="gvd-group__name">Total</p>
+          <p class="gvd-total">Calculated from the gift type and amount chosen above.</p>
+        </div>
+
+      </div>
+
+      <p class="gvd-card__act"><a class="em-btn em-btn--primary em-btn--lg" href="/donate/give">Donate Today</a></p>
+      <p class="gvd-card__legal">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
+    </div>
+  </div>
+
+  <!-- The rest of the roadmap’s opening section, under the card rather than
+       before it. Someone who arrived ready has already given by this point;
+       someone who did not is reading exactly this. It holds the card’s measure
+       so the page has one centre line all the way down. -->
+  <div class="em-container gvd-aside__wrap" data-reveal-group>
+    <p data-reveal="rise">That’s why we’re working every day to advance practical solutions that expand educational opportunity, strengthen our workforce, and build safer communities.</p>
+    <p data-reveal="rise">When you give, you become part of creating a path to generational prosperity for Mississippi’s children, workers, and families.</p>
+  </div>
+
+</section>

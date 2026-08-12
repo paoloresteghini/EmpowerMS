@@ -2939,8 +2939,8 @@ const GIVE_COPY = [
 
 const GIVEPAGES = ABOUTPAGES.filter(p => p.out.includes('give-'));
 
-test('all three Donate readings build', () => {
-  assert.equal(GIVEPAGES.length, 3, `expected three Donate readings, found ${GIVEPAGES.length}`);
+test('all four Donate readings build', () => {
+  assert.equal(GIVEPAGES.length, 4, `expected four Donate readings, found ${GIVEPAGES.length}`);
 });
 
 test('every Donate reading carries the roadmap copy verbatim', () => {
@@ -2969,9 +2969,21 @@ test('no Donate reading collects payment details', () => {
     assert.ok(!/<form/.test(html.slice(html.indexOf('<main'), html.indexOf('</main>'))),
       `${out} has a form in its main content — the processor owns the transaction`);
 
-    /* Every amount is a link, and every one of them goes to the hand-off. */
-    const amounts = [...html.matchAll(/<a class="gv[abc]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
-    assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
+    /* Every amount is a link, and every one of them goes to the hand-off.
+
+       Three of the four readings draw their own ladder. The Card does not, and
+       that is the reading rather than an omission: it copies Empower's form,
+       where the suggested amounts appear only once a gift type is chosen. So the
+       floor is asserted for the readings that offer a ladder, and The Card is
+       asserted to offer none at all — a ladder appearing there would mean the
+       page had stopped being a copy of their form. */
+    const amounts = [...html.matchAll(/<a class="gv[a-z]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
+    if (out === 'dist/give-d.html') {
+      assert.equal(amounts.length, 0,
+        `${out} draws its own amount ladder — it is a copy of Empower's form, which reveals amounts after the gift type`);
+    } else {
+      assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
+    }
     for (const href of amounts) {
       assert.match(href, /^\/donate\/give/, `${out} sends an amount to ${href}`);
     }
@@ -2986,7 +2998,11 @@ test('every hand-off link on a Donate page goes to the processor route', () => {
   for (const { out, html } of GIVEPAGES) {
     const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
     const hrefs = [...body.matchAll(/href="(\/donate[^"]*)"/g)].map(m => m[1]);
-    assert.ok(hrefs.length >= 5, `${out} has ${hrefs.length} hand-off links`);
+    /* The Card hands off once, from the button under the form; the other three
+       hand off from every tile as well. What matters on all four is that no
+       hand-off goes anywhere else. */
+    const floor = out === 'dist/give-d.html' ? 1 : 5;
+    assert.ok(hrefs.length >= floor, `${out} has ${hrefs.length} hand-off links`);
     for (const href of hrefs) {
       assert.match(href, /^\/donate\/give/, `${out} sends a donor to ${href}`);
     }
@@ -3041,6 +3057,57 @@ test('no Donate reading invents a number', () => {
         `${out} shows the figure ${figure}, which is not one of the suggested amounts`);
     }
   }
+});
+
+test('The Card is a drawing of Empower\u2019s form, not a form', () => {
+  /* The whole point of this reading is that it copies their donation form field
+     for field. The line it must not cross is turning that copy into a working
+     one: this build is handed over as static HTML with no endpoint, so a real
+     name, email and address form here would collect real personal data into
+     nothing. Every field is a styled div with its label as text.
+
+     The generic Donate sweep already bans a <form> and a payment field on all
+     four. This adds the rest of the controls, and checks the two things that
+     make the facsimile honest rather than a trap: a note saying what the card
+     is, and the drawing itself hidden from screen readers so nobody is walked
+     through a form they cannot fill in. */
+  const html = readFileSync('dist/give-d.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+  assert.ok(!/<input|<select|<textarea|<button|<label/.test(body),
+    'give-d has grown a real form control');
+  assert.match(body, /<div class="gvd-form" aria-hidden="true">/,
+    'the form facsimile is no longer hidden from screen readers');
+  assert.ok(body.includes('gvd-card__note'), 'the card no longer says what it is');
+
+  /* Their form's own card row is a notice until the payment condition is met, so
+     copying it exactly means copying the notice rather than drawing a card
+     field. */
+  assert.ok(body.includes('The credit card field will initiate once the payment condition is met.'),
+    'the credit card notice from Empower\u2019s form is missing');
+
+  /* Every field group on their form, in their order. A copy that quietly drops
+     the address or the gift type is no longer the thing that was asked for. */
+  for (const name of ['Name', 'Email', 'Cell', 'Address', 'Select Gift Type', 'Credit Card', 'Total']) {
+    assert.ok(body.includes(`>${name}<`) || body.includes(`>${name}<span`),
+      `give-d has lost the ${name} group from Empower\u2019s form`);
+  }
+  for (const sub of ['First', 'Last', 'Street Address', 'Address Line 2', 'City',
+                     'State / Province / Region', 'Zip / Postal Code', 'Country']) {
+    assert.ok(body.includes(sub), `give-d has lost the ${sub} field from Empower\u2019s form`);
+  }
+  for (const choice of ['One Time Gift', 'Monthly Gift', 'Annual Gift']) {
+    assert.ok(body.includes(choice), `give-d has lost the ${choice} option`);
+  }
+
+  /* The banner is the one Paolo asked for, and the card overlaps into the body
+     rather than sitting under the banner: a negative top margin, not a guessed
+     absolute height. */
+  const css = readFileSync('css/give-d.css', 'utf8');
+  assert.match(css, /\.gvd-banner\{[^}]*pattern-blue\.png/,
+    'the banner has lost the EM pattern');
+  assert.match(css, /\.gvd-card\{[^}]*margin-top:clamp\(-/,
+    'the card no longer overlaps the banner');
 });
 
 test('the Donate readings keep both roadmap buttons and fill only the first', () => {
@@ -3322,7 +3389,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'capitol-a': 'cca', 'capitol-b': 'ccb',
     'epic-a': 'epa', 'epic-b': 'epb', 'epic-c': 'epc',
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
-    'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc',
+    'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc', 'give-d': 'gvd',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its

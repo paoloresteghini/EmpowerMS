@@ -1,0 +1,234 @@
+/* Donate, reading D: "The Card".
+   Namespace: .gvd-
+
+   Built 2026-08-12, the second answer to Empower's note on the Donate page.
+   Reading C redesigns the giving decision and slabs the processor's part; this
+   one does the opposite. It takes Empower's own donation form, field for field,
+   and gives it somewhere to sit: a short navy banner carrying the EM pattern,
+   and a card that lifts out of it, overlapping the bottom edge and running down
+   into the white body. The form is the page.
+
+   The overlap is done with a negative margin on the card and bottom padding on
+   the banner, not with absolute positioning. An absolutely positioned card
+   leaves a hole in the flow that has to be guessed at with a fixed height, and
+   this card's height changes with the copy inside it.
+
+   Every field is a styled div with its label as text. There is no input, select,
+   textarea, button or form element on this page, which is the same line every
+   Donate reading holds: the build is handed over as static HTML with nothing
+   behind it, so a real name-and-address form would collect real personal data
+   into nothing. */
+
+/* ---------- Banner ---------- */
+.gvd-top{background:var(--surface-page)}
+.gvd-banner{
+  background:var(--surface-navy-deep) url("../assets/pattern-blue.png") center / cover no-repeat;
+  color:var(--text-inverse);
+  /* The bottom padding is what the card overlaps into. */
+  padding-block:clamp(48px,7vw,96px) clamp(96px,12vw,168px);
+}
+.gvd-banner__inner{max-width:min(var(--container-max),100%)}
+.gvd-banner__title{
+  margin:0;max-width:18ch;
+  font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:clamp(2rem,1.1rem + 3.4vw,3.6rem);
+  line-height:1.03;letter-spacing:-.032em;
+  color:var(--text-inverse);
+}
+.gvd-banner__you{
+  margin:clamp(20px,2.6vw,32px) 0 0;max-width:52ch;
+  font-size:var(--fs-lead);line-height:1.5;color:var(--text-inverse-muted);
+}
+.gvd-banner__so{
+  margin:clamp(12px,1.5vw,20px) 0 0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.4rem,1rem + 1.4vw,2.1rem);
+  letter-spacing:var(--ls-heading);
+  color:var(--orange-300);
+}
+
+/* ---------- The card ---------- */
+/* Centred and pulled up over the banner's lower edge. The width is capped in ch
+   rather than in px so the form's own measure sets it. */
+.gvd-stage{position:relative;z-index:1}
+.gvd-card{
+  max-width:60ch;margin-inline:auto;
+  margin-top:clamp(-140px,-10vw,-80px);
+  background:var(--white);
+  border-radius:var(--radius-panel);
+  box-shadow:var(--shadow-lg);
+  padding:clamp(28px,4vw,56px);
+}
+.gvd-card__title{
+  margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+/* Says what the card is before the drawing of the form starts, because the
+   drawing itself is hidden from screen readers. */
+.gvd-card__note{
+  margin:var(--space-4) 0 clamp(24px,3vw,36px);
+  padding-bottom:clamp(24px,3vw,36px);
+  border-bottom:1px solid var(--border-subtle);
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
+}
+
+/* ---------- The form facsimile ---------- */
+.gvd-group{margin-bottom:clamp(20px,2.6vw,32px)}
+.gvd-group__name{
+  margin:0 0 var(--space-3);
+  font-size:var(--fs-h4);line-height:1.2;
+  color:var(--text-body);
+}
+.gvd-group__name--alert{color:var(--status-danger)}
+.gvd-req{color:var(--em-orange);margin-left:2px}
+
+.gvd-row{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-4);margin-bottom:var(--space-4)}
+.gvd-row--2{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Email and Cell run half width on Empower's form, so they do here. */
+.gvd-row--half{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.gvd-row--half .gvd-field:only-child{grid-column:1}
+.gvd-row:last-child{margin-bottom:0}
+
+.gvd-field{display:grid;gap:6px}
+/* The box is the picture of an input: same height, same hairline, same fill. */
+.gvd-box{
+  display:flex;align-items:center;
+  min-height:46px;padding-inline:var(--space-4);
+  background:var(--white);
+  border:1px solid var(--border-default);
+  font-size:var(--fs-body);color:var(--text-muted);
+}
+.gvd-box--hint{color:var(--grey-400)}
+/* The country control is a select on their form, so it carries the chevron. */
+.gvd-box--select{position:relative}
+.gvd-box--select::after{
+  content:"";position:absolute;right:14px;top:50%;
+  width:9px;height:9px;margin-top:-6px;
+  border-right:2px solid var(--text-body);
+  border-bottom:2px solid var(--text-body);
+  transform:rotate(45deg);
+}
+.gvd-sub{
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted);
+}
+
+.gvd-choices{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
+.gvd-choices li{
+  display:flex;align-items:center;gap:var(--space-3);
+  font-size:var(--fs-body);color:var(--text-body);
+}
+.gvd-dot{
+  width:16px;height:16px;flex:0 0 auto;border-radius:50%;
+  border:1px solid var(--border-strong);background:var(--white);
+}
+.gvd-aside{
+  margin:var(--space-4) 0 0;
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
+}
+
+/* Their own card row is a notice until the payment condition is met, so copying
+   the form exactly means copying the notice. */
+.gvd-alert{
+  margin:0;padding:var(--space-5) var(--space-6);
+  border:1px solid var(--status-danger);
+  background:var(--status-danger-bg);
+  font-size:var(--fs-body);line-height:1.5;color:var(--status-danger);
+}
+
+.gvd-group--total{margin-bottom:clamp(24px,3vw,36px)}
+.gvd-total{
+  margin:0;
+  font-size:var(--fs-body);line-height:1.5;color:var(--text-muted);
+}
+
+.gvd-card__act{margin:0}
+.gvd-card__act .em-btn{width:100%}
+.gvd-card__legal{
+  margin:var(--space-5) 0 0;
+  font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted);
+}
+
+/* ---------- The copy under the card ---------- */
+.gvd-aside__wrap{
+  max-width:60ch;margin-inline:auto;
+  padding-block:clamp(40px,6vw,72px) 0;
+}
+.gvd-aside__wrap p{
+  margin:0 0 var(--space-5);
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.gvd-aside__wrap p:last-child{margin-bottom:0}
+
+/* ---------- Why Your Gift Matters ---------- */
+.gvd-matters{background:var(--surface-page);padding-block:clamp(56px,8vw,112px)}
+.gvd-matters__say{max-width:60ch;margin-inline:auto}
+.gvd-matters__title{
+  margin:0 0 clamp(20px,2.6vw,32px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-strong);
+}
+.gvd-matters__say p{
+  margin:0 0 var(--space-5);
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body);
+}
+.gvd-matters__say p:last-child{margin-bottom:0}
+.gvd-matters__say .gvd-matters__lead{
+  font-size:var(--fs-lead);line-height:1.45;
+  color:var(--text-strong);font-weight:var(--fw-semibold);
+}
+/* Edge to edge, and the only full-bleed thing on the page: the card holds the
+   centre, so the photography is what gives the page its width. */
+.gvd-pair{
+  list-style:none;margin:clamp(40px,6vw,72px) 0 0;padding:0;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.gvd-pair img{
+  display:block;width:100%;height:auto;
+  aspect-ratio:5/4;object-fit:cover;
+}
+
+/* ---------- Help Write Mississippi's Next Chapter ---------- */
+.gvd-next{
+  background:var(--surface-navy);
+  color:var(--text-inverse);
+  padding-block:clamp(56px,8vw,112px);
+}
+.gvd-next__inner{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  gap:clamp(28px,4vw,64px);align-items:end;
+}
+.gvd-next__title{
+  margin:0;max-width:20ch;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
+  color:var(--text-inverse);
+}
+.gvd-next__lead{
+  margin:clamp(20px,2.6vw,32px) 0 0;max-width:52ch;
+  font-size:var(--fs-lead);line-height:1.45;color:var(--white);
+}
+.gvd-next__body{
+  margin:var(--space-5) 0 0;max-width:60ch;
+  font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-inverse-muted);
+}
+.gvd-next__act{margin:0;white-space:nowrap}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .gvd-next__inner{grid-template-columns:minmax(0,1fr);align-items:start}
+  .gvd-next__act{white-space:normal}
+}
+
+@media (max-width:640px){
+  /* The form's paired rows stack. A 46px box in half of a 320px screen is not a
+     field anybody would want to fill in, and their own form does the same. */
+  .gvd-row--2,.gvd-row--half{grid-template-columns:minmax(0,1fr)}
+  .gvd-pair{grid-template-columns:minmax(0,1fr)}
+  .gvd-card{margin-top:clamp(-72px,-12vw,-48px)}
+}

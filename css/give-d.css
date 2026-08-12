@@ -48,16 +48,19 @@
 }
 
 /* ---------- The card ---------- */
-/* Centred and pulled up over the banner's lower edge. The width is capped in ch
-   rather than in px so the form's own measure sets it. */
+/* Centred and pulled up over the banner's lower edge. The width is set by the
+   FORM, not by a reading measure: the paired rows inside it (first/last,
+   city/state, zip/country) each need to be a field somebody would want to type
+   into, and at a 60ch card they came out under 200px apiece. 880px puts them at
+   roughly the width they have on Empower's own page. */
 .gvd-stage{position:relative;z-index:1}
 .gvd-card{
-  max-width:60ch;margin-inline:auto;
+  max-width:880px;margin-inline:auto;
   margin-top:clamp(-140px,-10vw,-80px);
   background:var(--white);
   border-radius:var(--radius-panel);
   box-shadow:var(--shadow-lg);
-  padding:clamp(28px,4vw,56px);
+  padding:clamp(28px,4vw,64px);
 }
 .gvd-card__title{
   margin:0;
@@ -152,8 +155,11 @@
 }
 
 /* ---------- The copy under the card ---------- */
+/* Narrower than the card on purpose: the card is sized by its fields, this is
+   sized by the line length somebody can actually read. Both are centred, so they
+   share one centre line down the page. */
 .gvd-aside__wrap{
-  max-width:60ch;margin-inline:auto;
+  max-width:64ch;margin-inline:auto;
   padding-block:clamp(40px,6vw,72px) 0;
 }
 .gvd-aside__wrap p{
@@ -164,7 +170,7 @@
 
 /* ---------- Why Your Gift Matters ---------- */
 .gvd-matters{background:var(--surface-page);padding-block:clamp(56px,8vw,112px)}
-.gvd-matters__say{max-width:60ch;margin-inline:auto}
+.gvd-matters__say{max-width:64ch;margin-inline:auto}
 .gvd-matters__title{
   margin:0 0 clamp(20px,2.6vw,32px);
   font-family:var(--font-display);font-weight:var(--fw-bold);

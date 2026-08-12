@@ -1320,6 +1320,50 @@ test('every build on the chooser is filterable, and every set has exactly one pi
   }
 });
 
+test('every number on the chooser rail counts something real', () => {
+  /* The counts beside each facet, and the New badges, are hand-written. This
+     build has been bitten twice by hand-maintained lists that stopped matching
+     what was built and went on passing: the side-stripe sweep with its typed
+     page list, and these badges, which still said "New today" about four sets a
+     week after they went up. A number nobody checks is a number that quietly
+     becomes wrong, and on a page whose whole job is helping Empower see what
+     changed, that is worse than having no number.
+
+     So: each Set count is the number of cards in that set, and the Signed off
+     count is the number of chosen builds across the page. Both derived from the
+     markup, not from memory. */
+  const chooser = readFileSync('dist/index.html', 'utf8');
+
+  const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
+  for (const section of sections) {
+    const key = section.match(/data-set="([a-z]+)"/)[1];
+    const built = (section.match(/<li data-set="[a-z]+" class="ch__opt/g) || []).length;
+
+    const facet = chooser.match(
+      new RegExp(`id="set-${key}"[\\s\\S]*?<span class="ch__check__n">(\\d+)</span>`));
+    assert.ok(facet, `the ${key} facet has no count beside it`);
+    assert.equal(Number(facet[1]), built,
+      `the ${key} facet says ${facet[1]} builds, the page shows ${built}`);
+  }
+
+  const picks = (chooser.match(/ch__opt--pick/g) || []).length;
+  const signed = chooser.match(/id="signed-off"[\s\S]*?<span class="ch__check__n">(\d+)<\/span>/);
+  assert.ok(signed, 'the Signed off facet has no count beside it');
+  assert.equal(Number(signed[1]), picks,
+    `the Signed off facet says ${signed[1]}, the page marks ${picks} chosen builds`);
+
+  /* And a New badge only on a set Empower has not chosen from yet. Once a set is
+     decided it is not news, it is a record. */
+  for (const section of sections) {
+    const key = section.match(/data-set="([a-z]+)"/)[1];
+    const decided = section.includes('ch__opt--pick');
+    const badged = new RegExp(`id="set-${key}"[\\s\\S]{0,240}?ch__new`).test(chooser);
+    if (decided) {
+      assert.ok(!badged, `the ${key} set is chosen and still carries a New badge`);
+    }
+  }
+});
+
 test('the chooser page is review-only and never links into the hand-off as a homepage', () => {
   const chooser = readFileSync('dist/index.html', 'utf8');
   assert.match(chooser, /<meta name="robots" content="noindex">/, 'the chooser is indexable');

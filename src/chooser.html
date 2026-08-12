@@ -53,7 +53,7 @@
             <label class="ch__check__label" for="signed-off">
               <span class="ch__check__box" aria-hidden="true"></span>
               Signed off
-              <span class="ch__check__n">10</span>
+              <span class="ch__check__n">13</span>
             </label>
           </div>
         </fieldset>
@@ -65,7 +65,7 @@
             <label class="ch__check__label" for="set-home">
               <span class="ch__check__box" aria-hidden="true"></span>
               The homepage
-              <span class="ch__check__n">7</span>
+              <span class="ch__check__n">6</span>
             </label>
           </div>
           <div class="ch__check">
@@ -153,7 +153,6 @@
             <label class="ch__check__label" for="set-mail">
               <span class="ch__check__box" aria-hidden="true"></span>
               Email Sign Up
-              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
               <span class="ch__check__n">2</span>
             </label>
           </div>
@@ -162,7 +161,6 @@
             <label class="ch__check__label" for="set-amb">
               <span class="ch__check__box" aria-hidden="true"></span>
               Ambassador
-              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
               <span class="ch__check__n">2</span>
             </label>
           </div>
@@ -172,7 +170,7 @@
               <span class="ch__check__box" aria-hidden="true"></span>
               Donate
               <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
-              <span class="ch__check__n">2</span>
+              <span class="ch__check__n">4</span>
             </label>
           </div>
         </fieldset>
@@ -670,8 +668,7 @@
 
   <section data-set="give" aria-labelledby="group-give">
     <h2 class="ch__group" id="group-give">Donate</h2>
-    <p class="ch__groupnote"><strong>New: two answers to the same note.</strong> Empower said neither of the first two landed and asked for something simpler and more streamlined, with the giving form higher up the page and fewer clicks between arriving and giving. <strong>One Screen</strong> (11 August) redesigns the giving decision itself and holds the processor’s part in a marked slot. <strong>The Card</strong> (12 August) does the opposite: it takes Empower’s existing donation form, field for field, and gives it somewhere to sit. Both put the ask on the first screen. A and B are left up so all four can be read against each other.</p>
-    <p class="ch__groupnote">The last tab in the roadmap, now in four readings, and the only page in the build that asks for money. <strong>None of them collects payment details.</strong> The amount choices are links that carry a figure to <code>/donate/give</code>, which is where the processor’s own page or embed lives; card numbers, expiry dates and bank details belong to the processor and never to this site. A test fails any of them for a card, CVV, expiry or bank field. The figures on the ladder — $25 through $500, and monthly — are a proposal: Empower set the real ladder, and the live site’s processor URL was not exposed in its markup, so <code>/donate/give</code> is a placeholder route to be pointed at the real one.</p>
+    <p class="ch__groupnote">The last tab in the roadmap and the only page in the build that asks for money. <strong>New: two answers to the same note.</strong> Empower said neither of the first two readings landed, and asked for something simpler with the giving form higher up the page. <strong>The Card</strong> takes their existing donation form, field for field, and gives it somewhere to sit. <strong>One Screen</strong> redesigns the giving decision itself. Both put the ask on the first screen, and A and B are left up so all four can be read against each other.</p>
     <ul class="ch__list">
       <li data-set="give" class="ch__opt">
         <p class="ch__tag">Donate D, new</p>
@@ -717,9 +714,8 @@
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote">The roadmap gives this tab two “Donate Today” buttons. The page’s single orange action goes to the ask (the hero on A and B, the gift panel on One Screen) and the other is drawn as a secondary, so nothing is lost and no page carries two orange fills. No reading invents a total raised, a donor count, or a progress bar: this page has no numbers on it except the amounts you might give and the 501(c)(3) line the roadmap supplies.</p>
-    <p class="ch__groupnote"><strong>How the two new readings differ.</strong> One Screen redesigns the giving decision: frequency and amount are drawn our way, high on the page, and the dashed box below them is a deliberate placeholder for the form Empower already run (the live donate page uses a Gravity Forms form with a Stripe payment element), drawn at roughly the height the real one occupies. The Card leaves that decision exactly as it is today and redesigns the setting instead, so the form on it is the live form’s own fields in the live form’s own order, including the credit card notice that stands in until the payment condition is met, and the suggested amounts that appear only once a gift type is chosen.</p>
-    <p class="ch__groupnote"><strong>Two things to confirm.</strong> First, the amounts. The live form offers a free-entry box for a one-time gift, $15/$25/$50/$100 monthly, and $100/$250/$500/$1,000 annually, where One Screen’s ladder is $25 through $500 for every frequency. That ladder is the one Empower said they liked, so it is what is built; say the word and it becomes the live one instead. Second, <code>/donate/give</code>: every amount, frequency and Donate Today link on all four readings points at it, and it needs to be the real donate page or the anchor of the embedded form. <strong>None of the four collects a payment detail</strong>, and on The Card that goes further: every field in it is a drawing, not a control, because a real name-and-address form on a page with no endpoint would be collecting real personal data into nothing.</p>
+    <p class="ch__groupnote"><strong>None of the four collects a payment detail.</strong> Card numbers, expiry dates and bank details belong to the processor, and a test fails every one of these pages for a card, CVV, expiry or bank field. On The Card that goes further: each field in it is a drawing rather than a control, because a real name-and-address form on a page with nothing behind it would be collecting real personal data into nothing. No reading invents a total raised, a donor count or a progress bar.</p>
+    <p class="ch__groupnote"><strong>Two things to confirm.</strong> The amounts: One Screen offers $25 through $500 at every frequency, where the live form offers an open box for a one-time gift, $15/$25/$50/$100 monthly and $100/$250/$500/$1,000 annually. The route: every amount and Donate Today link points at <code>/donate/give</code>, which needs to become the real donate page.</p>
   </section>
 
   <section class="ch__shared" aria-labelledby="shared-title">

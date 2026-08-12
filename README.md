@@ -949,6 +949,24 @@ readings also show a real Empower campaign email from the asset library, cropped
 to its masthead, so the page shows what arrives rather than describing it. No
 page invents a subscriber count, an open rate, or a testimonial.
 
+**The live donate page is Gravity Forms with the Stripe add-on**, and the Stripe
+Payment Element is embedded in Empower's own page. Nothing redirects to
+stripe.com, no Payment Link, no hosted Checkout. Confirmed from the markup on
+2026-08-12: `gravityforms 3.0.2`, `gravityformsstripe 7.0.3`, a
+`stripe_creditcard` field and a `payment-element` mount. Three things follow.
+
+- **There is nothing to hand off to.** The form lives on `/donate/` itself, so
+  One Screen puts the choice above it and the form below it, on one page.
+- **Gravity Forms can be driven by the URL.** A field with "Allow field to be
+  populated dynamically" ticked and a parameter name set will fill in from a
+  query string, so an amount tile can be a link. **It is not switched on today.**
+  Six plausible parameter names were tested against the live form and none
+  populated anything, so the names in this build (`gift_type`, `amount`) are
+  ours, and swapping in the real ones is one edit per tile.
+- **The card row is Stripe's.** Its contents are inside an iframe Stripe owns.
+  We style the row around it and the label above it; that is the whole extent of
+  it, and it will not match the rest of the form.
+
 **Donate**, four readings. A and B were built 2026-08-08; Empower said neither
 landed and asked for something simpler with the giving form higher up the page
 and fewer clicks. There are two answers to that note, and they take opposite
@@ -962,7 +980,7 @@ asks for money.
 | --- | --- |
 | `dist/give-a.html` | **Generational** — a photograph the width of the window, then a staircase: three plates stepping down and across with two photographs filling the gaps, because the copy's own picture of a gift is "one opportunity, one family, and one generation at a time". Amounts as a grid of tiles |
 | `dist/give-d.html` | **The Card** (*built 2026-08-12*). A short navy banner carrying the EM pattern, and one card lifting out of it, overlapping the banner's lower edge and running down into the white body. Inside the card is Empower's live donation form drawn field for field: name, email, cell, the full address, the three gift types, the credit card notice and the total. Everything else on the page is centred behind it |
-| `dist/give-c.html` | **One Screen** (*built to Empower's 2026-08-11 note*). The hero and the ask share the first screen: headline, the reader's sentence and "So do we." on the left, the gift panel on the right: how often, how much, then a marked slot for Empower's own donation form. Everything the other two put *before* the ask now sits after it, and on a phone the panel moves above the headline |
+| `dist/give-c.html` | **One Screen** (*rebuilt 2026-08-12*). The two decisions that cost the clicks, how often and how much, on the first screen beside a short hero; Empower's own form directly beneath on the same page with that choice already filled into it. No hand-off, because there is nowhere to hand off to |
 | `dist/give-b.html` | **Next Chapter** — navy from the header down, with the ask as the only thing that changes colour: a white plate at the end of a dark scroll. The first screen is type alone, the reader's sentence answered by ours, and all the photography lands at once as four edge-to-edge panels. Amounts as a ruled list |
 
 **No reading collects payment details, and that is not a style choice.** Card

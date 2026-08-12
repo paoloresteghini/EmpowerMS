@@ -684,10 +684,10 @@
       <li data-set="give" class="ch__opt">
         <p class="ch__tag">Donate C, new</p>
         <h3><a href="give-c.html">One Screen</a></h3>
-        <p class="ch__desc">The page has one job, so the job is on the first screen. A short hero holds the left (the headline, the reader’s sentence, and “So do we.”) and the gift panel holds the right: how often, how much, then the slot where Empower’s own donation form drops in. Everything the other two readings put <em>before</em> the ask now sits after it, for the reader who has not decided yet. On a phone the panel moves above the headline rather than below the copy: nobody should scroll past an argument to reach the thing they came to do.</p>
+        <p class="ch__desc">The page has one job, so the job is on the first screen: a short hero on the left, and on the right the only two decisions that cost a donor any clicks, how often and how much. Empower’s own form then sits <em>underneath, on the same page</em>, with that choice already filled into it. Everything the first two readings put before the ask now sits after it, for the reader who has not decided yet, and on a phone the choice moves above the headline. Nobody should scroll past an argument to reach the thing they came to do.</p>
         <dl class="ch__meta">
           <div><dt>Feels like</dt><dd>Direct. One decision, in view</dd></div>
-          <div><dt>Signature</dt><dd>Hero and gift panel on one screen</dd></div>
+          <div><dt>Signature</dt><dd>Choose first, form fills in below</dd></div>
           <div><dt>Best for</dt><dd>Fewest clicks between arriving and giving</dd></div>
         </dl>
       </li>
@@ -714,8 +714,9 @@
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote"><strong>None of the four collects a payment detail.</strong> Card numbers, expiry dates and bank details belong to the processor, and a test fails every one of these pages for a card, CVV, expiry or bank field. On The Card that goes further: each field in it is a drawing rather than a control, because a real name-and-address form on a page with nothing behind it would be collecting real personal data into nothing. No reading invents a total raised, a donor count or a progress bar.</p>
-    <p class="ch__groupnote"><strong>Two things to confirm.</strong> The amounts: One Screen offers $25 through $500 at every frequency, where the live form offers an open box for a one-time gift, $15/$25/$50/$100 monthly and $100/$250/$500/$1,000 annually. The route: every amount and Donate Today link points at <code>/donate/give</code>, which needs to become the real donate page.</p>
+    <p class="ch__groupnote"><strong>What the live form actually is.</strong> Gravity Forms with the Stripe add-on, and the Stripe payment element sits inside your own page: nothing redirects to stripe.com. That is why One Screen has no hand-off in it. The tiles link to <code>/donate/</code> with the choice in the address, and the form below fills in from it. Two consequences worth knowing: the card field will always look like Stripe rather than like the rest of the form, because Stripe owns what is inside it; and the amount tiles are a <em>shortcut into</em> your form, not a replacement for it, so nothing about how giving works has to change.</p>
+    <p class="ch__groupnote"><strong>None of the four collects a payment detail.</strong> Card numbers, expiry dates and bank details belong to the processor, and a test fails every one of these pages for a card, CVV, expiry or bank field. On One Screen and The Card that goes further: each field drawn on them is a picture rather than a control, because a real name-and-address form on a page with nothing behind it would be collecting real personal data into nothing. No reading invents a total raised, a donor count or a progress bar.</p>
+    <p class="ch__groupnote"><strong>Three things we need from Empower.</strong> <strong>1.</strong> Switch on “Allow field to be populated dynamically” for the gift type and amount fields on form 4, and tell us the parameter names. That is the whole mechanism behind One Screen; it is not on today, and the names in the build are ours as a stand-in. <strong>2.</strong> The amounts. One Screen offers $25 through $500, where the live form offers an open box for a one-time gift, $15/$25/$50/$100 monthly and $100/$250/$500/$1,000 annually. <strong>3.</strong> Confirm the donate page URL, which the build assumes is <code>/donate/</code>. A and B still hand off to a placeholder route, <code>/donate/give</code>, because they were built before we knew any of this.</p>
   </section>
 
   <section class="ch__shared" aria-labelledby="shared-title">

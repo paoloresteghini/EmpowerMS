@@ -1,27 +1,25 @@
-<!-- Hero and gift, on one screen. Built 2026-08-11 to Empower’s brief: neither of
-     the first two readings landed, and what was asked for was "simpler and more
-     streamlined… as easy as possible for someone to give with fewer clicks", with
-     the giving form high on the page, "right after a simple hero with a strong
-     headline and brief introductory text".
+<!-- Hero and the choice, on one screen. Built 2026-08-11 to Empower’s brief that
+     neither of the first two readings landed: "simpler and more streamlined… as
+     easy as possible for someone to give with fewer clicks", with the giving form
+     high on the page. Rebuilt 2026-08-12 once we knew what the live form is.
 
-     So the hero and the ask are the same screen rather than the first and the
-     last thing on the page. The words hold the left column, the gift holds the
-     right, and at the width where two columns stop working the gift moves ABOVE
-     everything else rather than below it. On a page with one job, the job goes
-     first.
+     It is Gravity Forms with the Stripe add-on, and the Stripe Payment Element is
+     embedded in Empower’s own page. Nothing redirects to stripe.com. That changes
+     the shape of this reading: the form is not somewhere else, it is further down
+     the same page, so there is no hand-off to design around. The two decisions
+     that cost the clicks (how often, how much) come first, and the tiles carry the
+     answer into the form below.
 
-     The roadmap’s opening is a two-beat: the reader’s want, then "So do we." Both
-     are here, and they are all that is here. The two paragraphs that followed
-     them in the roadmap have moved under the fold of the gift, where they answer
-     "what will this do?" for a reader who has not decided yet. The hero stays
-     the four lines Empower asked for.
+     Every tile is a link to /donate/ with the choice in the query string. Gravity
+     Forms populates a field from a query parameter when that field has "Allow
+     field to be populated dynamically" ticked and a parameter name set. It is NOT
+     switched on today: six plausible names were tested against the live form on
+     2026-08-12 and none populated anything. So the names here are ours, they are
+     documented on the chooser as an ask, and swapping in the real ones is one
+     edit per tile.
 
-     Nothing in this section collects a payment. The amount and frequency choices
-     are LINKS that carry the choice to /donate/give, and the details-and-card
-     step is a marked placeholder for Empower’s existing donation form. That is a
-     safety decision as much as a design one: this build is handed over as static
-     HTML with no endpoint behind it, so a real card field here would be
-     collecting real card data into nothing. -->
+     Links, not fields. Nothing here collects anything: the form owns every input,
+     and this build has no endpoint behind it. -->
 <section class="gvc-hero" aria-labelledby="give-title">
   <div class="em-container gvc-hero__grid">
 
@@ -31,51 +29,36 @@
       <p class="gvc-hero__so">So do we.</p>
     </div>
 
-    <!-- The gift. One panel, three decisions, in the order a donor makes them:
-         how often, how much, then who you are, and only the first two belong to
-         us. -->
     <div class="gvc-give" id="give">
       <h2 class="gvc-give__title">Make your gift</h2>
 
       <div class="gvc-field">
         <h3 class="gvc-field__label" id="freq-label">How often</h3>
         <ul class="gvc-freq" aria-labelledby="freq-label">
-          <li><a class="gvc-freq__opt" href="/donate/give?frequency=once">One time</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/give?frequency=monthly">Monthly</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/give?frequency=annual">Annually</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=one-time#give-form">One time</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=monthly#give-form">Monthly</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=annual#give-form">Annually</a></li>
         </ul>
       </div>
 
       <div class="gvc-field">
         <h3 class="gvc-field__label" id="amount-label">How much</h3>
         <ul class="gvc-ladder" aria-labelledby="amount-label">
-          <li><a class="gvc-amount" href="/donate/give?amount=25"><span class="gvc-amount__figure">$25</span></a></li>
-          <li><a class="gvc-amount" href="/donate/give?amount=50"><span class="gvc-amount__figure">$50</span></a></li>
-          <li><a class="gvc-amount" href="/donate/give?amount=100"><span class="gvc-amount__figure">$100</span></a></li>
-          <li><a class="gvc-amount" href="/donate/give?amount=250"><span class="gvc-amount__figure">$250</span></a></li>
-          <li><a class="gvc-amount" href="/donate/give?amount=500"><span class="gvc-amount__figure">$500</span></a></li>
-          <li><a class="gvc-amount gvc-amount--other" href="/donate/give"><span class="gvc-amount__figure">Other</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=25#give-form"><span class="gvc-amount__figure">$25</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=50#give-form"><span class="gvc-amount__figure">$50</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=100#give-form"><span class="gvc-amount__figure">$100</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=250#give-form"><span class="gvc-amount__figure">$250</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=500#give-form"><span class="gvc-amount__figure">$500</span></a></li>
+          <li><a class="gvc-amount gvc-amount--other" href="/donate/?gift_type=one-time#give-form"><span class="gvc-amount__figure">Other</span></a></li>
         </ul>
       </div>
 
-      <!-- The placeholder, drawn at roughly the height the real thing occupies so
-           the panel is not a lie about how long the page is. Empower’s live donate
-           page runs a Gravity Forms form with a Stripe payment element, and that
-           form is what drops in here at build time. Named, dashed and captioned,
-           because an unlabelled grey box in a review reads as an unfinished
-           design rather than as a deliberate slot. -->
-      <div class="gvc-slot">
-        <p class="gvc-slot__name">Your details and payment</p>
-        <p class="gvc-slot__note">Empower’s existing donation form embeds here: name, email, address and card details, handled by the payment processor. This wireframe never collects them itself.</p>
-      </div>
-
-      <p class="gvc-give__act"><a class="em-btn em-btn--primary em-btn--lg" href="/donate/give">Donate Today</a></p>
-      <p class="gvc-give__legal">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
+      <p class="gvc-give__hand">Choosing here fills in the form below. Nothing else to do first.</p>
     </div>
 
-    <!-- The rest of the roadmap’s opening section, under the gift rather than
-         above it. A donor who arrived ready has already given by this point; a
-         donor who did not is reading exactly this. -->
+    <!-- The rest of the roadmap’s opening section, under the choice rather than
+         above it. Somebody who arrived ready has already chosen by this point;
+         somebody who did not is reading exactly this. -->
     <div class="gvc-hero__under" data-reveal-group>
       <p data-reveal="rise">That’s why we’re working every day to advance practical solutions that expand educational opportunity, strengthen our workforce, and build safer communities.</p>
       <p data-reveal="rise">When you give, you become part of creating a path to generational prosperity for Mississippi’s children, workers, and families.</p>

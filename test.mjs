@@ -1280,14 +1280,30 @@ test('the chooser filters without a script, and every control is a real one', ()
   const ids = [...chooser.matchAll(/<input class="ch__check__input[^"]*" type="checkbox" id="([^"]+)"/g)]
     .map(m => m[1]);
   assert.deepEqual(ids,
-    ['signed-off', 'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
+    ['to-review', 'signed-off', 'archived',
+     'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
      'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
      'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing'],
-    'the facets in the rail are not the seventeen expected controls');
+    'the facets in the rail are not the three statuses and sixteen sets expected');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
   }
+
+  /* The Set facet folds, because sixteen rows made the rail taller than the page
+     beside it. Three things have to hold. It is a <details> and it is SHUT, which
+     is the point. The fieldset and its legend survive inside it, so the grouping
+     is still there for a screen reader even though the summary is what is read
+     visually. And a set ticked behind a shut panel has to announce itself, or the
+     page is filtered for a reason nobody can see. */
+  assert.match(chooser, /<details class="ch__facet ch__facet--fold">/,
+    'the Set facet is not collapsible, and sixteen rows is longer than the page beside it');
+  assert.ok(!/<details class="ch__facet ch__facet--fold" open>/.test(chooser),
+    'the Set facet ships open, so folding it buys nothing');
+  assert.match(chooser, /<fieldset class="ch__facet__body">\s*\n\s*<legend class="em-visually-hidden">Set<\/legend>/,
+    'the Set checkboxes have lost their fieldset or its legend, so they are no longer a named group');
+  assert.match(css, /\.ch__facet--fold:has\(\.ch__set:checked\) \.ch__facet__summary::after\{content:"Filtered"/,
+    'a set ticked behind the shut Set panel says nothing, so the page is filtered invisibly');
 });
 
 test('every build on the chooser is filterable, and every set has exactly one pick', () => {
@@ -1315,13 +1331,13 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      others: Empower did not pick between A and B, they asked for a different
      direction, and C and D are the two answers to that. All Content went up on
      2026-08-12 with two readings and has not been seen yet. The landing page
-     template is open in a third sense — it is a template rather than a set of
-     options, so there is nothing to choose between, and it stays here until
-     Empower say it is right.
+     template went up the same day with two readings of its own, which differ in
+     one decision: whether the ask waits at the bottom of the page or is held
+     beside the argument.
 
      Moving a key off this list is the commit that records the decision. */
-  const UNDECIDED = ['give', 'content', 'landing'];
-  const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
+  const UNDECIDED = ['content', 'landing'];
+  const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
   assert.equal(sections.length, 16, `expected sixteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
@@ -1343,15 +1359,22 @@ test('every number on the chooser rail counts something real', () => {
      becomes wrong, and on a page whose whole job is helping Empower see what
      changed, that is worse than having no number.
 
-     So: each Set count is the number of cards in that set, and the Signed off
+     So: each Set count is how many builds exist for that set, and the Signed off
      count is the number of chosen builds across the page. Both derived from the
-     markup, not from memory. */
+     markup, not from memory.
+
+     A set's builds are no longer all in its own section: the ones Empower did not
+     take are rows in the archive at the foot of the page. The count still means
+     "builds for this set", so it counts both, which is also why ticking a set and
+     finding fewer things than the number promised is a failure this catches. */
   const chooser = readFileSync('dist/index.html', 'utf8');
 
-  const sections = chooser.match(/<section data-set="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
+  const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
-    const built = (section.match(/<li data-set="[a-z]+" class="ch__opt/g) || []).length;
+    const inSection = (section.match(/<li data-set="[a-z]+" class="ch__opt/g) || []).length;
+    const archived = (chooser.match(new RegExp(`<li class="ch__arc__item" data-set="${key}"`, 'g')) || []).length;
+    const built = inSection + archived;
 
     const facet = chooser.match(
       new RegExp(`id="set-${key}"[\\s\\S]*?<span class="ch__check__n">(\\d+)</span>`));
@@ -1360,11 +1383,33 @@ test('every number on the chooser rail counts something real', () => {
       `the ${key} facet says ${facet[1]} builds, the page shows ${built}`);
   }
 
-  const picks = (chooser.match(/ch__opt--pick/g) || []).length;
-  const signed = chooser.match(/id="signed-off"[\s\S]*?<span class="ch__check__n">(\d+)<\/span>/);
-  assert.ok(signed, 'the Signed off facet has no count beside it');
-  assert.equal(Number(signed[1]), picks,
-    `the Signed off facet says ${signed[1]}, the page marks ${picks} chosen builds`);
+  /* The three Status counts, each against the thing it filters to. Signed off is
+     the picks, To review is every card that is not one (only the open sets have
+     any, because a decided set keeps nothing else), and Archived is the rows in
+     the archive. These are the numbers a client reads to know how much is left,
+     so they are the last three on this page that should be allowed to drift. */
+  const statusCount = id =>
+    Number(chooser.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="ch__check__n">(\\d+)</span>`))[1]);
+  const cardsIn = sections.join('');
+  const picks = (cardsIn.match(/ch__opt--pick/g) || []).length;
+  const open = (cardsIn.match(/<li data-set="[a-z]+" class="ch__opt">/g) || []).length;
+  const archived = (chooser.match(/<li class="ch__arc__item"/g) || []).length;
+
+  assert.equal(statusCount('signed-off'), picks,
+    `the Signed off facet says ${statusCount('signed-off')}, the page marks ${picks} chosen builds`);
+  assert.equal(statusCount('to-review'), open,
+    `the To review facet says ${statusCount('to-review')}, the page shows ${open} builds without a decision`);
+  assert.equal(statusCount('archived'), archived,
+    `the Archived facet says ${statusCount('archived')}, the archive holds ${archived}`);
+  /* And the three together account for every build the page offers, each exactly
+     once: a page listed twice, or a card in neither state, shows up here as a sum
+     that does not match. */
+  const offered = new Set([
+    ...[...cardsIn.matchAll(/<h3><a href="([a-z0-9-]+\.html)"/g)].map(m => m[1]),
+    ...[...chooser.matchAll(/<h4 class="ch__arc__name"><a href="([a-z0-9-]+\.html)"/g)].map(m => m[1]),
+  ]);
+  assert.equal(picks + open + archived, offered.size,
+    `the three Status counts add up to ${picks + open + archived}, but the page offers ${offered.size} distinct builds`);
 
   /* And a New badge only on a set Empower has not chosen from yet. Once a set is
      decided it is not news, it is a record. */
@@ -1375,6 +1420,114 @@ test('every number on the chooser rail counts something real', () => {
     if (decided) {
       assert.ok(!badged, `the ${key} set is chosen and still carries a New badge`);
     }
+  }
+});
+
+test('the chooser archives every build Empower did not take, and nothing else', () => {
+  /* Sign-off is what this page is for now, so a decided set shows one decision
+     and the builds it was chosen over are rows in the archive. Two ways that can
+     rot, and both are checked against the page rather than against a list: a
+     decided set keeping a second card, and a build that left its section without
+     arriving in the archive. The second one is the dangerous one, because the
+     page still looks finished and a build has simply vanished from review. */
+  const chooser = readFileSync('dist/index.html', 'utf8');
+  const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
+  const archive = chooser.slice(chooser.indexOf('<section class="ch__archive"'));
+
+  const archived = [...archive.matchAll(/<li class="ch__arc__item" data-set="([a-z]+)">[\s\S]*?href="([^"]+)"/g)]
+    .map(m => ({ set: m[1], href: m[2] }));
+
+  for (const section of sections) {
+    const key = section.match(/data-set="([a-z]+)"/)[1];
+    const cards = section.match(/<li data-set="[a-z]+" class="ch__opt[^"]*"/g) || [];
+    const mine = archived.filter(a => a.set === key);
+
+    if (!section.includes('ch__opt--pick')) {
+      assert.equal(mine.length, 0,
+        `the ${key} set is still open and has ${mine.length} builds in the archive — nothing there has been chosen over anything`);
+      continue;
+    }
+
+    assert.equal(cards.length, 1,
+      `the ${key} set is decided and shows ${cards.length} cards; everything but the decision belongs in the archive`);
+
+    if (mine.length) {
+      assert.match(section, new RegExp(`<p class="ch__also">[^<]*<a href="#archive-${key}">`),
+        `the ${key} set has ${mine.length} builds in the archive and no line pointing at them`);
+      assert.ok(archive.includes(`id="archive-${key}"`),
+        `the ${key} set points at an archive group that does not exist`);
+    }
+  }
+
+  /* Every archived row is a page that this build actually produces, and the pick
+     of a set is never one of them. */
+  const built = new Set(PAGES.map(p => p.out.replace('dist/', '')));
+  for (const row of archived) {
+    assert.ok(built.has(row.href), `the archive links ${row.href}, which this build does not produce`);
+  }
+  const picked = [...chooser.matchAll(/class="ch__opt ch__opt--pick">[\s\S]*?<h3><a href="([^"]+)"/g)].map(m => m[1]);
+  for (const href of picked) {
+    assert.ok(!archived.some(a => a.href === href),
+      `${href} is both a chosen build and archived`);
+  }
+
+  /* 26 rows today. The number is derived, so this line is only here to make the
+     shape of the page visible in the test output. */
+  assert.equal(archived.length, 26, `the archive holds ${archived.length} builds, expected 26`);
+});
+
+test('the chooser archive filters with the rail, and says so when a set has nothing in it', () => {
+  /* The enumeration is the price of filtering without a script, so it is derived
+     rather than trusted: every set that HAS an archive group needs a reveal rule,
+     every set that does not must not have one, and the selector that shows the
+     "nothing archived" line has to name exactly the sets that do. Get the last
+     one wrong and either a filter shows an empty heading or the message appears
+     over a full list. */
+  const chooser = readFileSync('dist/index.html', 'utf8');
+  const css = readFileSync('css/chooser.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const withArchive = [...chooser.matchAll(/<div class="ch__arc" id="archive-([a-z]+)"/g)].map(m => m[1]);
+  const allSets = [...chooser.matchAll(/<input class="ch__check__input ch__set" type="checkbox" id="set-([a-z]+)"/g)]
+    .map(m => m[1]);
+
+  for (const key of allSets) {
+    const rule = css.includes(`body:has(#set-${key}:checked) .ch__arc[data-set="${key}"]`);
+    if (withArchive.includes(key)) {
+      assert.ok(rule, `ticking ${key} in the rail hides its own archive group`);
+    } else {
+      assert.ok(!rule, `${key} has a rule revealing an archive group it does not have`);
+    }
+  }
+
+  /* The guarded selector, not the base rule that hides it: the one line that
+     mentions the message AND a facet. */
+  const none = css.split('\n').find(line => line.includes('.ch__arc__none') && line.includes(':not(:has('));
+  assert.ok(none, 'nothing ever shows the "nothing archived" line');
+  const guarded = [...none.matchAll(/:not\(:has\(#set-([a-z]+):checked\)\)/g)].map(m => m[1]);
+  assert.deepEqual(guarded.sort(), [...withArchive].sort(),
+    'the "nothing archived" line is guarded on the wrong set of sets, so it will appear over a full archive or hide behind an empty one');
+
+  /* The archive is hidden by default and there are exactly three ways in. The
+     first two matter to a reader: the facet, and any link in the page that asks
+     for it, which works through :target because a link cannot tick a checkbox
+     without a script. The third is the rule that lets an explicit status choice
+     override a stale fragment left in the address bar. */
+  assert.match(css, /\.ch__archive\{display:none/,
+    'the archive is not hidden by default, and these are the builds that did not make it');
+  assert.match(css, /body:has\(#archived:checked\) \.ch__archive\{display:block\}/,
+    'ticking Archived does not show the archive');
+  assert.match(css, /\.ch__archive:target,\s*\n\.ch__archive:has\(:target\)\{display:block\}/,
+    'a link to the archive cannot open it, so every pointer under a decided set is a dead link while it is hidden');
+  assert.match(css, /body:has\(\.ch__set:checked\) \.ch__results > section\.ch__archive:target/,
+    'a link to the archive stops working as soon as a set filter is on');
+  assert.match(css, /body:has\(\.ch__status:checked\):not\(:has\(#archived:checked\)\) \.ch__archive\{display:none\}/,
+    'a status other than Archived leaves the archive open if a fragment happens to point into it');
+
+  /* And the statuses themselves: hides, one per status, each naming the state it
+     spares. Written as reveals they would fight the Set facet instead of
+     composing with it. */
+  for (const [id, state] of [['signed-off', 'decided'], ['to-review', 'open']]) {
+    assert.match(css, new RegExp(`body:has\\(\\.ch__status:checked\\):not\\(:has\\(#${id}:checked\\)\\) \\.ch__results > section\\[data-state="${state}"\\]`),
+      `nothing hides the ${state} sets when a status other than ${id} is ticked`);
   }
 });
 
@@ -3472,7 +3625,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'epic-a': 'epa', 'epic-b': 'epb', 'epic-c': 'epc',
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
     'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc', 'give-d': 'gvd',
-    'content-a': 'cad', 'content-b': 'cst', 'landing': 'lnd',
+    'content-a': 'cad', 'content-b': 'cwa', 'landing': 'lnd', 'landing-b': 'lnb',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its
@@ -3646,7 +3799,6 @@ const CONTENT_COPY = [
   'Explore Mississippi-specific research, data, and policy solutions designed to turn ideas into action.',
   'Press Releases',
   'Get the latest news, announcements, and updates from Empower Mississippi.',
-  'Filter by Topic:',
   'Quality Education',
   'Meaningful Work',
   'Public Safety',
@@ -3668,6 +3820,18 @@ test('every All Content reading carries the roadmap copy verbatim', () => {
       assert.ok(html.includes(line), `${out} is missing roadmap copy: "${line.slice(0, 60)}…"`);
     }
   }
+
+  /* "Filter by Topic:" is the one roadmap string that belongs to reading A only,
+     and that is a decision rather than an omission. In A, topic IS a filter and
+     the label is carried word for word. In B, topic is the structure of the page
+     and type is the filter, so a control labelled "Filter by Topic:" would either
+     be a second mechanism nobody needs or a label on links that only scroll.
+     Recorded here so the difference stays deliberate and visible. */
+  const a = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
+  const b = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
+  assert.ok(a.includes('Filter by Topic:'), 'content-a has lost the roadmap’s topic-filter label');
+  assert.ok(!b.replace(/<!--[\s\S]*?-->/g, '').includes('Filter by Topic:'),
+    'content-b labels something "Filter by Topic:", and nothing on that reading filters by topic');
 });
 
 test('both All Content readings are titled All Content, not Commentary', () => {
@@ -3695,7 +3859,7 @@ test('neither All Content reading ships a filter that needs a script', () => {
     const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
     assert.deepEqual(scripts, ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'],
       `${out} loads something beyond the three shared behaviour modules: ${scripts.join(', ')}`);
-    assert.match(html, /<form class="c(ad-controls|st-rail)"/,
+    assert.match(html, /<form class="c(ad-controls|wa-choose__form)"/,
       `${out}'s filter is not wrapped in a form`);
   }
   for (const file of ['css/content-a.css', 'css/content-b.css']) {
@@ -3721,14 +3885,29 @@ test('every item on both All Content readings is a real empowerms.org post', () 
     'the two All Content readings do not show the same posts, so they cannot be compared');
 });
 
-test('both All Content readings answer their one dead end in words', () => {
+/* One shelf block per subject, so the tests below can ask questions of a shelf
+   rather than of the whole page. */
+const shelvesOf = html => {
+  const parts = html.split(/<section class="cwa-shelf[^"]*" id="shelf-/).slice(1);
+  /* Cut each block at its own closing tag. Without that, the last shelf runs on
+     into the shared footer, and a question about "what is on this shelf" gets
+     answered with the footer's logo. */
+  return parts.map(part => ({
+    id: part.slice(0, part.indexOf('"')),
+    html: part.slice(0, part.indexOf('</section>')),
+  }));
+};
+
+test('both All Content readings answer their dead ends in words', () => {
   /* Bill Summaries is a topic here and a category in their WordPress, and every
-     bill summary is written as an article. So pairing that topic with any other
-     type returns nothing, and both pages have a written answer for it rather
-     than a blank grid. The rule that shows it is enumerated in CSS — there is
-     no script to count what is left. */
+     bill summary is written as an article. So asking for a bill summary as any
+     other kind of thing returns nothing, and both pages answer that in words
+     rather than with a blank grid. B has a second one for the same reason: the
+     two impact reports are both research, so its closing group empties when
+     research is filtered out. Every rule that shows an empty state is enumerated
+     in CSS — there is no script to count what is left. */
   for (const { out, html } of CONTENTPAGES) {
-    assert.match(html, /class="c(ad|st)-empty" role="status"/,
+    assert.match(html, /class="c(ad-empty|wa-shelf__empty)" role="status"/,
       `${out} has no empty state for the Bill Summaries pairing`);
     assert.match(textOf(html), /bill summaries are published as articles/i,
       `${out}'s empty state does not say why nothing matched`);
@@ -3736,24 +3915,144 @@ test('both All Content readings answer their one dead end in words', () => {
   const a = readFileSync('css/content-a.css', 'utf8');
   assert.match(a, /#ca-p-bills:checked\)[\s\S]{0,400}\.cad-empty/,
     'content-a never shows its empty state');
-  const b = readFileSync('css/content-b.css', 'utf8');
-  assert.match(b, /#cb-p-bills:checked\)[\s\S]{0,600}\.cst-empty/,
-    'content-b never shows its empty state');
+
+  /* B's dead ends, DERIVED from what is on each shelf rather than listed by
+     hand. A shelf empties when none of the kinds it holds is ticked, so a shelf
+     that holds all four kinds cannot empty and one that holds fewer can. The
+     list changed once already: moving both impact reports into the closing group
+     left the education shelf with no research of its own, which turned a
+     two-dead-end page into a three-dead-end page and made one shelf go silently
+     blank. A hand-written list would not have noticed, in the same way the
+     chooser's hand-written rail counts did not. */
+  const bHtml = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
+  const bCss = readFileSync('css/content-b.css', 'utf8');
+  const ALL_KINDS = ['article', 'story', 'research', 'press'];
+
+  for (const shelf of shelvesOf(bHtml)) {
+    const holds = new Set([...shelf.html.matchAll(/<li class="cwa-item[^"]*" data-type="([a-z]+)"/g)].map(m => m[1]));
+    const canEmpty = ALL_KINDS.some(k => !holds.has(k));
+
+    if (!canEmpty) {
+      assert.ok(!shelf.html.includes('cwa-shelf__empty'),
+        `content-b’s ${shelf.id} shelf holds all four kinds and cannot empty, so its empty state is dead markup`);
+      assert.ok(!bCss.includes(`[data-shelf="${shelf.id}"]`),
+        `content-b has a filter rule for its ${shelf.id} shelf, which holds all four kinds and cannot empty`);
+      continue;
+    }
+
+    assert.ok(shelf.html.includes('class="cwa-shelf__empty" role="status"'),
+      `content-b’s ${shelf.id} shelf can be emptied by a filter and has nothing to say when it is`);
+
+    /* The rule's condition must be exactly "none of the kinds this shelf holds
+       is ticked". Too few :not()s and the message appears over a shelf that
+       still has rows; too many and the shelf goes blank in silence. */
+    for (const which of ['.cwa-items', '.cwa-shelf__empty']) {
+      const rule = bCss.split('\n').find(line =>
+        line.includes(`[data-shelf="${shelf.id}"] ${which}`) && line.includes('body:has(.cwa-type:checked)'));
+      assert.ok(rule, `content-b has no rule for ${which} on its ${shelf.id} shelf`);
+      const guarded = new Set([...rule.matchAll(/:not\(:has\(#cw-t-([a-z]+):checked\)\)/g)].map(m => m[1]));
+      assert.deepEqual([...guarded].sort(), [...holds].sort(),
+        `content-b’s ${shelf.id} rule for ${which} guards on ${[...guarded].sort().join('+') || 'nothing'}, but that shelf holds ${[...holds].sort().join('+')}`);
+    }
+  }
 });
 
-test('content-b keeps its type hides after its topic reveals', () => {
-  /* The one place in this build where rule ORDER carries behaviour. Topic is
-     multi-valued, so it uses the hide-everything-then-reveal shape; type is
-     single-valued and uses hide-only. A topic reveal can un-hide a row the type
-     facet hid, which would turn AND into OR across the two facets. The type
-     rules win because they are both later and more specific — this asserts the
-     first half, which is the half an edit can silently break. */
-  const css = readFileSync('css/content-b.css', 'utf8');
-  const reveal = css.indexOf('#cb-p-education:checked');
-  const hide = css.indexOf(':not(:has(#cb-t-article:checked))');
-  assert.ok(reveal > 0 && hide > 0, 'content-b is missing one of its two filter shapes');
-  assert.ok(hide > reveal,
-    'content-b declares its type hides BEFORE its topic reveals — the two facets now OR instead of AND');
+test('content-b filters on one facet, so it needs no rule ordering', () => {
+  /* The shape of the filter, and the reason this reading is simpler than A's.
+     Type is B's only facet, so it can use hide-everything-then-reveal, which is
+     an OR inside the facet: nothing here can un-hide a row that another rule hid
+     on purpose. A needs its two facets ordered; this one must not grow a second
+     facet without that being a deliberate rewrite. */
+  const css = readFileSync('css/content-b.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(css, /body:has\(\.cwa-type:checked\) \.cwa-item\{display:none\}/,
+    'content-b does not hide the rows when a kind is ticked, so its filter reveals nothing');
+  for (const type of ['article', 'story', 'research', 'press']) {
+    assert.match(css, new RegExp(`body:has\\(#cw-t-${type}:checked\\) \\.cwa-item\\[data-type="${type}"\\]`),
+      `content-b never reveals ${type} rows`);
+  }
+  assert.ok(!/#cw-p-/.test(css),
+    'content-b has grown a topic facet — topic is this reading’s STRUCTURE, and two facets need the ordered shape');
+});
+
+test('content-a’s filter bar stacks its two facets against one label gutter', () => {
+  /* The two facets were set side by side, and they do not fit: the five topic
+     pills need about 590px of line and the container had 453 to give them beside
+     the five type tabs, so they wrapped to a ragged second row in a column that
+     was itself pushed to the right edge. Stacked, each facet holds one line and
+     both control rows start at the same x, which is what the shared label track
+     buys, and it only exists because display:contents dissolves the fieldsets.
+     A fieldset that is itself a grid leaves its legend outside that grid, so the
+     alignment cannot be done from inside one; putting the columns back on the
+     fieldsets is the reflex this test is here to catch. */
+  const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const inner = css.match(/\.cad-controls__inner\{[^}]*\}/)[0];
+  assert.match(inner, /grid-template-columns:auto minmax\(0,1fr\)/,
+    'content-a’s filter bar is no longer a label gutter and one full-width control column');
+  assert.match(inner, /align-items:baseline/,
+    'content-a’s legends no longer sit on the baseline of the row they label');
+  assert.match(css, /\.cad-group\{[^}]*display:contents/,
+    'content-a’s control groups are boxes again, so their two legends can no longer share a column track');
+
+  /* The other half of the same decision. Dissolving a fieldset costs its
+     implicit grouping in shipped browsers, so the role and the name are stated
+     rather than inherited, and every group has to carry both. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
+  const groups = [...html.matchAll(/<fieldset class="cad-group[^"]*"([^>]*)>/g)].map(m => m[1]);
+  assert.equal(groups.length, 2, `content-a has ${groups.length} control groups in its filter bar, expected 2`);
+  for (const attrs of groups) {
+    assert.match(attrs, /role="group"/,
+      'a display:contents fieldset on content-a has no explicit role, so its grouping can be dropped');
+    const id = attrs.match(/aria-labelledby="([^"]+)"/);
+    assert.ok(id, 'a display:contents fieldset on content-a has no explicit accessible name');
+    assert.ok(html.includes(`class="cad-group__label" id="${id[1]}"`),
+      `content-a names a control group with #${id[1]}, which is not the id of its legend`);
+  }
+});
+
+test('every card on content-a carries the photograph of the post it links to', () => {
+  /* Their archive shows an image on every post, and stripping that in our
+     version was the first thing Empower would have noticed. What makes it
+     honest is WHICH image: each card carries the featured image of the post it
+     links to, pulled from their own media library, so a card beside "How Karl
+     Hampton Found Freedom" is a photograph of Karl Hampton rather than a stock
+     photograph that reads as one. That is the whole reason this is testable at
+     all: the file name has to match the slug in the href. A generic photograph
+     put back here would pass an eye and fail this line. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
+  const cards = html.match(/<li class="cad-card[\s\S]*?<\/li>/g) || [];
+  assert.equal(cards.length, 23, `content-a has ${cards.length} cards, expected 23`);
+
+  for (const card of cards) {
+    const slug = card.match(/href="https:\/\/empowerms\.org\/([^"/]+)\//)[1];
+    const img = card.match(/<img class="cad-card__photo[^"]*"[^>]*>/);
+    assert.ok(img, `content-a's card for ${slug} carries no photograph`);
+    const src = img[0].match(/src="\.\.\/assets\/posts\/([^."]+)\.[a-z]+"/);
+    assert.ok(src, `content-a's card for ${slug} does not take its photograph from assets/posts`);
+    assert.equal(src[1], slug,
+      `content-a shows ${src[1]}'s photograph on the card for ${slug}`);
+    const alt = img[0].match(/alt="([^"]*)"/)[1];
+    assert.ok(alt.length > 20, `content-a has thin alt text on ${slug}: "${alt}"`);
+    /* The filenames in this project have lied before, so alt text that is just
+       the filename or the headline read back is the failure mode to catch. */
+    assert.ok(!alt.toLowerCase().includes(slug.slice(0, 18).replace(/-/g, ' ')),
+      `content-a's alt text for ${slug} is its file name, not a description of the photograph`);
+  }
+});
+
+test('content-a shows the five card-built graphics whole, and crops only photographs', () => {
+  /* Five of the twenty-three are not photographs: they are cards built at
+     another ratio with their own type running to the edge. Cropping those into
+     the 3:2 plate cuts their words in half. They are marked in the markup and
+     letterboxed in CSS, and both halves have to stay in step. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
+  const whole = html.match(/cad-card__photo cad-card__photo--whole/g) || [];
+  assert.equal(whole.length, 5,
+    `content-a marks ${whole.length} images to be shown whole, expected 5`);
+  const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(css, /\.cad-card__photo\{[^}]*aspect-ratio:3\/2/,
+    'content-a no longer states one ratio for its card photographs, so its rows will not line up');
+  assert.match(css, /\.cad-card__photo--whole\{[^}]*object-fit:contain/,
+    'content-a crops the images that were built as cards, which cuts their type in half');
 });
 
 test('content-a states each type once as a band and filters within it', () => {
@@ -3765,39 +4064,91 @@ test('content-a states each type once as a band and filters within it', () => {
   assert.equal(cards.length, 23, `content-a shows ${cards.length} cards, expected 23`);
 });
 
-test('content-b is one list, newest first', () => {
-  /* The whole argument of the reading. A row out of order is not a styling slip,
-     it is the reading not being what it says it is. */
+test('content-b files every piece under one subject, newest first', () => {
+  /* The whole argument of the reading: subject is the structure, so a piece
+     filed twice inflates a shelf and a piece out of order makes the shelf not
+     what it says it is. Five shelves in the roadmap's order, twenty-three pieces
+     filed once each, each shelf newest first. */
   const html = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
-  const dates = [...html.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})"/g)].map(m => m[1]);
-  assert.equal(dates.length, 23, `content-b shows ${dates.length} dated items, expected 23`);
-  assert.deepEqual(dates, [...dates].sort().reverse(), 'content-b is not in date order, newest first');
-  assert.equal((html.match(/class="cst-lead"/g) || []).length, 1,
-    'content-b does not have exactly one lead item');
+  const shelves = shelvesOf(html);
+  assert.deepEqual(shelves.map(s => s.id),
+    ['education', 'work', 'safety', 'bills', 'across'],
+    'content-b’s shelves are not Empower’s three subjects, then the bills, then the reports that cover all three');
+
+  let filed = 0;
+  for (const shelf of shelves) {
+    const dates = [...shelf.html.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})"/g)].map(m => m[1]);
+    assert.ok(dates.length > 0, `content-b’s ${shelf.id} shelf is empty`);
+    assert.deepEqual(dates, [...dates].sort().reverse(),
+      `content-b’s ${shelf.id} shelf is not newest first`);
+    filed += dates.length;
+  }
+  assert.equal(filed, 23, `content-b files ${filed} pieces across its shelves, expected 23`);
+
+  /* The lead is a rule, not a pick: the newest piece on each of the three
+     photographed subject shelves, set larger. The two plain shelves are short
+     enough to read whole and get none, so three is the number. */
+  const leads = html.match(/class="cwa-item cwa-item--lead"/g) || [];
+  assert.equal(leads.length, 3, `content-b sets ${leads.length} pieces as a lead, expected 3`);
+  for (const shelf of shelves.filter(s => ['bills', 'across'].includes(s.id))) {
+    assert.ok(!shelf.html.includes('cwa-item--lead'),
+      `content-b’s ${shelf.id} shelf has a lead, and it is short enough not to need one`);
+  }
 });
 
-test('content-b’s facet counts match what is on the page', () => {
-  /* Hand-written numbers that nobody checks quietly become wrong; this build has
-     been bitten by that twice. The counts are of this page, not of their
-     archive — that is said on the page and in the chooser — but they have to be
-     right about this page. */
+test('content-b keeps photography on the subject, never beside a headline', () => {
+  /* A decision with a reason, so it is tested rather than trusted. Half of these
+     pieces are about a named Mississippian, and a stock photograph next to "How
+     Karl Hampton Found Freedom" reads as a photograph OF Karl Hampton. So the
+     photographs sit in the shelf head, where they illustrate the subject, and
+     the two shelves with no honest subject photograph (a bill, a report) carry
+     none at all. */
   const html = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
-  const items = [...html.matchAll(/data-type="([a-z]+)" data-topic="([^"]*)"/g)]
-    .map(m => ({ type: m[1], topics: m[2].split(' ') }));
-  assert.equal(items.length, 23, `expected 23 items, found ${items.length}`);
+  const items = html.match(/<li class="cwa-item[\s\S]*?<\/li>/g) || [];
+  assert.equal(items.length, 23, `expected 23 rows, found ${items.length}`);
+  for (const item of items) {
+    assert.ok(!item.includes('<img'),
+      'content-b puts a photograph inside a row, beside a headline that may name a real person');
+  }
+  const photos = [...html.matchAll(/<img class="cwa-shelf__photo"[^>]*alt="([^"]*)"/g)].map(m => m[1]);
+  assert.equal(photos.length, 3, `content-b’s shelf heads carry ${photos.length} photographs, expected 3`);
+  for (const alt of photos) {
+    assert.ok(alt.length > 20, `a shelf photograph has thin alt text: "${alt}"`);
+  }
+  for (const shelf of shelvesOf(html).filter(s => ['bills', 'across'].includes(s.id))) {
+    assert.ok(!shelf.html.includes('<img'),
+      `content-b’s ${shelf.id} shelf carries a photograph, and there is no photograph of a bill`);
+  }
+});
 
-  for (const [id, key] of [['cb-t-article', 'article'], ['cb-t-story', 'story'],
-                           ['cb-t-research', 'research'], ['cb-t-press', 'press']]) {
-    const shown = Number(html.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="cst-check__n">(\\d+)</span>`))[1]);
-    const real = items.filter(i => i.type === key).length;
-    assert.equal(shown, real, `the ${key} facet says ${shown}, the page holds ${real}`);
+test('content-b’s four counts match what is on the page, and it states no other number', () => {
+  /* Hand-written numbers that nobody checks quietly become wrong, and this build
+     has been bitten by that twice. Four counts survive on this reading, and they
+     are the four that stay true while the page is being filtered: ticking
+     Articles does not change how many articles the page holds. A per-subject
+     count would not survive that, which is why the shelf headings carry none,
+     and this test holds that line as well as checking the four. */
+  const html = CONTENTPAGES.find(p => p.out.endsWith('content-b.html')).html;
+  const types = [...html.matchAll(/<li class="cwa-item[^"]*" data-type="([a-z]+)"/g)].map(m => m[1]);
+  assert.equal(types.length, 23, `expected 23 rows, found ${types.length}`);
+
+  for (const [id, key] of [['cw-t-article', 'article'], ['cw-t-story', 'story'],
+                           ['cw-t-research', 'research'], ['cw-t-press', 'press']]) {
+    const shown = Number(html.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="cwa-switch__n">(\\d+)</span>`))[1]);
+    const real = types.filter(t => t === key).length;
+    assert.equal(shown, real, `the ${key} switch says ${shown}, the page holds ${real}`);
   }
-  for (const [id, key] of [['cb-p-education', 'education'], ['cb-p-work', 'work'],
-                           ['cb-p-safety', 'safety'], ['cb-p-bills', 'bills']]) {
-    const shown = Number(html.match(new RegExp(`id="${id}"[\\s\\S]*?<span class="cst-check__n">(\\d+)</span>`))[1]);
-    const real = items.filter(i => i.topics.includes(key)).length;
-    assert.equal(shown, real, `the ${key} facet says ${shown}, the page holds ${real}`);
-  }
+
+  const counts = html.match(/class="cwa-switch__n">/g) || [];
+  assert.equal(counts.length, 4, `content-b shows ${counts.length} counts, expected the four kinds and nothing else`);
+
+  /* And no figure anywhere else in the prose: the shelf heads describe subjects,
+     they do not claim sizes. Dates are the one number this page states, and they
+     are inside <time>. */
+  const body = html.slice(html.indexOf('<main')).replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<time[\s\S]*?<\/time>/g, '').replace(/<span class="cwa-switch__n">\d+<\/span>/g, '');
+  const figures = textOf(body).match(/\d+(\.\d+)?\s?%|\$\s?\d|\b\d{1,3}(,\d{3})+\b|\b\d+ pieces\b/g) || [];
+  assert.deepEqual(figures, [], `content-b states a figure outside the four counts: ${figures.join(', ')}`);
 });
 
 test('the landing template is six independent blocks', () => {
@@ -3815,35 +4166,107 @@ test('the landing template is six independent blocks', () => {
     'the landing template’s blocks are not one file each');
 });
 
-test('the landing template collects nothing and invents nothing', () => {
-  /* There is no endpoint behind this page, so the campaign form is a marked
+/* Both templates, so the rules below are asked of the set rather than of one
+   page. Derived from PAGES: a third template cannot quietly opt out. */
+const LANDINGPAGES = PAGES
+  .filter(p => p.out === 'dist/landing.html' || p.out.startsWith('dist/landing-'))
+  .map(p => ({ out: p.out, html: readFileSync(p.out, 'utf8') }));
+
+test('both landing templates build, and hold the same campaign', () => {
+  assert.equal(LANDINGPAGES.length, 2, `expected two landing templates, found ${LANDINGPAGES.length}`);
+  /* Identical sample content is what makes the pair a choice about structure
+     rather than about copy, the same reason the two All Content readings share
+     one pool of posts. The three campaign posts are the checkable part. */
+  const [a, b] = LANDINGPAGES.map(p =>
+    [...p.html.matchAll(/href="(https:\/\/empowerms\.org\/[^"]+)"/g)].map(m => m[1]).sort());
+  assert.deepEqual(a, b,
+    'the two landing templates link different campaign posts, so they cannot be compared');
+});
+
+test('the landing template B is four sections and four removable blocks', () => {
+  /* Same property as A, one level down. A's unit is the section; B's rail is one
+     section with two columns, so B's unit is the block inside the left column.
+     Both have to survive a block being deleted, duplicated or reordered, which is
+     what makes either of them a template rather than a page. */
+  const html = readFileSync('dist/landing-b.html', 'utf8');
+  const sections = html.match(/<section class="lnb-[a-z]+"/g) || [];
+  assert.equal(sections.length, 3, `expected three sections on landing-b, found ${sections.length}`);
+  const files = readdirSync('src/landing-b/sections').sort();
+  assert.deepEqual(files,
+    ['00-note.html', '01-hero.html', '02-rail.html', '03-outcome.html'],
+    'landing-b’s sections are not one file each');
+
+  const blocks = html.match(/<div class="lnb-block"/g) || [];
+  assert.equal(blocks.length, 4,
+    `expected four removable blocks in landing-b’s story column, found ${blocks.length}`);
+
+  /* Nothing may reach across a block boundary by id. The hero's button pointing
+     at the ask panel is the one crossing this page is allowed, because that link
+     IS the reading. */
+  const ids = [...html.slice(html.indexOf('<main')).matchAll(/href="#([a-z-]+)"/g)].map(m => m[1]);
+  assert.deepEqual([...new Set(ids)], ['ask'],
+    `landing-b links across its own blocks by id: ${[...new Set(ids)].join(', ')}`);
+});
+
+test('the landing template B holds its ask beside the argument, not below it', () => {
+  /* The whole argument of the reading, and all three parts of it can be checked.
+     One: the panel is written BEFORE the story, because on a phone there is no
+     second column and markup order is what a phone reader gets. Two: it is
+     placed into the second column on desktop, so the visual order is still
+     story-then-panel. Three: it is sticky. Lose any one of them and this is the
+     other template with a narrower column. */
+  const html = readFileSync('dist/landing-b.html', 'utf8');
+  const panel = html.indexOf('class="lnb-panel"');
+  const story = html.indexOf('class="lnb-story"');
+  assert.ok(panel > 0 && story > 0, 'landing-b has lost either its panel or its story column');
+  assert.ok(panel < story,
+    'landing-b writes its story before its ask, so on a phone the ask lands at the bottom of the page');
+
+  const css = readFileSync('css/landing-b.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = css.match(/\.lnb-panel\{[^}]*\}/)[0];
+  assert.match(rule, /grid-column:2/,
+    'landing-b does not place its ask in the second column, so the desktop reading order is inverted');
+  assert.match(rule, /position:sticky/, 'landing-b’s ask does not stay on screen, which is the reading');
+  assert.match(rule, /top:1\d\dpx/,
+    'landing-b’s sticky ask has no offset for the sticky site header, so the header will cover it');
+
+  /* And it collapses before the column gets too narrow to hold a two-line
+     heading and an embed. */
+  assert.match(css, /@media \(max-width:1040px\)[\s\S]{0,400}\.lnb-panel\{[^}]*position:static/,
+    'landing-b never releases its sticky panel, so the narrow layout keeps a cramped second column');
+});
+
+test('every landing template collects nothing and invents nothing', () => {
+  /* There is no endpoint behind either page, so the campaign form is a marked
      slot rather than a drawn form — the same decision the Donate readings make
      about the processor's fields. And no statistic: a campaign's numbers are
      the first thing to go stale, and this build does not invent them. */
-  const html = readFileSync('dist/landing.html', 'utf8');
-  for (const tag of ['<input', '<select', '<textarea', '<form']) {
-    assert.ok(!html.slice(html.indexOf('<main')).includes(tag),
-      `the landing template’s body contains ${tag} — it has no endpoint and must collect nothing`);
-  }
-  assert.match(html, /class="lnd-act__slot" data-placeholder="form"/,
-    'the landing template has no marked slot for the campaign’s own form');
-  assert.match(html, /data-placeholder="quote"/,
-    'the landing template fills the quotation instead of holding the space for a real one');
+  for (const { out, html } of LANDINGPAGES) {
+    for (const tag of ['<input', '<select', '<textarea', '<form']) {
+      assert.ok(!html.slice(html.indexOf('<main')).includes(tag),
+        `${out}'s body contains ${tag} — it has no endpoint and must collect nothing`);
+    }
+    assert.match(html, /class="ln[bd][a-z_-]*__slot" data-placeholder="form"/,
+      `${out} has no marked slot for the campaign’s own form`);
+    assert.match(html, /data-placeholder="quote"/,
+      `${out} fills the quotation instead of holding the space for a real one`);
 
-  /* Comments and markup out first, then look for the shapes a claimed statistic
-     actually takes: a percentage, a money amount, or a number written with
-     thousands separators. Bare four-digit years are not claims — the sample
-     campaign is dated, and dates are the one number this page is allowed. */
-  const prose = textOf(html.slice(html.indexOf('<main')).replace(/<!--[\s\S]*?-->/g, ''));
-  const figures = prose.match(/\d+(\.\d+)?\s?%|\$\s?\d|\b\d{1,3}(,\d{3})+\b/g) || [];
-  assert.deepEqual(figures, [], `the landing template states a figure: ${figures.join(', ')}`);
+    /* Comments and markup out first, then look for the shapes a claimed statistic
+       actually takes: a percentage, a money amount, or a number written with
+       thousands separators. Bare four-digit years are not claims — the sample
+       campaign is dated, and dates are the one number these pages are allowed. */
+    const prose = textOf(html.slice(html.indexOf('<main')).replace(/<!--[\s\S]*?-->/g, ''));
+    const figures = prose.match(/\d+(\.\d+)?\s?%|\$\s?\d|\b\d{1,3}(,\d{3})+\b/g) || [];
+    assert.deepEqual(figures, [], `${out} states a figure: ${figures.join(', ')}`);
+  }
 });
 
-test('the landing template says it is a template', () => {
+test('every landing template says it is a template', () => {
   /* Review-only chrome, and the thing that stops a worked example being read as
      a live campaign or as approved copy. It is deleted at hand-off; until then
-     it has to be there. */
-  const html = readFileSync('dist/landing.html', 'utf8');
-  assert.match(html, /<div class="lnd-note" role="note">/, 'the landing template has lost its review strip');
-  assert.match(textOf(html), /This page is a template/, 'the review strip no longer says what it is');
+     it has to be there, on both. */
+  for (const { out, html } of LANDINGPAGES) {
+    assert.match(html, /<div class="ln[bd]-note" role="note">/, `${out} has lost its review strip`);
+    assert.match(textOf(html), /This page is a template/, `${out}'s review strip no longer says what it is`);
+  }
 });

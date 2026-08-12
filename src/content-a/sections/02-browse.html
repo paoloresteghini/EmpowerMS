@@ -21,14 +21,31 @@
      invented headline. What IS ours is the sorting: their WordPress has no
      "Research & Reports" category yet, so the report posts were gathered by
      hand, and Bill Summaries is a category there but a topic here, which is
-     what the roadmap asks for. Both are flagged on the chooser. -->
+     what the roadmap asks for. Both are flagged on the chooser.
+
+     SO ARE THE PHOTOGRAPHS. Every post in their archive carries a featured
+     image, so every card here carries the same one, taken from their own media
+     library and held in assets/posts under the post’s slug. That is what makes
+     a photograph beside a headline safe: the picture next to "How Karl Hampton
+     Found Freedom" is Karl Hampton, not a stock photograph that reads as him.
+     An earlier draft put library photography on four lead cards only; that is
+     the thing this replaced. Alt text was written from the images themselves,
+     because the file names in this project have lied before. Five of the
+     twenty-three are not photographs but cards built at another ratio with
+     their own type on them, and they are marked to be shown whole rather than
+     cropped. -->
 <section class="cad-browse" aria-labelledby="browse-title">
   <h2 class="em-visually-hidden" id="browse-title">Browse all content</h2>
 
   <form class="cad-controls">
     <div class="em-container cad-controls__inner">
-      <fieldset class="cad-group">
-        <legend class="cad-group__label">Browse</legend>
+      <!-- role="group" and aria-labelledby alongside the fieldset and its legend,
+           not instead of them. The stylesheet dissolves these fieldsets with
+           display:contents so that both legends can share one column track, and
+           display:contents has dropped implicit semantics in shipped browsers;
+           an explicit role and an explicit name survive it. -->
+      <fieldset class="cad-group" role="group" aria-labelledby="cad-type-label">
+        <legend class="cad-group__label" id="cad-type-label">Browse</legend>
         <div class="cad-tabs">
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-all" checked>
           <label class="cad-tab" for="ca-t-all">Everything</label>
@@ -43,8 +60,8 @@
         </div>
       </fieldset>
 
-      <fieldset class="cad-group cad-group--topics">
-        <legend class="cad-group__label">Filter by Topic:</legend>
+      <fieldset class="cad-group cad-group--topics" role="group" aria-labelledby="cad-topic-label">
+        <legend class="cad-group__label" id="cad-topic-label">Filter by Topic:</legend>
         <div class="cad-chips">
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-all" checked>
           <label class="cad-chip" for="ca-p-all">All</label>
@@ -76,55 +93,63 @@
         </div>
         <ul class="cad-cards" data-reveal-group>
           <li class="cad-card cad-card--lead" data-type="article" data-topic="education" data-reveal="rise">
-            <img class="cad-card__photo" src="../assets/photography/young-man-portrait-bw.jpg" alt="Students seated at desks in a classroom, facing an adult standing near the front" width="1243" height="1580" loading="lazy" decoding="async">
+            <img class="cad-card__photo" src="../assets/posts/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results.jpg" alt="Two young pupils writing at a classroom table, heads down over their work" width="1000" height="525" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-06-24">June 24, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/">Charter Schools Outperform Districts on 3rd Grade Reading Test Initial Results</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo cad-card__photo--whole" src="../assets/posts/education-is-economic-development-why-business-leaders-should-support-house-bill.jpg" alt="A Mississippi Business Journal feature card carrying the article’s title and a portrait of Grant Callen" width="1000" height="562" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-02-05">February 5, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/education-is-economic-development-why-business-leaders-should-support-house-bill/">Education Is Economic Development: Why Business Leaders Should Support House Bill</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/accountability-and-action-the-path-to-safer-communities.jpg" alt="The light bar of a police car flashing red and blue on a dark street" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-10-16">October 16, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/accountability-and-action-the-path-to-safer-communities/">Accountability and Action: The Path to Safer Communities</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/from-incarceration-to-impact-how-karl-hampton-found-freedom-through-opportunity.jpg" alt="Karl Hampton standing outdoors in a checked suit, an open field behind him" width="1000" height="612" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2026-03-27">March 27, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/from-incarceration-to-impact-how-karl-hampton-found-freedom-through-opportunity/">From Incarceration to Impact: How Karl Hampton Found Freedom Through Opportunity</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/labor-day-a-call-to-strengthen-mississippis-workforce.jpg" alt="Two colleagues working at a laptop in a bright office, one leaning in over the other’s shoulder" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2024-08-30">August 30, 2024</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/labor-day-a-call-to-strengthen-mississippis-workforce/">Labor Day: A Call to Strengthen Mississippi’s Workforce</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/whats-next-capitalizing-on-mississippis-pro-growth-momentum.jpg" alt="Four panellists on stage beneath a screen reading “What’s Next? Capitalizing on Mississippi’s Pro-Growth Momentum”" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2023-09-19">September 19, 2023</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/whats-next-capitalizing-on-mississippis-pro-growth-momentum/">What’s Next? Capitalizing on Mississippi’s Pro-Growth Momentum</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/hb-1072-voluntary-portable-benefit-plan-act.jpg" alt="An orange Empower Mississippi card reading “We support House Bill 1072, Voluntary Portable Benefit Plan Act”" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-02-24">February 24, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/hb-1072-voluntary-portable-benefit-plan-act/">HB 1072 — Voluntary Portable Benefit Plan Act</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/hb-2-mississippi-education-freedom-act.jpg" alt="An orange Empower Mississippi card reading “We support House Bill 2, Mississippi Education Freedom Act”" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-01-12">January 12, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/hb-2-mississippi-education-freedom-act/">HB 2: Mississippi Education Freedom Act</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="article" data-topic="bills" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/sb-2771-expanding-fresh-start.jpg" alt="An orange Empower Mississippi card reading “We support Senate Bill 2771, Expanding Fresh Start”" width="1000" height="666" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Bill Summaries</span><span class="cad-card__date"><time datetime="2026-01-28">January 28, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/sb-2771-expanding-fresh-start/">SB 2771: Expanding Fresh Start</a></h3>
@@ -139,37 +164,42 @@
         </div>
         <ul class="cad-cards" data-reveal-group>
           <li class="cad-card cad-card--lead" data-type="story" data-topic="education" data-reveal="rise">
-            <img class="cad-card__photo" src="../assets/photography/grandparents-grandchild.jpg" alt="A mother, a father and their young son crouched together on the grass in a park" width="922" height="617" loading="lazy" decoding="async">
+            <img class="cad-card__photo" src="../assets/posts/from-a-mothers-struggle-to-a-thriving-academy-the-story-of-knox-academy.jpg" alt="A woman standing smiling in a wood-panelled doorway at Knox Academy" width="1000" height="751" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2026-01-31">January 31, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/from-a-mothers-struggle-to-a-thriving-academy-the-story-of-knox-academy/">From a Mother’s Struggle to a Thriving Academy: The Story of Knox Academy</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="story" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/unlimited-dreams-gives-laurel-students-another-education-option-hope.jpg" alt="A teacher and a dozen pupils in red polo shirts standing together in a school library" width="1000" height="712" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-01-27">January 27, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/unlimited-dreams-gives-laurel-students-another-education-option-hope/">Unlimited Dreams Gives Laurel Students Another Education Option, Hope</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="story" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/kyle-jackson-a-fathers-footsteps.jpg" alt="Kyle Jackson standing in front of a large painted map of Mississippi" width="1000" height="750" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-05-02">May 2, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/kyle-jackson-a-fathers-footsteps/">Kyle Jackson: A Father’s Footsteps</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="story" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/kayla-hulett-finding-freedom-after-addiction.jpg" alt="A family of four seated together on a bench, two parents and two daughters" width="1000" height="619" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2024-10-15">October 15, 2024</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/kayla-hulett-finding-freedom-after-addiction/">Kayla Hulett: Finding Freedom After Addiction</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="story" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/state-removes-regulation-entrepreneur-follows-her-dreams.jpg" alt="A salon owner in a purple jacket in front of her Get Glam Beauty backdrop" width="1000" height="637" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2022-08-22">August 22, 2022</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/state-removes-regulation-entrepreneur-follows-her-dreams/">State removes regulation. Entrepreneur follows her dreams.</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="story" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/home-based-business-provides-new-career-for-entrepreneur.jpg" alt="A woman working at a laptop in a home office, a small black dog on her lap and children’s drawings behind her" width="1000" height="667" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2022-02-21">February 21, 2022</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/home-based-business-provides-new-career-for-entrepreneur/">Home-based business provides new career for entrepreneur</a></h3>
@@ -184,25 +214,28 @@
         </div>
         <ul class="cad-cards" data-reveal-group>
           <li class="cad-card cad-card--lead" data-type="research" data-topic="education work safety" data-reveal="rise">
-            <img class="cad-card__photo" src="../assets/photography/girl-writing-bw.jpg" alt="An adult writing in a spiral notebook at an office desk, black and white" width="1243" height="1580" loading="lazy" decoding="async">
+            <img class="cad-card__photo cad-card__photo--whole" src="../assets/posts/empower-ms-releases-2025-impact-report.jpg" alt="The 2025 impact report cover: a child on an adult’s shoulders with both arms out, against a sunset" width="1000" height="1000" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2026-03-02">March 2, 2026</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/empower-ms-releases-2025-impact-report/">Empower MS Releases 2025 Impact Report</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="research" data-topic="education work safety" data-reveal="rise">
+            <img class="cad-card__photo cad-card__photo--whole" src="../assets/posts/2024-impact-report-celebrating-10-years-of-service-in-mississippi.jpg" alt="A large numeral 10 filled with a collage of photographs from Empower’s first ten years" width="1000" height="822" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2025-02-18">February 18, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/2024-impact-report-celebrating-10-years-of-service-in-mississippi/">2024 Impact Report: Celebrating 10 Years Of Service In Mississippi</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="research" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement.jpg" alt="Two workers in hard hats reading a document together on a site, in black and white" width="1000" height="696" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2025-01-16">January 16, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/">New Empower Mississippi Report Highlights Growth in Labor Force Participation Rate, Outlines Recommendations for Continued Improvement</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="research" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/empower-releases-report-on-violent-crime-in-mississippi.jpg" alt="Police tape reading “police line do not cross” strung in front of blurred emergency lights at night" width="1000" height="697" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2022-12-08">December 8, 2022</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/">Empower releases report on violent crime in Mississippi</a></h3>
@@ -217,25 +250,28 @@
         </div>
         <ul class="cad-cards" data-reveal-group>
           <li class="cad-card cad-card--lead" data-type="press" data-topic="education" data-reveal="rise">
-            <img class="cad-card__photo" src="../assets/photography/family-outdoors-park.jpg" alt="A boy reading a book at a table in a school library" width="1243" height="1580" loading="lazy" decoding="async">
+            <img class="cad-card__photo cad-card__photo--whole" src="../assets/posts/waitlist-funded-lawmakers-increase-funding-for-special-needs-esa.jpg" alt="A card reading “Waitlist funded”, the word waitlisted struck through, over a collage of family photographs" width="1000" height="333" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-05-29">May 29, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/waitlist-funded-lawmakers-increase-funding-for-special-needs-esa/">WAITLIST FUNDED: Lawmakers Increase Funding for Special Needs ESA</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="press" data-topic="education" data-reveal="rise">
+            <img class="cad-card__photo cad-card__photo--whole" src="../assets/posts/governor-proclaims-mississippi-school-choice-week-as-annual-celebration-of-education-expands-nationwide.jpg" alt="A yellow and white card reading “Celebrating School Choice Week from Mississippi”, with the state outline" width="997" height="1000" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Quality Education</span><span class="cad-card__date"><time datetime="2025-01-26">January 26, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/governor-proclaims-mississippi-school-choice-week-as-annual-celebration-of-education-expands-nationwide/">Governor Proclaims ‘Mississippi School Choice Week’ as Annual Celebration of Education Expands Nationwide</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="press" data-topic="work" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/mississippi-legislature-passes-historic-legislation-to-phase-out-mississippis-income-tax.jpg" alt="The Empower Mississippi mark over the dome of the state capitol rotunda" width="1000" height="513" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Meaningful Work</span><span class="cad-card__date"><time datetime="2025-03-20">March 20, 2025</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/mississippi-legislature-passes-historic-legislation-to-phase-out-mississippis-income-tax/">Mississippi Legislature Passes Historic Legislation To Phase Out Mississippi’s Income Tax</a></h3>
             </div>
           </li>
           <li class="cad-card" data-type="press" data-topic="safety" data-reveal="rise">
+            <img class="cad-card__photo" src="../assets/posts/mississippi-governor-tate-reeves-proclaims-april-second-chance-month.jpg" alt="The Empower Mississippi mark over the dome of the state capitol rotunda" width="1000" height="515" loading="lazy" decoding="async">
             <div class="cad-card__body">
               <span class="cad-card__meta"><span class="cad-card__topic">Public Safety</span><span class="cad-card__date"><time datetime="2024-04-01">April 1, 2024</time></span></span>
               <h3 class="cad-card__title"><a href="https://empowerms.org/mississippi-governor-tate-reeves-proclaims-april-second-chance-month/">Mississippi Governor Tate Reeves Proclaims April “Second Chance Month”</a></h3>

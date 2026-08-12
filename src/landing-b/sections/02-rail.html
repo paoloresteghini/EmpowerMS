@@ -1,0 +1,132 @@
+<!-- BLOCK 2 · THE ARGUMENT, WITH THE ASK HELD BESIDE IT
+     One section, two columns, and the whole idea of this template. The left
+     column is the campaign’s case, made of blocks that behave exactly like the
+     other template’s: duplicate one, delete one, reorder them. The right column
+     holds one thing, the ask, and it stays on screen while the case is read.
+
+     WHY THE PANEL COMES FIRST IN THE MARKUP. On a phone there is no second
+     column, so whatever is written first is what a reader meets first. Most of
+     Empower’s visitors are on a phone, and on a campaign page the ask should not
+     be at the bottom: that is the criticism this template exists to answer. So
+     the panel is written first and PLACED into the second column on wider
+     screens, rather than written second and moved up by CSS. One consequence to
+     know rather than discover: on a desktop the tab order reaches the ask before
+     the argument. For a page whose job is the ask, that is the right order, and
+     it reads correctly to a screen reader too (the headline, then what we want,
+     then why).
+
+     STICKY, WITH NO SCRIPT. position:sticky against the row, offset by the
+     height of the site header. It stops being sticky the moment the row ends, so
+     it never overlaps the band below.
+
+     ELEMENTOR NOTE. This is one section with two columns; the right column’s
+     widget is set to sticky, which Elementor does natively under Advanced ▸
+     Motion Effects. The blocks in the left column are ordinary widgets.
+
+     FOUR BLOCKS IN THE LEFT COLUMN, each marked below. Every one is optional
+     except the first. -->
+<section class="lnb-rail" aria-labelledby="ask-title">
+  <div class="em-container lnb-grid">
+
+    <!-- THE PANEL. A slot, not a drawn form, for the same reason the Donate
+         readings hand off to the processor rather than collecting: there is no
+         endpoint behind this page, and a form that looks real and goes nowhere
+         is worse than a space that says what belongs in it. For an event this
+         panel holds the date, the place and a register button instead, at the
+         same size. -->
+    <div class="lnb-panel" id="ask">
+      <p class="lnb-panel__label">The ask</p>
+      <h2 class="lnb-panel__title" id="ask-title">Tell your legislator to fund the accounts</h2>
+      <p class="lnb-panel__lede">It takes about a minute, and a message from a constituent in the
+        district is worth more than any of ours.</p>
+      <div class="lnb-panel__slot" data-placeholder="form">
+        <p class="lnb-panel__slotlabel">Campaign form</p>
+        <p class="lnb-panel__slotnote">Petition, legislator lookup, sign-up or share, whichever this
+          campaign runs on, embedded here at roughly this height.</p>
+      </div>
+      <p class="lnb-panel__note">Nothing on this page collects anything. Whatever goes in the space
+        above is the only thing that will.</p>
+    </div>
+
+    <div class="lnb-story">
+
+      <!-- BLOCK 2a · THE CASE. A rich-text slot: heading and as many paragraphs
+           as the campaign needs. The only block here that a page cannot do
+           without. -->
+      <div class="lnb-block" data-reveal-group>
+        <h2 class="lnb-block__title" data-reveal="rise">What we asked for</h2>
+        <p data-reveal="rise">The Education Scholarship Account gives a child with special needs the
+          option their family judges best. It was funded for fewer children than
+          qualified for it, so the state kept a waiting list, and a waiting list
+          for a child’s education is a year of that child’s schooling.</p>
+        <p data-reveal="rise">We asked lawmakers for one thing: fund the accounts every eligible
+          family had already been told they qualified for.</p>
+      </div>
+
+      <!-- BLOCK 2b · THE THREE POINTS. What is happening, what it costs, what
+           would fix it: the block a campaign page always needs and never has a
+           name for. Ruled rows rather than bordered cards, because in a column
+           this width three cards would be three narrow boxes.
+
+           NO NUMBERS. This build invents no statistics, and a campaign’s figures
+           are the first thing to be wrong six months later. Where a figure
+           belongs, the point says so in words. -->
+      <div class="lnb-block" data-reveal-group>
+        <ul class="lnb-points">
+          <li class="lnb-point" data-reveal="rise">
+            <h3>What is happening</h3>
+            <p>Eligible families are approved, then told to wait for a place to open.</p>
+          </li>
+          <li class="lnb-point" data-reveal="rise">
+            <h3>What it costs</h3>
+            <p>A school year a child does not get back, in the years that matter most.</p>
+          </li>
+          <li class="lnb-point" data-reveal="rise">
+            <h3>What would fix it</h3>
+            <p>Funding that follows eligibility, so the list stops existing.</p>
+          </li>
+        </ul>
+      </div>
+
+      <!-- BLOCK 2c · PHOTOGRAPH AND PASSAGE. The workhorse. Run it twice with
+           different words and photographs and the page still reads; delete it
+           and nothing above or below notices. -->
+      <div class="lnb-block" data-reveal-group>
+        <figure class="lnb-figure">
+          <img class="lnb-figure__photo" src="../assets/photography/child-classroom-tablet.jpg"
+               alt="A young girl writing at a table in a brightly coloured classroom"
+               width="742" height="649" loading="lazy" decoding="async" data-reveal="clip">
+        </figure>
+        <h2 class="lnb-block__title" data-reveal="rise">Why it mattered</h2>
+        <p data-reveal="rise">Every family on that list had already been told their child qualified.
+          What they were waiting on was money, and the wait was measured in
+          school years.</p>
+        <p data-reveal="rise">Mississippi families told us what that meant in their own words, and
+          those stories did more to move this than any argument we made.</p>
+        <p class="lnb-block__link" data-reveal="rise">
+          <a href="https://empowerms.org/lauren-washington-a-hopeless-fight-for-an-esa/">Lauren Washington’s fight for an ESA</a>
+        </p>
+      </div>
+
+      <!-- BLOCK 2d · A VOICE, drawn as a slot rather than filled, and that is
+           the honest thing to do: the quotation belongs to a real person, and
+           inventing one for a template, or lifting somebody’s words out of an
+           article to decorate a demo, is the one placeholder that would read as
+           finished work while being false. What the block fixes is the shape. -->
+      <div class="lnb-block" data-reveal-group>
+        <figure class="lnb-quote">
+          <blockquote class="lnb-quote__slot" data-placeholder="quote" data-reveal="rise">
+            <p>One quotation from someone the campaign is about, in their own words.
+              Two or three lines is the size that carries; longer and it stops
+              being a voice and becomes another paragraph.</p>
+          </blockquote>
+          <figcaption class="lnb-quote__by" data-reveal="rise">
+            <span class="lnb-quote__name">Their name</span>
+            <span class="lnb-quote__role">Who they are, in six words</span>
+          </figcaption>
+        </figure>
+      </div>
+
+    </div>
+  </div>
+</section>

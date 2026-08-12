@@ -57,8 +57,12 @@
   -webkit-mask-size:78px;mask-size:78px;
   -webkit-mask-repeat:repeat;mask-repeat:repeat}
 
+/* Centred, not bottom-aligned. The lede column is the taller of the two, so
+   aligning to the baseline of the band pinned the headline to the bottom of the
+   navy and left a third of the hero empty above it. Centred, the two columns
+   share one optical line and the band closes up around them. */
 .cad-hero__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);
-  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:end}
+  column-gap:clamp(var(--space-8),5vw,var(--space-12));align-items:center}
 
 .cad-eyebrow{margin:0 0 var(--space-4);
   font-family:var(--font-display);font-weight:var(--fw-bold);
@@ -91,16 +95,36 @@
   border-bottom:1px solid var(--border-subtle);
   box-shadow:var(--shadow-xs)}
 
-.cad-controls__inner{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);
-  column-gap:clamp(var(--space-6),3vw,var(--space-10));row-gap:var(--space-4);
-  align-items:center;padding-top:var(--space-4);padding-bottom:var(--space-4)}
+/* ONE INSTRUMENT, NOT TWO WIDGETS, and the reason the two facets are stacked
+   rather than set side by side. The five topic pills need about 590px of line;
+   beside the five type tabs the container had 453 to give them, so they wrapped
+   to a ragged second row inside a column that was itself pushed to the right
+   edge: two controls of different heights, different languages and different
+   alignments, sharing one bar and agreeing on nothing.
 
-.cad-group{border:0;margin:0;padding:0;min-width:0}
-.cad-group__label{padding:0;margin:0 0 var(--space-3);
+   Stacked, each facet gets the full line and holds it: one row of tabs, one row
+   of pills, unwrapped at every width down to 900px. The order is the argument of
+   this reading (type is the page, topic narrows it), and the label gutter is
+   what makes it read as one control rather than two: BROWSE and FILTER BY TOPIC:
+   sit in the same column track, so both control rows start at the same x, and
+   both legends sit on their row's BASELINE rather than on the top of its box.
+
+   display:contents on the fieldsets is what allows that. A fieldset that is
+   itself a grid leaves its own legend outside the grid, because the legend is
+   placed in the border box rather than the content box, so the two label columns
+   could never be made to agree from inside one. Dissolving it makes the legend
+   and the control row items of the one grid above. The markup carries role="group" and
+   aria-labelledby for it: display:contents has dropped implicit semantics in
+   shipped browsers, and an explicit role and name survive that. */
+.cad-controls__inner{display:grid;grid-template-columns:auto minmax(0,1fr);
+  column-gap:clamp(var(--space-5),2.4vw,var(--space-8));row-gap:var(--space-4);
+  align-items:baseline;padding-top:var(--space-4);padding-bottom:var(--space-5)}
+
+.cad-group{display:contents;border:0;margin:0;padding:0;min-width:0}
+.cad-group__label{padding:0;margin:0;white-space:nowrap;
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
   text-transform:uppercase;color:var(--text-muted)}
-.cad-group--topics{justify-self:end}
 
 /* The radios themselves are never seen; the labels are the control. Not
    display:none — that takes them out of the tab order and off the a11y tree
@@ -141,9 +165,13 @@
   color:var(--text-inverse)}
 .cad-radio:focus-visible + .cad-chip{outline:3px solid var(--focus-ring);outline-offset:3px}
 
-@media (max-width:1080px){
-  .cad-controls__inner{grid-template-columns:minmax(0,1fr)}
-  .cad-group--topics{justify-self:start}
+/* Below this the gutter costs more line than it buys alignment: the tabs alone
+   need 656px, so a 135px label column starts forcing them to wrap. The fieldsets
+   become blocks again and each legend goes back over its own row. */
+@media (max-width:900px){
+  .cad-controls__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
+  .cad-group{display:block}
+  .cad-group__label{margin-bottom:var(--space-3)}
 }
 /* A filter bar that occupies half a phone screen is worse than one that
    scrolls away with the page. */
@@ -174,8 +202,10 @@
 .cad-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));
   gap:clamp(var(--space-5),2.4vw,var(--space-7));list-style:none;margin:0;padding:0}
 
+/* No padding on the card itself: every card carries the photograph its post
+   carries on empowerms.org, and that photograph runs to the card's edges. The
+   copy is padded by .cad-card__body instead. */
 .cad-card{position:relative;overflow:hidden;display:flex;flex-direction:column;
-  padding:var(--space-6);
   border:1px solid var(--border-subtle);border-radius:var(--radius-card);
   background:var(--surface-card)}
 
@@ -185,7 +215,8 @@
    its height into both of them, and the pair drifts apart to the top and the
    bottom of the card. It has to be a wrapper — align-content cannot pack rows
    that a spanning item has already stretched. */
-.cad-card__body{display:flex;flex-direction:column;gap:var(--space-4)}
+.cad-card__body{display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6)}
 
 /* The lead of each band takes the whole first row and turns sideways —
    photograph on the left, headline on the right. Spanning two of three columns
@@ -194,17 +225,52 @@
 .cad-card--lead{grid-column:1/-1;display:grid;
   grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
   align-items:center;padding:0}
-.cad-card--lead .cad-card__body{padding:var(--space-7) var(--space-7) var(--space-7) var(--space-3)}
-.cad-card--lead .cad-card__photo{align-self:stretch;height:100%;
-  min-height:clamp(240px,21vw,320px)}
+.cad-card--lead .cad-card__body{padding:clamp(var(--space-6),2.4vw,var(--space-8));
+  padding-left:clamp(var(--space-6),2.4vw,var(--space-8))}
+
+/* A DEFINITE height, and the reason it cannot be height:100%. The photo is a
+   direct child of the card's grid, so a percentage height has nothing to
+   resolve against: the row is sized by its own contents, which includes this
+   image. The percentage fell back to auto, the portrait source (1243x1580) drew
+   itself at its intrinsic ratio, and one 589px column became 749px tall — a lead
+   card three times the height of the copy inside it, with the headline floating
+   in the middle of the empty half. Bounded, the lead is a band across the top of
+   its shelf: wide crop, copy centred against it. */
+/* Taller than a banner, and cropped from above the middle. The lead sits beside
+   its copy rather than over it, so its box is wide; at 260px that made a 2:1
+   letterbox, and the first portrait through it (the Knox Academy story) lost the
+   top of its subject's head. 300-420 brings it back to about 1.6:1, and
+   object-position at 35% puts the crop where faces are rather than through them. */
+.cad-card--lead .cad-card__photo{aspect-ratio:auto;height:clamp(300px,24vw,420px);
+  object-position:center 35%}
 
 @media (max-width:720px){
   .cad-card--lead{grid-template-columns:minmax(0,1fr)}
   .cad-card--lead .cad-card__body{padding:var(--space-6)}
 }
 
-.cad-card__photo{display:block;width:100%;height:clamp(200px,22vw,272px);object-fit:cover;
+/* ONE RATIO FOR TWENTY-THREE PHOTOGRAPHS. What their posts carry is not a
+   picture library: it is eight photographs, several campaign cards built at
+   1200x630, two screenshots and a report cover, and their ratios run from 1:1 to
+   3:1. A grid that respects each one is a masonry wall of mismatched plates, so
+   the card states a ratio and the photograph is cropped into it. 3:2 because it
+   is the ratio most of these images already are, so most are not cropped at all.
+   The two that lose the most (the 3:1 waitlist card, the square report cover)
+   both survive it: their type sits centred, which is what object-position keeps.
+   Height is the ratio's job, not a fixed pixel figure, so a card in a two-column
+   row and a card in a three-column row crop identically. */
+.cad-card__photo{display:block;width:100%;aspect-ratio:3/2;height:auto;
+  object-fit:cover;object-position:center;background:var(--surface-subtle);
   transition:transform var(--dur-slow) var(--ease-out)}
+
+/* Five of the twenty-three are not photographs but cards, built at another
+   ratio with their own type running to the edge: the ten-year collage, the
+   Business Journal feature, the 2025 report cover, the School Choice Week card
+   and the WAITLIST FUNDED banner. Cropping those to 3:2 cuts their words in
+   half, which is worse than a margin. So they are shown whole on the page's own
+   grey, inside the same 3:2 plate as everything else, and the row stays level. */
+.cad-card__photo--whole{object-fit:contain;padding:var(--space-5)}
+.cad-card:hover .cad-card__photo--whole{transform:none}
 .cad-card:hover .cad-card__photo{transform:scale(1.035)}
 
 .cad-card__meta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-4);

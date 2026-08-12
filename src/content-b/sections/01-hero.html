@@ -1,18 +1,53 @@
-<!-- Same absence as reading A: the roadmap gives this page no hero copy, so
-     every word here is ours and written to be replaced. See the note on
-     reading A’s hero for the h1 and the naming question that goes with it.
+<!-- All Content B, “What It’s About”, section 1 of 3.
 
-     WHERE THIS ONE DIFFERS. A’s hero introduces four doors. This page has no
-     doors — one list, newest first — so the hero says what the list is and gets
-     out of the way. It is short on purpose: the first thing below it is the
-     newest thing Empower published, and that should be the loudest object on
-     the screen. -->
-<section class="cst-hero" aria-labelledby="hero-title" data-reveal-entrance>
+     THE ROADMAP GIVES THIS PAGE NO HERO. Its All Content tab holds a page title,
+     a URL, the four type columns and the topic list, and nothing else: no
+     headline, no paragraph, no image note. So every word above the filter is
+     ours and is written to be replaced. The naming question (the tab says “ALL
+     CONTENT”, then names the page ”Empower Mississippi Commentary" at
+     /empower-commentary) is put to Empower rather than settled here; see the
+     note on reading A’s hero, which carries it at length.
+
+     WHERE THIS READING DIFFERS FROM A, IN ONE SENTENCE. A organises the archive
+     by what kind of thing each piece is. This one organises it by what the piece
+     is about, which is the axis a reader arrives with: somebody worried about
+     their child’s school does not want “an article”, they want the school one.
+     So topic is the structure of the page and type is the filter over it, which
+     is A’s two axes swapped.
+
+     LIGHT, ON PURPOSE. A opens on a drenched navy hero. This one opens white so
+     that the navy lands one screen lower, on the block that actually does
+     something (the four kinds). The loudest object on the page is the choice.
+
+     NO ORANGE FILLED ACTION. There is nothing to do here but read. -->
+<section class="cwa-hero" aria-labelledby="hero-title" data-reveal-entrance>
   <div class="em-container">
-    <div class="cst-hero__inner" data-reveal-group>
-      <h1 id="hero-title" data-reveal="rise">All Content</h1>
-      <p class="cst-hero__lede" data-reveal="rise">Articles, community stories, research and press releases, newest
-        first. Filter it down when you know what you are after.</p>
+    <div class="cwa-hero__inner" data-reveal-group>
+      <div class="cwa-hero__copy">
+        <h1 id="hero-title" data-reveal="rise">All Content</h1>
+        <p class="cwa-hero__lede" data-reveal="rise">Everything we publish, filed under the part of life it is
+          about. Read down a subject, or narrow the whole page to one kind of
+          thing.</p>
+      </div>
+
+      <!-- Set as an index in the second column rather than as a row of chips
+           under the lede: it is the shape of the page stated once, and it gives
+           the hero its second half instead of leaving it empty.
+
+           These jump, they do not filter. Named as what they are, because a
+           control that says “filter” and scrolls instead is the kind of small
+           lie a page never recovers from. The roadmap’s “Filter by Topic:”
+           label belongs to reading A, where topic genuinely is a filter. -->
+      <nav class="cwa-jump" aria-labelledby="jump-label" data-reveal="rise">
+        <p class="cwa-jump__label" id="jump-label">Go straight to</p>
+        <ul class="cwa-jump__list">
+          <li><a href="#shelf-education">Quality Education</a></li>
+          <li><a href="#shelf-work">Meaningful Work</a></li>
+          <li><a href="#shelf-safety">Public Safety</a></li>
+          <li><a href="#shelf-bills">Bill Summaries</a></li>
+          <li><a href="#shelf-across">Across all three</a></li>
+        </ul>
+      </nav>
     </div>
   </div>
 </section>

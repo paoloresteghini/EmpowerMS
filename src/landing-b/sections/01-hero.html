@@ -1,0 +1,48 @@
+<!-- BLOCK 1 · CAMPAIGN HERO
+     Slots: eyebrow, headline, one paragraph, the date line, one action, one
+     supporting link, one photograph.
+
+     WHERE THIS DIFFERS FROM THE OTHER TEMPLATE. That one opens white with the
+     photograph as a column beside the copy. This one is navy and the photograph
+     runs off the right edge of the screen, because everything below it is white:
+     the page has one dark screen and it is the first one. The button in it does
+     not go to another page, it goes to the panel that is already on screen.
+
+     THE DATE LINE IS DRAWN AS A SLOT. It is the one fact a campaign or an event
+     page has to state above the fold (the deadline, the session end, the day
+     itself), and it is also the fact this build will not invent: Save Our ESA is
+     closed, so a live deadline here would be fiction. The shape is fixed, the
+     words are yours.
+
+     ONE ORANGE ACTION, and this is the page type that gets one. -->
+<section class="lnb-hero" aria-labelledby="hero-title" data-reveal-entrance>
+  <div class="em-container">
+    <div class="lnb-hero__copy" data-reveal-group>
+      <p class="lnb-eyebrow" data-reveal="rise">Campaign</p>
+      <h1 id="hero-title" data-reveal="rise">Save Our ESA</h1>
+      <p class="lnb-hero__lede" data-reveal="rise">Mississippi families with children who have special needs were being
+        put on a waiting list for the education their child needed now.
+        Not next year, not when a place opened up. Now.</p>
+      <p class="lnb-hero__when" data-placeholder="deadline" data-reveal="rise">The deadline goes here: the day the session ends, the day of
+        the event, the day the vote is taken.</p>
+      <p class="lnb-hero__actions" data-reveal="rise">
+        <a class="em-btn em-btn--primary em-btn--lg" href="#ask">Contact your legislator</a>
+        <a class="lnb-hero__aside" href="https://empowerms.org/waitlisted-again/">Read what the waitlist meant</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Outside the container on purpose: it is pinned to the right half of the
+       section so it can reach the edge of the screen and the full height of the
+       band. No text sits over it at any width, which is the one rule this build
+       keeps about photography and contrast.
+
+       Not the campaign’s own artwork. Empower’s Save Our ESA file is an email
+       mock-up whose body is lorem ipsum, and a client review page carrying lorem
+       ipsum is not a template, it is an unfinished page. -->
+  <figure class="lnb-hero__figure" data-reveal="clip">
+    <img class="lnb-hero__photo" src="../assets/photography/family-outdoors-park.jpg"
+         alt="A boy in a school polo shirt reading a book at a table in a school library"
+         width="1243" height="1580" fetchpriority="high" decoding="async">
+  </figure>
+</section>

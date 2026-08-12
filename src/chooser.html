@@ -23,7 +23,7 @@
   <div class="em-container">
     <img class="ch__logo" src="../assets/logo-primary.png" alt="Empower Mississippi" width="1053" height="491">
     <h1>Build review</h1>
-    <p class="ch__lede">Most sets on this page have been chosen from, and each choice is marked: the homepage is the agreed build, Empower picked The Table, Three Doors, The Roster and The Through Line Down on 5 August; on 7 August they picked Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast, and The Dome for Capitol Chat; and on 11 August they picked The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador. Three sets are open: Donate, where Empower asked for a different direction rather than choosing between the first two; and All Content and the landing page template, both new here today. The pages that were not picked still build, so every decision can be re-read. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
+    <p class="ch__lede"><strong>Two sets are left to review: All Content and the landing page template.</strong> Everything else has been decided. The homepage is the agreed build; on 5 August you picked The Table, Three Doors, The Roster and The Through Line Down; on 7 August Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast and The Dome for Capitol Chat; on 11 August The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador; and One Screen for Donate. Each decided set shows that one build and nothing else. The twenty-six we showed you that you did not choose are out of the way rather than gone: tick <em>Archived</em> in the filter, or follow the archive link under any set, and every one of them is still there and still building. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
     <p class="ch__note">This page is a review tool. It is never part of the hand-off.</p>
   </div>
 </header>
@@ -46,151 +46,191 @@
       </summary>
 
       <div class="ch__rail__body">
+        <!-- THREE STATUSES, AND THE DEFAULT IS NOT "EVERYTHING". Nothing ticked
+             shows the fourteen decisions and the four builds still waiting on
+             one; the twenty-six that did not make it stay out of the way until
+             Archived is ticked, or until a link in the page asks for them.
+
+             Unlike the Set facet below, these are hides rather than reveals:
+             ticking one status hides the other two. That is what lets the two
+             facets compose without fighting, and it is also why the numbers stay
+             true whatever is ticked. -->
         <fieldset class="ch__facet">
           <legend>Status</legend>
           <div class="ch__check">
-            <input class="ch__check__input" type="checkbox" id="signed-off">
-            <label class="ch__check__label" for="signed-off">
+            <input class="ch__check__input ch__status" type="checkbox" id="to-review">
+            <label class="ch__check__label" for="to-review">
               <span class="ch__check__box" aria-hidden="true"></span>
-              Signed off
-              <span class="ch__check__n">13</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="ch__facet">
-          <legend>Set</legend>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-home">
-            <label class="ch__check__label" for="set-home">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              The homepage
-              <span class="ch__check__n">6</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-who">
-            <label class="ch__check__label" for="set-who">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Who We Are
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-do">
-            <label class="ch__check__label" for="set-do">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              What We Do
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-team">
-            <label class="ch__check__label" for="set-team">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Team, Board &amp; Fellows
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-solutions">
-            <label class="ch__check__label" for="set-solutions">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Solutions
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-education">
-            <label class="ch__check__label" for="set-education">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Quality Education
-              <span class="ch__check__n">1</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-work">
-            <label class="ch__check__label" for="set-work">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Meaningful Work
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-safety">
-            <label class="ch__check__label" for="set-safety">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Public Safety
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-podcast">
-            <label class="ch__check__label" for="set-podcast">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              The Empower Podcast
-              <span class="ch__check__n">2</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-capitol">
-            <label class="ch__check__label" for="set-capitol">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Capitol Chat
-              <span class="ch__check__n">2</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-epic">
-            <label class="ch__check__label" for="set-epic">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              EPIC (Research)
-              <span class="ch__check__n">3</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-mail">
-            <label class="ch__check__label" for="set-mail">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Email Sign Up
-              <span class="ch__check__n">2</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-amb">
-            <label class="ch__check__label" for="set-amb">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Ambassador
-              <span class="ch__check__n">2</span>
-            </label>
-          </div>
-          <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-give">
-            <label class="ch__check__label" for="set-give">
-              <span class="ch__check__box" aria-hidden="true"></span>
-              Donate
+              To review
               <span class="ch__check__n">4</span>
             </label>
           </div>
           <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-content">
-            <label class="ch__check__label" for="set-content">
+            <input class="ch__check__input ch__status" type="checkbox" id="signed-off">
+            <label class="ch__check__label" for="signed-off">
               <span class="ch__check__box" aria-hidden="true"></span>
-              All Content
-              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
-              <span class="ch__check__n">2</span>
+              Signed off
+              <span class="ch__check__n">14</span>
             </label>
           </div>
           <div class="ch__check">
-            <input class="ch__check__input ch__set" type="checkbox" id="set-landing">
-            <label class="ch__check__label" for="set-landing">
+            <input class="ch__check__input ch__status" type="checkbox" id="archived">
+            <label class="ch__check__label" for="archived">
               <span class="ch__check__box" aria-hidden="true"></span>
-              Landing page template
-              <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
-              <span class="ch__check__n">1</span>
+              Archived
+              <span class="ch__check__n">26</span>
             </label>
           </div>
         </fieldset>
+
+        <!-- FOLDED, because sixteen rows is longer than the page above them. A
+             <details> around the fieldset rather than around the checkboxes:
+             the summary is the facet heading and the legend stays for the
+             grouping, visually hidden because the summary already says it.
+
+             Shut by default. Status is the facet that matters at sign-off, and a
+             set filter is the exception rather than the way in. A set left ticked
+             behind a shut panel would be a trap, so the summary says FILTERED
+             whenever there is something ticked inside it. -->
+        <details class="ch__facet ch__facet--fold">
+          <summary class="ch__facet__summary">
+            <span>Set</span>
+            <span class="ch__facet__caret" aria-hidden="true"></span>
+          </summary>
+          <fieldset class="ch__facet__body">
+            <legend class="em-visually-hidden">Set</legend>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-home">
+              <label class="ch__check__label" for="set-home">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                The homepage
+                <span class="ch__check__n">6</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-who">
+              <label class="ch__check__label" for="set-who">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Who We Are
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-do">
+              <label class="ch__check__label" for="set-do">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                What We Do
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-team">
+              <label class="ch__check__label" for="set-team">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Team, Board &amp; Fellows
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-solutions">
+              <label class="ch__check__label" for="set-solutions">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Solutions
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-education">
+              <label class="ch__check__label" for="set-education">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Quality Education
+                <span class="ch__check__n">1</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-work">
+              <label class="ch__check__label" for="set-work">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Meaningful Work
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-safety">
+              <label class="ch__check__label" for="set-safety">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Public Safety
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-podcast">
+              <label class="ch__check__label" for="set-podcast">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                The Empower Podcast
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-capitol">
+              <label class="ch__check__label" for="set-capitol">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Capitol Chat
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-epic">
+              <label class="ch__check__label" for="set-epic">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                EPIC (Research)
+                <span class="ch__check__n">3</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-mail">
+              <label class="ch__check__label" for="set-mail">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Email Sign Up
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-amb">
+              <label class="ch__check__label" for="set-amb">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Ambassador
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-give">
+              <label class="ch__check__label" for="set-give">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Donate
+                <span class="ch__check__n">4</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-content">
+              <label class="ch__check__label" for="set-content">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                All Content
+                <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-landing">
+              <label class="ch__check__label" for="set-landing">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Landing page template
+                <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+          </fieldset>
+        </details>
 
         <button class="ch__rail__clear" type="reset">Clear filters</button>
       </div>
@@ -199,7 +239,7 @@
 
 
   <main class="ch__results">
-  <section data-set="home" aria-labelledby="group-home">
+  <section data-set="home" data-state="decided" aria-labelledby="group-home">
     <h2 class="ch__group" id="group-home">The homepage</h2>
     <ul class="ch__list">
       <li data-set="home" class="ch__opt ch__opt--pick">
@@ -212,67 +252,12 @@
           <div><dt>Next</dt><dd>Consolidate to one stylesheet, then convert to Elementor</dd></div>
         </dl>
       </li>
-
-      <li data-set="home" class="ch__opt ch__opt--ref">
-        <p class="ch__tag">Reference</p>
-        <h3><a href="current-2.html">The Evolution</a></h3>
-        <p class="ch__desc">The design you already have, moved forward rather than replaced. A navy utility strip over a centred nav with plain dropdowns instead of mega menus; a centred banner whose three photographs cross the edge of a tinted band; the three foundations as full-height photographic panels that open under the pointer.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Familiar, current, unfussy</dd></div>
-          <div><dt>Signature</dt><dd>Photographs straddling every colour edge, so no section sits in a box</dd></div>
-          <div><dt>Best for</dt><dd>Shipping something better without relearning the site</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="home" class="ch__opt ch__opt--ref">
-        <p class="ch__tag">Reference · Homepage A</p>
-        <h3><a href="homepage-a.html">Front Porch</a></h3>
-        <p class="ch__desc">An interlocking mosaic. The hero portrait carries an inset photograph at one corner and the north-star quote at the other; the solutions model is a staggered photo mosaic against a sticky intro; the three foundations climb a diagonal.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Warm, photographic, family-first</dd></div>
-          <div><dt>Signature</dt><dd>Overlap — nothing sits in a plain band</dd></div>
-          <div><dt>Best for</dt><dd>A parent arriving from social media</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="home" class="ch__opt ch__opt--ref">
-        <p class="ch__tag">Reference · Homepage B</p>
-        <h3><a href="homepage-b.html">The Index</a></h3>
-        <p class="ch__desc">A persistent armature. Every section is a sticky rail carrying its place in the funnel against a wide content column. Hairlines instead of card borders, tabular numerals, real negative space.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Elegant, precise, credible</dd></div>
-          <div><dt>Signature</dt><dd>Foundations is an index — each row cross-fades its own photographic plate</dd></div>
-          <div><dt>Best for</dt><dd>A lawmaker, journalist or donor checking credibility</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="home" class="ch__opt ch__opt--ref">
-        <p class="ch__tag">Reference · Homepage C</p>
-        <h3><a href="homepage-c.html">The Atlas</a></h3>
-        <p class="ch__desc">Horizontal motion inside a vertical page. The solutions model and the stories run as scroll-snapped rails; the three foundations are full-height photographic panels that expand under the pointer or the keyboard.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Confident, modern, hands-on</dd></div>
-          <div><dt>Signature</dt><dd>Panels that open as you move across them</dd></div>
-          <div><dt>Best for</dt><dd>A visitor who came to look around rather than to read</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="home" class="ch__opt ch__opt--ref">
-        <p class="ch__tag">Reference · Homepage D</p>
-        <h3><a href="homepage-d.html">The Throughline</a></h3>
-        <p class="ch__desc">The page as a route. An orange line threads the five steps of the solutions model, and the three foundations are full-height photographic slabs that stick and slide over one another as you scroll.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Cinematic, bold, single-minded</dd></div>
-          <div><dt>Signature</dt><dd>The sticky foundation stack</dd></div>
-          <div><dt>Best for</dt><dd>Making one big impression on a large screen</dd></div>
-        </dl>
-      </li>
     </ul>
+    <p class="ch__also">The five builds it was assembled from are in the <a href="#archive-home">archive</a>.</p>
   </section>
 
-  <section data-set="who" aria-labelledby="group-who">
+  <section data-set="who" data-state="decided" aria-labelledby="group-who">
     <h2 class="ch__group" id="group-who">About Us — Who We Are</h2>
-    <p class="ch__groupnote">Mission, history and nonprofit status. All three carry the same roadmap copy in the same order, and all three link to the team page below.</p>
     <ul class="ch__list">
       <li data-set="who" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Who We Are A</p>
@@ -284,34 +269,12 @@
           <div><dt>Best for</dt><dd>A visitor who wants to know who these people are</dd></div>
         </dl>
       </li>
-
-      <li data-set="who" class="ch__opt">
-        <p class="ch__tag">Who We Are B</p>
-        <h3><a href="who-we-are-b.html">The Record</a></h3>
-        <p class="ch__desc">The typographic reading. The mission statement fills the hero at display size; below it the page is a numbered record, each chapter with a sticky rail holding its number and name while the narrative travels past.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Considered, precise, institutional</dd></div>
-          <div><dt>Signature</dt><dd>The sticky chapter rail</dd></div>
-          <div><dt>Best for</dt><dd>A donor or lawmaker reading carefully</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="who" class="ch__opt">
-        <p class="ch__tag">Who We Are C</p>
-        <h3><a href="who-we-are-c.html">The Ground</a></h3>
-        <p class="ch__desc">The photographic reading. A full-width picture behind a navy panel, the story on a navy band with two offset frames, and the three legal entities set against the roadmap’s own verbs — educate, engage, elect.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Bold, rooted, cinematic</dd></div>
-          <div><dt>Signature</dt><dd>Full-bleed photography with every word on solid colour</dd></div>
-          <div><dt>Best for</dt><dd>Making the state itself the first thing you see</dd></div>
-        </dl>
-      </li>
     </ul>
+    <p class="ch__also">The two other readings are in the <a href="#archive-who">archive</a>.</p>
   </section>
 
-  <section data-set="do" aria-labelledby="group-do">
+  <section data-set="do" data-state="decided" aria-labelledby="group-do">
     <h2 class="ch__group" id="group-do">About Us — What We Do</h2>
-    <p class="ch__groupnote">The roadmap gives this page one headline, one line of copy, three solutions and four report links. Each variation is a different answer to how little that is.</p>
     <ul class="ch__list">
       <li data-set="do" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: What We Do A</p>
@@ -323,34 +286,12 @@
           <div><dt>Best for</dt><dd>Sitting directly under the agreed homepage</dd></div>
         </dl>
       </li>
-
-      <li data-set="do" class="ch__opt">
-        <p class="ch__tag">What We Do B</p>
-        <h3><a href="what-we-do-b.html">The Ledger</a></h3>
-        <p class="ch__desc">The page as a document: a typographic hero with the three solutions indexed beneath it, one full-width row per solution with the photograph alternating side, and the reports as ledger lines.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Orderly, editorial, unhurried</dd></div>
-          <div><dt>Signature</dt><dd>Alternating rows on alternating surfaces</dd></div>
-          <div><dt>Best for</dt><dd>Growing — a fourth solution is one more row</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="do" class="ch__opt">
-        <p class="ch__tag">What We Do C</p>
-        <h3><a href="what-we-do-c.html">The Field</a></h3>
-        <p class="ch__desc">The loudest of the three. A photograph the width of the window with the hero card climbing it, three tall photographic cards at three heights, and a navy ribbon of years closing the page.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Big, confident, image-led</dd></div>
-          <div><dt>Signature</dt><dd>Tall cards at three heights</dd></div>
-          <div><dt>Best for</dt><dd>A page that has to carry very little copy</dd></div>
-        </dl>
-      </li>
     </ul>
+    <p class="ch__also">The two other readings are in the <a href="#archive-do">archive</a>.</p>
   </section>
 
-  <section data-set="team" aria-labelledby="group-team">
+  <section data-set="team" data-state="decided" aria-labelledby="group-team">
     <h2 class="ch__group" id="group-team">About Us — Team, Board &amp; Fellows</h2>
-    <p class="ch__groupnote">The page all six About builds link to. Three readings of it: the same ten staff, five fellows and eight board members, the same roadmap copy, three different answers to how much weight the photographs carry. Portraits are marked placeholders until Empower supply headshots.</p>
     <ul class="ch__list">
       <li data-set="team" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Team A</p>
@@ -360,49 +301,20 @@
           <div><dt>Feels like</dt><dd>Warm, human, unhurried</dd></div>
           <div><dt>Signature</dt><dd>Staff portraits staggered out of the grid</dd></div>
           <div><dt>Best for</dt><dd>A page whose job is to make the team recognisable</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="team" class="ch__opt">
-        <p class="ch__tag">Team B</p>
-        <h3><a href="team-b.html">The Directory</a></h3>
-        <p class="ch__desc">The typographic reading, and the one that still works if Empower would rather not lead with faces. A numbered index, one hairline row per person, photographs reduced to discs beside the names, and a window-wide photograph after the list rather than above it.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Precise, institutional, quick to scan</dd></div>
-          <div><dt>Signature</dt><dd>Ten rows read like a masthead</dd></div>
-          <div><dt>Best for</dt><dd>Growing — an eleventh hire is one more row</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="team" class="ch__opt">
-        <p class="ch__tag">Team C</p>
-        <h3><a href="team-c.html">The Frame</a></h3>
-        <p class="ch__desc">The loudest of the three. A photograph the width of the window with the navy hero panel climbing it, the staff as square framed plates, the fellows as full-width rows with the subject area set larger than the name, and the board closing the page as a navy ribbon.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Bold, image-led, confident</dd></div>
-          <div><dt>Signature</dt><dd>Square plates, and a board ribbon in navy</dd></div>
-          <div><dt>Best for</dt><dd>Sitting under Who We Are C</dd></div>
+          <!-- The bio page is the one page in the build that is not a set of its
+               own, and every name on all three readings opens it. It lived in this
+               set's note until the notes came off; a test requires every built page
+               to be reachable from this page, so it lives in the card now. -->
+          <div><dt>Also</dt><dd><a href="team-bio.html">The individual bio page</a></dd></div>
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote">On all three, every staff card opens the one staff detail screen built so far: <a href="team-bio.html">Grant Callen’s bio</a>, the template the other nine are cut from. The set still waits on 23 headshots and those nine pages.</p>
+    <p class="ch__also">The two other readings are in the <a href="#archive-team">archive</a>.</p>
   </section>
 
-  <section data-set="solutions" aria-labelledby="group-solutions">
+  <section data-set="solutions" data-state="decided" aria-labelledby="group-solutions">
     <h2 class="ch__group" id="group-solutions">Solutions</h2>
-    <p class="ch__groupnote">The landing page for the three areas: Quality Education, Meaningful Work, Public Safety, plus research and community stories. Same roadmap copy on all three, three different arguments about what the three areas ARE. None of them reuses a What We Do composition, so the two pages cannot be mistaken for each other.</p>
     <ul class="ch__list">
-      <li data-set="solutions" class="ch__opt">
-        <p class="ch__tag">Solutions A</p>
-        <h3><a href="solutions-a.html">The Commons</a></h3>
-        <p class="ch__desc">The familiar one. A hero photograph running off the left edge of the window, then the three areas stacked as three identical panels, picture always on the left. Research lands on a navy slab and the page closes on community stories. Sits beside the agreed homepage without argument.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Warm, familiar, on-brand</dd></div>
-          <div><dt>Signature</dt><dd>Three equal panels, picture-left every time</dd></div>
-          <div><dt>Best for</dt><dd>The lowest-risk option on the table</dd></div>
-        </dl>
-      </li>
-
       <li data-set="solutions" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Solutions B</p>
         <h3><a href="solutions-b.html">The Throughline Down</a></h3>
@@ -413,24 +325,12 @@
           <div><dt>Best for</dt><dd>Making the three areas feel like one argument</dd></div>
         </dl>
       </li>
-
-      <li data-set="solutions" class="ch__opt">
-        <p class="ch__tag">Solutions C</p>
-        <h3><a href="solutions-c.html">The Lattice</a></h3>
-        <p class="ch__desc">The structural reading, and the least like anything else in this build. Near-monochrome: the three areas hang from one beam with three orange nodes, the house honeycomb sits behind them at lattice scale, and the photographs are desaturated until you touch them so the structure reads first.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Considered, systemic, unhurried</dd></div>
-          <div><dt>Signature</dt><dd>One beam, three nodes, three columns</dd></div>
-          <div><dt>Best for</dt><dd>An audience that reads before it scrolls</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">All three route to <code>/solutions/education</code>, <code>/solutions/work</code> and <code>/solutions/safety</code>. All three are built below.</p>
+    <p class="ch__also">The two other readings are in the <a href="#archive-solutions">archive</a>.</p>
   </section>
 
-  <section data-set="education" aria-labelledby="group-education">
+  <section data-set="education" data-state="decided" aria-labelledby="group-education">
     <h2 class="ch__group" id="group-education">Solutions — Quality Education</h2>
-    <p class="ch__groupnote">The third solution detail page, built on the same shared template as Meaningful Work and Public Safety: the same seven-section flow, four work areas, and one thing only this page carries, a closing statement after them. Its copy has not been through client review, unlike the other two. Empower confirmed it on 2026-08-07, the same day they picked the shared template for all three solution pages.</p>
     <ul class="ch__list">
       <li data-set="education" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Quality Education</p>
@@ -443,35 +343,11 @@
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote">Sections 6 and 7 are feeds on all three solution pages, and they become live queries in WordPress. Until then they show real posts from empowerms.org: the three most recent Education community stories, and education articles and research. Every headline links to the post it names, so nothing on this page is written by us.</p>
   </section>
 
-  <section data-set="work" aria-labelledby="group-work">
+  <section data-set="work" data-state="decided" aria-labelledby="group-work">
     <h2 class="ch__group" id="group-work">Solutions — Meaningful Work</h2>
-    <p class="ch__groupnote">The first of the solution detail pages, now in three readings. All three carry the roadmap’s Meaningful Work tab whole: its seven-section flow, five work areas, and the “What We’re Working Toward” line under each one. The third is built on the Streetlight template Empower chose for Public Safety on 2026-08-07, so it shares its blocks and its stylesheet with that page rather than composing its own. Empower chose that third reading the same day, so Streetlight is now the template for all three solution pages.</p>
     <ul class="ch__list">
-      <li data-set="work" class="ch__opt">
-        <p class="ch__tag">Meaningful Work B</p>
-        <h3><a href="work-b.html">The Sidelines</a></h3>
-        <p class="ch__desc">The editorial reading. The headline is the whole first screen on white, the page’s one photograph arrives under it window-wide, and the problem is the only dark section on the page. The four approaches run as one horizontal track; the five work areas are a mosaic led by one double-width navy plate.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Near-monochrome, credible, unhurried</dd></div>
-          <div><dt>Signature</dt><dd>The four-track and the double-width lead plate</dd></div>
-          <div><dt>Best for</dt><dd>Leading with the participation problem</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="work" class="ch__opt">
-        <p class="ch__tag">Meaningful Work C</p>
-        <h3><a href="work-c.html">The Plate</a></h3>
-        <p class="ch__desc">Keeps the three sections Paolo picked out of B — the work-area mosaic, the story columns, the article stubs — and rebuilds everything above them. Navy holds the top third with the photograph inset beside the headline, white plates climb that edge, and the four approaches are quartered inside one navy plate. The only reading with a rail: five links on the navy’s bottom edge that jump straight to the five areas.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Structural, civic, navigable</dd></div>
-          <div><dt>Signature</dt><dd>The rail, and the approaches quartered on navy</dd></div>
-          <div><dt>Best for</dt><dd>Five areas a reader can survey without scrolling</dd></div>
-        </dl>
-      </li>
-
       <li data-set="work" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Meaningful Work</p>
         <h3><a href="work.html">The Streetlight</a></h3>
@@ -483,24 +359,12 @@
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote">Sections 6 and 7 are feeds on all three, and they become live queries in WordPress. Until then they show real posts from empowerms.org: the three most recent Meaningful Work community stories, and workforce articles and research. Every headline links to the post it names, so nothing on any of the three is written by us.</p>
+    <p class="ch__also">The two other readings are in the <a href="#archive-work">archive</a>.</p>
   </section>
 
-  <section data-set="safety" aria-labelledby="group-safety">
+  <section data-set="safety" data-state="decided" aria-labelledby="group-safety">
     <h2 class="ch__group" id="group-safety">Solutions — Public Safety</h2>
-    <p class="ch__groupnote">The second solution detail page, in three readings. Same seven-section roadmap flow, four work areas rather than five. Empower chose Public Safety B, The Streetlight, on 2026-08-07, and made it the shared template for Meaningful Work and Quality Education too, rather than one of three distinct designs.</p>
     <ul class="ch__list">
-      <li data-set="safety" class="ch__opt">
-        <p class="ch__tag">Public Safety A</p>
-        <h3><a href="safety-a.html">The Neighbourhood</a></h3>
-        <p class="ch__desc">Safety as a place, so the page is built out of places. A window-wide photograph with the headline on a navy block standing on its bottom edge, the vision and the problem held to opposite sides of the page and facing each other across it, the four approaches laid as a course of brick with staggered joints and no gaps, and the four work areas standing as four posts divided by hairlines under navy caps. Nothing on it is a card.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Warm, neighbourly, built</dd></div>
-          <div><dt>Signature</dt><dd>The offset bricks and the four capped posts</dd></div>
-          <div><dt>Best for</dt><dd>Sitting closest to the agreed homepage</dd></div>
-        </dl>
-      </li>
-
       <li data-set="safety" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Public Safety</p>
         <h3><a href="safety.html">The Streetlight</a></h3>
@@ -511,24 +375,12 @@
           <div><dt>Best for</dt><dd>A subject that should not read as cheerful</dd></div>
         </dl>
       </li>
-
-      <li data-set="safety" class="ch__opt">
-        <p class="ch__tag">Public Safety C</p>
-        <h3><a href="safety-c.html">The Watch</a></h3>
-        <p class="ch__desc">The same three kept sections and the inverse of C’s upper half: one navy plate on a white field, the photograph a column inside it, the rail beneath on white divided by hairlines. The vision is a second navy plate split by one rule; the problem is the only section with no plate at all, which is what makes the others read as objects. Four approaches as wide rows, no boxes.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Composed, deliberate, unhurried</dd></div>
-          <div><dt>Signature</dt><dd>One navy plate on white, four approaches as rows</dd></div>
-          <div><dt>Best for</dt><dd>A serious subject without going dark</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">Quality Education, the third destination the Solutions landing page routes to, is built on this reading: the Streetlight template, carrying its own copy, in the Quality Education set above.</p>
+    <p class="ch__also">The two other readings are in the <a href="#archive-safety">archive</a>.</p>
   </section>
 
-  <section data-set="podcast" aria-labelledby="group-podcast">
+  <section data-set="podcast" data-state="decided" aria-labelledby="group-podcast">
     <h2 class="ch__group" id="group-podcast">The Empower Podcast</h2>
-    <p class="ch__groupnote">The show page, in two readings. Both carry the roadmap’s Podcast tab whole — the three-sentence hero, both of its buttons, “Go Beyond the Headlines.” and the episode library. Both also answer the question the roadmap puts to Paolo directly: they filter the library by tag, with no JavaScript. Empower chose The Studio on 2026-08-07.</p>
     <ul class="ch__list">
       <li data-set="podcast" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Podcast A</p>
@@ -540,24 +392,12 @@
           <div><dt>Best for</dt><dd>A back catalogue people dig through</dd></div>
         </dl>
       </li>
-
-      <li data-set="podcast" class="ch__opt">
-        <p class="ch__tag">Podcast B</p>
-        <h3><a href="podcast-b.html">On the Record</a></h3>
-        <p class="ch__desc">The headline is the hero: three sentences on three lines at display size, the third in orange, with the picture arriving after the words as one window-wide band. The show’s description is the page’s single navy panel, and the library filters from a row of tag chips across the top rather than a rail down the side.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Editorial, confident, spare</dd></div>
-          <div><dt>Signature</dt><dd>Three-line headline, chips over two-up rows</dd></div>
-          <div><dt>Best for</dt><dd>Leading with what the show is about</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">The nine episodes in each library are real ones from empowerms.org, each linked to the episode it names. There are nine because that is every topic-and-guest pair, so no combination of filters can return an empty grid.</p>
+    <p class="ch__also">The other reading is in the <a href="#archive-podcast">archive</a>.</p>
   </section>
 
-  <section data-set="capitol" aria-labelledby="group-capitol">
+  <section data-set="capitol" data-state="decided" aria-labelledby="group-capitol">
     <h2 class="ch__group" id="group-capitol">Capitol Chat</h2>
-    <p class="ch__groupnote">The other show in the Podcast dropdown, in two readings. Its roadmap copy differs from The Empower Podcast’s in ways that drove the design rather than decorated it: <strong>one</strong> button, not two, because this is an audio show where the other leads on YouTube; a weekly five-minute format during the legislative session; and a host — Wil Ervin — whose bio page does not exist, so his name is deliberately not a link. Empower chose The Dome on 2026-08-07.</p>
     <ul class="ch__list">
       <li data-set="capitol" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Capitol Chat A</p>
@@ -569,24 +409,12 @@
           <div><dt>Best for</dt><dd>Catching up in one scroll</dd></div>
         </dl>
       </li>
-
-      <li data-set="capitol" class="ch__opt">
-        <p class="ch__tag">Capitol Chat B</p>
-        <h3><a href="capitol-b.html">The Session</a></h3>
-        <p class="ch__desc">The question holds the left of a navy hero and the reply holds the right. The Capitol photography runs full-bleed beneath it, the widest any placeholder gets here. The show is described in two text columns, and the library accumulates by session — so ticking a session hides that whole group, heading included, which a flat list cannot show.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>On the record. Structured, archival</dd></div>
-          <div><dt>Signature</dt><dd>Full-bleed band, two text columns, grouped list</dd></div>
-          <div><dt>Best for</dt><dd>A back catalogue that grows every session</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">Six rows in each library, three per session and all three topics inside each group, so no combination of filters can empty the list or leave a heading with nothing under it. Every row is a real Capitol Chat with its published date, linked to the episode. The topic against each one is ours: Capitol Chat carries no topic tag upstream, so those three labels are a stand-in until Empower supply the real ones.</p>
+    <p class="ch__also">The other reading is in the <a href="#archive-capitol">archive</a>.</p>
   </section>
 
-  <section data-set="epic" aria-labelledby="group-epic">
+  <section data-set="epic" data-state="decided" aria-labelledby="group-epic">
     <h2 class="ch__group" id="group-epic">EPIC (Research)</h2>
-    <p class="ch__groupnote">The research arm, in three readings. The roadmap tab is short — a hero, one passage about what EPIC does, a three-step method and an index of research — so these three are held apart by <strong>structure</strong> rather than by how much they say. All three carry the same approved copy word for word, take the roadmap’s two buttons and fill only the first one, and put the three focus areas high on the page, which is what Keri’s comms notes ask for. Every report named on all three is a real one from empowerms.org, linked to the post it names. Nothing on these pages puts a number on a chart: a made-up statistic decorating a research page would be the worst thing on this site.</p>
     <ul class="ch__list">
       <li data-set="epic" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: EPIC A</p>
@@ -598,36 +426,12 @@
           <div><dt>Best for</dt><dd>Showing how the work is done</dd></div>
         </dl>
       </li>
-
-      <li data-set="epic" class="ch__opt">
-        <p class="ch__tag">EPIC B</p>
-        <h3><a href="epic-b.html">The Plotted Field</a></h3>
-        <p class="ch__desc">Argues that EPIC is evidence. A white field with an outlined wordmark and a drawn plot that has no axis, no scale and no numbers on it, a navy plate pulled up over the hero, and three steps that stagger down and across the grid with a thread drawn through them. It closes on three full-height doors, one per focus area.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A working surface. Open, deliberate</dd></div>
-          <div><dt>Signature</dt><dd>Broken grid, drawn plot, three doors</dd></div>
-          <div><dt>Best for</dt><dd>Looking like a research organisation</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="epic" class="ch__opt">
-        <p class="ch__tag">EPIC C</p>
-        <h3><a href="epic-c.html">The Instrument</a></h3>
-        <p class="ch__desc">Argues that EPIC is one object. Navy from the header to the footer, with a single line down the left edge that fills as the page scrolls and carries a mark at every step. The densest of the three: the method is three ruled rows, and the research is a dated index rather than three panels. It says the same words in less room.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>An instrument. Quiet, exact</dd></div>
-          <div><dt>Signature</dt><dd>Drenched navy, filling spine, dated index</dd></div>
-          <div><dt>Best for</dt><dd>Readers who came to find something</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">The roadmap offers a choice of URL, SEO title and SEO description for this page. All three builds use <code>/epic</code> and the first of each pair, which is the one that names Quality Education, Meaningful Work and Public Safety. <strong>These three add no JavaScript.</strong> The sideways track, the drawn thread and the filling spine are all CSS driven by scroll position, so they convert to Elementor as custom CSS rather than as a plugin; where a browser does not support that, or the reader has asked for reduced motion, each page is a static composition that needs nothing. Photography on all three is from the supplied library and stands in — it was shot for the solution pages — and nothing in that library shows a neighbourhood or a street, so the Public Safety frame is the loosest of the three.</p>
-    <p class="ch__groupnote"><strong>Changed on 11 August, to Empower’s note.</strong> The Pinned Method now carries The Instrument’s version of “How EPIC Turns Research Into Solutions”: three ruled rows with the step name on a narrow left measure, rather than the sideways track. On The Instrument that sequence was marked against a line running the whole page; here the page is navy in one section only, so the line is local to the method and fills as that section crosses the screen. The sideways track is still on The Plotted Field’s sibling and on The Instrument itself if you want to compare. The EPIC logo now sits to the right of the hero headline. The file Empower publish is navy and orange <em>on white</em>, so it stands on a white plate rather than being recoloured to sit on the navy: <strong>a reversed or transparent version would let it sit straight on the field</strong>, and that is an asset ask, not a build change.</p>
+    <p class="ch__also">The two other readings are in the <a href="#archive-epic">archive</a>.</p>
   </section>
 
-  <section data-set="mail" aria-labelledby="group-mail">
+  <section data-set="mail" data-state="decided" aria-labelledby="group-mail">
     <h2 class="ch__group" id="group-mail">Email Sign Up</h2>
-    <p class="ch__groupnote">The first of the two Join Us destinations, in two readings. This tab ends on an instruction rather than a paragraph — “Insert signup form on webpage” — so unlike every other page in this build these are built around a <strong>real form</strong>: real labels, autocomplete tokens, native validation, and no script behind any of it. At hand-off the action becomes the WordPress or Mailchimp endpoint and nothing else changes. The two readings disagree about one thing: where the form goes. Empower chose Five Minutes on 11 August.</p>
     <ul class="ch__list">
       <li data-set="mail" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Email Sign Up A</p>
@@ -639,24 +443,12 @@
           <div><dt>Best for</dt><dd>Conversion above all</dd></div>
         </dl>
       </li>
-
-      <li data-set="mail" class="ch__opt">
-        <p class="ch__tag">Email Sign Up B</p>
-        <h3><a href="mail-b.html">The Issue</a></h3>
-        <p class="ch__desc">The opposite bet: the form is the destination, so the page gets to be a piece of publishing first. A photograph the width of the window, the title on solid ground beneath it, the argument on a navy band, and the four things you receive set like the contents of an issue — display type on ruled lines that step in from the left. The form closes it, beside the email itself.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A publication, not a landing page</dd></div>
-          <div><dt>Signature</dt><dd>Full-width bands, contents-page list</dd></div>
-          <div><dt>Best for</dt><dd>Making the newsletter feel worth having</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">Both readings show a real Empower campaign email from the asset library, cropped to its masthead, so the page shows what arrives rather than describing it. Neither page invents a subscriber count, an open rate or a testimonial.</p>
+    <p class="ch__also">The other reading is in the <a href="#archive-mail">archive</a>.</p>
   </section>
 
-  <section data-set="amb" aria-labelledby="group-amb">
+  <section data-set="amb" data-state="decided" aria-labelledby="group-amb">
     <h2 class="ch__group" id="group-amb">Ambassador</h2>
-    <p class="ch__groupnote">The second Join Us destination, in two readings. This tab carries two instructions — “Include interest form for joining the ambassador program” and “Include ambassador photos” — so both readings are built around a real interest form and both lead with people. The photographs are stand-ins from the supplied library until Empower send Ambassador portraits of their own. Ashley Green is named on both because the roadmap names her, and on neither is her name a link: only the CEO’s bio page exists, and a name that opens somebody else’s bio is the exact failure Empower flagged on 5 August. Empower chose The Network on 11 August.</p>
     <ul class="ch__list">
       <li data-set="amb" class="ch__opt ch__opt--pick">
         <p class="ch__tag">Chosen: Ambassador A</p>
@@ -668,38 +460,15 @@
           <div><dt>Best for</dt><dd>Showing the network is real</dd></div>
         </dl>
       </li>
-
-      <li data-set="amb" class="ch__opt">
-        <p class="ch__tag">Ambassador B</p>
-        <h3><a href="amb-b.html">The First Step</a></h3>
-        <p class="ch__desc">One held frame instead of a crowd. A drenched navy hero sets the roadmap’s three beats on three lines, a photograph runs the full width beneath it, and then the left column <em>stops</em> — a single face and one sentence stay in view while both questions are answered on the right. The four ways step down the page with photographs among them; the form takes the last screen on its own.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A personal ask, not a campaign</dd></div>
-          <div><dt>Signature</dt><dd>Sticky held frame, stepped ways</dd></div>
-          <div><dt>Best for</dt><dd>Persuading one person at a time</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote">The interest form on both is the same set of fields, and the four tick boxes are worded to match the four ways the roadmap lists. Nothing on either page is a fake control: every field has a real label, a real autocomplete token and native validation, and there is no JavaScript on either page beyond the shared header and reveal scripts every page loads.</p>
+    <p class="ch__also">The other reading is in the <a href="#archive-amb">archive</a>.</p>
   </section>
 
-  <section data-set="give" aria-labelledby="group-give">
+  <section data-set="give" data-state="decided" aria-labelledby="group-give">
     <h2 class="ch__group" id="group-give">Donate</h2>
-    <p class="ch__groupnote">The last tab in the roadmap and the only page in the build that asks for money. <strong>New: two answers to the same note.</strong> Empower said neither of the first two readings landed, and asked for something simpler with the giving form higher up the page. <strong>The Card</strong> takes their existing donation form, field for field, and gives it somewhere to sit. <strong>One Screen</strong> redesigns the giving decision itself. Both put the ask on the first screen, and A and B are left up so all four can be read against each other.</p>
     <ul class="ch__list">
-      <li data-set="give" class="ch__opt">
-        <p class="ch__tag">Donate D, new</p>
-        <h3><a href="give-d.html">The Card</a></h3>
-        <p class="ch__desc">Your form, given somewhere to sit. A short navy banner carries the headline and the EM pattern, and one card lifts out of it, overlapping the banner’s bottom edge and running down into the white body. Inside the card is Empower’s existing donation form drawn field for field: name, email, cell, the full address, the three gift types, the credit card notice and the total, in that order. Everything else on the page is quiet and centred behind it.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A counter. Familiar, businesslike</dd></div>
-          <div><dt>Signature</dt><dd>Patterned banner, card overlapping into the body</dd></div>
-          <div><dt>Best for</dt><dd>Changing nothing about how giving works</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="give" class="ch__opt">
-        <p class="ch__tag">Donate C, new</p>
+      <li data-set="give" class="ch__opt ch__opt--pick">
+        <p class="ch__tag">Chosen: Donate C</p>
         <h3><a href="give-c.html">One Screen</a></h3>
         <p class="ch__desc">The page has one job, so the job is on the first screen: a short hero on the left, and on the right the only two decisions that cost a donor any clicks, how often and how much. Choosing carries straight into Empower’s own form with the answer already in it, so nothing is stated twice. The form itself is not drawn here: The Card is the reading that reproduces it, and showing it on both made this page about the form rather than about the choice. Everything the first two readings put before the ask now sits after it, for the reader who has not decided yet, and on a phone the choice moves above the headline. Nobody should scroll past an argument to reach the thing they came to do.</p>
         <dl class="ch__meta">
@@ -708,37 +477,12 @@
           <div><dt>Best for</dt><dd>Fewest clicks between arriving and giving</dd></div>
         </dl>
       </li>
-
-      <li data-set="give" class="ch__opt">
-        <p class="ch__tag">Donate A</p>
-        <h3><a href="give-a.html">Generational</a></h3>
-        <p class="ch__desc">The copy’s own picture of a gift is incremental — “one opportunity, one family, and one generation at a time” — so the middle of the page is a <em>staircase</em>: three plates stepping down and across with two photographs filling the gaps they leave. It opens on a photograph the width of the window, and “So do we.” gets its own line in orange, because that two-word answer is the argument of the page.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Warm, accumulating, human</dd></div>
-          <div><dt>Signature</dt><dd>Photographic hero, staircase, amount tiles</dd></div>
-          <div><dt>Best for</dt><dd>A first-time giver who needs the why</dd></div>
-        </dl>
-      </li>
-
-      <li data-set="give" class="ch__opt">
-        <p class="ch__tag">Donate B</p>
-        <h3><a href="give-b.html">Next Chapter</a></h3>
-        <p class="ch__desc">Navy from the header down, with the ask as the only thing on the page that changes colour: a white plate at the end of a dark scroll. The first screen is type alone — the reader’s sentence, then ours, set as an exchange — and all the photography lands at once, four panels edge to edge for the four conditions the copy names. Amounts are a ruled list, not a grid of buttons.</p>
-        <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>Serious. A case, then an ask</dd></div>
-          <div><dt>Signature</dt><dd>Drenched navy, four-panel band, white plate</dd></div>
-          <div><dt>Best for</dt><dd>Donors who already know the work</dd></div>
-        </dl>
-      </li>
     </ul>
-    <p class="ch__groupnote"><strong>What the live form actually is.</strong> Gravity Forms with the Stripe add-on, and the Stripe payment element sits inside your own page: nothing redirects to stripe.com. That is why One Screen has no hand-off in it. The tiles link to <code>/donate/</code> with the choice in the address, and the form fills in from it. Two consequences worth knowing: the card field will always look like Stripe rather than like the rest of the form, because Stripe owns what is inside it; and the amount tiles are a <em>shortcut into</em> your form, not a replacement for it, so nothing about how giving works has to change.</p>
-    <p class="ch__groupnote"><strong>None of the four collects a payment detail.</strong> Card numbers, expiry dates and bank details belong to the processor, and a test fails every one of these pages for a card, CVV, expiry or bank field. On One Screen and The Card that goes further: each field drawn on them is a picture rather than a control, because a real name-and-address form on a page with nothing behind it would be collecting real personal data into nothing. No reading invents a total raised, a donor count or a progress bar.</p>
-    <p class="ch__groupnote"><strong>Three things we need from Empower.</strong> <strong>1.</strong> Switch on “Allow field to be populated dynamically” for the gift type and amount fields on form 4, and tell us the parameter names. That is the whole mechanism behind One Screen; it is not on today, and the names in the build are ours as a stand-in. <strong>2.</strong> The amounts. One Screen offers $25 through $500, where the live form offers an open box for a one-time gift, $15/$25/$50/$100 monthly and $100/$250/$500/$1,000 annually. <strong>3.</strong> Confirm the donate page URL, which the build assumes is <code>/donate/</code>. A and B still hand off to a placeholder route, <code>/donate/give</code>, because they were built before we knew any of this.</p>
+    <p class="ch__also">The three other readings are in the <a href="#archive-give">archive</a>.</p>
   </section>
 
-  <section data-set="content" aria-labelledby="group-content">
+  <section data-set="content" data-state="open" aria-labelledby="group-content">
     <h2 class="ch__group" id="group-content">All Content</h2>
-    <p class="ch__groupnote"><strong>New.</strong> The page Kienna asked for after the Georgia Center for Opportunity’s, where a visitor can browse and filter everything Empower publishes. The roadmap’s All Content tab gives four content types with a sentence each and a topic list, and nothing else — no headline, no hero — so the four sentences and the five topic labels are carried word for word and everything above the filter is ours, written to be replaced. The two readings are opposite answers: one keeps the four types as the structure of the page, the other dissolves them into a single dated stream.</p>
     <ul class="ch__list">
       <li data-set="content" class="ch__opt">
         <p class="ch__tag">All Content A, new</p>
@@ -753,37 +497,42 @@
 
       <li data-set="content" class="ch__opt">
         <p class="ch__tag">All Content B, new</p>
-        <h3><a href="content-b.html">The Stream</a></h3>
-        <p class="ch__desc">No bands and no doors: everything in one dated spine, newest first, with the most recent piece given the weight of a front page and the rest set as a record rather than as more cards. Type becomes a filter in a held rail alongside topic, and the roadmap’s four sentences sit under the four type checkboxes. This is the shape the archive actually has, and the closest of the two to the page Kienna sent.</p>
+        <h3><a href="content-b.html">What It’s About</a></h3>
+        <p class="ch__desc">The same twenty-three pieces with the two axes swapped. Subject is the page: Quality Education, Meaningful Work, Public Safety, then Bill Summaries, then the two reports that cover all three. Type becomes the filter, and the roadmap’s four sentences do that job, set as four columns on a navy band that is the only thing here that changes colour. Nobody worried about their child’s school arrives wanting “an article”; they arrive with a subject.</p>
         <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A record. Chronological, unfussy</dd></div>
-          <div><dt>Signature</dt><dd>Sticky facet rail, one lead, ruled dated rows</dd></div>
-          <div><dt>Best for</dt><dd>Visitors who want to know what is new</dd></div>
+          <div><dt>Feels like</dt><dd>A shelf per subject. Read down one</dd></div>
+          <div><dt>Signature</dt><dd>Navy switch band, photographed shelf heads, ruled rows</dd></div>
+          <div><dt>Best for</dt><dd>Visitors who arrive with a worry, not a format</dd></div>
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote"><strong>The content on both pages is real.</strong> Twenty-three live posts from empowerms.org — real titles, real dates, real links — rather than invented headlines. Two things in it are ours and need your word: your WordPress has no <em>Research &amp; Reports</em> category yet, so those four were gathered by hand from your report posts; and <em>Bill Summaries</em> is a category there but a topic here, which is what the roadmap asks for. That second one has a visible consequence, and both pages answer it in words rather than with a blank screen: bill summaries are written as articles, so pairing that topic with any other type returns nothing.</p>
-    <p class="ch__groupnote"><strong>The filter runs with no JavaScript at all</strong> — the same mechanism as the podcast libraries. Two things follow: a filtered view cannot be linked to or bookmarked, and the counts in B’s rail are of what is on this page rather than of your archive. Both are fixable in WordPress with a small script; neither is worth one here.</p>
-    <p class="ch__groupnote"><strong>One question for Empower.</strong> The roadmap heads this tab “ALL CONTENT” and then names the page “Empower Mississippi Commentary” at <code>/empower-commentary</code>. Those describe two different pages, and the header nav shipped on every build in this set says All Content. Both readings use <strong>All Content</strong> at <code>/content</code>. Tell us which you want and it is a one-line change. The SEO title and description are blank in the roadmap for this page, so they are still owed.</p>
   </section>
 
-  <section data-set="landing" aria-labelledby="group-landing">
+  <section data-set="landing" data-state="open" aria-labelledby="group-landing">
     <h2 class="ch__group" id="group-landing">Landing page template</h2>
-    <p class="ch__groupnote"><strong>New.</strong> Kienna asked to be able to start with a blank page in Elementor and build a campaign or event page as needed. Elementor already gives you the blank page; what it cannot give you is this build’s decisions. So this is the other half of that: the blocks a campaign page actually needs, drawn in this design language and sized, to be duplicated and cut down. Not a wireframe of a campaign — a kit.</p>
     <ul class="ch__list">
       <li data-set="landing" class="ch__opt">
-        <p class="ch__tag">Template, new</p>
+        <p class="ch__tag">Template A, new</p>
         <h3><a href="landing.html">The campaign kit</a></h3>
         <p class="ch__desc">Six independent blocks: a campaign hero with one action, the ask with a three-point summary beside it, an image-and-text pair that can be flipped and run twice, a voice, the action band, and three links out. Delete any of them, reorder them, run one twice — nothing depends on what sits above or below it. The one orange filled button is the campaign’s ask, which is the whole reason this page type exists.</p>
         <dl class="ch__meta">
-          <div><dt>Feels like</dt><dd>A single-purpose page. One ask, held</dd></div>
+          <div><dt>Feels like</dt><dd>A page you read down to the ask</dd></div>
           <div><dt>Signature</dt><dd>Six removable blocks, one navy action band</dd></div>
-          <div><dt>Best for</dt><dd>Campaigns, events, anything with a deadline</dd></div>
+          <div><dt>Best for</dt><dd>A case that has to be made before anyone acts</dd></div>
+        </dl>
+      </li>
+
+      <li data-set="landing" class="ch__opt">
+        <p class="ch__tag">Template B, new</p>
+        <h3><a href="landing-b.html">The held ask</a></h3>
+        <p class="ch__desc">The same campaign, with the ask moved out of the bottom of the page and into a panel that stays beside the argument as you read. One dark screen and it is the first one, with the photograph running off the right edge; then white, with the case in the left column and the form held in the right. On a phone the panel comes first, directly under the hero, because that is where a phone reader will and will not scroll to. For an event, the same panel holds the date, the place and a register button.</p>
+        <dl class="ch__meta">
+          <div><dt>Feels like</dt><dd>A page with its hand out, politely, throughout</dd></div>
+          <div><dt>Signature</dt><dd>Navy hero, bleeding photograph, sticky ask panel</dd></div>
+          <div><dt>Best for</dt><dd>Deadlines, events, anything with a closing date</dd></div>
         </dl>
       </li>
     </ul>
-    <p class="ch__groupnote"><strong>The sample is your own Save Our ESA campaign</strong>, which closed when the waitlist was funded in May 2025 — real name, real posts linked from it, so nothing on the page reads as an invented programme. A strip at the top says so, and that strip is review-only chrome that is deleted at hand-off. The Save Our ESA artwork in your media library is not used: it is an email mock-up set in lorem ipsum, so the hero carries a photograph instead.</p>
-    <p class="ch__groupnote"><strong>Two blocks are drawn as empty slots on purpose.</strong> The quotation, because it belongs to a real person and inventing one — or lifting somebody’s words out of an article to decorate a demo — is the placeholder that would read as finished work while being false. And the campaign form, because there is no endpoint behind this page; whatever a campaign runs on, a petition, a legislator lookup, a sign-up, embeds there. No page in this build collects anything.</p>
   </section>
 
   <section class="ch__shared" aria-labelledby="shared-title">
@@ -796,6 +545,249 @@
       <li>WCAG 2.2 AA, reduced motion honoured, working without JavaScript, no sideways scroll at 320px.</li>
       <li>No text sits directly on a photograph anywhere in this set — every word is on a solid or near-solid surface, so contrast survives the stand-in photography being replaced.</li>
     </ul>
+  </section>
+
+  <!-- THE ARCHIVE. Every build Empower saw and did not take, out of the set it
+       belongs to and collected here, so the page above it is the decisions and
+       nothing else. Sign-off is what this page is for now, and eleven sets
+       carrying two or three cards each was the thing in the way of it.
+
+       NOTHING IS DELETED AND NOTHING MOVES ON DISK. All 26 still build, still
+       carry their own stylesheet, and are still linked from here, because the
+       argument for the chosen one is only re-readable next to what it was chosen
+       over. What changed is the weight they are given: a row rather than a card.
+
+       THE HOMEPAGE GROUP IS NOT A LIST OF REJECTIONS. The agreed build was
+       assembled out of those five, section by section, which is why they are
+       tagged as references rather than as options.
+
+       HIDDEN BY DEFAULT. The page is for sign-off, so nothing ticked in the rail
+       means the fourteen decisions and the four builds still waiting on one, and
+       none of this. Three things bring it back: the Archived box in the rail, the
+       archive link in the intro, and the pointer under any decided set. The last
+       two work through :target, which is why they still work while the section is
+       hidden and still need no script. Ticking a set narrows the archive with it,
+       and the three sets with nothing in here get a line saying so instead of an
+       empty heading. -->
+  <section class="ch__archive" id="archive" aria-labelledby="archive-title">
+    <h2 class="ch__group" id="archive-title">Archive</h2>
+    <p class="ch__groupnote">Everything we showed you that you did not take, kept because a
+      decision is only re-readable next to the thing it was made against. Every
+      page here still builds and still works; it is one click away, just no
+      longer in the way of the sets that are still open.</p>
+
+    <p class="ch__arc__none" role="status">Nothing is archived for that filter. Quality Education
+      was built as one page rather than as a set of options, and All Content and
+      the landing page template are both still open, so nothing in them has been
+      chosen over anything yet.</p>
+
+      <div class="ch__arc" id="archive-home" data-set="home">
+        <h3 class="ch__arc__title">The homepage</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="home">
+          <p class="ch__arc__tag">Reference</p>
+          <h4 class="ch__arc__name"><a href="current-2.html">The Evolution</a></h4>
+          <p class="ch__arc__line">Familiar, current, unfussy</p>
+        </li>
+        <li class="ch__arc__item" data-set="home">
+          <p class="ch__arc__tag">Reference · Homepage A</p>
+          <h4 class="ch__arc__name"><a href="homepage-a.html">Front Porch</a></h4>
+          <p class="ch__arc__line">Warm, photographic, family-first</p>
+        </li>
+        <li class="ch__arc__item" data-set="home">
+          <p class="ch__arc__tag">Reference · Homepage B</p>
+          <h4 class="ch__arc__name"><a href="homepage-b.html">The Index</a></h4>
+          <p class="ch__arc__line">Elegant, precise, credible</p>
+        </li>
+        <li class="ch__arc__item" data-set="home">
+          <p class="ch__arc__tag">Reference · Homepage C</p>
+          <h4 class="ch__arc__name"><a href="homepage-c.html">The Atlas</a></h4>
+          <p class="ch__arc__line">Confident, modern, hands-on</p>
+        </li>
+        <li class="ch__arc__item" data-set="home">
+          <p class="ch__arc__tag">Reference · Homepage D</p>
+          <h4 class="ch__arc__name"><a href="homepage-d.html">The Throughline</a></h4>
+          <p class="ch__arc__line">Cinematic, bold, single-minded</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-who" data-set="who">
+        <h3 class="ch__arc__title">About Us — Who We Are</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="who">
+          <p class="ch__arc__tag">Who We Are B</p>
+          <h4 class="ch__arc__name"><a href="who-we-are-b.html">The Record</a></h4>
+          <p class="ch__arc__line">Considered, precise, institutional</p>
+        </li>
+        <li class="ch__arc__item" data-set="who">
+          <p class="ch__arc__tag">Who We Are C</p>
+          <h4 class="ch__arc__name"><a href="who-we-are-c.html">The Ground</a></h4>
+          <p class="ch__arc__line">Bold, rooted, cinematic</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-do" data-set="do">
+        <h3 class="ch__arc__title">About Us — What We Do</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="do">
+          <p class="ch__arc__tag">What We Do B</p>
+          <h4 class="ch__arc__name"><a href="what-we-do-b.html">The Ledger</a></h4>
+          <p class="ch__arc__line">Orderly, editorial, unhurried</p>
+        </li>
+        <li class="ch__arc__item" data-set="do">
+          <p class="ch__arc__tag">What We Do C</p>
+          <h4 class="ch__arc__name"><a href="what-we-do-c.html">The Field</a></h4>
+          <p class="ch__arc__line">Big, confident, image-led</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-team" data-set="team">
+        <h3 class="ch__arc__title">About Us — Team, Board &amp; Fellows</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="team">
+          <p class="ch__arc__tag">Team B</p>
+          <h4 class="ch__arc__name"><a href="team-b.html">The Directory</a></h4>
+          <p class="ch__arc__line">Precise, institutional, quick to scan</p>
+        </li>
+        <li class="ch__arc__item" data-set="team">
+          <p class="ch__arc__tag">Team C</p>
+          <h4 class="ch__arc__name"><a href="team-c.html">The Frame</a></h4>
+          <p class="ch__arc__line">Bold, image-led, confident</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-solutions" data-set="solutions">
+        <h3 class="ch__arc__title">Solutions</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="solutions">
+          <p class="ch__arc__tag">Solutions A</p>
+          <h4 class="ch__arc__name"><a href="solutions-a.html">The Commons</a></h4>
+          <p class="ch__arc__line">Warm, familiar, on-brand</p>
+        </li>
+        <li class="ch__arc__item" data-set="solutions">
+          <p class="ch__arc__tag">Solutions C</p>
+          <h4 class="ch__arc__name"><a href="solutions-c.html">The Lattice</a></h4>
+          <p class="ch__arc__line">Considered, systemic, unhurried</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-work" data-set="work">
+        <h3 class="ch__arc__title">Solutions — Meaningful Work</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="work">
+          <p class="ch__arc__tag">Meaningful Work B</p>
+          <h4 class="ch__arc__name"><a href="work-b.html">The Sidelines</a></h4>
+          <p class="ch__arc__line">Near-monochrome, credible, unhurried</p>
+        </li>
+        <li class="ch__arc__item" data-set="work">
+          <p class="ch__arc__tag">Meaningful Work C</p>
+          <h4 class="ch__arc__name"><a href="work-c.html">The Plate</a></h4>
+          <p class="ch__arc__line">Structural, civic, navigable</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-safety" data-set="safety">
+        <h3 class="ch__arc__title">Solutions — Public Safety</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="safety">
+          <p class="ch__arc__tag">Public Safety A</p>
+          <h4 class="ch__arc__name"><a href="safety-a.html">The Neighbourhood</a></h4>
+          <p class="ch__arc__line">Warm, neighbourly, built</p>
+        </li>
+        <li class="ch__arc__item" data-set="safety">
+          <p class="ch__arc__tag">Public Safety C</p>
+          <h4 class="ch__arc__name"><a href="safety-c.html">The Watch</a></h4>
+          <p class="ch__arc__line">Composed, deliberate, unhurried</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-podcast" data-set="podcast">
+        <h3 class="ch__arc__title">The Empower Podcast</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="podcast">
+          <p class="ch__arc__tag">Podcast B</p>
+          <h4 class="ch__arc__name"><a href="podcast-b.html">On the Record</a></h4>
+          <p class="ch__arc__line">Editorial, confident, spare</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-capitol" data-set="capitol">
+        <h3 class="ch__arc__title">Capitol Chat</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="capitol">
+          <p class="ch__arc__tag">Capitol Chat B</p>
+          <h4 class="ch__arc__name"><a href="capitol-b.html">The Session</a></h4>
+          <p class="ch__arc__line">On the record. Structured, archival</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-epic" data-set="epic">
+        <h3 class="ch__arc__title">EPIC (Research)</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="epic">
+          <p class="ch__arc__tag">EPIC B</p>
+          <h4 class="ch__arc__name"><a href="epic-b.html">The Plotted Field</a></h4>
+          <p class="ch__arc__line">A working surface. Open, deliberate</p>
+        </li>
+        <li class="ch__arc__item" data-set="epic">
+          <p class="ch__arc__tag">EPIC C</p>
+          <h4 class="ch__arc__name"><a href="epic-c.html">The Instrument</a></h4>
+          <p class="ch__arc__line">An instrument. Quiet, exact</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-mail" data-set="mail">
+        <h3 class="ch__arc__title">Email Sign Up</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="mail">
+          <p class="ch__arc__tag">Email Sign Up B</p>
+          <h4 class="ch__arc__name"><a href="mail-b.html">The Issue</a></h4>
+          <p class="ch__arc__line">A publication, not a landing page</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-amb" data-set="amb">
+        <h3 class="ch__arc__title">Ambassador</h3>
+        <ul class="ch__arc__list">
+        <li class="ch__arc__item" data-set="amb">
+          <p class="ch__arc__tag">Ambassador B</p>
+          <h4 class="ch__arc__name"><a href="amb-b.html">The First Step</a></h4>
+          <p class="ch__arc__line">A personal ask, not a campaign</p>
+        </li>
+        </ul>
+      </div>
+
+      <div class="ch__arc" id="archive-give" data-set="give">
+        <h3 class="ch__arc__title">Donate</h3>
+        <ul class="ch__arc__list">
+          <li class="ch__arc__item" data-set="give">
+            <p class="ch__arc__tag">Donate D</p>
+            <h4 class="ch__arc__name"><a href="give-d.html">The Card</a></h4>
+            <p class="ch__arc__line">A counter. Familiar, businesslike</p>
+          </li>
+          <li class="ch__arc__item" data-set="give">
+            <p class="ch__arc__tag">Donate A</p>
+            <h4 class="ch__arc__name"><a href="give-a.html">Generational</a></h4>
+            <p class="ch__arc__line">Warm, accumulating, human</p>
+          </li>
+          <li class="ch__arc__item" data-set="give">
+            <p class="ch__arc__tag">Donate B</p>
+            <h4 class="ch__arc__name"><a href="give-b.html">Next Chapter</a></h4>
+            <p class="ch__arc__line">Serious. A case, then an ask</p>
+          </li>
+        </ul>
+      </div>
   </section>
   </main>
 </div>

@@ -441,12 +441,69 @@ the composition, not before.
 
 ## The review page
 
-`dist/index.html` is the review index. A sticky jump bar leads to its three
-sets — the homepage, Who We Are, What We Do — and each set is a grid of cards
-carrying what the build feels like, what its signature move is, and who it is
-for. It loads no JavaScript; the jump bar is plain in-page anchors.
+`dist/index.html` is the review index: sixteen sets, a filter rail, and a card
+per build carrying what it feels like, what its signature move is and who it is
+for. It loads no JavaScript — the rail is real form controls and `:has()` rules
+in `css/chooser.css`, and Clear is a native `<button type="reset">`.
 
-The homepage set leads with the agreed build, then the references behind it.
+**Three statuses, and archived is off by default.** As of 2026-08-12 the rail's
+Status facet is `To review` (4), `Signed off` (14) and `Archived` (26), in that
+order, and nothing ticked means the first two: the decisions, and the two sets still being
+reviewed. The statuses are written as **hides** rather than reveals — each rule
+says "if a status is ticked and it is not this one, this one goes" — which is
+what lets them compose with the Set facet instead of fighting it, and why they
+OR with each other (ticking `Signed off` and `Archived` shows what was decided
+*and* what it beat). Sections carry `data-state="decided|open"` so a set whose
+only cards are hidden goes with them rather than leaving a heading over nothing.
+
+**The archive.** A decided set shows only the build Empower chose plus one line
+pointing at the archive; the 26 they did not choose are rows in an `Archive`
+section at the foot, grouped by set. Nothing was deleted and nothing moved on
+disk: all 26 still build and are still linked, because the argument for a chosen
+build is only re-readable next to what it was chosen over. Three things open it:
+the `Archived` box, the archive link in the intro, and the pointer under any
+decided set. The last two work through `:target` and `:has(:target)`, because a
+link cannot tick a checkbox without a script — which is also why a ticked status
+other than `Archived` has to outrank them, for the case where a stale fragment
+is still in the address bar. Ticking a set narrows the archive with it, and the
+three sets with nothing archived (Quality Education, built as one page, plus the
+two still open) get a written line instead of an empty heading.
+
+Four tests derive all of that from the page rather than from a list: which sets
+have archive groups, whether the `:not(:has())` guard on that line names exactly
+those sets, whether every non-picked build appears in the archive exactly once,
+and whether the three Status counts add up to the builds the page offers.
+
+**The Set facet folds.** Sixteen rows made the rail taller than the results beside
+it, so it is a `<details>` that ships shut, with the fieldset and a visually
+hidden legend kept inside so the group survives for a screen reader. A set ticked
+behind the shut panel puts a `Filtered` chip on the summary, because a page
+filtered for a reason nobody can see is worse than a long rail. All four
+properties are tested.
+
+**The paragraph text under each set is gone** as of the same date: every set now
+runs heading, card, and the one line pointing at the archive. It was build
+archaeology on sets that are decided, and it was longer than the decisions it sat
+under. What was still live in it went with it, so **these are recorded here and
+nowhere on the page**, and the client has to be told them another way:
+
+- **Donate** (chosen: One Screen) needs the dynamic-population parameter names for
+  the gift type and amount fields on Gravity Forms form 4, the amount ladder, and
+  confirmation that the page is `/donate/`.
+- **All Content** has the `/empower-commentary` versus `ALL CONTENT` naming
+  question outstanding, and two filing caveats: their WordPress has no
+  `Research & Reports` category, and `Bill Summaries` is a category there but a
+  topic here.
+- **The landing template B** needs the right column's widget set to sticky in
+  Elementor.
+
+`team-bio.html` was in the Team note and is now a line in the Team card's meta
+instead: it is the one built page that is not a set of its own, and a test
+requires every built page to be reachable from the chooser.
+
+The homepage set leads with the agreed build; the five references behind it are
+in the archive, tagged as references because the agreed build was assembled out
+of them rather than chosen over them.
 `current.html` still builds and its URL still resolves, but it is not on the
 page — Empower are not being asked to consider the original wireframe build,
 and it is kept only for diffing against what exists today. A named exemption in
@@ -970,14 +1027,20 @@ stripe.com, no Payment Link, no hosted Checkout. Confirmed from the markup on
   We style the row around it and the label above it; that is the whole extent of
   it, and it will not match the rest of the form.
 
-**Donate**, four readings. A and B were built 2026-08-08; Empower said neither
-landed and asked for something simpler with the giving form higher up the page
-and fewer clicks. There are two answers to that note, and they take opposite
-routes: **One Screen** (2026-08-11) redesigns the giving decision and holds the
-processor's part in a marked slot, **The Card** (2026-08-12) leaves the decision
-exactly as it is today and redesigns the setting, copying Empower's own form
-field for field. The last tab in the roadmap and the only page in the build that
-asks for money.
+**Donate**, four readings, and **Empower chose One Screen on 2026-08-12.** A and B
+were built 2026-08-08; Empower said neither landed and asked for something
+simpler with the giving form higher up the page and fewer clicks. Two answers
+took opposite routes: **One Screen** (2026-08-11) redesigns the giving decision
+and holds the processor's part in a marked slot, **The Card** (2026-08-12) leaves
+the decision exactly as it is today and redesigns the setting, copying Empower's
+own form field for field. One Screen is the pick; the other three are in the
+chooser's archive. The last tab in the roadmap and the only page in the build
+that asks for money.
+
+Three things are still owed before One Screen can be built for real, and they are
+on the chooser as well as here: the dynamic-population parameter names for the
+gift type and amount fields on Gravity Forms form 4 (the ones in the build are
+stand-ins), the amount ladder, and confirmation that the page is `/donate/`.
 
 | Page | What it is |
 | --- | --- |
@@ -1045,14 +1108,29 @@ page is ours**, written to be replaced.
 
 | Page | What it is |
 | --- | --- |
-| `dist/content-a.html` | **The Four Doors** — the roadmap's own four-column block standing up and working. The four types are bands down the page, each under its own sentence; choosing one narrows the page to it rather than sending you elsewhere. Type as tabs, topic as chips, a wide lead card with the photograph at the head of each band |
-| `dist/content-b.html` | **The Stream** — no bands. Everything in one dated spine, newest first, with the most recent piece given the weight of a front page and the rest set as ruled rows. Type becomes a facet in a held rail beside topic, and the roadmap's four sentences sit under the four type checkboxes |
+| `dist/content-a.html` | **The Four Doors** — the roadmap's own four-column block standing up and working. The four types are bands down the page, each under its own sentence; choosing one narrows the page to it rather than sending you elsewhere. Type as tabs, topic as chips, both stacked against one label gutter in a sticky bar; a card per post, each carrying its own featured image, with a wide lead card across the head of each band |
+| `dist/content-b.html` | **What It's About** — the same posts with A's two axes swapped. Subject is the structure: a shelf each for Quality Education, Meaningful Work and Public Safety with a photographed head, then Bill Summaries, then the two reports that cover all three. Type is the filter, and the roadmap's four sentences do that job as four columns on a navy band. Photography belongs to the subject, never beside a named person's headline |
 
 **The content is real.** Twenty-three live empowerms.org posts with their real
 titles, dates and URLs, pulled from the site's REST API, on both pages. A test
 asserts the two show the *same* twenty-three, so the readings can be compared
 without the content being a variable, and a second test asserts every link is an
 empowerms.org URL rather than an invented headline.
+
+**So are the photographs on A.** Every post in their archive carries a featured
+image and A carries the same one on every card, taken from their own media
+library and held in `assets/posts/` under the post's slug. That is what makes a
+picture beside a headline safe: the image next to "How Karl Hampton Found
+Freedom" is Karl Hampton rather than a library photograph that reads as him, and
+a test fails the page if a card's image file and its link ever stop matching.
+Alt text was written from the images themselves, because the file names in this
+project have lied before. Five of the twenty-three are not photographs but cards
+built at another ratio with their own type on them (the ten-year collage, the
+Business Journal feature, the 2025 report cover, School Choice Week, WAITLIST
+FUNDED); those are shown whole on the page's grey rather than cropped into the
+3:2 plate, which would cut their words in half. B still keeps photography on the
+subject in its shelf heads and off its rows, which is now a difference between
+the readings rather than a constraint on both.
 
 Two things about that content are ours and need Empower's word:
 
@@ -1091,17 +1169,34 @@ is on the chooser for Empower to answer, and the test that records the decision
 is the line to change if they answer the other way. The roadmap leaves the SEO
 title and description blank for this page, so both are still owed.
 
-**The landing page template**, built 2026-08-12. Kienna asked to be able to
-start with a blank page in Elementor and build a campaign or event page as
-needed. Elementor already gives her the blank page; what it cannot give her is
-this build's decisions, so `dist/landing.html` is the other half of that ask: a
-kit rather than a wireframe of a campaign.
+**The landing page template**, built 2026-08-12, in two readings. Kienna asked
+to be able to start with a blank page in Elementor and build a campaign or event
+page as needed. Elementor already gives her the blank page; what it cannot give
+her is this build's decisions, so both pages are the other half of that ask: a
+kit rather than a wireframe of a campaign. They carry the same campaign word for
+word, and the difference between them is one decision, where the ask sits.
 
-Six independent blocks, one section file each — campaign hero with one action,
-the ask with a three-point summary beside it, an image-and-text pair that flips
-and can run twice, a voice, the action band, three links out. Delete any of
-them, reorder them, run one twice; nothing depends on what sits above or below
-it, and a test asserts the count and the one-file-per-block structure.
+| Page | What it is |
+| --- | --- |
+| `dist/landing.html` | **The campaign kit** — six independent blocks, one section file each: campaign hero with one action, the ask with a three-point summary beside it, an image-and-text pair that flips and can run twice, a voice, the action band, three links out. The ask is block five, reached by a button in the hero. Best where the case needs making before anyone will act |
+| `dist/landing-b.html` | **The held ask** — the ask moves out of the bottom of the page into a panel that stays beside the argument. One dark screen and it is the first one, with the photograph running off the right edge; then the case in the left column, the form held in the right. Best for a deadline, where every screen of scrolling between reader and action costs something |
+
+Delete any block, reorder them, run one twice; nothing depends on what sits
+above or below it. On A the unit is the section; on B the rail is one section
+with two columns, so B's unit is the block inside the left column. A test
+asserts both counts and the one-file-per-block structure.
+
+Three properties of B are tested rather than trusted, because losing any one of
+them turns it back into A with a narrower column: the panel is written **before**
+the story (on a phone there is no second column, and markup order is what a phone
+reader gets), it is **placed** into the second column on desktop so the visual
+order is still story-then-panel, and it is **sticky** with an offset for the
+sticky site header. The known cost, stated rather than discovered: on a desktop
+the tab order reaches the ask before the argument. For a page that exists to be
+acted on that is the right order, and the reading order still makes sense.
+
+In Elementor, B needs one thing A does not: the right column's widget set to
+sticky under Advanced, Motion Effects.
 
 - **The sample is Empower's own Save Our ESA campaign**, which closed when the
   waitlist was funded in May 2025 — real name, real posts linked from it, so
@@ -1112,13 +1207,20 @@ it, and a test asserts the count and the one-file-per-block structure.
   The hero carries a photograph instead. Note that the same file is captioned
   "Research report cover" on `dist/current.html`, which is wrong and predates
   this work.
-- **Two blocks are drawn as empty slots on purpose**: the quotation, because it
+- **Blocks are drawn as empty slots on purpose**: the quotation, because it
   belongs to a real person and inventing one — or lifting somebody's words out
   of an article to decorate a demo — is the placeholder that reads as finished
   work while being false; and the campaign form, because there is no endpoint
-  behind the page. A test fails the page for any `<input>`, `<select>`,
+  behind either page. B adds one more, the date line under its headline: the one
+  fact a deadline page has to state above the fold is the one fact a closed
+  campaign cannot supply. A test fails either page for any `<input>`, `<select>`,
   `<textarea>` or `<form>` in its body, and for any figure written as a
   percentage, a money amount or a thousands-separated number.
+- **B's photography needs a crop check, not just an alt check.** Its story
+  photograph is a child with her face in the upper third of the frame, and the
+  default centred `object-fit: cover` crop removed her head and left the page
+  showing a torso. `object-position` is set per photograph, and swapping the
+  image means redoing that line.
 
 ### The EPIC pages: what converts, and what to watch
 

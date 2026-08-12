@@ -197,7 +197,7 @@ export const PAGES = [
      All Content; the disagreement is a question for Empower, not a decision for
      us. */
   { src: 'content-a/index.html', out: 'dist/content-a.html', title: 'All Content A — The Four Doors', kind: 'about' },
-  { src: 'content-b/index.html', out: 'dist/content-b.html', title: 'All Content B — The Stream', kind: 'about' },
+  { src: 'content-b/index.html', out: 'dist/content-b.html', title: 'All Content B — What It’s About', kind: 'about' },
 
   /* The flexible landing page. Kienna asked only for "the ability to start with
      a blank page in Elementor and build something as needed" — which is what
@@ -208,7 +208,8 @@ export const PAGES = [
      It is a TEMPLATE, and the sample it is dressed in is a real Empower
      campaign (the Special Needs ESA waitlist) with real posts linked from it,
      so nothing on it reads as an invented programme or an approved headline. */
-  { src: 'landing/index.html', out: 'dist/landing.html', title: 'Flexible landing page — the template', kind: 'about' },
+  { src: 'landing/index.html', out: 'dist/landing.html', title: 'Flexible landing page A — the campaign kit', kind: 'about' },
+  { src: 'landing-b/index.html', out: 'dist/landing-b.html', title: 'Flexible landing page B — the held ask', kind: 'about' },
 ];
 
 function resolve(html, depth = 0) {

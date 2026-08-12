@@ -189,15 +189,26 @@ body:has(#set-give:checked) .ch__results > section[data-set="give"],
 body:has(#set-content:checked) .ch__results > section[data-set="content"],
 body:has(#set-landing:checked) .ch__results > section[data-set="landing"]{display:block}
 
-/* Status. Carries one more element on the left than the reveal rules above, so
-   it outranks them when both facets are on: a card has to satisfy BOTH, and the
-   more specific rule is the one that says no.
+/* Status: three of them, and HIDES rather than reveals.
+     · Signed off — the thirteen builds Empower chose, one per decided set.
+     · To review  — the eight in the three sets still open.
+     · Archived   — the twenty-three they did not take, which are the rows in the
+                    archive at the foot of the page and are hidden by default.
 
-   The two solution detail sets carry no pick yet, so ticking Signed off hides
-   both of them whole. That is correct rather than a gap: they are the sets
-   Empower has not decided, and the filter's job is to show what has been. */
-body:has(#signed-off:checked) .ch__results .ch__opt:not(.ch__opt--pick){display:none}
-body:has(#signed-off:checked) .ch__results > section:not(:has(.ch__opt--pick)){display:none}
+   Written as hides for two reasons. It composes with the Set facet above without
+   fighting it: Set reveals, Status takes away, and a card has to satisfy both, so
+   the rule that says no is the one that wins. And it makes "nothing ticked" mean
+   the page's default view rather than a fourth state to maintain.
+
+   Each rule reads: if any status is ticked and it is not THIS one, this one goes.
+   Sections carry data-state so a set whose only cards are hidden goes with them
+   rather than leaving a heading over nothing. */
+body:has(.ch__status:checked):not(:has(#signed-off:checked)) .ch__results .ch__opt--pick,
+body:has(.ch__status:checked):not(:has(#signed-off:checked)) .ch__results > section[data-state="decided"]{
+  display:none}
+body:has(.ch__status:checked):not(:has(#to-review:checked)) .ch__results .ch__opt:not(.ch__opt--pick),
+body:has(.ch__status:checked):not(:has(#to-review:checked)) .ch__results > section[data-state="open"]{
+  display:none}
 
 /* The shared-rules panel is not a build and cannot be filtered to. It is the
    page's footnote and stays wherever the filters land. */
@@ -320,3 +331,190 @@ body:has(.ch__set:checked) .ch__results > section.ch__shared{display:block}
 @media (prefers-reduced-motion:reduce){
   .ch__opt:hover{transform:none}
 }
+
+/* ---------- The pointer under a decided set ---------- */
+
+/* One line where two or three cards used to be. It is deliberately quiet: the
+   point of moving them out was that a set which has been decided should read as
+   one decision, and this line is the receipt, not a second option. */
+.ch__also{margin:var(--space-6) 0 0;font-size:var(--fs-small);line-height:1.6;
+  color:var(--text-muted)}
+.ch__also a{font-weight:var(--fw-semibold);color:var(--em-orange-ink);
+  text-decoration:underline;text-underline-offset:3px}
+.ch__also a:hover{color:var(--em-blue)}
+.ch__also a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;
+  border-radius:2px}
+
+/* ---------- The archive ---------- */
+
+/* Rows, not cards. The whole reason these moved is that twenty-three cards were
+   competing with thirteen decisions, so the archive has to be legible without
+   asking for the same attention: a ruled row per build, grouped by the set it
+   was proposed for, with the same three facts a card carried in its head. */
+/* display:none is the default state, not a filtered one. See the facet rules at
+   the top of this file for the three things that bring it back. */
+.ch__archive{display:none;margin-bottom:clamp(var(--space-10),5vw,var(--space-13))}
+
+/* The group is what a pointer link targets, so it carries the scroll offset:
+   without it the group lands flush against the top of the viewport. */
+.ch__arc{margin-top:clamp(var(--space-8),3.5vw,var(--space-10));scroll-margin-top:var(--space-7)}
+.ch__arc__title{scroll-margin-top:88px;margin:0;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.ch__arc__list{list-style:none;margin:var(--space-4) 0 0;padding:0;
+  border-top:1px solid var(--border-default)}
+
+.ch__arc__item{position:relative;display:grid;
+  /* 205px is what "REFERENCE · HOMEPAGE A" needs on one line at this size; a
+     narrower tag column wrapped five of the homepage rows and left the archive
+     looking like it had two kinds of row in it. */
+  grid-template-columns:minmax(min(205px,100%),.8fr) minmax(0,1.25fr) minmax(0,1.4fr);
+  column-gap:clamp(var(--space-5),2.5vw,var(--space-7));align-items:baseline;
+  padding:var(--space-5) 0;border-bottom:1px solid var(--border-subtle);
+  background:var(--surface-page)}
+
+/* The mark, at row scale, growing from the bottom-left on hover. Same motif as
+   everywhere else in the build, and a pseudo-element so nothing here needs the
+   card's translate. */
+.ch__arc__item::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:0;
+  background:var(--em-orange);transition:width var(--dur) var(--ease-out)}
+.ch__arc__item:hover::after,.ch__arc__item:focus-within::after{width:56px}
+
+.ch__arc__tag{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--text-muted)}
+
+.ch__arc__name{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-h4);line-height:1.2;letter-spacing:-.02em}
+.ch__arc__name a{color:var(--em-blue);text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+/* The whole row is the target; the name carries the accessible name and the
+   focus ring. */
+.ch__arc__name a::before{content:"";position:absolute;inset:0}
+.ch__arc__item:hover .ch__arc__name a{color:var(--em-orange-ink)}
+.ch__arc__name a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+.ch__arc__line{margin:0;font-size:var(--fs-small);line-height:1.5;
+  color:var(--text-body)}
+
+/* Marked from above, like every other held or empty state in this build. */
+.ch__arc__none{display:none;position:relative;max-width:74ch;
+  margin:clamp(var(--space-7),3vw,var(--space-8)) 0 0;
+  padding:calc(var(--space-7) + 4px) var(--space-7) var(--space-7);
+  border:1px solid var(--border-subtle);border-radius:var(--radius-panel);
+  background:var(--surface-page);
+  font-size:var(--fs-small);line-height:1.6;color:var(--text-body)}
+.ch__arc__none::before{content:"";position:absolute;left:var(--space-7);top:var(--space-6);
+  width:56px;height:4px;background:var(--em-orange)}
+
+@media (max-width:760px){
+  /* Three columns of a phone's width give a tag column that fits one word and a
+     name that wraps every second one. */
+  .ch__arc__item{grid-template-columns:minmax(0,1fr);row-gap:var(--space-2)}
+}
+
+/* ---------- What the facets do to the archive ---------- */
+
+/* The archive survives a set filter the way the shared panel does, and its
+   groups filter with their sets: ticking Who We Are shows that set's decision
+   AND the two readings it was chosen over, which is the only way the decision
+   is re-readable.
+
+   Four sets have nothing in here: Quality Education was built as a single page
+   rather than as a set of options, and Donate, All Content and the landing page
+   template are all still open. Ticking one of those four alone gets a written
+   answer instead of a heading over nothing. The enumeration is the price of
+   doing this without a script, and it is checked by a test rather than trusted. */
+/* HIDDEN BY DEFAULT. These are the builds that did not make it and the page is
+   for sign-off, so nothing ticked means the thirteen decisions and the eight
+   still open, and none of this.
+
+   Three ways in, in order of authority:
+
+   1 · the Archived box in the rail;
+   2 · any link in the page that asks for it. :target catches the intro's link to
+       the section, :has(:target) catches the pointer under each decided set,
+       which goes to that set's group inside it. That is what keeps those links
+       honest with the section hidden, and it needs no script;
+   3 · nothing else. A ticked status that is not Archived beats a stale fragment
+       in the address bar, which is what the last rule here is for: an id inside
+       :has() outranks the class-level rules above it, whatever their order. */
+body:has(#archived:checked) .ch__archive{display:block}
+.ch__archive:target,
+.ch__archive:has(:target){display:block}
+/* The same two, weighted to beat the Set facet's blanket hide of every section. */
+body:has(.ch__set:checked) .ch__results > section.ch__archive:target,
+body:has(.ch__set:checked) .ch__results > section.ch__archive:has(:target){display:block}
+body:has(.ch__status:checked):not(:has(#archived:checked)) .ch__archive{display:none}
+
+body:has(.ch__set:checked) .ch__arc{display:none}
+body:has(#set-home:checked) .ch__arc[data-set="home"],
+body:has(#set-who:checked) .ch__arc[data-set="who"],
+body:has(#set-do:checked) .ch__arc[data-set="do"],
+body:has(#set-team:checked) .ch__arc[data-set="team"],
+body:has(#set-solutions:checked) .ch__arc[data-set="solutions"],
+body:has(#set-work:checked) .ch__arc[data-set="work"],
+body:has(#set-safety:checked) .ch__arc[data-set="safety"],
+body:has(#set-podcast:checked) .ch__arc[data-set="podcast"],
+body:has(#set-capitol:checked) .ch__arc[data-set="capitol"],
+body:has(#set-epic:checked) .ch__arc[data-set="epic"],
+body:has(#set-mail:checked) .ch__arc[data-set="mail"],
+body:has(#set-amb:checked) .ch__arc[data-set="amb"],
+body:has(#set-give:checked) .ch__arc[data-set="give"]{display:block}
+
+body:has(.ch__set:checked):not(:has(#set-home:checked)):not(:has(#set-who:checked)):not(:has(#set-do:checked)):not(:has(#set-team:checked)):not(:has(#set-solutions:checked)):not(:has(#set-work:checked)):not(:has(#set-safety:checked)):not(:has(#set-podcast:checked)):not(:has(#set-capitol:checked)):not(:has(#set-epic:checked)):not(:has(#set-mail:checked)):not(:has(#set-amb:checked)):not(:has(#set-give:checked)) .ch__arc__none{
+  display:block}
+
+/* There is deliberately no rule here for Signed off. An earlier one hid the whole
+   archive whenever Signed off was ticked, which was right while Archived was not
+   a facet of its own and wrong the moment it became one: ticking both is a
+   reasonable thing to ask for ("what was decided, and what it beat"), and that
+   rule silently answered only half of it. The statuses OR with each other, like
+   the sets do. */
+
+@media (prefers-reduced-motion:reduce){
+  .ch__arc__item::after,.ch__arc__name a{transition:none}
+}
+
+/* ---------- The Set facet, folded ---------- */
+
+/* Sixteen rows made the rail taller than the results beside it, so the facet is
+   a <details>. It keeps the same border-top and rhythm as the Status facet above
+   it, so folded or open it still reads as one of two facets rather than as a
+   different kind of control. */
+.ch__facet--fold{margin:0 0 var(--space-5);padding:0;border:0;
+  border-top:1px solid var(--border-inverse)}
+
+.ch__facet__summary{display:flex;align-items:center;gap:var(--space-3);
+  min-height:40px;padding:var(--space-4) 0 var(--space-2);cursor:pointer;
+  list-style:none;
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+.ch__facet__summary::-webkit-details-marker{display:none}
+.ch__facet__summary:hover{color:var(--white)}
+.ch__facet__summary:focus-visible{outline:none;box-shadow:var(--shadow-focus-inverse)}
+
+/* The same caret as the rail's own, one size down. */
+.ch__facet__caret{width:7px;height:7px;flex:0 0 auto;margin-left:auto;
+  border-right:2px solid var(--orange-300);border-bottom:2px solid var(--orange-300);
+  transform:rotate(45deg);transition:transform var(--dur) var(--ease-out)}
+.ch__facet--fold[open] .ch__facet__caret{transform:rotate(-135deg)}
+
+.ch__facet__body{margin:0;padding:0 0 var(--space-2);border:0;min-width:0}
+
+/* A set left ticked behind a shut panel is a filter nobody can see and cannot
+   explain the page. The summary says so, and the chip is the same orange-on-navy
+   pill the New badge and the counts already use. */
+.ch__facet--fold:has(.ch__set:checked) .ch__facet__caret{margin-left:0}
+.ch__facet--fold:has(.ch__set:checked) .ch__facet__summary::after{content:"Filtered";
+  margin-left:auto;display:inline-flex;align-items:center;height:18px;padding:0 8px;
+  border-radius:var(--radius-pill);background:var(--em-orange);
+  color:var(--surface-navy-deep);
+  font-size:11px;font-weight:var(--fw-bold);letter-spacing:.04em;line-height:1}
+
+/* Where :has() is missing the rail is hidden altogether, so this cue never has
+   to stand in for the filtering itself. */

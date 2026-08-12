@@ -1,0 +1,79 @@
+<!-- All Content B, section 2 of 3: the four kinds.
+
+     THE ROADMAP’S OWN FOUR-COLUMN BLOCK, AS THE CONTROL. Its All Content tab
+     draws Articles, Community Stories, Research & Reports and Press Releases as
+     four columns with a sentence under each. Reading A stands those four up as
+     four bands of cards. This reading keeps them as four columns and makes them
+     the switch: the four sentences are still the introduction to the four kinds,
+     and ticking one narrows every shelf below to it. Same words, doing two jobs.
+
+     WHY CHECKBOXES AND NOT A’S RADIOS. Type is the only facet here, so there is
+     no second facet for a multi-select to fight with, and “articles and press
+     releases” is a real thing to want. Nothing ticked shows everything, so the
+     unfiltered page is the absence of a rule rather than a fifth “All” option.
+
+     THE COUNTS ARE OF THIS PAGE. Twenty-three posts, not their whole archive,
+     and unlike a per-topic count these four stay true under filtering: ticking
+     Articles does not change how many articles this page holds. That is the
+     reason there is no count on the shelf headings below. A number nobody can
+     check goes wrong quietly, and this build has been bitten by that twice.
+
+     RESET IS NATIVE. <button type="reset"> inside the form, so it works with no
+     script at all. It is deliberately not the orange filled button: this page
+     has no primary action, and clearing a filter is not one. -->
+<section class="cwa-choose" id="choose" aria-labelledby="choose-title">
+  <div class="em-container">
+    <form class="cwa-choose__form">
+      <fieldset class="cwa-choose__set">
+        <legend class="cwa-choose__title" id="choose-title">What kind of thing are you after?</legend>
+
+        <!-- Two hints, one shown at a time. The second is for browsers without
+             :has(), where the switches are hidden and this block is reduced to
+             what the roadmap wrote: four kinds, described. -->
+        <p class="cwa-choose__hint">Tick any of the four. Leave them clear and the whole page stays.</p>
+        <p class="cwa-choose__hint cwa-choose__hint--static">Four kinds of thing, published continuously.</p>
+
+        <ul class="cwa-switches">
+          <li class="cwa-switch">
+            <input class="cwa-switch__input cwa-type" type="checkbox" id="cw-t-article">
+            <label class="cwa-switch__label" for="cw-t-article">
+              <span class="cwa-switch__box" aria-hidden="true"></span>
+              <span class="cwa-switch__name">Articles</span>
+              <span class="cwa-switch__n">9</span>
+            </label>
+            <p class="cwa-switch__blurb">Explore the latest ideas, insights, and updates on the issues shaping opportunity in Mississippi.</p>
+          </li>
+          <li class="cwa-switch">
+            <input class="cwa-switch__input cwa-type" type="checkbox" id="cw-t-story">
+            <label class="cwa-switch__label" for="cw-t-story">
+              <span class="cwa-switch__box" aria-hidden="true"></span>
+              <span class="cwa-switch__name">Community Stories</span>
+              <span class="cwa-switch__n">6</span>
+            </label>
+            <p class="cwa-switch__blurb">Meet the people behind the issues and see how policy and opportunity impact real lives across Mississippi.</p>
+          </li>
+          <li class="cwa-switch">
+            <input class="cwa-switch__input cwa-type" type="checkbox" id="cw-t-research">
+            <label class="cwa-switch__label" for="cw-t-research">
+              <span class="cwa-switch__box" aria-hidden="true"></span>
+              <span class="cwa-switch__name">Research &amp; Reports</span>
+              <span class="cwa-switch__n">4</span>
+            </label>
+            <p class="cwa-switch__blurb">Explore Mississippi-specific research, data, and policy solutions designed to turn ideas into action.</p>
+          </li>
+          <li class="cwa-switch">
+            <input class="cwa-switch__input cwa-type" type="checkbox" id="cw-t-press">
+            <label class="cwa-switch__label" for="cw-t-press">
+              <span class="cwa-switch__box" aria-hidden="true"></span>
+              <span class="cwa-switch__name">Press Releases</span>
+              <span class="cwa-switch__n">4</span>
+            </label>
+            <p class="cwa-switch__blurb">Get the latest news, announcements, and updates from Empower Mississippi.</p>
+          </li>
+        </ul>
+
+        <button class="em-btn em-btn--inverse-outline em-btn--sm cwa-choose__reset" type="reset">Show everything</button>
+      </fieldset>
+    </form>
+  </div>
+</section>

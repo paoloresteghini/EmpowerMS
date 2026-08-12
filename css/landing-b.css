@@ -1,0 +1,303 @@
+/* Campaign landing page, reading B: "The Held Ask".
+
+   WHAT THIS IS, AND WHY THERE ARE TWO. Kienna asked to be able to start with a
+   blank page in Elementor and build a campaign or an event page as needed.
+   Elementor gives her the blank page; what it cannot give her is this build's
+   decisions, so both templates are the other half of that ask. The first one is
+   a kit of six stacked blocks with the ask at the bottom behind an anchor. This
+   one moves the ask into a panel beside the argument and keeps it on screen,
+   because a campaign page with a deadline cannot afford to put its ask five
+   blocks down. Same campaign, same words, one structural difference. That is the
+   whole comparison.
+
+   THE ORDER IS DELIBERATE, IN THE MARKUP. The panel is written before the story
+   and PLACED into the second column on wide screens, rather than written after
+   it and pulled up by CSS. On a phone there is no second column, and most of
+   Empower's visitors are on a phone, so what is written first is what they meet
+   first. The cost is that on a desktop the tab order reaches the ask before the
+   argument; for a page that exists to be acted on, that is the right order, and
+   the reading order still makes sense (headline, what we want, why).
+
+   COLOUR STRATEGY: one dark screen and it is the FIRST one. The other template
+   runs white and saves its navy for the action band at the bottom; this one has
+   no bottom action band to save it for, so the hero carries the weight and
+   everything below it is white and grey. The photograph runs off the right edge
+   of the hero rather than sitting in a column, and no type is ever set over it.
+
+   NO SIDE STRIPES: the 56x4 orange rule marks from above, on the panel label,
+   every block heading, the quotation slot and the outcome of the three steps.
+
+   TWO SLOTS AND ONE PLACEHOLDER LINE, all marked and all deliberate: the form
+   (there is no endpoint behind this page, and a form that looks real and goes
+   nowhere is worse than a held space), the quotation (it belongs to a real
+   person and this build does not invent people), and the date line in the hero
+   (Save Our ESA is closed, so a live deadline there would be fiction). NO
+   INVENTED STATISTICS anywhere.
+
+   NO SCRIPT. The sticky panel is position:sticky against its grid row, so it
+   releases exactly where the row ends and never overlaps the band below.
+
+   ELEMENTOR NOTE: four sections. The rail is one section with two columns, and
+   the right column's widget is set sticky under Advanced, Motion Effects. The
+   four blocks in the left column are ordinary widgets that can be duplicated,
+   reordered or deleted, which is the same property the other template has.
+
+   Namespaced .lnb- throughout. */
+
+/* =========================== 0 · Review strip ============================ */
+
+/* Not part of the design. Review-only chrome, deliberately looking like a note
+   rather than like a band of the page, and deleted at hand-off. */
+.lnb-note{background:var(--status-warning-bg);border-bottom:1px solid #E7D3A6}
+.lnb-note p{max-width:var(--container-max);margin:0 auto;
+  padding:var(--space-4) var(--gutter);
+  font-size:var(--fs-small);line-height:1.55;color:#6A4906}
+
+/* =============================== 1 · Hero ================================ */
+
+/* One band, and the copy is inside the container while the photograph is not.
+   min-height rather than a fixed height so a longer headline or an extra line of
+   copy grows the band instead of cropping into the photograph. */
+.lnb-hero{position:relative;isolation:isolate;overflow:clip;
+  display:grid;align-items:center;
+  min-height:clamp(440px,44vw,580px);
+  padding:clamp(var(--space-10),5vw,var(--space-12)) 0;
+  background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+/* 52% at most, against a photograph that takes 46%: the two never meet, at any
+   width above the breakpoint. Type over photography is the one contrast problem
+   no test in this build can see, so the layout is what prevents it. */
+.lnb-hero__copy{max-width:min(52ch,52%)}
+
+.lnb-eyebrow{margin:0 0 var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--orange-300)}
+
+/* tokens/base.css colours headings --text-strong, which is this hero's own navy;
+   the inverse has to be said out loud. */
+.lnb-hero h1{margin:0 0 var(--space-5);
+  font-size:clamp(2.75rem,5.5vw,var(--fs-hero));line-height:var(--lh-hero);
+  letter-spacing:var(--ls-hero);color:var(--text-inverse);text-wrap:balance}
+
+.lnb-hero__lede{margin:0;max-width:44ch;
+  font-size:var(--fs-lead);line-height:1.65;color:var(--text-inverse-muted)}
+
+/* The date line, drawn as a held space in the same dashed vocabulary as the two
+   other slots on the page: a dashed rule the whole way round rather than a line
+   above it, which read as a divider instead of as a space waiting for a fact. */
+.lnb-hero__when{margin:var(--space-6) 0 0;max-width:42ch;
+  padding:var(--space-4) var(--space-5);
+  border:2px dashed rgba(255,255,255,.42);border-radius:var(--radius-panel);
+  font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);line-height:1.5;color:var(--text-inverse-muted)}
+
+.lnb-hero__actions{display:flex;flex-wrap:wrap;align-items:center;
+  gap:var(--space-5) var(--space-7);margin:clamp(var(--space-7),3vw,var(--space-8)) 0 0}
+.lnb-hero__aside{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);color:var(--text-link-inverse);
+  text-decoration:underline;text-underline-offset:5px;
+  transition:color var(--dur) var(--ease-out)}
+.lnb-hero__aside:hover{color:var(--white)}
+.lnb-hero__aside:focus-visible{outline:3px solid var(--focus-ring-inverse);
+  outline-offset:3px;border-radius:2px}
+
+/* Pinned to the right half of the band, reaching the edge of the screen and the
+   full height. Negative z-index with isolation on the section: it sits above the
+   navy and below the copy, so a narrow window can never put type on top of it. */
+.lnb-hero__figure{position:absolute;inset:0 0 0 auto;z-index:-1;
+  width:min(46%,760px);margin:0}
+.lnb-hero__photo{display:block;width:100%;height:100%;object-fit:cover;
+  object-position:center 24%}
+
+/* =========================== 2 · The rail ================================ */
+
+.lnb-rail{padding:clamp(var(--space-10),5vw,var(--space-13)) 0;
+  background:var(--surface-page)}
+
+/* Both children are placed explicitly, which is what lets the markup put the
+   panel first (for phones) while the panel appears second (on desktop). */
+.lnb-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.62fr);
+  column-gap:clamp(var(--space-8),4vw,var(--space-11));align-items:start}
+.lnb-story{grid-column:1;grid-row:1;min-width:0}
+
+/* 113px is the sticky site header measured in the browser rather than guessed:
+   45px of contact strip plus the bar's scrolled min-height of 68px. The 16 on
+   top of it is the gap. */
+.lnb-panel{grid-column:2;grid-row:1;align-self:start;
+  position:sticky;top:129px;
+  padding:clamp(var(--space-6),2vw,var(--space-7));
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-subtle);box-shadow:var(--shadow-xs)}
+
+.lnb-panel__label{position:relative;margin:0 0 var(--space-4);
+  padding-top:calc(var(--space-4) + 4px);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.lnb-panel__label::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+.lnb-panel__title{margin:0 0 var(--space-4);
+  font-size:clamp(1.25rem,1.6vw,1.5rem);line-height:1.2;
+  letter-spacing:var(--ls-heading);color:var(--text-strong);text-wrap:balance}
+.lnb-panel__lede{margin:0 0 var(--space-6);
+  font-size:var(--fs-body);line-height:1.6;color:var(--text-body)}
+
+/* The same held space the Donate readings use for the processor's fields: drawn
+   at roughly the height a real embed occupies, marked as a slot, collecting
+   nothing. Dashed --border-default rather than the shared inverse token, which
+   is one of the two open palette findings at 2.28:1. */
+.lnb-panel__slot{display:grid;align-content:center;gap:var(--space-3);
+  min-height:260px;padding:var(--space-6);
+  border:2px dashed var(--border-default);border-radius:var(--radius-panel);
+  background:var(--surface-page)}
+.lnb-panel__slotlabel{margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;color:var(--em-orange-ink)}
+.lnb-panel__slotnote{margin:0;font-size:var(--fs-small);line-height:1.55;
+  color:var(--text-body)}
+.lnb-panel__note{margin:var(--space-5) 0 0;
+  font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted)}
+
+/* ---- the blocks in the left column ---- */
+
+.lnb-block + .lnb-block{margin-top:clamp(var(--space-9),4vw,var(--space-11))}
+
+.lnb-block__title{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);letter-spacing:var(--ls-heading);
+  color:var(--text-strong);text-wrap:balance}
+.lnb-block__title::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+.lnb-block p{margin:0 0 var(--space-5);max-width:62ch;
+  font-size:var(--fs-lead);line-height:1.65;color:var(--text-body);text-wrap:pretty}
+.lnb-block p:last-child{margin-bottom:0}
+
+.lnb-block__link{margin:0}
+.lnb-block__link a{font-family:var(--font-display);font-weight:var(--fw-semibold);
+  font-size:var(--fs-body);color:var(--em-orange-ink);text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+.lnb-block__link a::after{content:" \2192"}
+.lnb-block__link a:hover{color:var(--text-strong);text-decoration:underline;
+  text-underline-offset:4px}
+.lnb-block__link a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;
+  border-radius:2px}
+
+/* Ruled rows, not cards. Three cards inside a column this width would be three
+   narrow boxes, and the other template already answers this block with cards. */
+.lnb-points{list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+.lnb-point{display:grid;grid-template-columns:minmax(0,.5fr) minmax(0,1fr);
+  column-gap:clamp(var(--space-5),2.5vw,var(--space-7));
+  padding:clamp(var(--space-5),2vw,var(--space-6)) 0;
+  border-bottom:1px solid var(--border-subtle)}
+.lnb-point h3{margin:0;font-size:var(--fs-h5);line-height:1.3;color:var(--text-strong)}
+.lnb-point p{margin:0;max-width:46ch;
+  font-size:var(--fs-body);line-height:1.6;color:var(--text-body)}
+
+.lnb-figure{margin:0 0 var(--space-6);overflow:hidden;border-radius:var(--radius-card)}
+/* object-position, not the default centre. This photograph is a child at a desk
+   with her face in the upper third, and a centred crop of a 340px band through a
+   tall source removed her head and left the page showing a torso. Any photograph
+   dropped in here needs the same one-line check. */
+.lnb-figure__photo{display:block;width:100%;
+  height:clamp(260px,26vw,360px);object-fit:cover;object-position:center 16%}
+
+/* Drawn as a slot: a dashed rule and muted type, so it reads as a space held
+   open rather than as a quotation nobody said. */
+.lnb-quote{margin:0}
+.lnb-quote__slot{position:relative;margin:0 0 var(--space-5);
+  padding:calc(var(--space-8) + 4px) var(--space-7) var(--space-7);
+  border:2px dashed var(--border-default);border-radius:var(--radius-panel);
+  background:var(--surface-subtle)}
+.lnb-quote__slot::before{content:"";position:absolute;left:var(--space-7);top:var(--space-7);
+  width:56px;height:4px;background:var(--em-orange)}
+.lnb-quote__slot p{margin:0;font-family:var(--font-display);
+  font-weight:var(--fw-semibold);font-size:var(--fs-h4);line-height:1.4;
+  color:var(--text-muted)}
+.lnb-quote__by{display:flex;flex-wrap:wrap;align-items:baseline;
+  gap:var(--space-2) var(--space-4)}
+.lnb-quote__name{font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-body);color:var(--text-strong)}
+.lnb-quote__role{font-size:var(--fs-small);color:var(--text-muted)}
+
+/* ============================= 3 · Outcome =============================== */
+
+.lnb-outcome{padding:clamp(var(--space-10),5vw,var(--space-12)) 0;
+  background:var(--surface-subtle);border-top:1px solid var(--border-subtle)}
+
+.lnb-outcome__head{max-width:64ch;margin-bottom:clamp(var(--space-8),3.5vw,var(--space-10))}
+.lnb-outcome__title{position:relative;margin:0 0 var(--space-4);
+  padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);letter-spacing:var(--ls-heading);
+  color:var(--text-strong)}
+.lnb-outcome__title::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+.lnb-outcome__lede{margin:0;font-size:var(--fs-lead);line-height:1.6;
+  color:var(--text-body);text-wrap:pretty}
+
+/* Numbered, because this genuinely IS a sequence: the campaign in the order it
+   happened. Numbers above every section would be scaffolding; three steps of one
+   story are what the device is for. */
+.lnb-steps{counter-reset:step;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
+  gap:clamp(var(--space-6),3vw,var(--space-8));
+  list-style:none;margin:0;padding:0}
+
+.lnb-step{position:relative;counter-increment:step;
+  padding-top:calc(var(--space-7) + 4px);
+  border-top:1px solid var(--border-default)}
+.lnb-step::before{content:counter(step,decimal-leading-zero);
+  position:absolute;left:0;top:var(--space-4);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);color:var(--text-muted)}
+/* The last step is the outcome, and it gets the mark. A campaign page that
+   closed should end on the thing that happened, not on more reading. */
+.lnb-step:last-child::after{content:"";position:absolute;left:0;top:-1px;
+  width:56px;height:4px;background:var(--em-orange)}
+
+.lnb-step__date{display:block;margin-bottom:var(--space-3);
+  font-size:var(--fs-caption);font-weight:var(--fw-semibold);color:var(--text-muted)}
+.lnb-step__title{margin:0;font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
+.lnb-step__title a{color:inherit;text-decoration:none;
+  transition:color var(--dur) var(--ease-out)}
+.lnb-step__title a:hover{color:var(--em-orange-ink);text-decoration:underline;
+  text-underline-offset:4px}
+.lnb-step__title a:focus-visible{outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+/* ============================ 4 · Responsive ============================= */
+
+/* The panel stops being a column before the type gets uncomfortable in it: a
+   .62fr column below about 1040px is too narrow for a two-line heading and a
+   260px embed. Single column, and the markup order puts the ask first. */
+@media (max-width:1040px){
+  .lnb-grid{grid-template-columns:minmax(0,1fr)}
+  .lnb-panel{grid-column:1;grid-row:1;position:static;
+    margin-bottom:clamp(var(--space-9),4vw,var(--space-11))}
+  .lnb-story{grid-column:1;grid-row:2}
+}
+
+@media (max-width:900px){
+  .lnb-hero{display:block;min-height:0;padding-bottom:0}
+  .lnb-hero__copy{max-width:none}
+  .lnb-hero__figure{position:static;z-index:auto;width:auto;
+    margin-top:clamp(var(--space-8),6vw,var(--space-10))}
+  .lnb-hero__photo{height:clamp(240px,52vw,340px);object-position:center 20%}
+}
+
+@media (max-width:560px){
+  /* A label column and a sentence column both get too narrow to read. */
+  .lnb-point{grid-template-columns:minmax(0,1fr);row-gap:var(--space-2)}
+}
+
+/* ============================== 5 · Motion =============================== */
+
+/* Nothing here animates on scroll except through the shared reveal layer, and
+   nothing that animates on hover is a data-reveal element: the hover work is on
+   links and pseudo-elements, which css/motion.css cannot reach. */
+@media (prefers-reduced-motion: reduce){
+  .lnb-hero__aside,.lnb-block__link a,.lnb-step__title a{transition:none}
+}

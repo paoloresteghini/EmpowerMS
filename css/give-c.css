@@ -150,131 +150,18 @@
 .gvc-amount:hover{border-color:var(--em-orange);background:var(--orange-100)}
 .gvc-amount--other .gvc-amount__figure{font-size:var(--fs-body);color:var(--text-body)}
 
-/* Says where the choice goes, because the answer is "down there", not "next
-   page". Quiet: the tiles above it are the thing to act on. */
+.gvc-give__act{margin:clamp(24px,3vw,32px) 0 0}
+.gvc-give__act .em-btn{width:100%}
+/* Says what the choice does, because the form is not on this page to show it.
+   Quiet: the tiles and the button above are the things to act on. */
 .gvc-give__hand{
-  margin:clamp(20px,2.4vw,28px) 0 0;
+  margin:var(--space-4) 0 0;
   font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
 }
-
-/* ---------- Empower's form, drawn ---------- */
-/* White, full width, directly under the hero: the second half of the one job
-   this page has. It is scrolled to by the tiles above, so it takes a
-   scroll-margin clear of the sticky header. */
-.gvc-form{
-  background:var(--surface-page);
-  padding-block:clamp(48px,7vw,96px);
-  scroll-margin-top:100px;
-}
-.gvc-form__inner{max-width:880px;margin-inline:auto}
-.gvc-form__title{
-  margin:0;
-  font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:clamp(1.5rem,1.1rem + 1.6vw,2.2rem);
-  line-height:1.12;letter-spacing:var(--ls-heading);
-  color:var(--text-strong);
-}
-/* Says what the drawing is before it starts, because the drawing itself is
-   hidden from screen readers. */
-.gvc-form__note{
-  margin:var(--space-4) 0 clamp(28px,3.5vw,44px);
-  padding-bottom:clamp(24px,3vw,36px);
-  border-bottom:1px solid var(--border-subtle);
-  max-width:70ch;
-  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
-}
-
-.gvc-grp{margin-bottom:clamp(20px,2.6vw,32px)}
-.gvc-grp__name{
-  margin:0 0 var(--space-3);
-  font-size:var(--fs-h4);line-height:1.2;color:var(--text-body);
-}
-.gvc-grp__name--alert{color:var(--status-danger)}
-.gvc-req{color:var(--em-orange);margin-left:2px}
-
-.gvc-r{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-4);margin-bottom:var(--space-4)}
-.gvc-r--2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.gvc-r--half{grid-template-columns:repeat(2,minmax(0,1fr))}
-.gvc-r--half .gvc-fd:only-child{grid-column:1}
-.gvc-r:last-child{margin-bottom:0}
-
-.gvc-fd{display:grid;gap:6px}
-.gvc-bx{
-  display:flex;align-items:center;
-  min-height:46px;padding-inline:var(--space-4);
-  background:var(--white);
-  border:1px solid var(--border-default);
-  font-size:var(--fs-body);color:var(--text-muted);
-}
-.gvc-bx--hint{color:var(--grey-400)}
-.gvc-bx--select{position:relative}
-.gvc-bx--select::after{
-  content:"";position:absolute;right:14px;top:50%;
-  width:9px;height:9px;margin-top:-6px;
-  border-right:2px solid var(--text-body);
-  border-bottom:2px solid var(--text-body);
-  transform:rotate(45deg);
-}
-.gvc-sb{
-  font-size:var(--fs-caption);letter-spacing:var(--ls-eyebrow);
-  text-transform:uppercase;color:var(--text-muted);
-}
-
-.gvc-choices{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
-.gvc-choices li{
-  display:flex;align-items:center;gap:var(--space-3);
-  font-size:var(--fs-body);color:var(--text-body);
-}
-.gvc-dot{
-  width:16px;height:16px;flex:0 0 auto;border-radius:50%;
-  border:1px solid var(--border-strong);background:var(--white);
-}
-
-/* The two rows the tiles reach. Marked so a reviewer can see what a click
-   produces: the filled state, not a description of it. The mark is a rule down
-   the left and a line of type, not a coloured panel, because these are ordinary
-   rows that happen to have arrived already answered. */
-/* Marked from ABOVE, with the build's own 56x4 rule, not with a side stripe.
-   The coloured left border is the motif this build bans everywhere else and
-   there is a test for it. */
-.gvc-grp--filled{padding-top:var(--space-5)}
-.gvc-grp--filled::before{
-  content:"";display:block;
-  width:56px;height:4px;border-radius:2px;
-  background:var(--em-orange);
-  margin-bottom:var(--space-5);
-}
-.gvc-dot--on{
-  border-color:var(--em-orange);
-  background:radial-gradient(circle at center, var(--em-orange) 0 45%, var(--white) 46%);
-}
-.gvc-choices__on{color:var(--text-strong);font-weight:var(--fw-semibold)}
-.gvc-bx--on{color:var(--text-strong);border-color:var(--border-strong);font-weight:var(--fw-semibold)}
-.gvc-grp__from{
-  margin:var(--space-3) 0 0;
-  font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
-  text-transform:uppercase;color:var(--em-orange-ink);
-}
-
-/* Their own card row is a notice until the payment condition is met, so drawing
-   the form as it stands means drawing the notice. */
-.gvc-alert{
-  margin:0;padding:var(--space-5) var(--space-6);
-  border:1px solid var(--status-danger);
-  background:var(--status-danger-bg);
-  font-size:var(--fs-body);line-height:1.5;color:var(--status-danger);
-}
-.gvc-total{
-  margin:0;
-  font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-h4);color:var(--text-strong);
-}
-
-.gvc-form__act{margin:clamp(28px,3.5vw,44px) 0 0}
-.gvc-form__act .em-btn{width:100%}
-.gvc-form__legal{
+.gvc-give__legal{
   margin:var(--space-5) 0 0;
+  padding-top:var(--space-5);
+  border-top:1px solid var(--border-subtle);
   font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted);
 }
 
@@ -367,10 +254,6 @@
   .gvc-give{grid-column:1;grid-row:auto;order:-1;position:static}
   .gvc-hero__say,.gvc-hero__under{grid-column:1}
   .gvc-hero__title{max-width:20ch}
-}
-
-@media (max-width:640px){
-  .gvc-r--2,.gvc-r--half{grid-template-columns:minmax(0,1fr)}
 }
 
 @media (max-width:520px){

@@ -3060,56 +3060,52 @@ test('every hand-off link on a Donate page stays on Empower\u2019s donate route'
   }
 });
 
-test('One Screen chooses first, then fills Empower\u2019s own form below it', () => {
-  /* The reason this reading exists, and the thing a later tidy-up could quietly
-     undo. Empower asked for fewer clicks with the form higher up the page, and
-     the live donate page turned out to be Gravity Forms with the Stripe Payment
-     Element embedded in it — so the answer is not a hand-off at all. The choice
-     sits on the first screen, the form sits under it on the SAME page, and the
-     tiles carry the choice into it.
+test('One Screen is the choice, and the choice carries into Empower\u2019s form', () => {
+  /* The reason this reading exists, and the thing a later edit could quietly
+     undo. Empower asked for fewer clicks with the giving form higher up, and the
+     live donate page turned out to be Gravity Forms with the Stripe Payment
+     Element embedded in it. So the answer is not a hand-off and not a second
+     copy of the form: it is the two decisions that cost the clicks, made once,
+     on the first screen, and carried into the form by the URL.
 
-     Asserted positionally, because that ordering IS the reading: choice before
-     form, form before the reassurance copy. */
+     The form itself is deliberately NOT on this page. The Card is the reading
+     that reproduces it field for field; drawing it here as well made the page
+     about the form rather than about the choice. */
   const html = readFileSync('dist/give-c.html', 'utf8');
   const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
 
   const choice = body.indexOf('class="gvc-give" id="give"');
-  const form = body.indexOf('id="give-form"');
+  const under = body.indexOf('gvc-hero__under');
   const matters = body.indexOf('gvc-matters');
   assert.ok(choice > -1, 'give-c has lost the choice panel');
-  assert.ok(form > -1, 'give-c has lost the form section');
-  assert.ok(choice < form, 'the choice no longer comes before the form');
-  assert.ok(form < matters, 'the form now sits below Why Your Gift Matters');
+  assert.ok(choice < under, 'the choice no longer comes before the copy it was put above');
+  assert.ok(choice < matters, 'the choice now sits below Why Your Gift Matters');
 
-  /* Every tile carries the choice in the query string, and lands on the form.
-     Bare /donate/ links would leave the donor to make the same choice twice,
-     which is the click this reading exists to remove. */
+  /* No second rendering of the form, in any shape: neither the field-for-field
+     drawing nor a slot standing in for it. */
+  assert.ok(!body.includes('gvc-drawn') && !body.includes('gvc-slot'),
+    'give-c is showing the form again — that is The Card\u2019s reading');
+  assert.ok(!/<input|<select|<textarea|<button|<label/.test(body),
+    'give-c has grown a real form control');
+
+  /* Every tile carries the choice in the query string. A bare /donate/ link
+     would leave the donor to state the same thing twice, which is the click this
+     reading exists to remove. */
   const tiles = [...body.matchAll(/<a class="gvc-(?:amount|freq__opt)[^"]*" href="([^"]+)"/g)].map(m => m[1]);
   assert.equal(tiles.length, 9, `give-c offers ${tiles.length} choices, expected three frequencies and six amounts`);
   for (const href of tiles) {
     assert.match(href, /^\/donate\/\?gift_type=/, `${href} carries no gift type`);
-    assert.match(href, /#give-form$/, `${href} does not land on the form`);
   }
-  /* The five figures carry an amount as well as a type; Other deliberately does
-     not, because the donor is going to type it. */
-  /* &amp; in the source, because these hrefs are read out of the built HTML. */
+  /* &amp; in the source, because these hrefs are read out of the built HTML. The
+     five figures carry an amount as well as a type; Other deliberately does not,
+     because the donor is going to type it. */
   const withAmount = tiles.filter(h => /(?:\?|&amp;|&)amount=\d+/.test(h));
   assert.equal(withAmount.length, 5, `${withAmount.length} tiles carry an amount, expected five`);
 
-  /* The form is a drawing, for the same reason every Donate page hands off
-     rather than collects: static HTML, no endpoint. */
-  assert.ok(!/<input|<select|<textarea|<button|<label/.test(body),
-    'give-c has grown a real form control');
-  assert.match(body, /<div class="gvc-drawn" aria-hidden="true">/,
-    'the drawn form is no longer hidden from screen readers');
-  assert.ok(body.includes('gvc-form__note'), 'the form section no longer says what it is');
-
-  /* And it is drawn FILLED, which is the demonstration: a reviewer sees what a
-     tile click produces instead of reading a description of it. */
-  const filled = (body.match(/gvc-grp--filled/g) || []).length;
-  assert.equal(filled, 2, `${filled} rows are marked as filled, expected the gift type and the amount`);
-  assert.ok(body.includes('Set by your choice above'),
-    'the filled rows no longer say where their value came from');
+  /* And the panel has to say what the choice does, because the form is not on
+     the page to show it. */
+  assert.match(body, /gvc-give__hand[^>]*>[^<]*donation form/,
+    'the panel no longer says where the choice goes');
 });
 
 test('no Donate reading invents a number', () => {

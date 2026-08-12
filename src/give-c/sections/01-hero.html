@@ -5,10 +5,13 @@
 
      It is Gravity Forms with the Stripe add-on, and the Stripe Payment Element is
      embedded in Empower’s own page. Nothing redirects to stripe.com. That changes
-     the shape of this reading: the form is not somewhere else, it is further down
-     the same page, so there is no hand-off to design around. The two decisions
-     that cost the clicks (how often, how much) come first, and the tiles carry the
-     answer into the form below.
+     the shape of this reading: the two decisions that cost the clicks (how often,
+     how much) come first, and the tiles carry the answer straight into that form
+     rather than making a donor state it twice.
+
+     The form itself is not drawn on this page. The Card is the reading that
+     reproduces it field for field; here the page is about the choice, and showing
+     the form as well made it about the form.
 
      Every tile is a link to /donate/ with the choice in the query string. Gravity
      Forms populates a field from a query parameter when that field has "Allow
@@ -35,25 +38,27 @@
       <div class="gvc-field">
         <h3 class="gvc-field__label" id="freq-label">How often</h3>
         <ul class="gvc-freq" aria-labelledby="freq-label">
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=one-time#give-form">One time</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=monthly#give-form">Monthly</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=annual#give-form">Annually</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=one-time">One time</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=monthly">Monthly</a></li>
+          <li><a class="gvc-freq__opt" href="/donate/?gift_type=annual">Annually</a></li>
         </ul>
       </div>
 
       <div class="gvc-field">
         <h3 class="gvc-field__label" id="amount-label">How much</h3>
         <ul class="gvc-ladder" aria-labelledby="amount-label">
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=25#give-form"><span class="gvc-amount__figure">$25</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=50#give-form"><span class="gvc-amount__figure">$50</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=100#give-form"><span class="gvc-amount__figure">$100</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=250#give-form"><span class="gvc-amount__figure">$250</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=500#give-form"><span class="gvc-amount__figure">$500</span></a></li>
-          <li><a class="gvc-amount gvc-amount--other" href="/donate/?gift_type=one-time#give-form"><span class="gvc-amount__figure">Other</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=25"><span class="gvc-amount__figure">$25</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=50"><span class="gvc-amount__figure">$50</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=100"><span class="gvc-amount__figure">$100</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=250"><span class="gvc-amount__figure">$250</span></a></li>
+          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=500"><span class="gvc-amount__figure">$500</span></a></li>
+          <li><a class="gvc-amount gvc-amount--other" href="/donate/?gift_type=one-time"><span class="gvc-amount__figure">Other</span></a></li>
         </ul>
       </div>
 
-      <p class="gvc-give__hand">Choosing here fills in the form below. Nothing else to do first.</p>
+      <p class="gvc-give__act"><a class="em-btn em-btn--primary em-btn--lg" href="/donate/">Donate Today</a></p>
+      <p class="gvc-give__hand">Your choice carries into Empower’s donation form. Nothing to fill in twice.</p>
+      <p class="gvc-give__legal">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
     </div>
 
     <!-- The rest of the roadmap’s opening section, under the choice rather than

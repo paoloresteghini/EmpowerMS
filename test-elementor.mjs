@@ -572,3 +572,91 @@ test('deployPage sets edit mode, template type and version, then flushes the Ele
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+/* withCapturingSsh() above only inspects the script deployPage() sends, never
+   runs it, so it cannot see whether a mid-script failure actually stops the
+   deploy: bash's exit status is that of its last command unless something on
+   the script sets `set -e`, and no assertion on the captured text can
+   distinguish "the script contains set -e" from "the script obeys it". The
+   fix under test here is exactly that behaviour, so this fake ssh really
+   executes the received script through a real local bash, with a fake `wp`
+   standing in on PATH, rather than asserting on text and trusting the rest.
+
+   wpe() always prepends exactly one `cd <ROOT> || exit 1` line ahead of
+   deployPage()'s own script (see wpe.mjs). That path does not exist on this
+   machine, so it is neutralised to a no-op `cd .` before handing the rest to
+   bash: this fake is testing deployPage()'s own control flow, not wpe()'s
+   cd-prefix behaviour, which is out of scope here and already exercised
+   elsewhere. */
+function withExecutingSsh(prefix, failOnSubstring) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const sshPath = path.join(tmpDir, 'ssh');
+  const wpPath = path.join(tmpDir, 'wp');
+
+  fs.writeFileSync(wpPath, [
+    '#!/usr/bin/env node',
+    `const args = process.argv.slice(2).join(' ');`,
+    `if (args.includes(${JSON.stringify(failOnSubstring)})) {`,
+    '  process.stderr.write("Error: simulated failure on: " + args + "\\n");',
+    '  process.exit(1);',
+    '}',
+    'process.stdout.write("Success: " + args + "\\n");',
+  ].join('\n'));
+  fs.chmodSync(wpPath, 0o755);
+
+  fs.writeFileSync(sshPath, [
+    '#!/usr/bin/env node',
+    'const { spawn } = require("child_process");',
+    'const chunks = [];',
+    'process.stdin.on("data", c => chunks.push(c));',
+    'process.stdin.on("end", () => {',
+    '  let script = Buffer.concat(chunks).toString("utf8");',
+    '  script = script.replace(/^cd [^\\n]*\\|\\| exit 1\\n/, "cd .\\n");',
+    '  const child = spawn("bash", ["-s"], { stdio: ["pipe", "inherit", "inherit"] });',
+    '  child.on("exit", code => process.exit(code === null ? 1 : code));',
+    '  child.stdin.write(script);',
+    '  child.stdin.end();',
+    '});',
+  ].join('\n'));
+  fs.chmodSync(sshPath, 0o755);
+
+  return { tmpDir };
+}
+
+test('deployPage rejects when the Elementor data write fails partway through the script, instead of resolving over a partial deploy', async () => {
+  const { tmpDir } = withExecutingSsh('deploy-exec-fail-', '_elementor_data');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await assert.rejects(
+      () => deployPage(42, [podcastHero()]),
+      err => {
+        /* Not just "it rejected": the failure must be the simulated
+           _elementor_data failure surfacing, not some unrelated error (a
+           missing binary, a bad script). */
+        assert.match(String(err.stderr || err.message), /simulated failure on:.*_elementor_data/);
+        return true;
+      },
+    );
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('deployPage still resolves when every wp-cli step genuinely succeeds', async () => {
+  /* Companion to the failure test above: proves set -e did not introduce a
+     false failure on the happy path, using the same real-execution fake
+     rather than trusting the earlier structural (capture-only) tests alone. */
+  const { tmpDir } = withExecutingSsh('deploy-exec-ok-', '__never_matches__');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    const out = await deployPage(42, [podcastHero()]);
+    assert.match(out, /Success.*_elementor_edit_mode builder/);
+    assert.match(out, /Success.*flush_css/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "385d894",
+    "elType": "container",
+    "settings": {
+      "html_tag": "section",
+      "css_classes": "zz-probe"
+    },
+    "elements": [
+      {
+        "id": "df239b3",
+        "elType": "container",
+        "settings": {
+          "css_classes": "em-container",
+          "content_width": "full"
+        },
+        "elements": [
+          {
+            "id": "3ef059a",
+            "elType": "widget",
+            "settings": {
+              "title": "Probe heading",
+              "_css_classes": "zz-probe__title",
+              "_attributes": "data-probe|static-value"
+            },
+            "elements": [],
+            "widgetType": "heading"
+          },
+          {
+            "id": "b9bafdb",
+            "elType": "widget",
+            "settings": {
+              "editor": "<p>Probe body copy for the schema capture.</p>",
+              "_css_classes": "zz-probe__body"
+            },
+            "elements": [],
+            "widgetType": "text-editor"
+          },
+          {
+            "id": "d3c63b5",
+            "elType": "widget",
+            "settings": {
+              "image": {
+                "id": 20520,
+                "url": "https://empv2.wpenginepowered.com/wp-content/uploads/2026/06/IMG_5964.jpg"
+              },
+              "_css_classes": "zz-probe__photo"
+            },
+            "elements": [],
+            "widgetType": "image"
+          },
+          {
+            "id": "bbac9e9",
+            "elType": "widget",
+            "settings": {
+              "html": "<svg width=\"10\" height=\"10\"></svg>",
+              "_css_classes": "zz-probe__svg"
+            },
+            "elements": [],
+            "widgetType": "html"
+          }
+        ],
+        "isInner": true
+      }
+    ],
+    "isInner": false
+  }
+]

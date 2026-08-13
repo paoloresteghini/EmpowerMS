@@ -1,0 +1,41 @@
+[
+  {
+    "id": "c04c902",
+    "elType": "container",
+    "settings": {
+      "css_classes": "pca-ep",
+      "__dynamic__": {
+        "_attributes": "[elementor-tag id=\"88cd029\" name=\"post-terms\" settings=\"%7B%22taxonomy%22%3A%22category%22%2C%22link%22%3A%22%22%2C%22before%22%3A%22data-guest%7C%22%2C%22separator%22%3A%22%20%22%7D\"]"
+      }
+    },
+    "elements": [
+      {
+        "id": "35c7821",
+        "elType": "widget",
+        "settings": {
+          "_css_classes": "pca-ep__title",
+          "header_size": "h3",
+          "__dynamic__": {
+            "title": "[elementor-tag id=\"6babfb7\" name=\"post-title\" settings=\"%7B%7D\"]"
+          },
+          "title": "Add Your Heading Text Here"
+        },
+        "elements": [],
+        "widgetType": "heading"
+      },
+      {
+        "id": "a573050",
+        "elType": "widget",
+        "settings": {
+          "_css_classes": "pca-ep__date",
+          "__dynamic__": {
+            "editor": "[elementor-tag id=\"4f1cea3\" name=\"post-date\" settings=\"%7B%22format%22%3A%22default%22%7D\"]"
+          }
+        },
+        "elements": [],
+        "widgetType": "text-editor"
+      }
+    ],
+    "isInner": false
+  }
+]

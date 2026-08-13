@@ -7,6 +7,7 @@ import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
+import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
 import { deployPage } from './elementor/deploy.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
@@ -482,6 +483,32 @@ test('the podcast hero mapping carries the section class and its copy', () => {
     assert.ok(flat.includes(s.replace(/"/g, '\\"')), `hero mapping is missing: ${s.slice(0, 48)}`);
   }
   assert.ok(flat.includes('pca-hero'), 'hero mapping does not carry the pca-hero class');
+});
+
+/* --- elementor/pages/podcast-a/02-about.mjs ----------------------------- */
+
+test('the podcast about mapping carries the section class and its copy', () => {
+  const tree = podcastAbout();
+  const flat = JSON.stringify(tree);
+  const source = fs.readFileSync('src/podcast-a/sections/02-about.html', 'utf8');
+
+  /* Same derivation as the hero test above: a copy deck read from the
+     source partial by regex, never typed by hand. {1,} rather than a higher
+     floor, for the same reason recorded there (a higher floor can silently
+     drop a short approved string without ever failing). */
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `about mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('pca-about'), 'about mapping does not carry the pca-about class');
+
+  /* team-bio.html is a static-build path that 404s under WordPress; see the
+     module's own comment for the evidence behind the replacement route. */
+  assert.ok(!flat.includes('team-bio.html'), 'about mapping still links the static-build team-bio.html path');
+  assert.ok(flat.includes('/person/grant-callen/'), 'about mapping does not link Grant Callen\'s real person route');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */

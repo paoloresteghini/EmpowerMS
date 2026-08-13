@@ -144,15 +144,15 @@ test('image() matches the captured image shape', () => {
   assert.ok(typeof ref.settings.image === 'object', 'captured image setting is not an object; the schema notes are wrong');
 });
 
-test('link() applies the confirmed widget css class key', () => {
-  /* The fixture has no button widget, so widgetType 'button' and the
-     label/href setting keys are unconfirmed against a real capture; only what
-     the schema notes confirm for "any widget" (the _css_classes key) is
-     asserted here. Do not extend this test with label/href assertions until a
-     real button node has been captured and the keys checked against it. */
-  const made = link({ label: 'Go', href: '/go', cssClass: 'zz-probe__cta' });
+test('link() matches the captured button shape', () => {
+  const ref = findByClass(REF, 'zz-probe__action');
+  assert.ok(ref, 'fixture has no .zz-probe__action button; recapture it');
+  const made = link({ label: 'Probe action', href: 'https://example.org/probe', cssClass: 'zz-probe__action' });
   assert.equal(made.elType, 'widget');
-  assert.equal(made.settings._css_classes, 'zz-probe__cta');
+  assert.equal(made.widgetType, ref.widgetType);
+  assert.equal(made.settings.text, 'Probe action');
+  assert.equal(made.settings.link.url, 'https://example.org/probe');
+  assert.equal(made.settings._css_classes, 'zz-probe__action');
 });
 
 test('html() carries markup through unaltered', () => {

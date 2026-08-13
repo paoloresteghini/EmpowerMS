@@ -61,13 +61,11 @@ export const text = ({ markup, cssClass = '', ...rest } = {}) =>
 export const image = ({ id, url, cssClass = '', ...rest } = {}) =>
   el('widget', { image: { id, url }, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'image' });
 
-/* UNVERIFIED: the captured fixture has no button widget, so widgetType
-   'button' and the label/href settings keys below are the brief's original
-   guess, not something read out of a capture. Kept because the "Produces"
-   interface requires link(), and the widget-level _css_classes key is
-   confirmed for "any widget" in the schema notes, so that part is safe. The
-   label/href keys need checking the first time a real button node is
-   captured, before Task 6 or 7 relies on them. */
+/* widgetType 'button' and the settings keys (text, link.url, _css_classes) are
+   read from a captured button node at .zz-probe__action. This was flagged
+   unverified in an earlier pass, when the fixture had no button widget and
+   these were the brief's unread guess; the capture has since confirmed the
+   guess was right, keys and shape both. */
 export const link = ({ label, href, cssClass = '', ...rest } = {}) =>
   el('widget', { text: label, link: { url: href }, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'button' });
 

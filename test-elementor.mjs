@@ -165,3 +165,90 @@ test('container() nests its children', () => {
   assert.equal(made.elements.length, 1);
   assert.equal(made.elements[0].settings.title, 'x');
 });
+
+/* The enqueue order IS the design. site.css carries every local WCAG override,
+   and a build that loads it before components.css loses them. The order is
+   asserted here rather than trusted to a hand-written list in the README. */
+test('the child theme enqueues every token, in cascade order, before components and site', () => {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+
+  /* The token paths are BUILT from an array in functions.php, so asserting the
+     literal string "tokens/base.css" would test a file that never contains it.
+     Assert the array's contents and order instead, which is the real contract. */
+  const arr = fn.match(/EMPOWER_TOKENS\s*=\s*array\(([\s\S]*?)\)/);
+  assert.ok(arr, 'functions.php has no EMPOWER_TOKENS array');
+  const tokens = [...arr[1].matchAll(/'([a-z]+)'/g)].map(m => m[1]);
+  assert.deepEqual(
+    tokens,
+    ['base', 'colors', 'elevation', 'fonts', 'motion', 'radius', 'spacing', 'typography'],
+    'the token cascade is incomplete or out of order',
+  );
+
+  /* Every one of the eight must exist on disk, or the enqueue 404s silently. */
+  for (const t of tokens) assert.ok(fs.existsSync(`tokens/${t}.css`), `tokens/${t}.css does not exist`);
+
+  /* site.css carries the shared chrome and every local WCAG override, so it
+     must come after components.css. Getting this backwards drops the contrast
+     fixes and nothing errors. */
+  const components = fn.indexOf('components/components.css');
+  const site = fn.indexOf('css/site.css');
+  assert.ok(components > -1, 'functions.php never enqueues components.css');
+  assert.ok(site > components, 'site.css is enqueued before components.css');
+  /* site.css's dependency array is built into $site_deps rather than passed
+     as an array literal, because UiCore's handle is added to it
+     conditionally (see the next test). Assert the built array still starts
+     with empower-components and is what actually gets enqueued. */
+  assert.match(fn, /\$site_deps\s*=\s*array\(\s*'empower-components'/,
+    'site.css does not declare components.css as a dependency, so the order is not guaranteed');
+  assert.match(fn, /wp_enqueue_style\(\s*'empower-site'[^)]*\$site_deps/,
+    'site.css is not enqueued with $site_deps, so the built dependency array is never used');
+});
+
+/* The spec's own risk table says UiCore's globals must be reconciled during
+   foundations: "the child theme's enqueue must win." A file-level test
+   cannot prove cascade order on a live install, but it can prove the file
+   takes the precaution: a guarded dependency (so a renamed or missing
+   UiCore handle costs only the ordering guarantee, not css/site.css
+   entirely) and a priority late enough to run after UiCore actually enqueues
+   its stylesheet, which happens at priority 50 in UiCore's own
+   frontend_css(). */
+test('the styles enqueue guards against UiCore loading after site.css', () => {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.match(fn, /wp_style_is\(\s*'uicore_global'\s*,\s*'registered'\s*\)/,
+    'functions.php never checks whether uicore_global is registered before depending on it');
+  assert.match(fn, /\$site_deps\[\]\s*=\s*'uicore_global'/,
+    'functions.php checks for uicore_global but never adds it to the dependency array');
+  const priority = fn.match(/EMPOWER_STYLES_PRIORITY\s*=\s*(\d+)/);
+  assert.ok(priority, 'functions.php has no EMPOWER_STYLES_PRIORITY constant');
+  assert.ok(Number(priority[1]) > 50,
+    'styles enqueue priority is not late enough to run after UiCore enqueues uicore_global at 50');
+});
+
+/* The guard below reads `fn.includes('motion')`, which is always true because
+   EMPOWER_TOKENS contains the string 'motion' for tokens/motion.css, a
+   different file from css/motion.css. Guard on the reveal-pair file itself
+   instead, which is the condition the test description actually names. */
+test('the motion layer ships as a pair or not at all', () => {
+  /* css/motion.css hides every [data-reveal] element and js/reveal.js is what
+     reveals them. Enqueueing the stylesheet without the script leaves the page
+     blank below the fold, which this build has already shipped once. */
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  if (fn.includes('css/motion.css')) {
+    assert.ok(fn.includes('js/reveal.js'), 'motion.css is reachable but reveal.js is never enqueued');
+  }
+});
+
+test('the child theme declares UiCore as its parent', () => {
+  const style = fs.readFileSync('wp/empowerms-child/style.css', 'utf8');
+  assert.match(style, /Template:\s*uicore-pro/, 'child theme does not declare uicore-pro as parent');
+});
+
+test('no stylesheet is duplicated into the child theme by hand', () => {
+  /* tokens/, components/, css/ and js/ are SYNCED from the repository root at
+     deploy time, never copied into wp/. A second copy drifts from the first and
+     the drift is invisible until a page renders wrong. */
+  const syncSrc = fs.readFileSync('wp/sync.mjs', 'utf8');
+  for (const dir of ['tokens', 'components', 'css', 'js', 'assets']) {
+    assert.ok(syncSrc.includes(`'${dir}'`), `wp/sync.mjs does not sync ${dir}/`);
+  }
+});

@@ -197,18 +197,40 @@ clever converter: when a section is wrong, you fix that section.
 ### The unknown that decides what approach A costs
 
 Elementor's per-element "CSS Classes" field is what lets a native heading widget
-carry `.wa-hero__title` so the existing stylesheet still styles it. The open
-question is where that class lands.
+carry `.wa-hero__title` so the existing stylesheet still styles it. ~~The open
+question is where that class lands.~~ **Answered by the spike, 2026-08-13:**
+both, split by element kind, not one or the other.
 
-- **On the element itself:** the stylesheets ship unchanged, exactly as the
-  README's enqueue table describes.
-- **On a wrapper `<div>`:** selectors that assume the element *is* the `<h1>` or
+- ~~On the element itself: the stylesheets ship unchanged, exactly as the
+  README's enqueue table describes.~~ **True for containers only.** A
+  container's class lands on the container itself; `html_tag: section`
+  produces a real `<section>` carrying the class.
+- ~~On a wrapper `<div>`: selectors that assume the element *is* the `<h1>` or
   the `<ul>` need adapting. Typography mostly survives by inheritance; margins,
-  `display`, grid participation and anything structural do not.
+  `display`, grid participation and anything structural do not.~~ **True for
+  every widget.** A widget's class lands on a wrapper `<div>`, never on the
+  semantic element inside it. Confirmed from a captured render
+  (`docs/elementor/schema-4.2.2.md`) and from the deployed spike page.
 
-If it is the second, the fix is an **additive bridge stylesheet** in the child
-theme carrying the Elementor-shaped selectors, with its own tests. The
-forty-seven existing stylesheets stay untouched and stay under test.
+**The bridge stylesheet is needed**, exactly as this section anticipated. Its
+real size, measured rather than estimated: `docs/elementor/spike-report.md`
+§1 greps all fifty files in `css/` for the selector shapes a wrapper div
+structurally breaks (an element type combined with a class, a child
+combinator or adjacent-sibling combinator off a class, `::before`/`::after`
+chained to a class). 33 of 50 carry at least one; narrowed to the 20
+stylesheets the fifteen in-scope pages actually load, **12 of 20** do, most
+concentrated in `team-a.css` and the `final` page's `option-a.css` /
+`option-d.css`. That measurement finds selectors that are provably broken
+by shape; it does not find every selector that is differently wrong once its
+class moves (the spike's own `.em-btn` button case is styled correctly by
+class and still wrong, because the design expected the class on the `<a>`,
+not the wrapper that actually carries it), so the bridge stylesheet's real
+scope is those 12 files read section by section against a rendered page, not
+a fixed list of 202 matches.
+
+The fix is an **additive bridge stylesheet** in the child theme carrying the
+Elementor-shaped selectors, with its own tests. The forty-seven, now fifty,
+existing stylesheets stay untouched and stay under test.
 
 **Consequence either way:** the converted DOM will not be class-for-class
 identical to `dist/`. The 228 existing tests keep proving the static build. The
@@ -312,10 +334,22 @@ must emit from the post's real terms. A template that does not emit them produce
 a page where every control moves, no card hides, and nothing reports an error.
 `test.mjs` holds the contract to the markup in both directions.
 
-Whether Elementor Pro's Custom Attributes field accepts dynamic tags as values is
-the **first thing the spike answers**. If it does not, the fallback is a filter in
-the child theme that stamps the attributes onto loop items: more code, but
-predictable.
+~~Whether Elementor Pro's Custom Attributes field accepts dynamic tags as values
+is the first thing the spike answers. If it does not, the fallback is a filter
+in the child theme that stamps the attributes onto loop items: more code, but
+predictable.~~ **Answered by the spike, 2026-08-13, and the answer is not the
+binary this question assumed.** Custom Attributes do accept dynamic tags, on
+both containers and widgets, confirmed from the live control definition and
+proven by rendering a real loop item whose `_attributes` carried a dynamic
+`post-terms` tag: it resolved correctly and independently for all six items
+rendered. The fallback filter is still needed, but for a different reason:
+`post-terms` is the only dynamic tag able to surface taxonomy data, and it
+renders each term wrapped in `<span>` even with linking off, so the value it
+produces is markup, not a token a CSS attribute selector can match. The
+mechanism works; the one tag capable of using it for this purpose is
+unusable for it. `wp/empowerms-child/inc/loop-attributes.php` is the filter
+that ships instead, stamping the real term slug onto the loop item container
+from PHP. Full account: `docs/elementor/spike-report.md` §2.
 
 ## The fidelity harness
 
@@ -417,13 +451,14 @@ The spike needs Elementor Pro installed. Nothing else is blocked.
 
 | Risk | Handling |
 | --- | --- |
-| CSS Classes land on a wrapper, so selectors need adapting | Additive bridge stylesheet with its own tests; originals untouched. The spike answers it before the plan is written |
-| Custom Attributes will not take dynamic tags | Child-theme filter stamps attributes onto loop items |
-| Elementor's JSON schema is version-specific and undocumented | Pinned at 4.2.1, recorded. Spike before committing |
+| ~~CSS Classes land on a wrapper, so selectors need adapting~~ **Confirmed 2026-08-13** | Additive bridge stylesheet with its own tests; originals untouched. Measured at 12 of the 20 in-scope stylesheets (33 of all 50 in `css/`), method and per-file breakdown in `docs/elementor/spike-report.md` §1. Not exhaustive: shape-grepping cannot find a selector that is correct by shape and still wrong once its class moves, so each of the 12 still needs a by-eye pass against a rendered page |
+| ~~Custom Attributes will not take dynamic tags~~ **Answered 2026-08-13, not the binary this row assumed** | They do take dynamic tags, on containers and widgets alike. The child-theme filter (`wp/empowerms-child/inc/loop-attributes.php`) still ships, because the one dynamic tag able to read taxonomy terms (`post-terms`) renders them wrapped in `<span>`, unusable by a CSS attribute selector regardless of the field accepting dynamic input. `docs/elementor/spike-report.md` §2 |
+| Elementor's JSON schema is version-specific and undocumented | ~~Pinned at 4.2.1, recorded.~~ **Re-pinned 2026-08-13** to what actually shipped once Pro was installed: 4.2.2 core, 4.2.1 Pro. Captured in `docs/elementor/schema-4.2.2.md` from a real render on the install, not from documentation |
 | ~~Changing Site Settings restyles existing live pages~~ | **Retired 2026-08-12.** Zero pages are built in Elementor, so Site Settings can be configured freely |
+| **New risk, found 2026-08-13: Site Settings cannot be saved on this install at all.** An Elementor Pro 4.2.1 bug (the Components package's `__beforeSave` hook dereferences `undefined` on any kit document). No newer Pro is available | Container width and widget spacing move into the bridge stylesheet instead, since they cannot be set any other way. Global colours and fonts are not relied on, since every element carries a build class. Empower must be told before handover: they cannot save Site Settings either. `docs/elementor/spike-report.md` §5.2 |
 | Two builders on one site: Beaver Builder runs 45 published pages, Elementor runs the 15 new ones | Accepted for this phase, retired in the second. Both load assets on every page unless scoped, which is a performance item on the go-live gate |
 | Beaver Builder removed before its 32 undesigned pages are converted or retired | Retirement is gated on the landing template being signed off. The plugin stays installed until page coverage is complete |
-| UiCore Pro's own global styles fight `tokens/` | Reconcile during foundations; the child theme's enqueue must win. Add a computed-style check to the harness |
+| ~~UiCore Pro's own global styles fight `tokens/`~~ **Partly settled 2026-08-13** | Enqueue ordering is fixed and verified live (`empower-site-css` now loads after `uicore_global-css`, at a raised priority past UiCore's own real enqueue call). A computed-style probe against four spot values (hero background, container max-width, action colour, heading size) matches on all four. **Not fully closed:** four spot checks are not an exhaustive sweep of UiCore's rules, and loading later only wins at equal specificity. Treat as probably safe, not proven, until a page with more UiCore-styled elements is converted |
 | The clone is behind live on Gravity Forms and Stripe versions | Confirm before the Donate work whether the clone gets re-synced from live, and whether that would destroy converted pages |
 | Empower edit pages mid-conversion and a rebuild destroys their work | Named handover point in the plan |
 | Gaps 1 and 2 stall four pages | Put both to Empower now, in parallel with the spike |

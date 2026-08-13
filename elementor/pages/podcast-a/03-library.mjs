@@ -213,11 +213,47 @@ const dynamicTag = (name, tagSettings = {}) =>
    own header comment carries the full proof for why a PHP filter is the
    route (post-terms is the only dynamic tag that can read a taxonomy term,
    and it always wraps the value in <span>, which a CSS attribute selector
-   can never match). */
+   can never match).
+
+   _element_cache: 'yes' on the pca-ep container is not decorative and not
+   optional. Found live, the hard way: Elementor's own per-template element
+   cache (Core\Base\Document::print_elements(), gated by the
+   elementor_element_cache_ttl option, ON by default and not something this
+   build's Site Settings can change per Task 7a's Step 7 finding) renders
+   the loop item ONCE per page load, caches that HTML keyed to the shared
+   template post, and reuses it verbatim for every subsequent iteration of
+   the loop within the same cache TTL, UNLESS should_render_shortcode()
+   (element-base.php) says otherwise. That check defers an element to a
+   fresh per-request [elementor-element] shortcode render only if it
+   already carries __dynamic__ settings, or _element_cache is set
+   explicitly. The three child widgets below (post-terms, post-title/
+   post-url, post-date) all carry __dynamic__, so they were already correct:
+   the deferred rendering visibly varies request to request in every check
+   this file's own tests ran. The pca-ep CONTAINER itself carries no
+   __dynamic__ setting of its own (data-guest is added by a PHP hook, not a
+   dynamic tag), so without this control it gets baked into the shared
+   cache on whichever post happens to render first, and every other item on
+   the page (65 of the 66) then serves THAT post's cached wrapper markup,
+   including whatever data-guest that specific before_render pass produced.
+   That is a page where 66 titles/dates differ correctly (proving the
+   dynamic tags work) while 65 of the 66 wrapper containers do not vary at
+   all, which reads as correct on a glance at the rendered page and is not:
+   confirmed directly by reading the post's own
+   _elementor_element_cache postmeta, which held literal HTML for the
+   container and [elementor-element ...] shortcode placeholders for its
+   three dynamic children. 'yes' forces should_render_shortcode() to defer
+   this container the same way, per element-cache/module.php's own control:
+   the option is labelled "Inactive" in the editor UI (cache inactive FOR
+   THIS ELEMENT, i.e. always render fresh), not "yes" in any user-facing
+   sense; 'yes' is the literal setting value the code checks for that
+   meaning. */
 export function loopItem() {
   return [
     container(
-      { cssClass: 'pca-ep', content_width: 'full', _attributes: 'data-reveal|rise' },
+      {
+        cssClass: 'pca-ep', content_width: 'full', _attributes: 'data-reveal|rise',
+        _element_cache: 'yes',
+      },
       [
         container(
           { cssClass: 'pca-ep__art', content_width: 'full', _attributes: 'aria-hidden|true' },

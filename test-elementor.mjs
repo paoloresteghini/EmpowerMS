@@ -619,6 +619,23 @@ test('the podcast loop item carries pca-ep and its child classes, and does not i
   assert.ok(!flat.includes('data-topic'), 'loop item sets data-topic, which the source says is not built at conversion');
 });
 
+/* Found live: without this, Elementor's own per-template element cache
+   (on by default, and not something this build's Site Settings can turn
+   off per Task 7a's Step 7 finding) bakes the pca-ep container's rendered
+   HTML once per page load and reuses it for every remaining loop item,
+   because the container carries no __dynamic__ setting of its own to
+   trigger Elementor's automatic per-request shortcode deferral. Confirmed
+   by deploying without this line: exactly one post's data-guest (or its
+   absence) applied to all 66 rendered episodes, invisible in the HTML
+   unless the cached postmeta itself is read. See the module's own note and
+   wp/empowerms-child/inc/loop-attributes.php's header comment for the full
+   account. */
+test('the podcast loop item container opts out of the per-template element cache', () => {
+  const [item] = podcastLoopItem();
+  assert.equal(item.settings._element_cache, 'yes',
+    'pca-ep container must set _element_cache: \'yes\', or data-guest freezes to whichever post renders first and is silently wrong for every other item');
+});
+
 test('the podcast loop item title is a Heading widget rendered as a span, not an invented heading level', () => {
   const [item] = podcastLoopItem();
   const titleNode = item.elements.find(el => el.settings?._css_classes === 'pca-ep__title');

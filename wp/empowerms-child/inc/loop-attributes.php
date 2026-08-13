@@ -44,6 +44,25 @@
  * Scoped to css_classes containing "pca-ep" as a whole class token (word
  * boundary, not a substring match), so it cannot fire for an unrelated
  * container that merely contains "pca-ep" inside a longer class name.
+ *
+ * A second, independent condition also has to hold for this hook to fire on
+ * every loop item rather than once per page: the pca-ep container in
+ * elementor/pages/podcast-a/03-library.mjs carries `_element_cache: 'yes'`.
+ * Found live, the hard way: Elementor's own per-template element cache
+ * (Core\Base\Document::print_elements(), on by default) renders a Loop Item
+ * template's top-level element ONCE per page load and reuses that HTML
+ * verbatim for every remaining iteration of the loop, UNLESS the element is
+ * deferred to a per-request [elementor-element] shortcode
+ * (should_render_shortcode() in element-base.php), which only happens
+ * automatically for elements that already carry a __dynamic__ setting of
+ * their own. The pca-ep container has none (data-guest comes from this PHP
+ * hook, not a dynamic tag), so without `_element_cache: 'yes'` this hook
+ * fires exactly once per page load, on whichever post the query returns
+ * first, and every other item silently reuses that one post's data-guest
+ * (or its absence). Confirmed directly by reading post 20572's own
+ * _elementor_element_cache postmeta, which held literal baked HTML for the
+ * container and shortcode placeholders for its three __dynamic__ children.
+ * See the module's own comment for the full account.
  */
 add_action( 'elementor/frontend/container/before_render', function ( $element ) {
 	$classes = (string) $element->get_settings_for_display( 'css_classes' );

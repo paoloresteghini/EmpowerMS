@@ -326,6 +326,18 @@ export function section() {
             post_query_post_type: 'post',
             post_query_include: 'terms',
             post_query_include_term_ids: [String(PODCAST_CATEGORY_ID)],
+            /* "Newest first" is the source partial's own requirement
+               (data-cms-note: "Episode library, newest first"). Set
+               explicitly rather than left to fall through to whatever
+               Elementor's control defaults happen to be, even though the
+               two are the same value today (Group_Control_Query's own
+               'orderby'/'order' fields default to 'post_date'/'desc', read
+               from group-control-query.php on empv2): a reader of this file
+               should see the requirement stated, not have to go read
+               Elementor's source to discover that leaving it unset happens
+               to produce the right order. */
+            post_query_orderby: 'post_date',
+            post_query_order: 'desc',
             _attributes: 'data-reveal-group|',
           }),
         ]),

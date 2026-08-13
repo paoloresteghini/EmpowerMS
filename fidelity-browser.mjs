@@ -22,16 +22,39 @@ import { chromium } from 'playwright';
       Playwright's 30s default timeout. 'load' matches what
       checkVisibleWithoutJs already uses below, for the same reason.
    2. { force: true } on check/uncheck. The live page runs a MailMunch popup
-      signup form (data-dojo-attach-point="modalOverlay"); even off-screen it
-      intercepts pointer events over the whole viewport and Playwright's
-      normal actionability check (real click, must be unobstructed) times
-      out against it. force: true dispatches the check directly against the
-      input rather than simulating a real pointer click through whatever
-      third-party overlay happens to be in the DOM that day. What this
-      function verifies is the CSS cascade from :checked, not click
-      ergonomics through an unrelated marketing plugin's markup, so bypassing
-      the actionability check is the right trade here, not a workaround for
-      something this test should actually be catching. */
+      signup form. Its backdrop (data-dojo-attach-point="modalOverlay",
+      class mc-modal-bg) starts at display:none and switches to a
+      full-viewport, z-index:9995 overlay roughly 6 to 8 seconds after load,
+      confirmed by polling its computed style. force: true is a deliberate
+      bypass of Playwright's actionability check, not a blind workaround:
+      this WAS investigated as a possible real defect rather than assumed
+      to be a test artifact (see the task report), and the investigation
+      resolved cleanly enough to keep the bypass rather than fix anything
+      here:
+        - A real (non-forced) page.locator(...).click() on the guest
+          checkbox, run after the popup has triggered, times out: mouse
+          interaction with the filter (and everything else on the page) IS
+          genuinely blocked for as long as the popup stays open, for every
+          visitor, not just this test.
+        - Real Tab-key navigation from the top of the document reaches the
+          checkbox in 7 tab presses even with the popup visually open (the
+          popup implements no focus trap of its own, so keyboard focus
+          walks straight past it into the page behind it), and Space then
+          toggles the checkbox and updates the visible card count
+          correctly. Keyboard users are not blocked.
+        - The popup carries a real close control (button.mc-closeModal,
+          aria-label="Close") and responds to Escape, so a mouse visitor
+          who notices it can dismiss it and regain normal interaction; the
+          defect is the automatic, undismissed default state, not an
+          absence of any way out.
+      So this is a real, live, site-wide MOUSE-only usability defect caused
+      by an unrelated third-party marketing plugin already installed on
+      empv2, not something this conversion introduced and not something
+      fixable from podcast-a's own markup or CSS. force: true here verifies
+      the filter's own CSS cascade in isolation from that plugin's timing,
+      which is what this function exists to prove; the plugin finding
+      itself is reported separately and flagged for the go-live gate,
+      not patched around silently. */
 export async function checkFilter(url, { toggleSelector, itemSelector, attribute = 'data-guest' }) {
   const browser = await chromium.launch();
   try {
@@ -85,6 +108,26 @@ export async function checkVisibleWithoutJs(url, selector) {
   }
 }
 
+/* The other half of the no-JS comparison: how many of the same selector are
+   visible once JavaScript HAS run and the reveal has been given time to
+   settle (settleReveal(), below). checkVisibleWithoutJs on its own proves
+   nothing is permanently hidden, but says nothing about whether the count it
+   found is the RIGHT count; a selector matching zero elements on both sides
+   (a typo, a class that does not exist) would report false parity. Diffing
+   against this is what test-elementor.mjs's no-JS test actually asserts. */
+export async function checkVisibleWithJs(url, selector) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url, { waitUntil: 'load' });
+    await settleReveal(page);
+    return await page.$$eval(selector, els =>
+      els.filter(e => getComputedStyle(e).opacity !== '0' && getComputedStyle(e).display !== 'none').length);
+  } finally {
+    await browser.close();
+  }
+}
+
 /* Check 5 of the spec's harness. Catches the two silent infrastructure
    failures: a stylesheet that never enqueued, and Elementor's Theme Style or
    UiCore's own globals winning over css/site.css. Compared against the same
@@ -115,13 +158,76 @@ export async function computedStyles(url, probes) {
   }
 }
 
-/* waitUntil: 'load', not 'networkidle', for the same reason as above. */
+/* waitUntil: 'load', not 'networkidle', for the same reason as above.
+
+   Found live, on the first capture pass: two of the four static-reference
+   screenshots (768, 1440) came back with the hero copy and the whole
+   episode grid rendered as a barely-visible grey ghost, while 1024 and 390
+   were fine. The cause is js/reveal.js's own design (see that file's own
+   comments): every [data-reveal] element outside the above-the-fold
+   [data-reveal-entrance] scope only gains its .is-revealed class from an
+   IntersectionObserver callback that fires once the element intersects the
+   viewport, and a plain fullPage screenshot does not reliably give that
+   callback time to fire and its CSS transition time to finish before the
+   capture happens, at every width, every time. Scrolling to the bottom
+   first (in real steps, not a single jump, so intersection entries fire
+   the way they would for a scrolling visitor) and then explicitly waiting
+   for every [data-reveal] element to carry .is-revealed removes the race
+   instead of hoping the timing works out. Scrolling back to the top before
+   capturing matches what Step 11 actually wants: a screenshot of the page
+   as a visitor arriving at the top of it would see it once revealed, not
+   mid-scroll.
+
+   Waiting only for the .is-revealed CLASS was not enough on its own,
+   found on the second capture pass: css/motion.css transitions opacity
+   over --dur-reveal (600ms) plus a PER-ITEM stagger,
+   transition-delay: calc(var(--reveal-i) * 70ms), where --reveal-i is the
+   element's position within its own [data-reveal-group] (js/reveal.js sets
+   it). The class is added the instant an element intersects, which can be
+   well before its transition-delay has even elapsed, let alone before the
+   600ms transition after that finishes; in a 66-card group the last card's
+   delay alone is 65 * 70ms = 4550ms. Capturing right after the class check
+   caught mid-transition frames, exactly the same "grey ghost" look as
+   before, just further down the page. Reading each element's own computed
+   transition-delay + transition-duration and waiting for the slowest one
+   is what makes this correct for any group size, this page's 9-card static
+   sample and the converted page's 66-card grid alike, rather than a fixed
+   guess tuned to whichever page happened to be captured last. */
+async function settleReveal(page) {
+  await page.evaluate(async () => {
+    const height = document.documentElement.scrollHeight;
+    const step = window.innerHeight;
+    for (let y = 0; y < height; y += step) {
+      window.scrollTo(0, y);
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, height);
+    await new Promise(r => requestAnimationFrame(r));
+  });
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('[data-reveal]')].every(el => el.classList.contains('is-revealed')),
+  { timeout: 10000 }).catch(() => {});
+  const maxTransitionMs = await page.evaluate(() => {
+    const toMs = v => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
+    let max = 0;
+    for (const el of document.querySelectorAll('[data-reveal]')) {
+      const cs = getComputedStyle(el);
+      const total = toMs(cs.transitionDelay || '0s') + toMs(cs.transitionDuration || '0s');
+      if (total > max) max = total;
+    }
+    return max;
+  });
+  await page.waitForTimeout(maxTransitionMs + 100);
+  await page.evaluate(() => window.scrollTo(0, 0));
+}
+
 export async function screenshots(url, dir) {
   const browser = await chromium.launch();
   try {
     for (const width of [390, 768, 1024, 1440]) {
       const page = await browser.newPage({ viewport: { width, height: 1200 } });
       await page.goto(url, { waitUntil: 'load' });
+      await settleReveal(page);
       await page.screenshot({ path: `${dir}/${width}.png`, fullPage: true });
       await page.close();
     }

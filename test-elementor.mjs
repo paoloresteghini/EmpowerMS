@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import http from 'node:http';
+import { execFileSync } from 'node:child_process';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
@@ -14,6 +16,50 @@ import {
 } from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
 import { deployPage, deployLoopItem } from './elementor/deploy.mjs';
+
+/* The computed-style comparison test below reads dist/podcast-a.html
+   directly (served locally, not fetched from the live install), so it needs
+   dist/ to actually be current. test.mjs already does exactly this at
+   import time for the same reason; `npm test` runs test.mjs first, so by
+   the time this file runs as part of that script dist/ is already fresh,
+   but this file is also run standalone throughout this task
+   (`node --test test-elementor.mjs`), and a stale dist/podcast-a.html would
+   make that test compare the converted page against last week's static
+   build without any signal that anything was wrong. Rebuilding here too
+   costs one build.mjs run and removes that gap. */
+execFileSync('node', ['build.mjs'], { stdio: 'inherit' });
+
+/* A minimal static file server for the repo root, so the computed-style test
+   can serve dist/podcast-a.html (and the tokens/css/js it references via
+   ../ relative paths) over real HTTP rather than file://, the same
+   distinction dev.mjs's own comment makes. Deliberately not dev.mjs itself:
+   dev.mjs also rebuilds on file changes and injects a live-reload client,
+   neither of which a one-shot computed-style read needs, and dev.mjs binds
+   a fixed default port that could collide with one already running.
+   Listening on port 0 hands back an OS-assigned free port instead. */
+const STATIC_TYPES = {
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8', '.woff2': 'font/woff2',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
+};
+
+function serveRepoRoot() {
+  const server = http.createServer((req, res) => {
+    const filePath = path.join(process.cwd(), decodeURIComponent(req.url.split('?')[0]));
+    fs.readFile(filePath, (err, body) => {
+      if (err) { res.writeHead(404); res.end(); return; }
+      res.writeHead(200, { 'Content-Type': STATIC_TYPES[path.extname(filePath)] || 'application/octet-stream' });
+      res.end(body);
+    });
+  });
+  return new Promise((resolve) => {
+    server.listen(0, () => resolve({
+      url: `http://localhost:${server.address().port}`,
+      close: () => new Promise((r) => server.close(r)),
+    }));
+  });
+}
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own
@@ -895,4 +941,95 @@ test('the podcast guest filter actually filters', { concurrency: 1 }, async () =
   assert.ok(r.after < r.before, 'ticking a guest hid nothing: the loop is not emitting data-guest');
   assert.deepEqual(r.kinds, ['lawmaker'], `filtered view still shows ${r.kinds.join(', ')}`);
   assert.equal(r.restored, r.before, 'unticking did not restore the full list');
+});
+
+/* Step 9. checkVisibleWithoutJs existed and was bug-fixed but was never
+   actually wired into the suite, so it was a snippet, not a regression
+   test: nothing would have caught it going red. Diffing against
+   checkVisibleWithJs (settled the same way checkFilter's own page is)
+   rather than asserting a bare "> 0" is what gives this real power: a
+   selector matching zero elements on both sides would satisfy ">0 and
+   equal" trivially only if BOTH counts were checked against zero directly,
+   which this does not do (withJs > 0 is asserted separately first).
+
+   'body [data-reveal]', not '[data-reveal]': the first run of this test
+   found a genuine 79-vs-80 mismatch, and the cause was the test's own
+   selector, not the page. js/reveal.js's own comment names exactly this
+   trap: it sets data-reveal="on" on <html> itself as its ready flag, and a
+   document-wide [data-reveal] query sweeps that root element into the
+   collection alongside the real content elements, present only once JS has
+   actually run (there is nothing to set it without JS). reveal.js queries
+   from document.body for the same reason; matching that scope here is what
+   makes the comparison apples to apples instead of comparing 80 elements
+   including a JS-only marker against 79 real content elements. */
+test('podcast-a is visible without JavaScript, matching a JS-enabled load', { concurrency: 1 }, async () => {
+  const { checkVisibleWithoutJs, checkVisibleWithJs } = await import('./fidelity-browser.mjs');
+  const url = process.env.SPIKE_URL;
+  const selector = 'body [data-reveal]';
+  const withJs = await checkVisibleWithJs(url, selector);
+  const withoutJs = await checkVisibleWithoutJs(url, selector);
+  assert.ok(withJs > 0, 'no [data-reveal] elements visible even with JavaScript enabled and settled; the selector itself may be wrong');
+  assert.equal(withoutJs, withJs,
+    `without JavaScript only ${withoutJs} of ${withJs} [data-reveal] elements are visible: something is starting hidden and waiting for a trigger that never fires`);
+});
+
+/* Step 10. Same problem as Step 9: computedStyles() existed, was run
+   manually once, and was never asserted against anything. "Against the
+   static build, not numbers typed into this file" per the review: dist/
+   podcast-a.html is served locally through serveRepoRoot() so its ../
+   relative asset paths resolve, and the four probes are compared live
+   rather than pinned to values that would go stale the moment either side's
+   CSS changes without this file being updated to match.
+   heroTitle's probe selector is .pca-hero h1, not .pca-hero__title: that
+   class does not exist anywhere in podcast-a's markup, static or
+   converted (the <h1> only ever carries id="hero-title"; css/podcast-a.css
+   styles it via .pca-hero h1). A selector matching nothing on both sides
+   would report false parity (both null, so "equal"), which is why this
+   test asserts the converted side is truthy first. */
+test('the converted page matches the static build on four computed-style probes', { concurrency: 1 }, async () => {
+  const { computedStyles } = await import('./fidelity-browser.mjs');
+  const PROBES = [
+    { name: 'heroTitle', selector: '.pca-hero h1', property: 'font-size' },
+    { name: 'heroBg', selector: '.pca-hero', property: 'background-color' },
+    { name: 'container', selector: '.em-container', property: 'max-width' },
+    { name: 'action', selector: '.em-btn--primary', property: 'background-color' },
+  ];
+  const server = await serveRepoRoot();
+  try {
+    const converted = await computedStyles(process.env.SPIKE_URL, PROBES);
+    const staticBuild = await computedStyles(`${server.url}/dist/podcast-a.html`, PROBES);
+    for (const { name, selector } of PROBES) {
+      assert.ok(converted[name], `converted page: ${name} probe (${selector}) matched nothing`);
+      assert.equal(converted[name], staticBuild[name],
+        `${name} differs: converted=${converted[name]} static=${staticBuild[name]}`);
+    }
+  } finally {
+    await server.close();
+  }
+});
+
+/* Nothing before this asserted the Loop Grid's query is actually scoped to
+   the Podcast category (133): r.before > 0 in the filter test above passes
+   identically whether the query is scoped or pulling every post on the
+   site. The independent oracle is wp-cli's own count for the same category
+   at test-run time, not a number typed into this file: the archive grows
+   as Empower publishes, and pinning this to today's 66 would make the test
+   wrong the next time someone runs it rather than proving anything. If the
+   category's real count ever exceeds LIBRARY_POSTS_PER_PAGE (100, in
+   03-library.mjs), this assertion starts failing for a true and useful
+   reason (the Loop Grid needs pagination), not a false one. */
+test('the podcast library loop grid is scoped to category 133, not the whole site', { concurrency: 1 }, async () => {
+  const expected = parseInt((await wpe('wp post list --post_type=post --cat=133 --post_status=publish --format=count')).trim(), 10);
+  assert.ok(Number.isInteger(expected) && expected > 0, 'could not read a real post count for category 133 from the install');
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(process.env.SPIKE_URL, { waitUntil: 'load' });
+    const rendered = await page.$$eval('.pca-ep', els => els.length);
+    assert.equal(rendered, expected,
+      `Loop Grid rendered ${rendered} episodes; category 133 (Podcast) has ${expected} published posts right now, so the query is not correctly scoped to it`);
+  } finally {
+    await browser.close();
+  }
 });

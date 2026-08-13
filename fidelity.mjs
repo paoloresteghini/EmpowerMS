@@ -63,7 +63,19 @@ export async function fetchConverted(url) {
    span, strong, sub, sup and time all wrap short runs inside a sentence
    in this codebase and never appear as a wrapper around unrelated content;
    every other tag it emits is a container, a heading, a list item or a line
-   break, and does interrupt a sentence, including <br>. */
+   break, and does interrupt a sentence, including <br>.
+   Comments are stripped before the tag pass, the same way script and style
+   content already is: an HTML comment opens with "<!--", so the tag regex
+   below (which requires a letter right after "<" or "</") never matches it,
+   and a comment body would otherwise survive as literal text glued onto
+   whichever segment it sits in. dist/ carries prose comments on eight or
+   more pages, and Elementor/WordPress output is comment-heavy by nature, so
+   copy that was pulled from the visible page during conversion but left
+   behind as a note would silently read as present without this. A doctype
+   ("<!DOCTYPE html>") is a different construct (no "--"), so this pattern
+   does not remove it; confirmed harmless instead, since it never matches a
+   real tag either and so lands in a segment of its own that no real deck
+   string would ever equal. */
 const INLINE_TAGS = new Set(['a', 'b', 'em', 'i', 'mark', 'small', 'span', 'strong', 'sub', 'sup', 'time']);
 /* A control character, not whitespace or punctuation, so it can never
    collide with anything a deck string could legitimately contain. Written
@@ -73,6 +85,7 @@ const BREAK = '\u0000';
 
 const segments = html => html
   .replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
+  .replace(/<!--[\s\S]*?-->/g, ' ')
   .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (m, tag) => (INLINE_TAGS.has(tag.toLowerCase()) ? ' ' : BREAK))
   .replace(/&nbsp;/g, ' ')
   .split(BREAK)

@@ -324,6 +324,16 @@ test('checkCopy does not let two unrelated block elements satisfy one deck strin
   );
 });
 
+/* The fix above stripped block tags with a regex that requires a letter
+   right after "<" or "</". An HTML comment opens with "<!--", so it never
+   matched and a comment's body survived as literal text inside a segment,
+   reopening the same failure class through a different door: copy that is
+   not really on the page (only noted in a comment) reading as present. */
+test('checkCopy does not let a comment body satisfy a deck string that is not really on the page', () => {
+  const live = '<div><!-- Real Solutions For All is not shipped, keeping as a note --></div><h1>Different Heading</h1>';
+  assert.deepEqual(checkCopy(live, ['Real Solutions For All']), ['Real Solutions For All']);
+});
+
 /* WP Engine's page cache can hand back a stale, pre-conversion copy of a page
    while still reporting HTTP 200 (seen for real during Task 4: x-cache: HIT
    on a page that had none of the new stylesheets). fetchConverted() must

@@ -58,6 +58,42 @@
             },
             "elements": [],
             "widgetType": "html"
+          },
+          {
+            "id": "3100b4b",
+            "elType": "widget",
+            "settings": {
+              "template_id": 20555,
+              "_css_classes": "pca-eps",
+              "columns": 3,
+              "alternate_templates": [
+                {
+                  "template_id": null,
+                  "_id": "16485d6"
+                }
+              ],
+              "pagination_page_limit": "5",
+              "pagination_prev_label": "Previous",
+              "pagination_next_label": "Next",
+              "text": "Load More",
+              "load_more_no_posts_custom_message": "No more posts to show",
+              "nothing_found_message_text": "It seems we can’t find what you’re looking for."
+            },
+            "elements": [],
+            "widgetType": "loop-grid"
+          },
+          {
+            "id": "0911c66",
+            "elType": "widget",
+            "settings": {
+              "text": "Probe action",
+              "link": {
+                "url": "https://example.org/probe"
+              },
+              "_css_classes": "zz-probe__action"
+            },
+            "elements": [],
+            "widgetType": "button"
           }
         ],
         "isInner": true

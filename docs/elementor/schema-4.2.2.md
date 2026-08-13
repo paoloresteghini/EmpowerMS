@@ -239,8 +239,41 @@ Everything else was dropped as default.
 | `text-editor` | `editor`, `_css_classes` |
 | `image` | `image`, `_css_classes` |
 | `html` | `html`, `_css_classes` |
+| `button` | `text`, `link`, `_css_classes` |
+| `loop-grid` | `template_id`, `_css_classes`, `columns`, plus label defaults |
 
-The `image` value is an object: `{ id, url }`.
+The `image` value is an object: `{ id, url }`. The `button` link value is an
+object too: `{ url }`. The button's class also lands on the wrapper div, with the
+real `<a class="elementor-button">` inside it, the same shape as the heading.
+
+The `loop-grid` capture is the one to read before Task 7:
+
+```json
+{
+  "id": "3100b4b",
+  "elType": "widget",
+  "widgetType": "loop-grid",
+  "settings": {
+    "template_id": 20555,
+    "_css_classes": "pca-eps",
+    "columns": 3,
+    "alternate_templates": [ { "template_id": null, "_id": "16485d6" } ],
+    "pagination_page_limit": "5",
+    "text": "Load More",
+    "nothing_found_message_text": "It seems we can’t find what you’re looking for."
+  }
+}
+```
+
+`template_id` is the `elementor_library` post id of the loop item. Note what is
+NOT there: `posts_per_page: 6` and `post_query_post_type: 'post'` were both set
+and both dropped as defaults, and Elementor added several label defaults that
+were never set. Query settings are prefixed `post_query_*` (`post_query_post_type`,
+`post_query_include_term_ids`, `post_query_exclude_ids` and so on), and a
+non-default query will persist under those keys.
+
+The `nothing_found_message_text` default arrives with a U+2019 apostrophe
+already, which happens to match this build's typography rule.
 
 ## Both widget generations are installed
 

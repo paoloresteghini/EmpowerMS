@@ -7,3 +7,4 @@ docs/Empower Mississippi Design System/
 *.png
 !assets/**/*.png
 .sfdx/
+wb-new.jpeg

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import { stripNotices, wpe } from './wpe.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
@@ -37,37 +39,35 @@ test('does not eat a legitimate line that merely mentions PHP', () => {
   assert.equal(stripNotices(raw), raw);
 });
 
-test('rejects output exceeding 32 MiB buffer', async () => {
-  /* Test buffer cap with a local command that generates output.
-     This tests the spawn-based buffer mechanism without requiring SSH. */
-  const maxBuffer = 32 * 1024 * 1024;
-  const result = await new Promise((resolve) => {
-    let stdout = '';
-    let rejected = false;
+test('wpe() rejects when output exceeds 32 MiB buffer', async () => {
+  /* Test buffer cap by creating a fake ssh binary that outputs > 32 MiB.
+     This exercises the real wpe() function, real spawn call, and real buffer
+     cap without requiring network access or WP Engine install. */
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wpe-test-'));
+  const sshPath = path.join(tmpDir, 'ssh');
 
-    const child = spawn('yes', ['a']);
+  /* Create a portable fake ssh executable using Node.js to generate output
+     slightly exceeding 32 MiB (33554432 bytes). */
+  const script = `#!/usr/bin/env node
+process.stdout.write('x'.repeat(34000000));
+`;
 
-    child.stdout.on('data', (data) => {
-      stdout += data.toString();
-      if (stdout.length > maxBuffer) {
-        child.kill();
-        rejected = true;
-        resolve({
-          failed: true,
-          message: `Output exceeds ${maxBuffer} bytes`,
-        });
-      }
-    });
+  fs.writeFileSync(sshPath, script);
+  fs.chmodSync(sshPath, 0o755);
 
-    child.on('close', () => {
-      if (!rejected) {
-        resolve({
-          failed: false,
-          message: 'Should have been killed by buffer limit',
-        });
-      }
-    });
-  });
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
 
-  assert.ok(result.failed, result.message);
+  try {
+    await wpe('anything');
+    assert.fail('wpe() should have rejected due to buffer exceeded');
+  } catch (err) {
+    assert.ok(err.message, 'error should have a message');
+    assert.match(err.message, /exceeds.*bytes/i, 'error message should mention buffer exceeded');
+    assert(err.stdout !== undefined, 'error should have stdout property');
+    assert(err.stderr !== undefined, 'error should have stderr property');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });

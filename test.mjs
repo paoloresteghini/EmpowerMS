@@ -454,8 +454,180 @@ test('section partials carry no page chrome', () => {
   }
 });
 
-test('no inline style attributes — Elementor hand-off hygiene', () => {
-  assert.ok(!/\sstyle="/.test(html), 'inline style attribute found; move it to CSS');
+test('no inline style attributes or style blocks — Elementor hand-off hygiene', () => {
+  /* Swept over EVERY client-facing page, not over `html`. This test spent most
+     of its life reading dist/current.html alone, because that was the only page
+     in the build the day it was written; by the time the build reached
+     forty-odd pages it was still reading one of them and still passing green.
+     A guard bound to a single representative artefact stops covering the build
+     the moment a second artefact exists, and it stops silently.
+
+     Both shapes matter for the conversion. An inline style attribute is a rule
+     Elementor cannot see, so it survives a paste into an HTML widget and then
+     vanishes the moment anybody rebuilds that block natively. An inline <style>
+     block is worse: pasted into an HTML widget it leaks page-wide, and it is
+     invisible to the enqueue order the hand-off table sets out. */
+  assert.ok(ALLPAGES.length > 40, `only ${ALLPAGES.length} pages swept — is the filter right?`);
+  for (const { out, html: page } of ALLPAGES) {
+    assert.ok(!/\sstyle="/.test(page), `${out}: inline style attribute found; move it to CSS`);
+    assert.ok(!/<style[\s>]/.test(page), `${out}: inline <style> block found; move it to a stylesheet`);
+  }
+});
+
+test('every section partial roots on a single element — one partial, one Elementor container', () => {
+  /* The hand-off says each partial under src/ is a standalone fragment that
+     pastes into one Elementor HTML widget or maps to one native container. That
+     only holds if the partial roots on <section> elements and nothing else: a
+     wrapper <div> around several sections is one extra nesting level that has
+     to be unpicked by hand at conversion time, and a partial that opens on a
+     <div> gives the person converting it nothing to map a container onto.
+
+     Several sibling sections in one partial is fine and used — All Content B's
+     shelves are six — because each still lands as its own container.
+
+     The two landing-template notes are the deliberate exception: they are
+     review furniture, addressed to Empower rather than to a visitor, and they
+     are named here so the exemption cannot quietly grow. */
+  const NOTE_PARTIALS = ['src/landing/sections/00-note.html', 'src/landing-b/sections/00-note.html'];
+  const partials = [];
+  const walk = dir => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(p);
+      else if (entry.name.endsWith('.html') && p.includes('/sections/')) partials.push(p);
+    }
+  };
+  walk('src');
+  assert.ok(partials.length > 150, `only ${partials.length} section partials found — is the walk right?`);
+
+  for (const f of partials) {
+    const s = readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '').trim();
+    if (NOTE_PARTIALS.includes(f)) {
+      assert.match(s, /^<div/, `${f} is exempted as a review note but no longer opens on a <div> — retire the exemption`);
+      continue;
+    }
+    assert.match(s, /^<section[\s>]/, `${f} does not open on a <section>`);
+    assert.match(s, /<\/section>$/, `${f} does not close on a </section>`);
+  }
+});
+
+/* ---------- CMS slots ---------- */
+
+test('every repeating block of live posts is marked as a CMS slot', () => {
+  /* The hand-off tells WordPress to "replace the auto-populated placeholder
+     strings with dynamic content". That instruction was written when the only
+     dynamic blocks in the build were four homepage stubs carrying the literal
+     words "auto-populated". Everything built since is populated with REAL
+     empowerms.org posts instead — which reads better in review and is honest
+     about the shape, but leaves the person doing the conversion with no signal
+     at all about which blocks are a query and which are authored content. Get
+     that wrong in either direction and the page is broken in a way nobody sees
+     for months: a query where an editorial sequence was meant, or twenty-three
+     headlines frozen into a static page that never updates again.
+
+     So every block holding two or more live post links carries data-cms. Three
+     values, and the third is as important as the first:
+
+       loop    the container repeats from a query
+       field   this element's text and href come from a query; what surrounds it
+               is authored
+       manual  it looks like a feed and deliberately is not — the landing
+               template's outcome sequence is three chosen posts in the order
+               the campaign happened, and a Loop Grid of whatever is recent
+               would destroy the point of the block */
+  const VALUES = new Set(['loop', 'field', 'manual']);
+  const partials = [];
+  const walk = dir => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(p);
+      else if (entry.name.endsWith('.html') && p.includes('/sections/')) partials.push(p);
+    }
+  };
+  walk('src');
+
+  let marked = 0;
+  for (const f of partials) {
+    const s = readFileSync(f, 'utf8');
+    const body = s.replace(/<!--[\s\S]*?-->/g, '');
+    const posts = (body.match(/empowerms\.org\//g) || []).length;
+    const markers = [...body.matchAll(/data-cms="([^"]*)"/g)].map(m => m[1]);
+    marked += markers.length;
+
+    if (posts >= 2) {
+      assert.ok(markers.length > 0,
+        `${f} carries ${posts} live post links and no data-cms marker — say whether that block is a ` +
+        `query (loop/field) or authored content that only looks like one (manual)`);
+    }
+    for (const v of markers) {
+      assert.ok(VALUES.has(v), `${f}: data-cms="${v}" is not one of ${[...VALUES].join(', ')}`);
+    }
+    /* A marker with no note is half a signal. The note is what tells the person
+       in Elementor which query, and where the query is not yet answerable —
+       Empower's WordPress has no Research & Reports category, and that belongs
+       beside the block that needs one, not only in this repository's README. */
+    const noted = (body.match(/data-cms-note="/g) || []).length;
+    assert.equal(noted, markers.length, `${f}: ${markers.length} data-cms markers but ${noted} data-cms-note`);
+  }
+  assert.ok(marked > 40, `only ${marked} CMS markers across the build — is the walk right?`);
+});
+
+test('the hand-off documents the CMS markers it asks the converter to grep for', () => {
+  /* The markers are only worth stamping if the person converting the build is
+     told they exist. A marker vocabulary documented nowhere is a private
+     convention, and this repository is a hand-off, not a runtime. */
+  const readme = readFileSync('README.md', 'utf8');
+  const handoff = readme.slice(readme.indexOf('## Hand-off to WordPress + Elementor'));
+  assert.ok(handoff.length > 2000, 'the hand-off section is missing or has been renamed');
+  for (const needle of ['data-cms', 'data-cms-note', 'data-cms-item-attrs',
+    '`loop`', '`field`', '`manual`', 'Loop Grid']) {
+    assert.ok(handoff.includes(needle), `the hand-off section does not document ${needle}`);
+  }
+});
+
+test('every filtered loop declares the item attributes its filter depends on', () => {
+  /* The four filtering pages are the ones the conversion can quietly break.
+     Their filters are CSS over data attributes on each card — data-type,
+     data-topic, data-guest, data-session — and in WordPress the cards stop
+     being hand-written HTML and start coming out of a Loop Grid. A loop item
+     template that does not emit those attributes produces a page that looks
+     right, filters nothing, and reports no error: every control still moves,
+     and every card stays put.
+
+     data-cms-item-attrs is that contract written down. This test keeps it
+     honest in both directions — every attribute named must actually be on the
+     items today, and every attribute on the items (bar the motion layer's own)
+     must be named — so the contract cannot drift away from the markup it
+     describes, in either direction. */
+  const filtered = [];
+  for (const f of ['src/content-a/sections/02-browse.html', 'src/content-b/sections/03-shelves.html',
+    'src/podcast-a/sections/03-library.html', 'src/podcast-b/sections/03-library.html',
+    'src/capitol-a/sections/03-library.html', 'src/capitol-b/sections/03-library.html']) {
+    const s = readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+    /* Each loop container, from its opening tag to the matching close. The
+       containers here are flat lists of <li>, so the first </ul> or </ol> after
+       the marker ends it. */
+    const chunks = [...s.matchAll(/<(ul|ol)([^>]*data-cms="loop"[^>]*)>([\s\S]*?)<\/\1>/g)];
+    assert.ok(chunks.length > 0, `${f}: no data-cms="loop" list found — did the markup shape change?`);
+    for (const [, , attrs, inner] of chunks) {
+      const declared = new Set((attrs.match(/data-cms-item-attrs="([^"]*)"/)?.[1] || '').split(',').filter(Boolean));
+      assert.ok(declared.size > 0, `${f}: a filtered loop declares no data-cms-item-attrs`);
+      /* data-reveal and data-reveal-group are the motion layer, not the filter,
+         and they are replaced by Elementor's own entrance animations at
+         conversion time — see the motion note in the README. */
+      const found = new Set([...inner.matchAll(/\s(data-[a-z-]+)=/g)]
+        .map(m => m[1]).filter(a => !a.startsWith('data-reveal')));
+      for (const a of declared) {
+        assert.ok(found.has(a), `${f} declares ${a} in data-cms-item-attrs but no item carries it`);
+      }
+      for (const a of found) {
+        assert.ok(declared.has(a), `${f}: items carry ${a} but the loop does not declare it in ` +
+          `data-cms-item-attrs — a Loop Grid that does not emit it filters nothing, silently`);
+      }
+      filtered.push(f);
+    }
+  }
+  assert.ok(filtered.length >= 12, `only ${filtered.length} filtered loops checked`);
 });
 
 test('every aria-controls in the built page points at an id that exists', () => {
@@ -3652,34 +3824,71 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
   }
 });
 
-test('the About pages hang no element out of its own section', () => {
-  /* Every overlap in this set is a negative margin on a child, never an
-     absolutely positioned element crossing a section boundary. That is the
-     Elementor constraint: a section maps to a section, and the overlap
-     survives the conversion. It is also the bug the homepage's north-star
-     card shipped — an element that hangs out of its section disappears the
-     moment a later section is given `position`.
+/* The one rule in the build that hangs an element out of its own section, and
+   the pages it is allowed to reach. .fp-northstar is Front Porch's quote card:
+   position:absolute with a negative `bottom`, so it straddles the boundary into
+   section 2. It is the cautionary tale the Elementor constraint was written
+   from — an escaping element needs a z-index workaround and disappears the
+   first time a later section is given `position` — and it survives only on the
+   four archived homepage options, which are kept buildable so the decision can
+   be re-read and are not being converted. Empower asked for it off the agreed
+   build, so final.html does not carry it.
 
-     The check is narrow on purpose: a rule that is BOTH position:absolute and
-     given a negative `bottom` is the shape that reaches downward out of its
-     own box. Absolute positioning inside a section is fine and used here. */
-  /* Derived from PAGES, never listed by hand. The hand-written list this replaced
-     named thirteen slugs because thirteen was all there was when it was written;
-     four pages added later were never added to it, and one of them shipped the
-     exact defect this sweep exists to catch while the sweep passed green. A list
-     that has to be extended by hand stops covering the build the first time
-     somebody forgets. */
-  for (const page of PAGES.filter(p => p.kind === 'about')) {
-    const slug = page.out.replace('dist/', '').replace('.html', '');
-    const cssFile = cssFileFor(slug);
-    const css = readFileSync(cssFile, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const block of css.split('}')) {
-      const [selector, body] = block.split('{');
-      if (!body || !/position:\s*absolute/.test(body)) continue;
-      assert.ok(!/bottom:\s*calc\(\s*-|bottom:\s*-/.test(body),
-        `${cssFile} hangs ${selector.trim().slice(0, 60)} below its own box — ` +
-        `use a negative margin on a child instead, so the section keeps its height`);
+   The allow-list is asserted in both directions below: the rule must still be
+   reachable from exactly these pages, and must still be absent from every
+   other one. An exemption nobody re-checks is how a sweep goes green over a
+   defect it was written to catch. */
+const KNOWN_ESCAPES = {
+  'fp-northstar': ['dist/homepage-a.html'],
+};
+
+test('no page hangs an element out of its own section', () => {
+  /* The Elementor constraint: one section maps to one section, and every
+     overlap is a negative margin on a child INSIDE the section that owns it.
+     A negative `bottom` on an absolutely positioned box is the shape that
+     reaches downward out of its own section; absolute positioning inside a
+     section is fine and used throughout.
+
+     Swept over every client-facing page through the stylesheets that page
+     actually LINKS, not through one file guessed from its slug. Two earlier
+     versions of this sweep each covered less than they read as covering: the
+     first named thirteen slugs by hand and never grew, and the second filtered
+     on kind === 'about', which quietly excluded final.html — the one page that
+     ships. Reading the page's own <head> is the only list that cannot go stale,
+     because it is the same list the hand-off table tells WordPress to enqueue.
+
+     A rule only counts against a page if that page actually uses it. option-a.css
+     is linked by final.html as well as by homepage-a.html, and final.html has the
+     north-star figure deleted from its markup, so the rule is inert there. */
+  assert.ok(ALLPAGES.length > 40, `only ${ALLPAGES.length} pages swept — is the filter right?`);
+  const seen = {};
+  for (const { out, html: page } of ALLPAGES) {
+    const sheets = [...page.matchAll(/<link rel="stylesheet" href="\.\.\/(css\/[^"]+)"/g)].map(m => m[1]);
+    assert.ok(sheets.length > 0, `${out} links no local stylesheet — did the <head> shape change?`);
+    for (const cssFile of sheets) {
+      const css = readFileSync(cssFile, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      for (const block of css.split('}')) {
+        const [selector, body] = block.split('{');
+        if (!body || !/position:\s*absolute/.test(body)) continue;
+        if (!/bottom:\s*calc\(\s*-|bottom:\s*-/.test(body)) continue;
+        for (const one of selector.split(',')) {
+          const cls = one.trim().match(/^\.([A-Za-z0-9_-]+)/)?.[1];
+          if (!cls || !new RegExp(`class="[^"]*\\b${cls}\\b`).test(page)) continue;
+          (seen[cls] ||= []).push(out);
+          assert.ok(KNOWN_ESCAPES[cls]?.includes(out),
+            `${out} uses .${cls} from ${cssFile}, which hangs below its own box — ` +
+            `use a negative margin on a child instead, so the section keeps its height`);
+        }
+      }
     }
+  }
+  /* The other direction. Without this, deleting .fp-northstar outright would
+     leave a permanent exemption standing over nothing, ready to wave through
+     the next element that takes the name. */
+  for (const [cls, pages] of Object.entries(KNOWN_ESCAPES)) {
+    assert.deepEqual([...new Set(seen[cls] || [])].sort(), [...pages].sort(),
+      `.${cls} is exempted for ${pages.join(', ')} but is actually reachable from ` +
+      `${(seen[cls] || ['nothing']).join(', ')} — update or retire the exemption`);
   }
 });
 

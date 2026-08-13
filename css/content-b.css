@@ -161,10 +161,16 @@
 
 .cwa-shelf{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;
   background:var(--surface-page)}
-.cwa-shelf + .cwa-shelf{border-top:1px solid var(--border-subtle)}
+/* The rule between shelves is a MODIFIER, not `.cwa-shelf + .cwa-shelf`. A
+   sibling combinator says "every shelf but the first", which is a count, and a
+   count does not survive the Elementor conversion: each shelf becomes its own
+   container, Elementor is free to put its own markup between two of them, and
+   deleting or reordering a shelf silently moves which one goes unruled. A class
+   travels with the shelf it belongs to. Same reasoning as .cwa-shelf--flip. */
+.cwa-shelf--ruled{border-top:1px solid var(--border-subtle)}
+.cwa-shelf--ruled-strong{border-top:1px solid var(--border-default)}
 /* The two shelves with no photograph, read as the tail of the page. */
 .cwa-shelf--plain{background:var(--surface-subtle)}
-.cwa-shelf--plain + .cwa-shelf--plain{border-top-color:var(--border-default)}
 
 .cwa-shelf__head{display:grid;
   grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);

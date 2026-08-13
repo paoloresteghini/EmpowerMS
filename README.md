@@ -942,12 +942,137 @@ header, a different script set and different partials. Per-page notes follow.
    `@include` list in its `src/<page>/index.html`.
 4. Fix up asset paths: partials use `../assets/…` relative to `dist/`. In WordPress
    these become theme URLs.
-5. Replace the "auto-populated" placeholder strings with dynamic content —
-   they mark CMS slots (blog posts, EPIC research, Community Stories).
+5. Wire up the CMS slots. **Every block that is a query rather than authored
+   content is marked in the markup with `data-cms`** — grep for it, do not go
+   by eye. Three values, and the third matters as much as the first:
+
+   | Value | Means |
+   | --- | --- |
+   | `loop` | The container repeats from a query. Becomes a Loop Grid |
+   | `field` | This element's text and `href` come from a query; what surrounds it is authored. EPIC's three focus areas are the case — the area name and photograph are ours, the report line beneath is the newest post |
+   | `manual` | It looks like a feed and deliberately is not. Landing template B's outcome sequence is three chosen posts in the order the campaign happened; a Loop Grid of whatever is recent destroys the point of the block |
+
+   Every marker carries a `data-cms-note` saying which query, in plain language,
+   including where the query is not yet answerable — Empower's WordPress has no
+   Research & Reports category, and that is recorded beside the two blocks that
+   need one rather than only here.
+
+   **`data-cms-item-attrs` is a hard contract, not a hint.** The four filtering
+   pages — both All Content readings, The Empower Podcast, Capitol Chat — filter
+   in CSS over `data-type`, `data-topic`, `data-guest` and `data-session` on each
+   card. When those cards come out of a Loop Grid instead of out of this
+   repository, **the loop item template must emit those attributes from the
+   post's own terms.** A template that does not produces a page where every
+   control still moves, no card ever hides, and nothing anywhere reports an
+   error. `test.mjs` holds the contract to the markup in both directions.
+
+   The older homepage stubs use the literal string "auto-populated" instead;
+   both markers mean the same thing and both are listed in the conversion sheet
+   below.
 6. Ship the scripts the page actually links. `js/nav.js` (mobile menu, sticky
    header condense) and `js/reveal.js` (entrance reveals) are on every page.
    The desktop navigation is **either** `js/megamenu.js` **or** `js/dropdown.js`,
    never both — see the per-page notes.
+
+### Tokens, and what Elementor has to be told
+
+The design tokens are eight small stylesheets of CSS custom properties and they
+work unchanged in WordPress — every rule in `css/` reads them by `var()`, so
+copying `tokens/` into the child theme is the whole of it. What does **not**
+happen by itself is Elementor learning them. Elementor's Site Settings hold
+their own colours, fonts and container width, and its editor UI offers those and
+not these. Set them to match, or every block built natively in Elementor drifts
+from every block pasted from here.
+
+| Elementor Site Setting | Set it from | Value |
+| --- | --- | --- |
+| Global Colors → Primary | `--em-blue` | `#003C50` |
+| Global Colors → Secondary | `--em-orange` | `#E65A28` |
+| Global Colors → Text | `--text-body` / `--grey-700` | `#4A4A4A` |
+| Global Colors → Accent | `--blue-400` | `#64A0B4` |
+| Global Fonts → Primary (headings) | `--font-display` | Figtree — standing in for **Gotham**, see Known substitutions |
+| Global Fonts → Secondary (body) | `--font-body` | Source Sans 3 — standing in for **Whitney** |
+| Layout → Content Width | `--container-max` | Read the value out of `tokens/spacing.css`; `.em-container` is the build's only page-width rule |
+| Layout → Widgets Space | — | Zero it. Vertical rhythm here is section padding, not widget gaps |
+
+Two cascade traps, both silent:
+
+- **`css/site.css` styles bare `h1`, `h2`, `h3` and `p`.** So does Elementor's
+  Theme Style. Whichever loads last wins, and Elementor's loads late. Either
+  turn Theme Style typography off, or set it to the same values — and if you set
+  it, set it from `tokens/typography.css` rather than by eye, because the
+  headings here are `clamp()` ramps rather than fixed sizes.
+- **The build's breakpoints are not Elementor's.** There are thirty-odd distinct
+  widths across `css/`, chosen where each layout actually breaks; Elementor
+  offers a fixed set. Pasted CSS is unaffected and keeps working. What it means
+  is that a block rebuilt natively cannot be made responsive through Elementor's
+  own controls *and* stay aligned with the rest of the page — set responsive
+  behaviour in the custom CSS for these blocks, not in the widget panel.
+
+### What each block becomes
+
+The default is a **native Elementor container carrying the section's own custom
+class**, with the stylesheets enqueued as above. That keeps the page editable.
+Three shapes are the exception and want an **HTML widget** instead, because
+Elementor cannot express them without losing the thing that makes them work:
+
+- **Inline SVG.** Several sections draw a glyph or a rule as inline `<svg>`
+  because the page's CSS colours and animates it. An icon widget or an `<img>`
+  breaks that link. `mail-a`'s ticks are the sharpest case — they animate.
+- **The filters.** Both All Content readings, The Empower Podcast and Capitol
+  Chat filter with CSS over real radio and checkbox inputs inside a `<form>`,
+  no script. The controls have to stay as authored; the cards below them are a
+  Loop Grid, and `data-cms-item-attrs` is the contract between the two.
+- **The forms.** See the note further down — they are real HTML with real
+  labels, and the only change at hand-off is the `action`.
+
+Section by section, for the pages that are settled or in front of Empower now.
+The section list for any page is the `@include` list in its `src/<page>/index.html`;
+this adds what each one turns into.
+
+| Page | Section | Becomes |
+| --- | --- | --- |
+| `final` | `01-hero` | Container. The north-star card is deliberately **not** here — that is the element that hung out of its own section |
+| | `02-solutions` (from option-d) | Container |
+| | `03-foundations` (from current-2) | Container + HTML widget for the three inline SVGs |
+| | `04-stories` | **Loop Grid** — carries the older `auto-populated` marker |
+| | `05-insights` | **Loop Grid** + HTML widget for the one inline SVG — also `auto-populated` |
+| | `06-joinus` | **Form widget**, or HTML widget keeping the markup as authored |
+| `who-we-are-a` | `01-hero` | Container + HTML widget (inline SVG) |
+| | `02-why`, `03-story`, `04-people`, `05-status` | Containers |
+| `what-we-do-a` | `01-hero`, `03-reports` | Containers |
+| | `02-solutions` | Container + HTML widget (three inline SVGs) |
+| `team-a` | `01-hero` | Container + HTML widget (inline SVG) |
+| | `02-staff`, `03-fellows`, `04-board` | Containers. Every portrait is a placeholder tile — see the Team notes |
+| `team-bio` | `01-profile`, `02-back` | HTML widgets (five inline SVGs between them). This is the template the other nine bios are cut from, so it is the one worth making an Elementor **saved template** |
+| `solutions-b` | `01-hero`, `03-research`, `04-stories` | Containers |
+| | `02-solutions` | Container + HTML widget (three inline SVGs) |
+| `work`, `safety`, `education` | `01`–`05` | Containers. **One template across all three** — `css/solution.css`, seven `sol-*` blocks — so build it once as an Elementor saved template and fill it three times |
+| | `06-stories` | **Loop Grid** (`data-cms`) |
+| | `07-latest` | **Loop Grid** (`data-cms`) |
+| `podcast-a` | `01-hero`, `02-about` | Containers |
+| | `03-library` | HTML widget for the filter controls + **Loop Grid** for the episodes. `data-cms-item-attrs="data-topic,data-guest"` |
+| `capitol-a` | `01-hero`, `02-about` | Containers |
+| | `03-library` | Same shape. `data-cms-item-attrs="data-session"`. Wil Ervin's name must stay unlinked |
+| `epic-a` | `01-hero`, `02-work` | Containers |
+| | `03-method` | Three nested containers — see the scroll-driven table below. Do **not** add Elementor's sticky effect on top |
+| | `04-research` | Container. Three authored focus areas, each with a `data-cms="field"` report line: the area is content, the report line is a query |
+| `mail-a` | `01-hero` | **Form widget** or HTML widget. The form is in the hero and the submit is the page's single orange action |
+| | `02-about` | Container |
+| | `03-receive` | HTML widget — the four ticks are inline SVG **and** animated |
+| `amb-a` | `01-hero`, `02-who`, `03-do` | Containers |
+| | `04-join` | **Form widget** or HTML widget. Ashley Green is named and must stay unlinked |
+| `give-c` | `01-hero` | Container. Nothing here collects payment details; the amounts are links carrying a figure |
+| | `03-matters`, `04-next` | Containers. The processor's form goes in the marked slot — Gravity Forms + embedded Stripe, as they run it now |
+| `content-a` | `01-hero` | Container |
+| | `02-browse` | HTML widget for the filter bar + **four Loop Grids**, one per band. `data-cms-item-attrs="data-type,data-topic"` |
+| `content-b` | `01-hero` | Container |
+| | `02-choose` | HTML widget (the four switches) |
+| | `03-shelves` | **Six containers, no wrapper** — five shelves and the back link — each with a **Loop Grid**. `data-cms-item-attrs="data-type"`. Shelves can be added, deleted or reordered; nothing in them is order-dependent |
+| `landing`, `landing-b` | `00-note` | **Do not convert.** Review furniture addressed to Empower, and the only two partials in the build that are not a `<section>` |
+| | all others | Containers — and this page is the one to save as an Elementor **template**, since its whole purpose is to be duplicated and cut down |
+| | `landing/06-reading` | **Loop Grid** |
+| | `landing-b/03-outcome` | **Not** a Loop Grid — `data-cms="manual"`, three chosen posts in campaign order |
 
 ### Per page
 
@@ -1222,23 +1347,25 @@ sticky under Advanced, Motion Effects.
   showing a torso. `object-position` is set per photograph, and swapping the
   image means redoing that line.
 
-### The EPIC pages: what converts, and what to watch
+### Scroll-driven motion: what converts, and what to watch
 
-These three carry the most visible motion in the build, so it is worth being
-exact about what is behind it. **They add no JavaScript.** The three scripts
-they link are the shared chrome every page links — `js/nav.js`, `js/reveal.js`,
-`js/dropdown.js` — and nothing in the sideways track, the drawn thread or the
-filling spine is scripted. Every one of those is a CSS scroll-driven animation
-(`animation-timeline`), which converts as **custom CSS**, not as a plugin, a
-widget setting or an embedded library.
+Four pages use CSS scroll-driven animation — the three EPIC readings and **Email
+Sign Up A**, the chosen Join Us page. It is worth being exact about what is
+behind it, because it looks like the sort of thing a plugin did. **None of these
+pages adds any JavaScript.** The scripts they link are the shared chrome every
+page links — `js/nav.js`, `js/reveal.js`, `js/dropdown.js` — and nothing in the
+sideways track, the drawn thread, the filling spine or the drawing tick is
+scripted. Every one of those is `animation-timeline`, which converts as **custom
+CSS**, not as a plugin, a widget setting or an embedded library.
 
 Each signature and what it becomes:
 
-| Reading | The move | In Elementor |
+| Page | The move | In Elementor |
 | --- | --- | --- |
-| A | The pinned track | Three nested containers: an outer one with `height: 240vh`, an inner one set sticky at `top: 0` and `height: 100vh`, and a flex row inside it at `width: max-content`. Elementor's Flexbox containers nest natively and take custom classes; the animation itself is CSS on those classes. Elementor's own sticky effect is **not** needed and should not be added on top |
-| B | The staggered steps and the thread | A single container with a 12-column custom grid and one inline SVG in an HTML widget, positioned `inset: 0` behind the steps. The overlap of the navy plate on the hero is a negative top margin on the plate, which Elementor sets in the widget's own spacing controls |
-| C | The spine | One wrapper container around all four sections, with an absolutely positioned 2px child. The wrapper is why `<main>` cannot be the positioning context — the skip link asserts `<main id="main">` verbatim across the build |
+| EPIC A | The pinned track | Three nested containers: an outer one with `height: 240vh`, an inner one set sticky at `top: 0` and `height: 100vh`, and a flex row inside it at `width: max-content`. Elementor's Flexbox containers nest natively and take custom classes; the animation itself is CSS on those classes. Elementor's own sticky effect is **not** needed and should not be added on top |
+| EPIC B | The staggered steps and the thread | A single container with a 12-column custom grid and one inline SVG in an HTML widget, positioned `inset: 0` behind the steps. The overlap of the navy plate on the hero is a negative top margin on the plate, which Elementor sets in the widget's own spacing controls |
+| EPIC C | The spine | One wrapper container around all four sections, with an absolutely positioned 2px child. The wrapper is why `<main>` cannot be the positioning context — the skip link asserts `<main id="main">` verbatim across the build |
+| `mail-a` | The drawing tick | The smallest of the four and the easiest to lose. Each of the four "what you receive" lines carries an inline SVG tick that draws itself as the line arrives (`animation-timeline: view()` over `stroke-dashoffset`). The SVG has to stay inline — an `<img>` or an icon widget cannot be animated from the page's CSS — so these four lines are an HTML widget, not an icon-list widget. The base state is a **finished** tick, so a browser that ignores the whole block still shows four ticked lines |
 
 Three things to keep whoever does the conversion out of trouble:
 
@@ -1248,11 +1375,11 @@ Three things to keep whoever does the conversion out of trouble:
   static composition without them. Strip either guard and the page stops being
   safe in a browser that lacks the feature, or for a reader who has asked for
   less motion. `test.mjs` fails the build if a declaration escapes its guard.
-- **Where scroll-driven animation is unsupported, all three are still whole
-  pages.** A becomes a normal three-column section, B's thread is simply drawn,
-  C's spine is simply full. Nothing is hidden waiting for a trigger — which is
-  the failure this build has already shipped once, and the reason
-  `css/motion.css` is gated the way it is.
+- **Where scroll-driven animation is unsupported, all four are still whole
+  pages.** EPIC A becomes a normal three-column section, B's thread is simply
+  drawn, C's spine is simply full, and `mail-a`'s ticks are simply ticked.
+  Nothing is hidden waiting for a trigger — which is the failure this build has
+  already shipped once, and the reason `css/motion.css` is gated the way it is.
 - **The `data-reveal` attributes are the existing motion layer, not new.** Same
   choice as everywhere else: keep `css/motion.css` + `js/reveal.js`, or replace
   each attribute with an Elementor entrance animation. The note further up about

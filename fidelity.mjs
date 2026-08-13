@@ -45,6 +45,18 @@ export async function fetchConverted(url) {
   return res.text();
 }
 
+/* Shared by segments() (checkCopy's helper) and checkSections(), so the two
+   can never drift on what counts as "not really on the page" the way they
+   already did once: checkSections searched raw liveHtml while checkCopy
+   moved to a comment-aware segments(), and a section deleted during
+   conversion but left behind commented out read as present. That is the
+   single most likely way a whole section disappears while its markup still
+   mentions it, which makes it more damaging than the copy-level version of
+   the same gap. One strip function, used everywhere HTML is searched for
+   real content, makes the drift structurally impossible rather than merely
+   fixed for now. */
+const stripComments = html => html.replace(/<!--[\s\S]*?-->/g, ' ');
+
 /* Elementor wraps and splits text far more than the static build does, so a
    raw indexOf reports false failures the moment a heading gains a wrapper
    mid-sentence. Comparing against one flattened string is not safe either
@@ -64,18 +76,18 @@ export async function fetchConverted(url) {
    in this codebase and never appear as a wrapper around unrelated content;
    every other tag it emits is a container, a heading, a list item or a line
    break, and does interrupt a sentence, including <br>.
-   Comments are stripped before the tag pass, the same way script and style
-   content already is: an HTML comment opens with "<!--", so the tag regex
-   below (which requires a letter right after "<" or "</") never matches it,
-   and a comment body would otherwise survive as literal text glued onto
-   whichever segment it sits in. dist/ carries prose comments on eight or
-   more pages, and Elementor/WordPress output is comment-heavy by nature, so
-   copy that was pulled from the visible page during conversion but left
-   behind as a note would silently read as present without this. A doctype
-   ("<!DOCTYPE html>") is a different construct (no "--"), so this pattern
-   does not remove it; confirmed harmless instead, since it never matches a
-   real tag either and so lands in a segment of its own that no real deck
-   string would ever equal. */
+   Comments go through stripComments() before the tag pass, the same way
+   script and style content already is stripped: an HTML comment opens with
+   "<!--", so the tag regex below (which requires a letter right after "<"
+   or "</") never matches it, and a comment body would otherwise survive as
+   literal text glued onto whichever segment it sits in. dist/ carries
+   prose comments on eight or more pages, and Elementor/WordPress output is
+   comment-heavy by nature, so copy that was pulled from the visible page
+   during conversion but left behind as a note would silently read as
+   present without this. A doctype ("<!DOCTYPE html>") is a different
+   construct (no "--"), so this pattern does not remove it; confirmed
+   harmless instead, since it never matches a real tag either and so lands
+   in a segment of its own that no real deck string would ever equal. */
 const INLINE_TAGS = new Set(['a', 'b', 'em', 'i', 'mark', 'small', 'span', 'strong', 'sub', 'sup', 'time']);
 /* A control character, not whitespace or punctuation, so it can never
    collide with anything a deck string could legitimately contain. Written
@@ -83,9 +95,7 @@ const INLINE_TAGS = new Set(['a', 'b', 'em', 'i', 'mark', 'small', 'span', 'stro
    readable. */
 const BREAK = '\u0000';
 
-const segments = html => html
-  .replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
-  .replace(/<!--[\s\S]*?-->/g, ' ')
+const segments = html => stripComments(html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' '))
   .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (m, tag) => (INLINE_TAGS.has(tag.toLowerCase()) ? ' ' : BREAK))
   .replace(/&nbsp;/g, ' ')
   .split(BREAK)
@@ -103,12 +113,20 @@ export function checkCopy(liveHtml, deck) {
 /* Sections are found by the build's OWN class, which every converted container
    carries. Absence and order are reported separately because they have
    different causes: absence means a section was not built, order means the
-   sections were assembled in the wrong sequence. */
+   sections were assembled in the wrong sequence.
+   Searches stripComments(liveHtml), not liveHtml: a section deleted during
+   conversion but left behind commented out still carries its class inside
+   the comment, and raw liveHtml would find it there and report the section
+   present. That is the single most likely way a whole section disappears
+   from a page while the markup still mentions it. All indices in this
+   function (both `at` and `last`) are taken from the one stripped string,
+   so order comparisons stay internally consistent. */
 export function checkSections(liveHtml, slugs) {
+  const html = stripComments(liveHtml);
   const problems = [];
   let last = -1;
   for (const slug of slugs) {
-    const at = liveHtml.search(new RegExp(`class="[^"]*\\b${slug}\\b`));
+    const at = html.search(new RegExp(`class="[^"]*\\b${slug}\\b`));
     if (at === -1) { problems.push(slug); continue; }
     if (at < last) problems.push(`${slug} is out of order`);
     else last = at;

@@ -334,6 +334,20 @@ test('checkCopy does not let a comment body satisfy a deck string that is not re
   assert.deepEqual(checkCopy(live, ['Real Solutions For All']), ['Real Solutions For All']);
 });
 
+/* checkSections searched raw liveHtml and never went through the comment
+   strip checkCopy gained above, because that strip lived inside segments(),
+   which only checkCopy calls. A section deleted during conversion but left
+   behind commented out still carries its class inside the comment, so the
+   class-search regex found it there and reported the section present. This
+   is the more damaging sibling of the checkCopy case: it is the check that
+   a whole section still exists and is in the right place, and "removed but
+   left commented out" is the single most likely way a section disappears
+   from a page while the markup still mentions it. */
+test('checkSections does not let a commented-out section read as present', () => {
+  const live = '<!-- <div class="pca-hero">removed during conversion</div> --><div class="pca-about"></div>';
+  assert.deepEqual(checkSections(live, ['pca-hero']), ['pca-hero']);
+});
+
 /* WP Engine's page cache can hand back a stale, pre-conversion copy of a page
    while still reporting HTTP 200 (seen for real during Task 4: x-cache: HIT
    on a page that had none of the new stylesheets). fetchConverted() must

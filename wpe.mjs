@@ -23,7 +23,10 @@ export function stripNotices(raw) {
 
 /* One WP-CLI command on the install. The command is piped over stdin as a
    shell script rather than passed as an argument, because inline $(...) and
-   parentheses get mangled by the gateway's argument handling. */
+   parentheses get mangled by the gateway's argument handling. Using spawn()
+   instead of execFile(): async execFile ignores the input option entirely
+   (only execFileSync and spawnSync accept it), so the script never reaches
+   the remote bash -s, leaving it blocked on stdin. */
 export async function wpe(command) {
   return new Promise((resolve, reject) => {
     const script = `cd ${ROOT} || exit 1\n${command}\n`;
@@ -37,24 +40,59 @@ export async function wpe(command) {
 
     let stdout = '';
     let stderr = '';
+    let rejected = false;
+    const maxBuffer = 32 * 1024 * 1024;
 
     child.stdout.on('data', (data) => {
       stdout += data.toString();
+      if (stdout.length > maxBuffer) {
+        child.kill();
+        rejected = true;
+        const err = new Error(`Output exceeds ${maxBuffer} bytes`);
+        err.stdout = stdout;
+        err.stderr = stderr;
+        err.code = null;
+        reject(err);
+      }
     });
 
     child.stderr.on('data', (data) => {
       stderr += data.toString();
+      if (stderr.length > maxBuffer) {
+        child.kill();
+        rejected = true;
+        const err = new Error(`Error output exceeds ${maxBuffer} bytes`);
+        err.stdout = stdout;
+        err.stderr = stderr;
+        err.code = null;
+        reject(err);
+      }
     });
 
     child.on('close', (code) => {
+      if (rejected) return;
       if (code !== 0) {
-        reject(new Error(`SSH failed with exit code ${code}: ${stderr}`));
+        const err = new Error(`SSH failed with exit code ${code}`);
+        err.stdout = stdout;
+        err.stderr = stderr;
+        err.code = code;
+        reject(err);
       } else {
         resolve(stripNotices(stdout));
       }
     });
 
     child.on('error', (err) => {
+      rejected = true;
+      err.stdout = stdout;
+      err.stderr = stderr;
+      reject(err);
+    });
+
+    child.stdin.on('error', (err) => {
+      rejected = true;
+      err.stdout = stdout;
+      err.stderr = stderr;
       reject(err);
     });
 

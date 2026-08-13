@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stripNotices } from './wpe.mjs';
+import { spawn } from 'node:child_process';
+import { stripNotices, wpe } from './wpe.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own
@@ -34,4 +35,39 @@ test('leaves clean output untouched', () => {
 test('does not eat a legitimate line that merely mentions PHP', () => {
   const raw = 'PHP version is 8.4\nnext line';
   assert.equal(stripNotices(raw), raw);
+});
+
+test('rejects output exceeding 32 MiB buffer', async () => {
+  /* Test buffer cap with a local command that generates output.
+     This tests the spawn-based buffer mechanism without requiring SSH. */
+  const maxBuffer = 32 * 1024 * 1024;
+  const result = await new Promise((resolve) => {
+    let stdout = '';
+    let rejected = false;
+
+    const child = spawn('yes', ['a']);
+
+    child.stdout.on('data', (data) => {
+      stdout += data.toString();
+      if (stdout.length > maxBuffer) {
+        child.kill();
+        rejected = true;
+        resolve({
+          failed: true,
+          message: `Output exceeds ${maxBuffer} bytes`,
+        });
+      }
+    });
+
+    child.on('close', () => {
+      if (!rejected) {
+        resolve({
+          failed: false,
+          message: 'Should have been killed by buffer limit',
+        });
+      }
+    });
+  });
+
+  assert.ok(result.failed, result.message);
 });

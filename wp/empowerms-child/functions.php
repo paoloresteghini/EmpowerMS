@@ -12,6 +12,9 @@ const EMPOWER_TOKENS = array(
 	'base', 'colors', 'elevation', 'fonts', 'motion', 'radius', 'spacing', 'typography',
 );
 
+require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
+require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
+
 /**
  * UiCore enqueues its own global stylesheet (handle uicore_global) at
  * priority 50, in its own frontend_css() method

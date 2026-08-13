@@ -6,6 +6,8 @@ import os from 'node:os';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
+import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
+import { deployPage } from './elementor/deploy.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own
@@ -449,6 +451,122 @@ test('flushPageCache throws loudly when wp page-cache flush does not report succ
   process.env.PATH = tmpDir + ':' + originalPath;
   try {
     await assert.rejects(() => flushPageCache(), /did not report success/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+/* --- elementor/pages/podcast-a/01-hero.mjs ------------------------------ */
+
+test('the podcast hero mapping carries the section class and its copy', () => {
+  const tree = podcastHero();
+  const flat = JSON.stringify(tree);
+  const source = fs.readFileSync('src/podcast-a/sections/01-hero.html', 'utf8');
+
+  /* Derived from the source partial, never typed by hand: a copy deck typed
+     from memory is a second source of truth and drifts from the first.
+     The brief's draft used a {12,} floor on the run length, which silently
+     drops "Listen Now" (10 characters) from the deck; a real copy string
+     going unchecked is exactly the failure this test exists to catch, so the
+     floor is lowered to {1,} rather than kept at a number picked to fit the
+     longest string in the section by coincidence. Verified this admits no
+     noise: run against src/podcast-a/sections/01-hero.html, {1,} yields the
+     same six clean strings {12,} yields plus "Listen Now", and nothing else
+     (the leading HTML comment contains no stray '<' or '>'). */
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `hero mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('pca-hero'), 'hero mapping does not carry the pca-hero class');
+});
+
+/* --- elementor/deploy.mjs ------------------------------------------------ */
+
+/* deployPage() shells out through wpe(), the same as flushPageCache() and
+   fetchConverted() above. Exercised the same way: a fake ssh binary on PATH
+   that, instead of just printing canned output, also captures the bash
+   script it received on stdin to a file, so the test can assert on the
+   commands actually sent rather than trusting the module's own description
+   of what it does. */
+
+function withCapturingSsh(prefix) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const sshPath = path.join(tmpDir, 'ssh');
+  const capturePath = path.join(tmpDir, 'captured.sh');
+  /* Reads all of stdin (the script wpe() pipes in), writes it verbatim to
+     capturePath, then reports success so deployPage()'s own checks (if any)
+     do not themselves fail. */
+  fs.writeFileSync(sshPath, [
+    '#!/usr/bin/env node',
+    'const fs = require("fs");',
+    `const chunks = [];`,
+    'process.stdin.on("data", c => chunks.push(c));',
+    'process.stdin.on("end", () => {',
+    `  fs.writeFileSync(${JSON.stringify(capturePath)}, Buffer.concat(chunks));`,
+    '  process.stdout.write("Success\\n");',
+    '});',
+  ].join('\n'));
+  fs.chmodSync(sshPath, 0o755);
+  return { tmpDir, sshPath, capturePath };
+}
+
+test('deployPage rejects a non-integer postId before touching the network', async () => {
+  await assert.rejects(() => deployPage('not-a-number', []), /postId/);
+  await assert.rejects(() => deployPage(1.5, []), /postId/);
+});
+
+test('deployPage writes the Elementor data through a temporary file on the install, not as a shell argument', async () => {
+  const { tmpDir, capturePath } = withCapturingSsh('deploy-file-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    const sections = [podcastHero()];
+    await deployPage(42, sections);
+    const script = fs.readFileSync(capturePath, 'utf8');
+    const json = JSON.stringify(sections);
+
+    /* The payload is large and contains quotes, so it must land in the
+       script as heredoc body content, not as an inline CLI argument to
+       `wp post meta update`. A `wp post meta update 42 _elementor_data
+       '...'` form on one line would still technically contain the JSON, so
+       the real assertion is structural: the JSON appears on its own,
+       between a heredoc opener and closer, and the `wp post meta update`
+       call for _elementor_data carries no inline value argument at all
+       (WP-CLI reads the value from STDIN when the value argument is
+       omitted). */
+    assert.ok(script.includes(json), 'captured script does not contain the encoded JSON payload');
+    assert.match(script, /cat\s*>\s*\S+\s*<<['"]?\w+['"]?/, 'JSON was not written via a heredoc to a temp file');
+    assert.match(script, /wp post meta update 42 _elementor_data\s*<\s*\S+/,
+      'wp post meta update for _elementor_data does not read from the temp file (no inline value argument)');
+    assert.doesNotMatch(script, new RegExp(`wp post meta update 42 _elementor_data ${json.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      'the JSON payload was passed inline as a shell argument');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('deployPage sets edit mode, template type and version, then flushes the Elementor CSS cache', async () => {
+  const { tmpDir, capturePath } = withCapturingSsh('deploy-meta-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await deployPage(42, [podcastHero()]);
+    const script = fs.readFileSync(capturePath, 'utf8');
+    assert.match(script, /wp post meta update 42 _elementor_edit_mode builder/);
+    assert.match(script, /wp post meta update 42 _elementor_template_type wp-page/);
+    /* 4.2.2 is what is actually running on empv2 (Task 2's capture), not
+       the plan's original 4.2.1 pin: see docs/elementor/schema-4.2.2.md. */
+    assert.match(script, /wp post meta update 42 _elementor_version 4\.2\.2/);
+    /* The brief names this step `wp elementor flush-css`. The command WP-CLI
+       actually registers on this install is `flush_css` (underscore), read
+       from `wp help elementor` on empv2; `flush-css` is not a subcommand and
+       would fail. Corrected here with that evidence. */
+    assert.match(script, /wp elementor flush_css/);
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });

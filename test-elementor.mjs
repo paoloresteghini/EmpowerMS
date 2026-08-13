@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, elementId } from './elementor/factory.mjs';
+import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own
@@ -280,5 +281,138 @@ test('no stylesheet is duplicated into the child theme by hand', () => {
   const syncSrc = fs.readFileSync('wp/sync.mjs', 'utf8');
   for (const dir of ['tokens', 'components', 'css', 'js', 'assets']) {
     assert.ok(syncSrc.includes(`'${dir}'`), `wp/sync.mjs does not sync ${dir}/`);
+  }
+});
+
+/* --- fidelity.mjs ------------------------------------------------------- */
+
+test('checkCopy reports every approved string the page is missing', () => {
+  const live = '<h1>Real Solutions</h1><p>For Mississippi</p>';
+  assert.deepEqual(checkCopy(live, ['Real Solutions', 'For Mississippi']), []);
+  assert.deepEqual(checkCopy(live, ['Real Solutions', 'Not present']), ['Not present']);
+});
+
+test('checkCopy sees through markup split inside a string', () => {
+  /* Elementor wraps and splits text far more than the static build does. A
+     copy check that only does indexOf on the raw HTML reports false failures
+     the moment a heading gains a wrapper mid-sentence. */
+  const live = '<h1>Real <span>Solutions</span> For All</h1>';
+  assert.deepEqual(checkCopy(live, ['Real Solutions For All']), []);
+});
+
+test('checkSections reports missing and out-of-order sections', () => {
+  const live = '<div class="pca-hero"></div><div class="pca-about"></div><div class="pca-library"></div>';
+  assert.deepEqual(checkSections(live, ['pca-hero', 'pca-about', 'pca-library']), []);
+  assert.deepEqual(checkSections(live, ['pca-hero', 'pca-missing']), ['pca-missing']);
+  assert.deepEqual(
+    checkSections(live, ['pca-library', 'pca-hero']),
+    ['pca-hero is out of order'],
+  );
+});
+
+/* WP Engine's page cache can hand back a stale, pre-conversion copy of a page
+   while still reporting HTTP 200 (seen for real during Task 4: x-cache: HIT
+   on a page that had none of the new stylesheets). fetchConverted() must
+   never trust a 200 alone; it has to read x-cache on the actual response.
+   These three tests stub global.fetch with a fake Response-shaped object, so
+   the stale case is proven without any network access or live install. */
+
+test('fetchConverted throws loudly on a cache HIT rather than returning stale content', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: { get: name => (name.toLowerCase() === 'x-cache' ? 'HIT: 3' : null) },
+    text: async () => 'stale content',
+  });
+  try {
+    await assert.rejects(() => fetchConverted('https://empv2.example/page'), /x-cache: HIT/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('fetchConverted returns the page when x-cache reports MISS', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: { get: name => (name.toLowerCase() === 'x-cache' ? 'MISS' : null) },
+    text: async () => 'fresh content',
+  });
+  try {
+    assert.equal(await fetchConverted('https://empv2.example/page'), 'fresh content');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('fetchConverted does not mistake an absent x-cache header for a stale page', async () => {
+  /* A local file or a host with no page cache in front of it sends no
+     x-cache header at all. Absent must not be treated the same as HIT, or
+     the harness would refuse to work off-install. */
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    status: 200,
+    headers: { get: () => null },
+    text: async () => 'plain content',
+  });
+  try {
+    assert.equal(await fetchConverted('https://example.com/page'), 'plain content');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test('fetchConverted still throws on a bad HTTP status', async () => {
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 404,
+    headers: { get: () => null },
+    text: async () => '',
+  });
+  try {
+    await assert.rejects(() => fetchConverted('https://example.com/missing'), /404/);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+/* flushPageCache() is the other half of the stale-cache defence: one flush
+   at the start of a harness run, over the same wpe() SSH channel used
+   elsewhere, so the run starts from a known-fresh cache instead of relying
+   solely on the per-fetch header check. Exercised the same way the existing
+   32 MiB wpe() test does: a fake ssh binary on PATH, no network. */
+
+test('flushPageCache resolves when wp page-cache flush reports success', async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wpe-flush-ok-'));
+  const sshPath = path.join(tmpDir, 'ssh');
+  fs.writeFileSync(sshPath, '#!/usr/bin/env node\nprocess.stdout.write("Success: Page Cache was flushed.\\n");\n');
+  fs.chmodSync(sshPath, 0o755);
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    const out = await flushPageCache();
+    assert.match(out, /Success/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('flushPageCache throws loudly when wp page-cache flush does not report success', async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wpe-flush-fail-'));
+  const sshPath = path.join(tmpDir, 'ssh');
+  fs.writeFileSync(sshPath, '#!/usr/bin/env node\nprocess.stdout.write("Error: something went wrong\\n");\n');
+  fs.chmodSync(sshPath, 0o755);
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await assert.rejects(() => flushPageCache(), /did not report success/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });

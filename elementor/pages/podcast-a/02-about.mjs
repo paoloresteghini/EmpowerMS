@@ -66,7 +66,17 @@ import { container, heading, text } from '../../factory.mjs';
       WordPress's default person single view, not this design, but it is a
       real page about the right person, not a 404. This is recorded on the
       route map as: destination exists and is live; styled template still
-      to be built. */
+      to be built.
+
+   6. _element_id: 'about-title' lands on the heading widget's WRAPPER div,
+      not on the <h2> itself, the same wrapper-class placement 01-hero.mjs's
+      own note 5 documents for its <h1>. So aria-labelledby="about-title" on
+      the outer container (note 2 above) resolves to that div, not to the
+      heading element. Recorded here rather than left to be inferred from
+      the sibling module, per the accessibility read 01-hero.mjs already
+      gives: the accessible name computed from the id still walks the div's
+      full text content, so the announced label is unaffected; what is lost
+      is that the id no longer points at the semantic heading itself. */
 
 export function section() {
   return container(

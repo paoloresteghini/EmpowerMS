@@ -8,6 +8,7 @@ import { container, heading, text, image, link, html, elementId } from './elemen
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
 import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
+import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
 import { deployPage } from './elementor/deploy.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
@@ -509,6 +510,25 @@ test('the podcast about mapping carries the section class and its copy', () => {
      module's own comment for the evidence behind the replacement route. */
   assert.ok(!flat.includes('team-bio.html'), 'about mapping still links the static-build team-bio.html path');
   assert.ok(flat.includes('/person/grant-callen/'), 'about mapping does not link Grant Callen\'s real person route');
+});
+
+/* --- elementor/pages/podcast-a/page.mjs ---------------------------------- */
+
+/* deployPage() overwrites _elementor_data wholesale, so the only thing that
+   stops a future call from dropping a section is this list being right.
+   Pinning the order here is what makes that a real, enforced contract
+   rather than something documented in a report and trusted to be read: a
+   03-library appended before 02-about, or a hero dropped entirely, fails
+   this test loudly instead of shipping quietly. */
+test('the podcast-a page composes hero then about, in that order', () => {
+  const built = podcastASections();
+  assert.deepEqual(
+    built.map(s => s.settings.css_classes),
+    ['pca-hero', 'pca-about'],
+    'podcast-a/page.mjs does not compose pca-hero before pca-about',
+  );
+  assert.equal(typeof podcastAPostId, 'number', 'podcast-a/page.mjs POST_ID is not a number');
+  assert.ok(Number.isInteger(podcastAPostId), 'podcast-a/page.mjs POST_ID is not an integer');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */

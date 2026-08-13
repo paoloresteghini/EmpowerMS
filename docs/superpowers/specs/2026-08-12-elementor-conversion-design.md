@@ -79,6 +79,36 @@ Mississippi", URL `empv2.wpenginepowered.com`.
 | No podcast or guest taxonomy; no session taxonomy | Confirms Gap 1. Podcast episodes are ordinary posts in category 133 |
 | `resource` CPT exists | Matches the known trap: `resource` is third-party reference links, not Empower research. Not a source for "Research" |
 
+### The `person` records against the roster, matched
+
+`team-a` places 23 placeholder tiles: 10 staff, 5 fellows, 8 board. The install
+holds 18 published `person` records, every one with a featured image **and** a
+real bio (514 to 2,147 characters of content).
+
+| Group | Tiles | Covered by a `person` record | Missing |
+| --- | --- | --- | --- |
+| Staff | 10 | 9 certain, 1 to confirm | Joanna Pevey on the page against a record titled Joanna Polk (`joanna-polk-2`). Same person, or two? |
+| Fellows | 5 | 3 | J. Robertson, Rebekah Staples |
+| Board | 8 | 1 (Grant Callen, also staff) | Abb Payne, Gerard Gibert, Sunny Desai, Betsy Dowell, Lex Lindsey, Marie Sanderson, George Williams |
+
+**What this changes.**
+
+1. **The nine missing staff bio pages become one template.** Every staff member
+   bar the Pevey/Polk question has a bio already written and stored. One Elementor
+   single-`person` template renders all ten, and `team-bio` stops being a page to
+   copy nine times.
+2. **The headshot blocker shrinks from 23 to about 9**, and almost all of what
+   remains is the board.
+3. **Ashley Green and Wil Ervin have records with bios.** Both are deliberately
+   unlinked in the static build because their bio pages did not exist, and two
+   tests enforce that. If the template ships, both rules should be revised rather
+   than worked around.
+
+**New question.** Five `person` records do not appear on the roadmap's roster at
+all: Brett Kittredge, Donald Nielsen, Joe Bishop-Henchman, Katie Elliott, Steven
+Randle. Either the roadmap roster is out of date, or these are former staff still
+published. Empower need to say which before the team page goes live.
+
 ### The Beaver Builder footprint, measured
 
 The 1,738 figure was `_fl_builder_data` meta rows, which overstates it. The real
@@ -330,8 +360,9 @@ on **zero** of them, and the Empower Solutions Model's invented five steps affec
 | --- | --- |
 | Gotham and Whitney licences | all 15; Figtree and Source Sans 3 stand in |
 | **Licensed photography, 12 distinct files** | 13 of 15. Extracted from the brand guide PDF, explicitly stand-in. A legal exposure once public, not a polish item |
-| 23 headshots, **partly solved** | `team-a`, `team-bio`. 18 `person` records exist with featured images. Confirm coverage against the 23 the pages need |
-| Nine staff bio pages, **possibly a template job** | `team-a` links all ten staff at the CEO's page. If the `person` records carry bios, one Elementor single-person template generates all ten |
+| 9 headshots, down from 23 | `team-a`. Matched 2026-08-12: 13 or 14 of the 23 are covered by `person` records. What remains is 2 fellows and 7 board members |
+| ~~Nine staff bio pages~~ **retired as a blocker** | Every staff bio already exists as `person` content. One single-`person` template renders all ten. It becomes a build task, not something Empower owe |
+| Whether the roadmap roster is current | Five published `person` records appear nowhere on it |
 | Host photography | `podcast-a`, `capitol-a`, both marked `data-placeholder="photo"` |
 | Grant Callen's real contact details | `team-bio`, currently the organisation's inbox, marked |
 | Ambassador photos | `amb-a` |
@@ -408,13 +439,14 @@ The spike needs Elementor Pro installed. Nothing else is blocked.
    Builder parts, and Beaver Builder retires. Its retirement is a second phase,
    gated on the landing page template being signed off, because 32 Beaver pages
    have no new design and most of them are what that template is for.
-4. **Whether the 18 `person` records cover the 23 the team pages need**, and
-   whether their bios are complete enough to generate the nine missing staff
-   pages from a single template. If so, two go-live blockers shrink to one task.
-5. **Whether Ashley Green and Wil Ervin now have somewhere to link to.** Both are
-   deliberately unlinked in the build because their bio pages did not exist. Both
-   have `person` records. Two tests enforce the unlinked rule and would need
-   revising if that changes.
+4. ~~Whether the `person` records cover the roster.~~ **Answered 2026-08-12:**
+   13 or 14 of 23, all with bios. See the matching table. One question falls out
+   of it: is Joanna Pevey on the page the same person as the `Joanna Polk`
+   record?
+5. ~~Whether Ashley Green and Wil Ervin have somewhere to link to.~~
+   **Answered: yes.** Both have `person` records with bios. The two tests
+   enforcing their unlinked state should be revised once the single-`person`
+   template ships, not worked around.
 6. **Whether the clone will be re-synced from live before cutover.** It is behind
    on Gravity Forms and Stripe, and a re-sync would overwrite converted pages.
 7. Empower's answer on the podcast guest taxonomy.

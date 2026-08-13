@@ -1,0 +1,27 @@
+{
+  "name": "empowerms",
+  "version": "1.0.0",
+  "description": "Static HTML + CSS builds for the Empower Mississippi refresh. The homepage is **settled** — `dist/final.html` is the agreed build, the About Us, Team and Solutions sets were decided on 2026-08-05, and on 2026-08-07 Empower chose one template for all three solution detail pages, The Studio for The Empower Podcast and The Dome for Capitol Chat. Four sets are open: **EPIC** (the research arm, three readings), the two Join Us destinations — **Email Sign Up** and the **Ambassador Landing Page** — and **Donate**, two readings each. The alternatives every decision was made from still build, as reference.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "node --test test.mjs && node --test test-elementor.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paoloresteghini/EmpowerMS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/paoloresteghini/EmpowerMS/issues"
+  },
+  "homepage": "https://github.com/paoloresteghini/EmpowerMS#readme",
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}

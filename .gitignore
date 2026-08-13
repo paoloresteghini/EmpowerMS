@@ -6,5 +6,7 @@ docs/Empower Mississippi Design System/
 .playwright-mcp/
 *.png
 !assets/**/*.png
+!docs/elementor/**/*.png
 .sfdx/
 wb-new.jpeg
+node_modules/

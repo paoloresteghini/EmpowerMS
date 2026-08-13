@@ -879,3 +879,20 @@ test('deployLoopItem writes _elementor_template_type loop-item, not wp-page', as
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 });
+
+/* --- fidelity-browser.mjs / the podcast guest filter --------------------- */
+
+/* The check that matters most and that nothing static can make. A Loop Grid
+   whose item template does not emit data-guest produces a page where every
+   control still moves, no card ever hides, and nothing reports an error. */
+test('the podcast guest filter actually filters', { concurrency: 1 }, async () => {
+  const { checkFilter } = await import('./fidelity-browser.mjs');
+  const r = await checkFilter(process.env.SPIKE_URL, {
+    toggleSelector: '#pa-g-lawmaker',
+    itemSelector: '.pca-ep',
+  });
+  assert.ok(r.before > 0, 'no episodes rendered at all');
+  assert.ok(r.after < r.before, 'ticking a guest hid nothing: the loop is not emitting data-guest');
+  assert.deepEqual(r.kinds, ['lawmaker'], `filtered view still shows ${r.kinds.join(', ')}`);
+  assert.equal(r.restored, r.before, 'unticking did not restore the full list');
+});

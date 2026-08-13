@@ -224,17 +224,47 @@ test('the styles enqueue guards against UiCore loading after site.css', () => {
     'styles enqueue priority is not late enough to run after UiCore enqueues uicore_global at 50');
 });
 
-/* The guard below reads `fn.includes('motion')`, which is always true because
-   EMPOWER_TOKENS contains the string 'motion' for tokens/motion.css, a
-   different file from css/motion.css. Guard on the reveal-pair file itself
-   instead, which is the condition the test description actually names. */
-test('the motion layer ships as a pair or not at all', () => {
-  /* css/motion.css hides every [data-reveal] element and js/reveal.js is what
-     reveals them. Enqueueing the stylesheet without the script leaves the page
-     blank below the fold, which this build has already shipped once. */
+/* Generalised from a motion-only version whose guard, `fn.includes('motion')`,
+   was always true (EMPOWER_TOKENS contains the string 'motion' for
+   tokens/motion.css, a different file from css/motion.css) and so only ever
+   covered one pair by accident. Rather than hand-list every css/js pair the
+   static build cares about, which is how an earlier sweep passed while
+   covering almost nothing, derive the pairs from dist/*.html itself: a js
+   file is "required" by a css file when every dist page carrying that css
+   also carries that js. This naturally reproduces the motion pair
+   (css/motion.css requires js/reveal.js, confirmed by hand against the
+   derived map) and catches the same class of defect for every other
+   stylesheet the theme is capable of enqueueing, including ones added later. */
+test('every stylesheet the theme can enqueue can also enqueue its paired script', () => {
+  const distFiles = fs.readdirSync('dist').filter(f => f.endsWith('.html'));
+  assert.ok(distFiles.length > 0, 'no dist/*.html pages to derive script pairings from');
+
+  const pages = distFiles.map(f => {
+    const html = fs.readFileSync(path.join('dist', f), 'utf8');
+    return {
+      css: new Set([...html.matchAll(/css\/([a-z0-9-]+)\.css/g)].map(m => m[1])),
+      js: new Set([...html.matchAll(/js\/([a-z0-9-]+)\.js/g)].map(m => m[1])),
+    };
+  });
+
+  const requiredJs = new Map(); // css basename -> Set of js basenames present on every page carrying it
+  for (const page of pages) {
+    for (const css of page.css) {
+      const current = requiredJs.get(css);
+      requiredJs.set(css, current ? new Set([...current].filter(j => page.js.has(j))) : new Set(page.js));
+    }
+  }
+
   const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
-  if (fn.includes('css/motion.css')) {
-    assert.ok(fn.includes('js/reveal.js'), 'motion.css is reachable but reveal.js is never enqueued');
+  for (const [css, jsSet] of requiredJs) {
+    /* A stylesheet the theme has no way to enqueue yet (its basename never
+       appears quoted in functions.php, e.g. css/megamenu.css today) is out
+       of scope: nothing to check until a later change makes it reachable. */
+    if (!fn.includes(`'${css}'`)) continue;
+    for (const js of jsSet) {
+      assert.ok(fn.includes(`'${js}'`) || fn.includes(`js/${js}.js`),
+        `css/${css}.css is enqueueable but its required js/${js}.js is not`);
+    }
   }
 });
 

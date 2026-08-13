@@ -82,6 +82,32 @@ add_action( 'wp_enqueue_scripts', function () {
 }, EMPOWER_STYLES_PRIORITY );
 
 /**
+ * Scripts have no equivalent to the styles priority problem: nothing else on
+ * this install competes with our scripts the way UiCore's global stylesheet
+ * competed with css/site.css, so there is no "must run after X" requirement
+ * to satisfy here. 20 is this theme's original scripts priority, kept as is
+ * and named so the gap between this and EMPOWER_STYLES_PRIORITY (60) reads
+ * as a decision rather than an oversight.
+ */
+const EMPOWER_SCRIPTS_PRIORITY = 20;
+
+/**
+ * Page scripts beyond the shared js/nav.js and js/reveal.js pair, keyed by
+ * page slug, mirroring empower_page_styles(). The static build pairs
+ * css/header-2.css with js/dropdown.js: a page that loads header-2.css
+ * without it renders five permanently open panels across its hero, the same
+ * silent-failure shape as the motion pair below. css/megamenu.css pairs the
+ * same way with js/megamenu.js, but is not wired up here because no page
+ * currently enqueues megamenu.css (empower_page_styles() has no entry for
+ * it); the mechanism below already covers it the moment one does.
+ */
+function empower_page_scripts() {
+	return array(
+		'podcast-a' => array( 'dropdown' ),
+	);
+}
+
+/**
  * The motion layer. Both files ship together or neither does: css/motion.css
  * hides every [data-reveal] element, and js/reveal.js is what reveals them.
  * Enqueueing the stylesheet without the script leaves the page blank below the
@@ -94,4 +120,11 @@ add_action( 'wp_enqueue_scripts', function () {
 	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), $ver, array( 'strategy' => 'defer' ) );
 	wp_script_add_data( 'empower-nav', 'type', 'module' );
 	wp_script_add_data( 'empower-reveal', 'type', 'module' );
-}, 20 );
+
+	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
+	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {
+		$handle = 'empower-script-' . $script;
+		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), $ver, array( 'strategy' => 'defer' ) );
+		wp_script_add_data( $handle, 'type', 'module' );
+	}
+}, EMPOWER_SCRIPTS_PRIORITY );

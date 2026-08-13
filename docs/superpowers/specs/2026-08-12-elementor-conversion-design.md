@@ -79,18 +79,43 @@ Mississippi", URL `empv2.wpenginepowered.com`.
 | No podcast or guest taxonomy; no session taxonomy | Confirms Gap 1. Podcast episodes are ordinary posts in category 133 |
 | `resource` CPT exists | Matches the known trap: `resource` is third-party reference links, not Empower research. Not a source for "Research" |
 
-### New decision this raises: the scope of the header and footer
+### The Beaver Builder footprint, measured
 
-The build's header and footer are global blocks. The site's current header and
-footer are Beaver Builder theme layouts applied site-wide. Three options, and
-this needs deciding before foundations:
+The 1,738 figure was `_fl_builder_data` meta rows, which overstates it. The real
+footprint, counted by distinct posts:
 
-1. **Elementor Theme Builder header and footer applied site-wide.** Coherent, and
-   it changes all 52 pages including the 37 we are not converting.
-2. **Scoped to the 15 converted pages.** Nothing else moves, and the site has two
-   different headers depending on which page you land on.
-3. **Rebuild the Beaver layouts to match.** Keeps one header, doubles the chrome
-   work, and leaves the chrome outside Elementor.
+| What | Count |
+| --- | --- |
+| Published pages with Beaver Builder enabled | **45** |
+| Private pages | 6 |
+| Beaver saved templates (`fl-builder-template`) | 112 |
+| Beaver theme layouts (`fl-theme-layout`) | 9 |
+| Posts | 2 |
+
+**Decision, Paolo 2026-08-12: the header and footer are Elementor Theme Builder
+parts applied site-wide, and Beaver Builder is to be retired.** Nothing has to be
+preserved for Beaver's sake.
+
+The arithmetic that follows, and why retirement is a second phase: the 15 signed-off
+designs replace about 13 of those 45 pages (`home`, `about`, `team` and `board`
+merged into one roster, `education-3`, `work`, `justice`, `the-empower-podcast`,
+`join`, `become-an-ambassador`, `donate`, plus Capitol Chat, EPIC and the staff
+bio, which have no existing equivalent). **About 32 Beaver Builder pages have no
+new design.** Removing the plugin before they are converted or retired breaks
+them.
+
+The shape of those 32 decides the second phase. They are largely campaign and
+petition pages, four thank-you pages, resource and download pages, two
+calculators, and content indexes. **That is what the landing page template was
+designed for**, and it is one of the two sets still open with Empower. Signing it
+off turns fifteen to twenty of those pages into fillings of one template instead
+of twenty bespoke conversions, which makes it the practical unlock for retiring
+Beaver Builder.
+
+Two open questions elsewhere in this repository now have factual answers from the
+install: `commentary` and `empower-commentary` both exist as live pages, which is
+the All Content naming disagreement made concrete; and Public Safety is published
+at `justice`, so our slug is a redirect decision rather than an open question.
 
 ## Decisions taken
 
@@ -365,7 +390,8 @@ The spike needs Elementor Pro installed. Nothing else is blocked.
 | Custom Attributes will not take dynamic tags | Child-theme filter stamps attributes onto loop items |
 | Elementor's JSON schema is version-specific and undocumented | Pinned at 4.2.1, recorded. Spike before committing |
 | ~~Changing Site Settings restyles existing live pages~~ | **Retired 2026-08-12.** Zero pages are built in Elementor, so Site Settings can be configured freely |
-| Two builders on one site: Beaver Builder runs 1,738 records, Elementor runs the 15 new pages | Accepted for this phase. Both load assets on every page unless scoped, which is a performance question for the go-live gate |
+| Two builders on one site: Beaver Builder runs 45 published pages, Elementor runs the 15 new ones | Accepted for this phase, retired in the second. Both load assets on every page unless scoped, which is a performance item on the go-live gate |
+| Beaver Builder removed before its 32 undesigned pages are converted or retired | Retirement is gated on the landing template being signed off. The plugin stays installed until page coverage is complete |
 | UiCore Pro's own global styles fight `tokens/` | Reconcile during foundations; the child theme's enqueue must win. Add a computed-style check to the harness |
 | The clone is behind live on Gravity Forms and Stripe versions | Confirm before the Donate work whether the clone gets re-synced from live, and whether that would destroy converted pages |
 | Empower edit pages mid-conversion and a rebuild destroys their work | Named handover point in the plan |
@@ -378,8 +404,10 @@ The spike needs Elementor Pro installed. Nothing else is blocked.
    2026-08-12.
 2. ~~Elementor licence tier.~~ **Answered:** free today, Pro available. Buying it
    is a prerequisite for step 3 of the sequence.
-3. **The header and footer scope.** Site-wide, scoped to the 15, or rebuild the
-   Beaver layouts. See the survey section.
+3. ~~The header and footer scope.~~ **Answered:** site-wide Elementor Theme
+   Builder parts, and Beaver Builder retires. Its retirement is a second phase,
+   gated on the landing page template being signed off, because 32 Beaver pages
+   have no new design and most of them are what that template is for.
 4. **Whether the 18 `person` records cover the 23 the team pages need**, and
    whether their bios are complete enough to generate the nine missing staff
    pages from a single template. If so, two go-live blockers shrink to one task.

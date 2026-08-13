@@ -310,6 +310,20 @@ test('checkSections reports missing and out-of-order sections', () => {
   );
 });
 
+/* checkCopy() flattened every tag to a plain space, so two unrelated block
+   elements sitting next to each other could satisfy a deck string that
+   spans their boundary, the exact failure this check exists to catch: a
+   heading genuinely dropped during conversion would pass, because its words
+   happened to survive split across its neighbours. Pinned here with the
+   two cases that proved the defect, so a regression fails loudly. */
+test('checkCopy does not let two unrelated block elements satisfy one deck string across their boundary', () => {
+  assert.deepEqual(checkCopy('<h1>Real</h1><p>Solutions</p>', ['Real Solutions']), ['Real Solutions']);
+  assert.deepEqual(
+    checkCopy('<h2>Our Work</h2><h2>Education First</h2>', ['Work Education']),
+    ['Work Education'],
+  );
+});
+
 /* WP Engine's page cache can hand back a stale, pre-conversion copy of a page
    while still reporting HTTP 200 (seen for real during Task 4: x-cache: HIT
    on a page that had none of the new stylesheets). fetchConverted() must

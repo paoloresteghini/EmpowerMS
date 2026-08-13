@@ -47,17 +47,44 @@ export async function fetchConverted(url) {
 
 /* Elementor wraps and splits text far more than the static build does, so a
    raw indexOf reports false failures the moment a heading gains a wrapper
-   mid-sentence. Compare against the page's text, not its markup. */
-const asText = html => html
+   mid-sentence. Comparing against one flattened string is not safe either
+   way, though: replacing every tag with a plain space collapses "<h1>Real
+   </h1><p>Solutions</p>" into "Real Solutions", so a deck string can be
+   satisfied by two unrelated block elements happening to sit next to each
+   other, which is exactly the failure this check exists to catch (a dropped
+   heading passing because its words survive split across its neighbours).
+   Block tags therefore cut the page into separate segments and a deck
+   string only counts as present if ONE segment contains it whole; inline
+   tags collapse to a plain space and never cut a segment, so a heading that
+   legitimately gains a mid-sentence wrapper (Elementor's own habit) still
+   reads as one continuous string.
+   The split comes from what the build actually emits, read off src/ and
+   dist/ (grep for tag names), not from memory: a, b, em, i, mark, small,
+   span, strong, sub, sup and time all wrap short runs inside a sentence
+   in this codebase and never appear as a wrapper around unrelated content;
+   every other tag it emits is a container, a heading, a list item or a line
+   break, and does interrupt a sentence, including <br>. */
+const INLINE_TAGS = new Set(['a', 'b', 'em', 'i', 'mark', 'small', 'span', 'strong', 'sub', 'sup', 'time']);
+/* A control character, not whitespace or punctuation, so it can never
+   collide with anything a deck string could legitimately contain. Written
+   as the explicit escape rather than an embedded byte so the source stays
+   readable. */
+const BREAK = '\u0000';
+
+const segments = html => html
   .replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
-  .replace(/<[^>]+>/g, ' ')
+  .replace(/<\/?([a-z][a-z0-9]*)\b[^>]*>/gi, (m, tag) => (INLINE_TAGS.has(tag.toLowerCase()) ? ' ' : BREAK))
   .replace(/&nbsp;/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
+  .split(BREAK)
+  .map(s => s.replace(/\s+/g, ' ').trim())
+  .filter(Boolean);
 
 export function checkCopy(liveHtml, deck) {
-  const text = asText(liveHtml);
-  return deck.filter(s => !text.includes(s.replace(/\s+/g, ' ').trim()));
+  const segs = segments(liveHtml);
+  return deck.filter(s => {
+    const needle = s.replace(/\s+/g, ' ').trim();
+    return !segs.some(seg => seg.includes(needle));
+  });
 }
 
 /* Sections are found by the build's OWN class, which every converted container

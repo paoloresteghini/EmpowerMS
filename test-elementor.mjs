@@ -4,12 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { stripNotices, wpe } from './wpe.mjs';
-import { container, heading, text, image, link, html, elementId } from './elementor/factory.mjs';
+import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
 import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
+import {
+  section as podcastLibrary, loopItem as podcastLoopItem,
+  LOOP_ITEM_POST_ID as podcastLoopItemPostId, PODCAST_CATEGORY_ID as podcastCategoryId,
+} from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
-import { deployPage } from './elementor/deploy.mjs';
+import { deployPage, deployLoopItem } from './elementor/deploy.mjs';
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own
@@ -163,6 +167,39 @@ test('link() matches the captured button shape', () => {
 test('html() carries markup through unaltered', () => {
   const svg = '<svg width="10" height="10"></svg>';
   assert.equal(html({ markup: svg }).settings.html, svg);
+});
+
+test('loopGrid() matches the captured loop-grid shape', () => {
+  const ref = findByClass(REF, 'pca-eps');
+  assert.ok(ref, 'fixture has no .pca-eps loop-grid; recapture it');
+  assert.equal(ref.widgetType, 'loop-grid', 'the pca-eps node in the fixture is not a loop-grid widget');
+  const made = loopGrid({ templateId: 20555, cssClass: 'pca-eps', columns: 3 });
+  assert.equal(made.elType, 'widget');
+  assert.equal(made.widgetType, 'loop-grid');
+  assert.equal(made.settings.template_id, 20555);
+  assert.equal(made.settings._css_classes, 'pca-eps');
+  assert.equal(made.settings.columns, 3);
+  assert.ok('template_id' in ref.settings, 'captured loop-grid has no template_id key; the schema notes are wrong');
+});
+
+test('loopGrid() passes query settings through to the widget settings unnamed', () => {
+  const made = loopGrid({
+    templateId: 20555,
+    cssClass: 'pca-eps',
+    post_query_post_type: 'post',
+    post_query_include: 'terms',
+    post_query_include_term_ids: ['133'],
+    posts_per_page: 100,
+  });
+  assert.equal(made.settings.post_query_post_type, 'post');
+  assert.equal(made.settings.post_query_include, 'terms');
+  assert.deepEqual(made.settings.post_query_include_term_ids, ['133']);
+  assert.equal(made.settings.posts_per_page, 100);
+});
+
+test('loopGrid() rejects a non-integer templateId before building anything', () => {
+  assert.throws(() => loopGrid({ templateId: 'not-a-number' }), /templateId/);
+  assert.throws(() => loopGrid({ templateId: undefined }), /templateId/);
 });
 
 test('container() nests its children', () => {
@@ -512,6 +549,105 @@ test('the podcast about mapping carries the section class and its copy', () => {
   assert.ok(flat.includes('/person/grant-callen/'), 'about mapping does not link Grant Callen\'s real person route');
 });
 
+/* --- elementor/pages/podcast-a/03-library.mjs --------------------------- */
+
+test('the podcast library mapping carries the section class and its static copy', () => {
+  const tree = podcastLibrary();
+  const flat = JSON.stringify(tree);
+  const source = fs.readFileSync('src/podcast-a/sections/03-library.html', 'utf8');
+
+  /* Same derivation as the hero and about tests above, with two extra passes
+     the other two sections did not need. First, comments are stripped:
+     unlike 01-hero.html and 02-about.html, this source file's own leading
+     comment contains literal "<button type="reset">" and "<form>" as prose,
+     which the plain {1,} regex reads as real tag boundaries and turns into a
+     spurious captured "string" from inside the comment. Second, the entire
+     <ul class="pca-eps">...</ul> loop block is removed before extraction:
+     its nine placeholder episodes are real published posts used as sample
+     data (see the module's own note 2 and the task report), not copy this
+     mapping reproduces as literal text: the Loop Grid renders them
+     dynamically from the database, so their titles/dates/tags are
+     legitimately absent from _elementor_data as strings. Checked directly:
+     stripping comments and the loop block from this source file yields
+     exactly the section head (heading, lede) and the filter bar's own
+     strings, and nothing else, verified by running the extraction and
+     inspecting its output before writing this assertion loop. */
+  const noComments = source.replace(/<!--[\s\S]*?-->/g, ' ');
+  const withoutLoop = noComments.replace(/<ul class="pca-eps"[\s\S]*?<\/ul>/, '');
+  const strings = [...withoutLoop.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no static copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `library mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('pca-library'), 'library mapping does not carry the pca-library class');
+});
+
+test('the podcast library mapping preserves the three guest checkbox ids verbatim', () => {
+  const flat = JSON.stringify(podcastLibrary());
+  /* css/podcast-a.css selects these by id in its :has() filter rule
+     (body:has(.pca-guest:checked):not(:has(#pa-g-lawmaker:checked)) ...): a
+     renamed or dropped id is a filter that silently does nothing. */
+  for (const id of ['pa-g-lawmaker', 'pa-g-expert', 'pa-g-leader']) {
+    /* flat is JSON.stringify(tree), so a literal double quote in the raw
+       HTML markup is JSON-escaped to \" once serialized; matching against
+       the unescaped form here would never find it. */
+    assert.ok(flat.includes(`id=\\"${id}\\"`), `library mapping is missing checkbox id ${id}`);
+  }
+});
+
+test('the podcast library mapping does not build data-topic; the source itself says only data-guest converts', () => {
+  const flat = JSON.stringify(podcastLibrary());
+  assert.ok(!flat.includes('data-topic'), 'library mapping still carries data-topic, which the source says is scaffolding only');
+});
+
+test('the podcast loop item carries pca-ep and its child classes, and does not itself set data-guest', () => {
+  const tree = podcastLoopItem();
+  const flat = JSON.stringify(tree);
+  assert.ok(Array.isArray(tree), 'loopItem() does not return an array, unlike the captured loop-item.json fixture shape');
+  for (const cls of ['pca-ep', 'pca-ep__art', 'pca-ep__tags', 'pca-ep__title', 'pca-ep__date']) {
+    assert.ok(flat.includes(cls), `loop item is missing the ${cls} class`);
+  }
+  /* The whole point of the child-theme filter (wp/empowerms-child/inc/
+     loop-attributes.php): data-guest must NOT be set from a dynamic tag
+     here, because post-terms is the only dynamic tag that can read a
+     taxonomy term and it always wraps the value in <span>, which the CSS
+     attribute selector can never match. If this ever starts matching, the
+     loop item has drifted back onto the broken route. */
+  assert.ok(!flat.includes('data-guest'), 'loop item sets data-guest itself; it must come from the PHP filter instead');
+  assert.ok(!flat.includes('data-topic'), 'loop item sets data-topic, which the source says is not built at conversion');
+});
+
+test('the podcast loop item title is a Heading widget rendered as a span, not an invented heading level', () => {
+  const [item] = podcastLoopItem();
+  const titleNode = item.elements.find(el => el.settings?._css_classes === 'pca-ep__title');
+  assert.ok(titleNode, 'loop item has no pca-ep__title node');
+  assert.equal(titleNode.widgetType, 'heading');
+  assert.equal(titleNode.settings.header_size, 'span', 'pca-ep__title should not add an h1-h6 heading level to every card');
+  assert.match(titleNode.settings.__dynamic__.title, /name="post-title"/);
+  assert.match(titleNode.settings.__dynamic__.link, /name="post-url"/);
+});
+
+test('the podcast loop item date and guest pill are bound to real per-post dynamic tags', () => {
+  const [item] = podcastLoopItem();
+  const dateNode = item.elements.find(el => el.settings?._css_classes === 'pca-ep__date');
+  assert.ok(dateNode, 'loop item has no pca-ep__date node');
+  assert.match(dateNode.settings.__dynamic__.editor, /name="post-date"/);
+
+  const tagsNode = item.elements.find(el => el.settings?.css_classes === 'pca-ep__tags');
+  assert.ok(tagsNode, 'loop item has no pca-ep__tags container');
+  const pill = tagsNode.elements[0];
+  assert.match(pill.settings.__dynamic__.editor, /name="post-terms"/);
+  assert.match(decodeURIComponent(pill.settings.__dynamic__.editor), /"taxonomy":"guest_type"/);
+});
+
+test('podcast-a/03-library.mjs points the loop grid at a real integer post id and category 133', () => {
+  assert.equal(typeof podcastLoopItemPostId, 'number');
+  assert.ok(Number.isInteger(podcastLoopItemPostId), 'LOOP_ITEM_POST_ID is not an integer');
+  assert.equal(podcastCategoryId, 133, 'PODCAST_CATEGORY_ID does not match the Podcast category id from the WP REST API survey');
+});
+
 /* --- elementor/pages/podcast-a/page.mjs ---------------------------------- */
 
 /* deployPage() overwrites _elementor_data wholesale, so the only thing that
@@ -520,12 +656,12 @@ test('the podcast about mapping carries the section class and its copy', () => {
    rather than something documented in a report and trusted to be read: a
    03-library appended before 02-about, or a hero dropped entirely, fails
    this test loudly instead of shipping quietly. */
-test('the podcast-a page composes hero then about, in that order', () => {
+test('the podcast-a page composes hero, about, then library, in that order', () => {
   const built = podcastASections();
   assert.deepEqual(
     built.map(s => s.settings.css_classes),
-    ['pca-hero', 'pca-about'],
-    'podcast-a/page.mjs does not compose pca-hero before pca-about',
+    ['pca-hero', 'pca-about', 'pca-library'],
+    'podcast-a/page.mjs does not compose pca-hero, pca-about, pca-library in that order',
   );
   assert.equal(typeof podcastAPostId, 'number', 'podcast-a/page.mjs POST_ID is not a number');
   assert.ok(Number.isInteger(podcastAPostId), 'podcast-a/page.mjs POST_ID is not an integer');
@@ -702,6 +838,25 @@ test('deployPage still resolves when every wp-cli step genuinely succeeds', asyn
     const out = await deployPage(42, [podcastHero()]);
     assert.match(out, /Success.*_elementor_edit_mode builder/);
     assert.match(out, /Success.*flush_css/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+/* deployLoopItem() shares deployElements() with deployPage() (see
+   elementor/deploy.mjs's own comment on the factoring); the one thing to
+   prove independently is the one thing that differs: the template type
+   written to _elementor_template_type. */
+test('deployLoopItem writes _elementor_template_type loop-item, not wp-page', async () => {
+  const { tmpDir, capturePath } = withCapturingSsh('deploy-loop-item-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await deployLoopItem(20572, podcastLoopItem());
+    const script = fs.readFileSync(capturePath, 'utf8');
+    assert.match(script, /wp post meta update 20572 _elementor_template_type loop-item/);
+    assert.doesNotMatch(script, /wp post meta update 20572 _elementor_template_type wp-page/);
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });

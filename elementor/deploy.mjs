@@ -44,13 +44,22 @@ const uniqueSuffix = () => `${Date.now()}_${Math.random().toString(16).slice(2)}
    failure regardless of `set -e`, and everything after it is this script,
    where every line is meant to fail loudly. `rm -f` is deliberately the one
    command that tolerates a missing file (that is what `-f` is for), not a
-   command whose failure this script should ignore. */
-export async function deployPage(postId, sections) {
+   command whose failure this script should ignore.
+
+   Factored out of deployPage() so deployLoopItem() (below) can share every
+   line of this without duplicating the set -e / heredoc / temp-file caution
+   above: the only thing that differs between a page and a Loop Item template
+   is the value written to _elementor_template_type. Both are elements of the
+   SAME underlying operation ("write this JSON tree into this post's
+   _elementor_data and flush"), just against different post types
+   (page vs elementor_library), which is why this stays one function with a
+   parameter rather than two independent copies that could drift. */
+function deployElements(postId, elements, templateType) {
   if (!Number.isInteger(postId)) {
-    throw new Error(`deployPage: postId must be an integer, got ${JSON.stringify(postId)}`);
+    throw new Error(`deployElements: postId must be an integer, got ${JSON.stringify(postId)}`);
   }
 
-  const json = JSON.stringify(sections);
+  const json = JSON.stringify(elements);
   const suffix = uniqueSuffix();
   const heredoc = `ELEMENTOR_DATA_${suffix}`;
   const tmpFile = `/tmp/elementor-data-${postId}-${suffix}.json`;
@@ -63,7 +72,7 @@ export async function deployPage(postId, sections) {
     `wp post meta update ${postId} _elementor_data < ${tmpFile}`,
     `rm -f ${tmpFile}`,
     `wp post meta update ${postId} _elementor_edit_mode builder`,
-    `wp post meta update ${postId} _elementor_template_type wp-page`,
+    `wp post meta update ${postId} _elementor_template_type ${templateType}`,
     `wp post meta update ${postId} _elementor_version ${ELEMENTOR_VERSION}`,
     /* The brief names this `wp elementor flush-css`. `wp help elementor` on
        empv2 lists the subcommand as `flush_css` (underscore); `flush-css`
@@ -72,4 +81,22 @@ export async function deployPage(postId, sections) {
   ].join('\n');
 
   return wpe(script);
+}
+
+export async function deployPage(postId, sections) {
+  return deployElements(postId, sections, 'wp-page');
+}
+
+/* Writes a Loop Item template's element tree to its elementor_library post.
+   The post itself (and its elementor_library_type: loop-item taxonomy term,
+   which Elementor's own Loop document class reads to know which panel/editor
+   to open, not something this write path touches) is one-time setup done via
+   wp-cli; see the task report for the exact commands. Everything after that
+   is identical to deployPage(), templateType 'loop-item' instead of
+   'wp-page' (Loop::DOCUMENT_TYPE, read from wp-content/plugins/elementor-pro/
+   modules/loop-builder/documents/loop.php on empv2, and confirmed against the
+   probe template Task 2 already built: post 20555 carries
+   _elementor_template_type loop-item). */
+export async function deployLoopItem(postId, elements) {
+  return deployElements(postId, elements, 'loop-item');
 }

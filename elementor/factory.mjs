@@ -74,3 +74,23 @@ export const link = ({ label, href, cssClass = '', ...rest } = {}) =>
    settings key html are read from the captured html node. */
 export const html = ({ markup, cssClass = '' } = {}) =>
   el('widget', { html: markup, [WIDGET_CSS_CLASS_KEY]: cssClass }, { widgetType: 'html' });
+
+/* widgetType 'loop-grid' and the settings key template_id (the elementor_library
+   post id of the Loop Item template) are read from the captured loop-grid node
+   in docs/elementor/schema-4.2.2.md ("The loop-grid capture is the one to read
+   before Task 7"). templateId is required rather than defaulted: a Loop Grid
+   with no template renders Elementor's own empty-view placeholder instead of
+   failing loudly, so a caller that forgets it would ship a page with a blank
+   library and no error to catch it. Query settings (post_query_post_type,
+   post_query_include, post_query_include_term_ids, posts_per_page, ...) are
+   passed through ...rest rather than named here: they are the one part of
+   this widget's shape that is genuinely per-caller (this build only ever
+   needs one Loop Grid, filtering podcast-a's episode library to category 133),
+   and naming query keys here would just be re-typing Elementor's own prefixed
+   control names one level removed from where they are documented. */
+export const loopGrid = ({ templateId, cssClass = '', ...rest } = {}) => {
+  if (!Number.isInteger(templateId)) {
+    throw new Error(`loopGrid: templateId must be an integer post id, got ${JSON.stringify(templateId)}`);
+  }
+  return el('widget', { template_id: templateId, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'loop-grid' });
+};

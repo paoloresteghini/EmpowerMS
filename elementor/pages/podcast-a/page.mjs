@@ -1,5 +1,6 @@
 import { section as hero } from './01-hero.mjs';
 import { section as about } from './02-about.mjs';
+import { section as library } from './03-library.mjs';
 
 /* The composition contract for this page: which sections it carries, and in
    what order. deployPage() overwrites _elementor_data wholesale, so a call
@@ -13,10 +14,10 @@ import { section as about } from './02-about.mjs';
    I happen to remember to list". It is a manifest, not a framework: one
    page, one ordered list, one id, nothing assembled cleverly.
 
-   As sections are added to podcast-a (03-library next), they are appended
-   here, in the order they appear on the page, and the composition test
-   below is extended to match. Nothing removes an entry from this list
-   without also removing it from that test.
+   As sections are added to podcast-a, they are appended here, in the order
+   they appear on the page, and the composition test below is extended to
+   match. Nothing removes an entry from this list without also removing it
+   from that test.
 
    POST_ID is kept here too, even though it is a different kind of fact from
    the section list: it is environment state (a WP post id specific to the
@@ -31,4 +32,4 @@ import { section as about } from './02-about.mjs';
 
 export const POST_ID = 20568;
 
-export const sections = () => [hero(), about()];
+export const sections = () => [hero(), about(), library()];

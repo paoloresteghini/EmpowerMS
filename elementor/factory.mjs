@@ -45,13 +45,21 @@ export const text = ({ markup, cssClass = '', ...rest } = {}) =>
   el('widget', { editor: markup, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'text-editor' });
 
 /* widgetType 'image' and the settings.image shape ({ id, url }) are read from
-   the captured image node. alt wasn't in the capture because it was left
-   blank on the reference build, the same default-omission behaviour the
-   heading's header_size shows; it's included here as a plain field rather
-   than chased into that omission convention, since Elementor accepts an
-   explicit empty alt exactly as it accepts a missing key. */
-export const image = ({ id, url, alt = '', cssClass = '', ...rest } = {}) =>
-  el('widget', { image: { id, url, alt }, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'image' });
+   the captured image node. No alt field: the image widget has no alt control
+   at all (elementor.widgetsCache.image.controls on the live install has
+   nothing matching alt), and alt text is read from the attachment's own
+   _wp_attachment_image_alt in the media library instead. Verified by
+   rendering two image widgets against one attachment, one with
+   settings.image.alt set to '' and one with no alt key, after giving the
+   attachment real alt text: both rendered the attachment's alt text, because
+   neither widget setting is consulted. A factory-level alt parameter would
+   therefore be accepted and silently discarded, which is worse than not
+   offering it: Tasks 6 and 7 map real alt copy off the static build, and a
+   parameter that looks like it carries that copy but doesn't would drop it
+   without any signal. Alt text is a media-library concern, out of reach for
+   a pure JSON factory, and is tracked as a go-live editorial task instead. */
+export const image = ({ id, url, cssClass = '', ...rest } = {}) =>
+  el('widget', { image: { id, url }, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'image' });
 
 /* UNVERIFIED: the captured fixture has no button widget, so widgetType
    'button' and the label/href settings keys below are the brief's original

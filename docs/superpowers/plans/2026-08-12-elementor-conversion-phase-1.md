@@ -50,7 +50,7 @@ Every WP-CLI call on this install returns Elementor deprecation notices interlea
 **Interfaces:**
 - Produces: `stripNotices(raw: string) => string` and `async wpe(command: string) => string`. Every later task uses `wpe()` to reach the install.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `test-elementor.mjs`:
 
@@ -94,12 +94,22 @@ test('does not eat a legitimate line that merely mentions PHP', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test test-elementor.mjs`
 Expected: FAIL, `Cannot find module './wpe.mjs'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
+
+> **Correction, found in execution 2026-08-13.** The `wpe()` code below does not
+> work and was not used. Node's asynchronous `execFile` has no `input` option:
+> that belongs to `execFileSync` and `spawnSync`. So `{ input: script }` is
+> silently ignored, the script never reaches the remote `bash -s`, and the call
+> blocks on an open stdin pipe forever. Proven by running exactly this code
+> against the install and watching it hang until killed at 180 seconds. The
+> shipped `wpe.mjs` uses `spawn()` instead, keeping the 32 MiB cap, attaching
+> `stdout` / `stderr` / `code` to rejections, and listening for errors on
+> `child.stdin`. `stripNotices` below is correct and shipped verbatim.
 
 Create `wpe.mjs`:
 
@@ -144,19 +154,19 @@ export async function wpe(command) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `node --test test-elementor.mjs`
 Expected: PASS, 4 tests
 
-- [ ] **Step 5: Verify against the real install**
+- [x] **Step 5: Verify against the real install**
 
 Run: `node -e "import('./wpe.mjs').then(m => m.wpe('wp option get siteurl; wp plugin get elementor --field=version')).then(console.log)"`
 Expected: exactly two lines, `https://empv2.wpenginepowered.com` and `4.2.1`, with no `PHP:` anywhere.
 
 If a notice survives, add the shape that leaked to the tests in Step 1 first, then widen the pattern. Do not widen the pattern without a test for it.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add wpe.mjs test-elementor.mjs

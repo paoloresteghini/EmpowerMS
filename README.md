@@ -684,6 +684,20 @@ different brands:
 
 Adding a page to `PAGES` brings it under all of that automatically.
 
+`npm test` runs `test.mjs` and then `test-elementor.mjs`, the second file
+covering the Elementor conversion tooling under `elementor/`, `wp/` and the
+harness in `fidelity.mjs` / `fidelity-browser.mjs`. Most of it runs with no
+setup, but four tests in `test-elementor.mjs` drive a real browser (via
+Playwright, already a devDependency) against the live converted page on
+WP Engine, and need `SPIKE_URL` set:
+
+```bash
+SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs
+```
+
+Without it, those four fail on purpose, with a message naming `SPIKE_URL`
+rather than a silent skip.
+
 ## Mobile navigation
 
 Below 960px the desktop nav (`.em-header__nav`) hides and a mobile menu takes over: a

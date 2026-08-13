@@ -201,7 +201,8 @@ marks=["<span>Podcast</span>", "<span>Empower News</span>", "<span>Podcast</span
    container really is evaluated per item.
 2. **The value is unusable.** `post-terms` emits each term wrapped in `<span>`,
    even with `link` switched off. So the attribute value is markup, not a token
-   list. `[data-guest~="lawmaker"]` cannot match `<span>Podcast</span>`, and
+   list. `[data-guest="lawmaker"]` (the shipped CSS matches exactly, not
+   `~=`) cannot match `<span>Podcast</span>` either way, and
    there is no control on the tag to render terms plain. Nothing errors: the
    attribute is present, the filter controls all move, and no card ever hides.
    That is the exact silent failure the spec names.

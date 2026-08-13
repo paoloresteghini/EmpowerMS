@@ -181,6 +181,19 @@ container specifically, so it does not also match `pca-ep__title` or
 attributes, 3 lawmaker / 3 expert / 3 leader, matching the nine termed
 posts exactly, no markup in any value.
 
+**`loop-attributes.php` takes only the first guest term** (`$terms[0]->slug`
+at line 82), a single-term assumption, not a limitation of the mechanism. Record
+this precisely for Phase 2: it is **not** a quick fix, because `data-guest` is
+matched exactly (`[data-guest="lawmaker"]` in `css/podcast-a.css`), not with
+`~=`. Widening the PHP side to write every term (space-separated, the shape
+`~=` expects) does nothing on its own; the CSS would also need to change from
+`=` to `~=`, and `css/podcast-a.css` is a protected file (see "The static
+build does not change" in this repository's constraints). So a second guest
+term is a bridge-stylesheet item, coordinated across both files, not a PHP-only
+change. (`docs/elementor/schema-4.2.2.md` currently writes `[data-guest~="lawmaker"]`
+where the shipped CSS uses `=`; that is a documentation slip, corrected there,
+not evidence the code already supports multiple terms.)
+
 **Building that filter correctly was not the end of the story**, because of
 Finding 5.1 below. Record the reason precisely for Phase 2: not "Custom
 Attributes will not take dynamic tags" (they will, and reliably), but "the
@@ -238,13 +251,17 @@ where this phase's only genuinely silent, non-obvious failure lived.
 
 **Genuinely editable.** This was checked directly in the Elementor editor
 (Task 6, Step 9), not inferred from the JSON: the converted page is 16
-nodes, zero HTML widgets outside the two sanctioned exceptions taken later
-(the filter form and the SVG icons in `03-library`), a nested tree of native
-containers and widgets, each carrying the build's own classes and editable
-through Elementor's normal panel controls. No fourth HTML-widget exception
-was needed or taken anywhere in the spike. That is the check that validates
-the whole native-first decision, and it validates it: opening the page in
-the editor shows Empower's actual structure, not one opaque block of pasted
+nodes, zero HTML widgets outside the one sanctioned exception taken (the
+filter form), a nested tree of native containers and widgets, each carrying
+the build's own classes and editable through Elementor's normal panel
+controls. The SVG icons in `03-library` are not a second exception: the spec
+(line 52) treats inline SVG as its own row, native containers with SVG
+staying as markup, separate from the three named HTML-widget exceptions at
+lines 163 to 171, and `03-library.mjs` note 3 records this. No fourth
+HTML-widget exception was needed or taken anywhere in the spike. That is the
+check that validates the whole native-first decision, and it validates it:
+opening the page in the
+editor shows Empower's actual structure, not one opaque block of pasted
 markup.
 
 The qualification is what is inside the two sanctioned HTML widgets: the
@@ -284,7 +301,13 @@ render that builds the cache.
 
 Fix: `_element_cache: 'yes'` on the container, Elementor's own escape hatch
 (`modules/element-cache/module.php`), labelled "Inactive" in the editor's
-Advanced tab, meaning cache inactive for that one element.
+Advanced tab, meaning cache inactive for that one element. The cost of that
+escape hatch: it opts the element out of the per-template cache entirely, so
+that container is freshly shortcode-rendered on every iteration rather than
+baked once and reused, 66 fresh renders per page load for this page's loop
+instead of one. Phase 2 has ten Loop Grid slots and will apply this fix by
+rote wherever an attribute comes from PHP rather than a dynamic tag; each one
+carries this same per-render cost, not just the correctness fix.
 
 **Why this belongs at the top of Phase 2's risk list:** it produces no
 error, no visible symptom beyond a wrong data attribute, and the page

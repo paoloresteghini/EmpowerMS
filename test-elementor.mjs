@@ -114,18 +114,20 @@ process.stdout.write('x'.repeat(34000000));
   const originalPath = process.env.PATH;
   process.env.PATH = tmpDir + ':' + originalPath;
 
+  let rejected;
   try {
     await wpe('anything');
-    assert.fail('wpe() should have rejected due to buffer exceeded');
   } catch (err) {
-    assert.ok(err.message, 'error should have a message');
-    assert.match(err.message, /exceeds.*bytes/i, 'error message should mention buffer exceeded');
-    assert(err.stdout !== undefined, 'error should have stdout property');
-    assert(err.stderr !== undefined, 'error should have stderr property');
+    rejected = err;
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+  if (!rejected) assert.fail('wpe() should have rejected due to buffer exceeded');
+  assert.ok(rejected.message, 'error should have a message');
+  assert.match(rejected.message, /exceeds.*bytes/i, 'error message should mention buffer exceeded');
+  assert(rejected.stdout !== undefined, 'error should have stdout property');
+  assert(rejected.stderr !== undefined, 'error should have stderr property');
 });
 
 /* --- elementor/factory.mjs -------------------------------------------- */
@@ -210,9 +212,14 @@ test('link() matches the captured button shape', () => {
   assert.equal(made.settings._css_classes, 'zz-probe__action');
 });
 
-test('html() carries markup through unaltered', () => {
+test('html() matches the captured html shape', () => {
+  const ref = findByClass(REF, 'zz-probe__svg');
+  assert.ok(ref, 'fixture has no .zz-probe__svg html widget; recapture it');
   const svg = '<svg width="10" height="10"></svg>';
-  assert.equal(html({ markup: svg }).settings.html, svg);
+  const made = html({ markup: svg, cssClass: 'zz-probe__svg' });
+  assert.equal(made.widgetType, ref.widgetType);
+  assert.equal(made.settings.html, svg);
+  assert.equal(made.settings._css_classes, 'zz-probe__svg');
 });
 
 test('loopGrid() matches the captured loop-grid shape', () => {
@@ -364,10 +371,16 @@ test('the child theme declares UiCore as its parent', () => {
 test('no stylesheet is duplicated into the child theme by hand', () => {
   /* tokens/, components/, css/ and js/ are SYNCED from the repository root at
      deploy time, never copied into wp/. A second copy drifts from the first and
-     the drift is invisible until a page renders wrong. */
+     the drift is invisible until a page renders wrong. Asserting sync.mjs names
+     the five directories is not enough on its own: it would pass unchanged if
+     someone hand-copied one of them into wp/empowerms-child/ anyway, and with
+     the first rsync now excluding those directories (see wp/sync.mjs), a
+     hand-copied directory would sit there uploaded as-is instead of being
+     overwritten by the sync loop. */
   const syncSrc = fs.readFileSync('wp/sync.mjs', 'utf8');
   for (const dir of ['tokens', 'components', 'css', 'js', 'assets']) {
     assert.ok(syncSrc.includes(`'${dir}'`), `wp/sync.mjs does not sync ${dir}/`);
+    assert.ok(!fs.existsSync(`wp/empowerms-child/${dir}`), `wp/empowerms-child/${dir} exists as a hand-made duplicate`);
   }
 });
 
@@ -711,6 +724,37 @@ test('podcast-a/03-library.mjs points the loop grid at a real integer post id an
   assert.equal(podcastCategoryId, 133, 'PODCAST_CATEGORY_ID does not match the Podcast category id from the WP REST API survey');
 });
 
+/* All three mapping modules explain at length, in the same vocabulary, why
+   every container must set content_width: 'full': a boxed container inserts
+   Elementor's own div.e-con-inner wrapper, which breaks .pca-hero__grid,
+   .pca-hero__frames and .pca-catalogue by putting a wrapper element between
+   the container and its real children, so the CSS that targets direct
+   children stops matching. It is the single most-repeated, most load-bearing
+   structural decision in the build, and until now nothing checked it: a
+   dropped content_width setting on any one container would collapse that
+   container's grid and be caught only by a human looking at a screenshot.
+   Walking every mapping module's tree and asserting the setting on every
+   container makes the decision self-enforcing, and generalises unchanged to
+   the 51 compositions Phase 2 writes. */
+test('every container in every podcast-a mapping module sets content_width: \'full\'', () => {
+  function* everyContainer(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'container') yield n;
+      if (n.elements?.length) yield* everyContainer(n.elements);
+    }
+  }
+  const trees = [podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem()];
+  let checked = 0;
+  for (const tree of trees) {
+    for (const c of everyContainer(Array.isArray(tree) ? tree : [tree])) {
+      assert.equal(c.settings.content_width, 'full',
+        `boxed container (class: ${c.settings.css_classes ?? '(none)'}) will insert div.e-con-inner and break its children's CSS`);
+      checked += 1;
+    }
+  }
+  assert.ok(checked > 0, 'no containers were found to check; the walk itself is broken');
+});
+
 /* --- elementor/pages/podcast-a/page.mjs ---------------------------------- */
 
 /* deployPage() overwrites _elementor_data wholesale, so the only thing that
@@ -832,8 +876,8 @@ test('deployPage sets edit mode, template type and version, then flushes the Ele
    deployPage()'s own script (see wpe.mjs). That path does not exist on this
    machine, so it is neutralised to a no-op `cd .` before handing the rest to
    bash: this fake is testing deployPage()'s own control flow, not wpe()'s
-   cd-prefix behaviour, which is out of scope here and already exercised
-   elsewhere. */
+   cd-prefix behaviour, which is out of scope here and is not exercised by
+   any test on this branch. */
 function withExecutingSsh(prefix, failOnSubstring) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   const sshPath = path.join(tmpDir, 'ssh');
@@ -928,12 +972,22 @@ test('deployLoopItem writes _elementor_template_type loop-item, not wp-page', as
 
 /* --- fidelity-browser.mjs / the podcast guest filter --------------------- */
 
+/* The four tests below drive a real browser against the deployed page, so
+   they need a live URL that nothing in this repository can supply on its
+   own. Without this guard, a missing SPIKE_URL surfaces as Playwright's own
+   "page.goto: url: expected string, got undefined", which reads like a
+   broken test rather than a missing environment variable. Failing loudly is
+   still the right call (README.md says the same); this just names the thing
+   that is missing instead of leaving that to Playwright's type error. */
+const requireSpikeUrl = () => process.env.SPIKE_URL
+  ?? assert.fail('SPIKE_URL is not set. These four tests drive a real browser against the deployed page: SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
+
 /* The check that matters most and that nothing static can make. A Loop Grid
    whose item template does not emit data-guest produces a page where every
    control still moves, no card ever hides, and nothing reports an error. */
 test('the podcast guest filter actually filters', { concurrency: 1 }, async () => {
   const { checkFilter } = await import('./fidelity-browser.mjs');
-  const r = await checkFilter(process.env.SPIKE_URL, {
+  const r = await checkFilter(requireSpikeUrl(), {
     toggleSelector: '#pa-g-lawmaker',
     itemSelector: '.pca-ep',
   });
@@ -964,7 +1018,7 @@ test('the podcast guest filter actually filters', { concurrency: 1 }, async () =
    including a JS-only marker against 79 real content elements. */
 test('podcast-a is visible without JavaScript, matching a JS-enabled load', { concurrency: 1 }, async () => {
   const { checkVisibleWithoutJs, checkVisibleWithJs } = await import('./fidelity-browser.mjs');
-  const url = process.env.SPIKE_URL;
+  const url = requireSpikeUrl();
   const selector = 'body [data-reveal]';
   const withJs = await checkVisibleWithJs(url, selector);
   const withoutJs = await checkVisibleWithoutJs(url, selector);
@@ -994,9 +1048,10 @@ test('the converted page matches the static build on four computed-style probes'
     { name: 'container', selector: '.em-container', property: 'max-width' },
     { name: 'action', selector: '.em-btn--primary', property: 'background-color' },
   ];
+  const spikeUrl = requireSpikeUrl();
   const server = await serveRepoRoot();
   try {
-    const converted = await computedStyles(process.env.SPIKE_URL, PROBES);
+    const converted = await computedStyles(spikeUrl, PROBES);
     const staticBuild = await computedStyles(`${server.url}/dist/podcast-a.html`, PROBES);
     for (const { name, selector } of PROBES) {
       assert.ok(converted[name], `converted page: ${name} probe (${selector}) matched nothing`);
@@ -1019,13 +1074,14 @@ test('the converted page matches the static build on four computed-style probes'
    03-library.mjs), this assertion starts failing for a true and useful
    reason (the Loop Grid needs pagination), not a false one. */
 test('the podcast library loop grid is scoped to category 133, not the whole site', { concurrency: 1 }, async () => {
+  const spikeUrl = requireSpikeUrl();
   const expected = parseInt((await wpe('wp post list --post_type=post --cat=133 --post_status=publish --format=count')).trim(), 10);
   assert.ok(Number.isInteger(expected) && expected > 0, 'could not read a real post count for category 133 from the install');
   const { chromium } = await import('playwright');
   const browser = await chromium.launch();
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(process.env.SPIKE_URL, { waitUntil: 'load' });
+    await page.goto(spikeUrl, { waitUntil: 'load' });
     const rendered = await page.$$eval('.pca-ep', els => els.length);
     assert.equal(rendered, expected,
       `Loop Grid rendered ${rendered} episodes; category 133 (Podcast) has ${expected} published posts right now, so the query is not correctly scoped to it`);

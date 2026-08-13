@@ -14,7 +14,16 @@ const FROM_ROOT = ['tokens', 'components', 'css', 'js', 'assets'];
 
 export async function syncTheme() {
   const ssh = `ssh -i ${KEY} -o BatchMode=yes`;
-  await run('rsync', ['-az', '--delete', '-e', ssh, 'wp/empowerms-child/', `${HOST}:${DEST}/`]);
+  /* wp/empowerms-child/ holds only the four PHP/CSS files that live in this
+     repository; tokens/, components/, css/, js/ and assets/ are synced
+     separately below, from the root, and never exist under wp/empowerms-child/
+     on disk here. Without these excludes, this rsync's own --delete removes
+     all five of those directories from the live theme (they aren't in the
+     source it's syncing from), and the loop below only re-uploads them one at
+     a time afterwards: a failure between the two steps leaves the live site
+     with no CSS or JS and nothing to report it. */
+  const excludes = FROM_ROOT.flatMap((dir) => ['--exclude', `/${dir}/`]);
+  await run('rsync', ['-az', '--delete', ...excludes, '-e', ssh, 'wp/empowerms-child/', `${HOST}:${DEST}/`]);
   for (const dir of FROM_ROOT) {
     await run('rsync', ['-az', '--delete', '-e', ssh, `${dir}/`, `${HOST}:${DEST}/${dir}/`]);
   }

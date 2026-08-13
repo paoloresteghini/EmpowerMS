@@ -72,8 +72,8 @@ export const link = ({ label, href, cssClass = '', ...rest } = {}) =>
 /* The escape hatch for the three named exceptions in the spec, and for
    nothing else. Markup goes through unaltered. widgetType 'html' and the
    settings key html are read from the captured html node. */
-export const html = ({ markup, cssClass = '' } = {}) =>
-  el('widget', { html: markup, [WIDGET_CSS_CLASS_KEY]: cssClass }, { widgetType: 'html' });
+export const html = ({ markup, cssClass = '', ...rest } = {}) =>
+  el('widget', { html: markup, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'html' });
 
 /* widgetType 'loop-grid' and the settings key template_id (the elementor_library
    post id of the Loop Item template) are read from the captured loop-grid node

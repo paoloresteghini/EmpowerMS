@@ -206,7 +206,14 @@ async function settleReveal(page) {
   });
   await page.waitForFunction(() =>
     [...document.querySelectorAll('[data-reveal]')].every(el => el.classList.contains('is-revealed')),
-  { timeout: 10000 }).catch(() => {});
+  { timeout: 10000 }).catch(() => {
+    /* Finding 5.9's grey-ghost screenshots happened because this timeout was
+       swallowed silently: capture proceeded anyway and produced exactly the
+       unusable screenshot this function exists to prevent, with no signal
+       anywhere. Warn rather than throw, since a partial reveal is still worth
+       looking at, but never let it pass without saying so. */
+    console.warn(`settleReveal: not every [data-reveal] element reached is-revealed within 10000ms on ${page.url()}`);
+  });
   const maxTransitionMs = await page.evaluate(() => {
     const toMs = v => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
     let max = 0;

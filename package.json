@@ -1,8 +1,7 @@
 {
   "name": "empowerms",
   "version": "1.0.0",
-  "description": "Static HTML + CSS builds for the Empower Mississippi refresh. The homepage is **settled** — `dist/final.html` is the agreed build, the About Us, Team and Solutions sets were decided on 2026-08-05, and on 2026-08-07 Empower chose one template for all three solution detail pages, The Studio for The Empower Podcast and The Dome for Capitol Chat. Four sets are open: **EPIC** (the research arm, three readings), the two Join Us destinations — **Email Sign Up** and the **Ambassador Landing Page** — and **Donate**, two readings each. The alternatives every decision was made from still build, as reference.",
-  "main": "index.js",
+  "description": "Static HTML and CSS builds for the Empower Mississippi refresh, plus the Elementor conversion tooling that reads them.",
   "directories": {
     "doc": "docs"
   },

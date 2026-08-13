@@ -339,22 +339,23 @@ pages instead of one find-and-replace in `src/`.
 
 ## Sequence
 
-1. **Access and survey.** Connect over SSH. Record Elementor version and licence
-   tier, the theme and whether a child theme exists, the active plugin list,
-   whether the current site uses Elementor at all, and the taxonomy state.
+0. ~~**Access and survey.**~~ **Done 2026-08-12**, recorded in the survey section
+   above. It moved three items out of "risk" and raised one new decision.
+1. **Install Elementor Pro**, and settle the header and footer scope. Both gate
+   everything after the spike.
 2. **Spike `podcast-a`.** Its `03-library` is a Loop Grid, nine inline SVGs and a
    `<form>` in one section, and it carries the item contract. Nothing left in
    scope is harder. Answer the class-placement question and the Custom Attributes
    question. Throwaway if it fails.
-3. **Foundations.** Child theme, tokens, enqueue order, Elementor Site Settings,
-   header and footer as Theme Builder parts.
+3. **Foundations.** UiCore child theme, tokens, enqueue order, Elementor Site
+   Settings, header and footer per the decision at step 1.
 4. **The fifteen**, hardest first so surprises land early: `capitol-a`, then
    `epic-a` and `mail-a` for the scroll-driven work, then the three form pages,
    then the solution template and its three fillings, then the plain pages.
 5. **Fidelity harness** running from page one, not bolted on at the end.
 6. **Go-live gate** as a cutover checklist.
 
-Steps 1 and 2 are blocked on WP Engine access. Nothing else is.
+The spike needs Elementor Pro installed. Nothing else is blocked.
 
 ## Risks
 

@@ -467,6 +467,29 @@ test('every stylesheet the theme can enqueue can also enqueue its paired script'
   }
 });
 
+test('the chrome stylesheet and its script are enqueued unconditionally, not per page', () => {
+  /* The header is a site-wide theme part now. css/header-2.css left in the
+     per-slug map would style exactly one page's header and leave every
+     other page with five permanently open panels across its hero, which is
+     this build's own documented failure mode for that pair. */
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const pageStyles = fn.slice(fn.indexOf('function empower_page_styles'), fn.indexOf('add_action', fn.indexOf('function empower_page_styles')));
+  const pageScripts = fn.slice(fn.indexOf('function empower_page_scripts'), fn.indexOf('add_action', fn.indexOf('function empower_page_scripts')));
+  assert.doesNotMatch(pageStyles, /'header-2'/, 'header-2.css is still keyed per page');
+  assert.doesNotMatch(pageScripts, /'dropdown'/, 'dropdown.js is still keyed per page');
+  assert.match(fn, /wp_enqueue_style\(\s*'empower-header-2'/, 'header-2.css is not enqueued unconditionally');
+  assert.match(fn, /wp_enqueue_script\(\s*'empower-dropdown'/, 'dropdown.js is not enqueued unconditionally');
+});
+
+test('the chrome stylesheet loads after site.css, not before it', () => {
+  /* css/header-2.css overrides shared chrome rules in css/site.css. The
+     README enqueue table orders them that way and the cascade depends on
+     it. */
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.match(fn, /wp_enqueue_style\(\s*'empower-header-2',[^;]*array\(\s*'empower-site'\s*\)/s,
+    'header-2.css does not declare empower-site as its dependency');
+});
+
 test('the child theme declares UiCore as its parent', () => {
   const style = fs.readFileSync('wp/empowerms-child/style.css', 'utf8');
   assert.match(style, /Template:\s*uicore-pro/, 'child theme does not declare uicore-pro as parent');

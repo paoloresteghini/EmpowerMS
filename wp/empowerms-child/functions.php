@@ -42,7 +42,7 @@ const EMPOWER_STYLES_PRIORITY = 60;
  */
 function empower_page_styles() {
 	return array(
-		'podcast-a' => array( 'header-2', 'motion', 'podcast-a' ),
+		'podcast-a' => array( 'motion', 'podcast-a' ),
 	);
 }
 
@@ -75,8 +75,13 @@ add_action( 'wp_enqueue_scripts', function () {
 	}
 	wp_enqueue_style( 'empower-site', $dir . '/css/site.css', $site_deps, $ver );
 
+	/* The header is a site-wide theme part now. css/header-2.css and
+	   js/dropdown.js ship together or the panels never close; both move from
+	   the per-slug map to this unconditional block. */
+	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), $ver );
+
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
-	$prev = 'empower-site';
+	$prev = 'empower-header-2';
 	foreach ( empower_page_styles()[ $slug ] ?? array() as $sheet ) {
 		$handle = 'empower-page-' . $sheet;
 		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), $ver );
@@ -105,9 +110,7 @@ const EMPOWER_SCRIPTS_PRIORITY = 20;
  * it); the mechanism below already covers it the moment one does.
  */
 function empower_page_scripts() {
-	return array(
-		'podcast-a' => array( 'dropdown' ),
-	);
+	return array();
 }
 
 /**
@@ -121,8 +124,12 @@ add_action( 'wp_enqueue_scripts', function () {
 	$ver = wp_get_theme()->get( 'Version' );
 	wp_enqueue_script( 'empower-nav', $dir . '/js/nav.js', array(), $ver, array( 'strategy' => 'defer' ) );
 	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), $ver, array( 'strategy' => 'defer' ) );
+	/* The header is a site-wide theme part now. css/header-2.css and
+	   js/dropdown.js ship together or the panels never close. */
+	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), $ver, array( 'strategy' => 'defer' ) );
 	wp_script_add_data( 'empower-nav', 'type', 'module' );
 	wp_script_add_data( 'empower-reveal', 'type', 'module' );
+	wp_script_add_data( 'empower-dropdown', 'type', 'module' );
 
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {

@@ -477,8 +477,10 @@ test('the chrome stylesheet and its script are enqueued unconditionally, not per
   const pageScripts = fn.slice(fn.indexOf('function empower_page_scripts'), fn.indexOf('add_action', fn.indexOf('function empower_page_scripts')));
   assert.doesNotMatch(pageStyles, /'header-2'/, 'header-2.css is still keyed per page');
   assert.doesNotMatch(pageScripts, /'dropdown'/, 'dropdown.js is still keyed per page');
-  assert.match(fn, /wp_enqueue_style\(\s*'empower-header-2'/, 'header-2.css is not enqueued unconditionally');
   assert.match(fn, /wp_enqueue_script\(\s*'empower-dropdown'/, 'dropdown.js is not enqueued unconditionally');
+  assert.match(fn, /wp_script_add_data\(\s*'empower-dropdown',\s*'type',\s*'module'\s*\)/,
+    'empower-dropdown does not declare itself as a module');
+  assert.match(fn, /wp_enqueue_style\(\s*'empower-header-2'/, 'header-2.css is not enqueued unconditionally');
 });
 
 test('the chrome stylesheet loads after site.css, not before it', () => {

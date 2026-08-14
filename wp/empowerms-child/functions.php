@@ -27,18 +27,17 @@ require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
 const EMPOWER_STYLES_PRIORITY = 60;
 
 /**
- * Page stylesheets beyond the shared cascade, keyed by page slug.
+ * Page stylesheets beyond the shared cascade and global header, keyed by page slug.
  *
  * Taken from the "Per page" table in README.md. Confirm each against the page's
  * own <head> in dist/ before trusting it: the older rows in that table were
  * written for dist/current.html and do not describe the pages that ship.
  *
- * podcast-a checked against dist/podcast-a.html directly: its head loads
- * css/header-2.css before css/motion.css and css/podcast-a.css. The README
- * table's own note explains why header-2.css cannot be dropped: "A page that
- * includes header-2.html without it renders five permanently open panels
- * across its hero." header-2.css is included here for that reason, even
- * though it is not yet enqueued as the global header block.
+ * css/header-2.css is no longer keyed here; the header is a site-wide theme
+ * part and header-2.css loads unconditionally after empower-site (see below).
+ * css/motion.css and css/podcast-a.css remain per-page because only podcast-a
+ * uses them today; the mechanism stays so future pages can opt in without
+ * changing the enqueue logic.
  */
 function empower_page_styles() {
 	return array(
@@ -101,13 +100,13 @@ const EMPOWER_SCRIPTS_PRIORITY = 20;
 
 /**
  * Page scripts beyond the shared js/nav.js and js/reveal.js pair, keyed by
- * page slug, mirroring empower_page_styles(). The static build pairs
- * css/header-2.css with js/dropdown.js: a page that loads header-2.css
- * without it renders five permanently open panels across its hero, the same
- * silent-failure shape as the motion pair below. css/megamenu.css pairs the
- * same way with js/megamenu.js, but is not wired up here because no page
- * currently enqueues megamenu.css (empower_page_styles() has no entry for
- * it); the mechanism below already covers it the moment one does.
+ * page slug. Currently unused: js/dropdown.js moved to the unconditional block
+ * when the header became a site-wide theme part, since css/header-2.css and
+ * js/dropdown.js ship together or the panels never close.
+ *
+ * The mechanism remains because css/megamenu.css pairs with js/megamenu.js the
+ * same way, and this function can route it per-page once empower_page_styles()
+ * has an entry for megamenu.css.
  */
 function empower_page_scripts() {
 	return array();

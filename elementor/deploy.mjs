@@ -100,3 +100,52 @@ export async function deployPage(postId, sections) {
 export async function deployLoopItem(postId, elements) {
   return deployElements(postId, elements, 'loop-item');
 }
+
+/* The two Theme Builder document types, read from Elementor Pro's own
+   documents on the install: modules/theme-builder/documents/header.php
+   returns 'header' from get_type(), footer.php returns 'footer'. Any other
+   value here would be a real template type belonging to a different deploy
+   path (wp-page, loop-item), written onto a library post that Elementor
+   then never renders in a location, with nothing reporting it. */
+const THEME_PART_LOCATIONS = ['header', 'footer'];
+
+export async function deployThemePart(postId, elements, location) {
+  if (!THEME_PART_LOCATIONS.includes(location)) {
+    throw new Error(
+      `deployThemePart: location must be one of ${THEME_PART_LOCATIONS.join(', ')}, got ${JSON.stringify(location)}`
+    );
+  }
+  return deployElements(postId, elements, location);
+}
+
+/* Elementor Pro's Conditions_Manager reads _elementor_conditions off the
+   document (conditions-manager.php:53) and expects an array of condition
+   strings, 'include/general' being the whole site. Written with
+   --format=json so WP-CLI stores an array rather than the literal text of
+   one: a part whose conditions are a string is assigned to nothing, renders
+   nowhere, and reports no error.
+
+   Separate from deployThemePart() deliberately. A part with data and no
+   condition renders nowhere; a part with a condition and no data renders an
+   empty location. Two failure modes, two writes, asserted independently. */
+export async function setConditions(postId, conditions) {
+  if (!Number.isInteger(postId)) {
+    throw new Error(`setConditions: postId must be an integer, got ${JSON.stringify(postId)}`);
+  }
+  if (!Array.isArray(conditions) || conditions.length === 0) {
+    throw new Error('setConditions: pass at least one condition, e.g. ["include/general"]');
+  }
+  const json = JSON.stringify(conditions);
+  const suffix = uniqueSuffix();
+  const heredoc = `ELEMENTOR_CONDITIONS_${suffix}`;
+  const tmpFile = `/tmp/elementor-conditions-${postId}-${suffix}.json`;
+  const script = [
+    'set -e',
+    `cat > ${tmpFile} <<'${heredoc}'`,
+    json,
+    heredoc,
+    `wp post meta update ${postId} _elementor_conditions --format=json < ${tmpFile}`,
+    `rm -f ${tmpFile}`,
+  ].join('\n');
+  return wpe(script);
+}

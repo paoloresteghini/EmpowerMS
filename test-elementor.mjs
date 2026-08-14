@@ -16,7 +16,7 @@ import {
   LOOP_ITEM_POST_ID as podcastLoopItemPostId, PODCAST_CATEGORY_ID as podcastCategoryId,
 } from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
-import { deployPage, deployLoopItem } from './elementor/deploy.mjs';
+import { deployPage, deployLoopItem, deployThemePart, setConditions } from './elementor/deploy.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
    directly (served locally, not fetched from the live install), so it needs
@@ -1069,6 +1069,85 @@ test('deployLoopItem writes _elementor_template_type loop-item, not wp-page', as
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+/* --- theme parts -------------------------------------------------------- */
+
+test('deployThemePart writes the header template type, not wp-page', async () => {
+  const { tmpDir, capturePath } = withCapturingSsh('deploy-header-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await deployThemePart(4242, [container({ cssClass: 'em-header' })], 'header');
+    const script = fs.readFileSync(capturePath, 'utf8');
+    assert.match(script, /wp post meta update 4242 _elementor_template_type header/);
+    assert.doesNotMatch(script, /wp post meta update 4242 _elementor_template_type wp-page/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('deployThemePart writes the footer template type', async () => {
+  const { tmpDir, capturePath } = withCapturingSsh('deploy-footer-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await deployThemePart(4243, [container({ cssClass: 'em-footer' })], 'footer');
+    const script = fs.readFileSync(capturePath, 'utf8');
+    assert.match(script, /wp post meta update 4243 _elementor_template_type footer/);
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('deployThemePart refuses a location that is not header or footer', async () => {
+  /* 'wp-page' and 'loop-item' are real template types with their own deploy
+     functions. Accepting one here would write a page's type onto a library
+     post that Elementor then never renders in a location, with no error. */
+  await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
+  await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
+});
+
+test('setConditions writes the conditions meta as a JSON array', async () => {
+  /* _elementor_conditions is read by Elementor Pro's Conditions_Manager
+     (wp-content/plugins/elementor-pro/modules/theme-builder/classes/
+     conditions-manager.php:53, get_meta). A bare string is not what it
+     expects and produces a part assigned to nothing, silently. */
+  const { tmpDir, capturePath } = withCapturingSsh('conditions-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    const conditions = ['include/general'];
+    await setConditions(4242, conditions);
+    const script = fs.readFileSync(capturePath, 'utf8');
+    const json = JSON.stringify(conditions);
+
+    /* The condition strings are caller-supplied and must never reach the
+       remote shell unquoted, so they are written through a heredoc and temp
+       file, then passed via STDIN. A script that passes the JSON inline as
+       an argument to `wp post meta update` would still technically contain
+       the JSON, so the real assertion is structural: the JSON appears on its
+       own, between a heredoc opener and closer, and the `wp post meta update`
+       call carries no inline value argument (WP-CLI reads it from STDIN when
+       the value argument is omitted). */
+    assert.ok(script.includes(json), 'captured script does not contain the JSON conditions');
+    assert.match(script, /cat\s*>\s*\S+\s*<<['"]?\w+['"]?/, 'conditions were not written via a heredoc to a temp file');
+    assert.match(script, /wp post meta update 4242 _elementor_conditions\s*--format=json\s*<\s*\S+/,
+      'wp post meta update for _elementor_conditions does not read from the temp file (no inline value argument)');
+    assert.doesNotMatch(script, new RegExp(`wp post meta update 4242 _elementor_conditions ${json.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      'the JSON conditions were passed inline as a shell argument');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('setConditions refuses an empty condition list', async () => {
+  /* An empty array assigns the part to no location at all, which renders
+     nothing and reports success. */
+  await assert.rejects(() => setConditions(4242, []), /at least one condition/);
 });
 
 /* --- fidelity-browser.mjs / the podcast guest filter --------------------- */

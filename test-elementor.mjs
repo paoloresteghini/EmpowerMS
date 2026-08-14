@@ -1157,12 +1157,91 @@ test('setConditions writes the conditions meta as a JSON array, then regenerates
        heredoc'd temp file, not `wp eval` with the PHP inline: inline PHP as
        a CLI argument goes through two levels of shell quoting, the same
        problem the JSON heredoc above already exists to avoid. */
-    assert.match(script, /wp eval-file\s+\S+/, 'conditions cache was not regenerated through wp eval-file');
-    assert.match(script, /Module::instance\(\)->get_conditions_manager\(\)/,
-      'the PHP does not reach the conditions manager through the Theme Builder module instance');
+    const evalFileMatch = script.match(/wp eval-file\s+(\S+)/);
+    assert.ok(evalFileMatch, 'conditions cache was not regenerated through wp eval-file');
+    /* wp eval-file must target the PHP temp file, not the JSON one: they are
+       two different heredocs writing two different temp files, and a script
+       that accidentally pointed wp eval-file at the .json file would still
+       satisfy a bare /wp eval-file\s+\S+/ match. */
+    assert.match(evalFileMatch[1], /\.php$/, 'wp eval-file does not target a .php file');
+    /* The fully-qualified class name, pinned literally rather than matched
+       loosely: a namespace typo here is a PHP parse error at eval-file time,
+       which is a real, silent failure mode a looser
+       /Module::instance\(\)/-style match would not catch. */
+    assert.ok(script.includes('\\ElementorPro\\Modules\\ThemeBuilder\\Module::instance()->get_conditions_manager()'),
+      'the PHP does not reach the conditions manager through the fully-qualified Theme Builder module instance');
     assert.match(script, /get_cache\(\)->regenerate\(\)/,
       'the PHP does not call Conditions_Cache::regenerate()');
     assert.ok(!/wp eval ['"]/.test(script), 'the PHP was passed inline to `wp eval` instead of via `wp eval-file`');
+
+    /* Ordering matters, not just presence. A setConditions() that
+       regenerated the cache BEFORE writing the postmeta would satisfy every
+       assertion above while reproducing the exact stale-cache bug this
+       function exists to prevent: the regeneration would snapshot the
+       pre-write state, and the freshly-written postmeta would still be
+       invisible to Elementor at render time. So the postmeta write's index
+       in the script must come before wp eval-file's. */
+    const metaWriteIdx = script.indexOf('wp post meta update 4242 _elementor_conditions');
+    const evalFileIdx = script.indexOf('wp eval-file');
+    assert.ok(metaWriteIdx !== -1 && evalFileIdx !== -1 && metaWriteIdx < evalFileIdx,
+      'the conditions cache is regenerated before (or without) the postmeta write; regenerating from the ' +
+      'pre-write state reproduces the exact stale-cache bug this call exists to prevent');
+
+    /* The verification half: regenerate() returning without throwing is not
+       evidence the post ended up registered anywhere (Important 1 from
+       Task 3's fix-round review). The PHP must read the option back and
+       check this specific post id, or a correct-looking, inert write would
+       resolve silently exactly as the original bug did. */
+    assert.ok(script.includes('$post_id = 4242;'), 'the PHP does not interpolate the caller\'s postId');
+    assert.match(script, /elementor_pro_theme_builder_conditions/,
+      'the PHP does not read the conditions cache option back to verify the post was actually registered');
+    assert.match(script, /exit\(\s*1\s*\)/,
+      'the PHP has no failure exit when the post is not found under any location after regenerating');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+/* withCapturingSsh() above only inspects the script setConditions() sends,
+   never runs it, so (per the same reasoning deployPage's equivalent pair of
+   tests at :1017 and :1038 already documents) it cannot see whether `set -e`
+   actually stops the deploy when `wp eval-file` fails: the script's last
+   line is `rm -f ${phpFile}`, which succeeds almost unconditionally, so a
+   `setConditions()` that dropped `set -e` (or that never checked
+   eval-file's exit code some other way) would still resolve. Mirrors
+   deployPage's real-execution pair exactly, using withExecutingSsh() rather
+   than a second capture-only fake. */
+test('setConditions rejects when the conditions cache regeneration fails', async () => {
+  const { tmpDir } = withExecutingSsh('conditions-exec-fail-', 'eval-file');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await assert.rejects(
+      () => setConditions(4242, ['include/general']),
+      err => {
+        /* Not just "it rejected": the failure must be the simulated
+           eval-file failure surfacing, not some unrelated error. */
+        assert.match(String(err.stderr || err.message), /simulated failure on:.*eval-file/);
+        return true;
+      },
+    );
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('setConditions still resolves when every wp-cli step genuinely succeeds', async () => {
+  /* Companion to the failure test above: proves set -e did not introduce a
+     false failure on the happy path. */
+  const { tmpDir } = withExecutingSsh('conditions-exec-ok-', '__never_matches__');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    const out = await setConditions(4242, ['include/general']);
+    assert.match(out, /Success.*_elementor_conditions/);
+    assert.match(out, /Success.*eval-file/);
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });

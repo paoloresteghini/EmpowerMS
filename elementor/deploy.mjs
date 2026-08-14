@@ -156,6 +156,22 @@ export async function deployThemePart(postId, elements, location) {
    argument handling), which is exactly the class of problem the heredoc
    pattern above (and deployElements() at :13-30) already exists to avoid.
 
+   Calling regenerate() and stopping is not enough, and this was caught by
+   review before it could repeat Task 3's own mistake one level down.
+   regenerate() returning without throwing is not evidence THIS post ended
+   up registered to a location: if the post is not published, or its
+   _elementor_template_type is wrong, or the condition string is not one
+   Elementor recognises, regenerate() completes happily and writes a cache
+   that still does not list the document. That is a write that is correct,
+   verifiable and inert, the exact failure mode this whole function exists
+   to close. So the PHP reads elementor_pro_theme_builder_conditions back
+   after regenerating and checks $postId actually appears under some
+   location; if it does not, it writes to STDERR and calls exit(1), which
+   ends the wp eval-file process (and, since PHP's exit() terminates the
+   process wp-cli itself is running in, wp-cli exits non-zero with it), so
+   set -e turns a silent no-op into a rejected promise instead of a resolved
+   one.
+
    Separate from deployThemePart() deliberately. A part with data and no
    condition renders nowhere; a part with a condition and no data renders an
    empty location. Two failure modes, two writes, asserted independently. */
@@ -174,8 +190,21 @@ export async function setConditions(postId, conditions) {
   const phpFile = `/tmp/elementor-conditions-cache-regen-${postId}-${suffix}.php`;
   const regenPhp = [
     '<?php',
+    `$post_id = ${postId};`,
     '$cm = \\ElementorPro\\Modules\\ThemeBuilder\\Module::instance()->get_conditions_manager();',
     '$cm->get_cache()->regenerate();',
+    "$cache = get_option( 'elementor_pro_theme_builder_conditions', array() );",
+    '$found = false;',
+    'foreach ( (array) $cache as $location => $documents ) {',
+    '\tif ( array_key_exists( (string) $post_id, (array) $documents ) ) {',
+    '\t\t$found = true;',
+    '\t\tbreak;',
+    '\t}',
+    '}',
+    'if ( ! $found ) {',
+    "\tfwrite( STDERR, \"setConditions: post $post_id was not found under any location in elementor_pro_theme_builder_conditions after regenerate(); the conditions cache regeneration ran but left this post unassigned\\n\" );",
+    '\texit( 1 );',
+    '}',
   ].join('\n');
   const script = [
     'set -e',

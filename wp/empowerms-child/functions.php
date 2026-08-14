@@ -126,14 +126,62 @@ add_action( 'wp_enqueue_scripts', function () {
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close. */
 	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), $ver, array( 'strategy' => 'defer' ) );
-	wp_script_add_data( 'empower-nav', 'type', 'module' );
-	wp_script_add_data( 'empower-reveal', 'type', 'module' );
-	wp_script_add_data( 'empower-dropdown', 'type', 'module' );
 
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {
 		$handle = 'empower-script-' . $script;
 		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), $ver, array( 'strategy' => 'defer' ) );
-		wp_script_add_data( $handle, 'type', 'module' );
 	}
 }, EMPOWER_SCRIPTS_PRIORITY );
+
+/**
+ * js/nav.js, js/reveal.js and js/dropdown.js are each written as an ES
+ * module: every one of them relies on module scope to keep its top-level
+ * `const` declarations private to itself. Loaded as classic scripts they
+ * share one global scope instead, and when a second file declares an
+ * identifier the first already claimed, the second throws a SyntaxError and
+ * never runs. js/reveal.js and js/dropdown.js both declare `const root =
+ * document.documentElement;` at their top level; loaded in enqueue order
+ * (nav, reveal, dropdown) reveal.js claims `root` and runs, dropdown.js's
+ * own declaration then collides and it never executes. Its first line past
+ * that point, `root.setAttribute('data-dropdown', 'on')`, is the gate
+ * css/header-2.css keys the closed-by-default panel styles off, so the
+ * failure is exactly the one this file's own comments warn about: the five
+ * desktop dropdown panels ship open in the markup by design and stay open.
+ *
+ * `wp_script_add_data( $handle, 'type', 'module' )` looks like the fix and
+ * is not one: WP_Scripts::do_item() (wp-includes/class-wp-scripts.php)
+ * builds each script tag's attributes from 'src', 'id', the loading
+ * strategy and fetchpriority only. It never reads a 'type' data key, on
+ * this WordPress version (7.0.4, confirmed by reading do_item() directly on
+ * the install) or in any version that predates wp_enqueue_script_module().
+ * Those calls, removed from the block above, have never emitted
+ * type="module"; empower-nav and empower-reveal have been classic scripts
+ * since Phase 1, and the collision was latent until js/dropdown.js became a
+ * third file competing for `root`.
+ *
+ * script_loader_tag is the filter WordPress actually threads through
+ * WP_Scripts::do_item() before printing, so it is what can put
+ * type="module" on the emitted tag. wp_enqueue_script_module() (WP 6.5+,
+ * available on this install) was the other candidate, but it is a separate
+ * registry with its own dependency handling; nothing here needs that, and
+ * this filter gets the same result without moving these three handles out
+ * of the machinery the rest of this file already uses. Editing js/ to
+ * remove the collision by renaming the declarations is not available:
+ * js/ is part of the protected static build.
+ *
+ * type="module" makes a script deferred by default (an external module
+ * script without `async` runs after the document has parsed), so the
+ * `'strategy' => 'defer'` argument on each enqueue call above becomes
+ * redundant, not wrong: WordPress still uses it to place the tag and still
+ * emits the `defer` attribute alongside `type="module"`, which browsers
+ * accept on the same tag without conflict. Left as is rather than removed,
+ * so each enqueue call keeps documenting its own ordering intent.
+ */
+add_filter( 'script_loader_tag', function ( $tag, $handle, $src ) {
+	static $module_handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown' );
+	if ( ! in_array( $handle, $module_handles, true ) ) {
+		return $tag;
+	}
+	return preg_replace( '/<script /', '<script type="module" ', $tag, 1 );
+}, 10, 3 );

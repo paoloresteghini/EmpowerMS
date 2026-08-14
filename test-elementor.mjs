@@ -478,9 +478,37 @@ test('the chrome stylesheet and its script are enqueued unconditionally, not per
   assert.doesNotMatch(pageStyles, /'header-2'/, 'header-2.css is still keyed per page');
   assert.doesNotMatch(pageScripts, /'dropdown'/, 'dropdown.js is still keyed per page');
   assert.match(fn, /wp_enqueue_script\(\s*'empower-dropdown'/, 'dropdown.js is not enqueued unconditionally');
-  assert.match(fn, /wp_script_add_data\(\s*'empower-dropdown',\s*'type',\s*'module'\s*\)/,
-    'empower-dropdown does not declare itself as a module');
   assert.match(fn, /wp_enqueue_style\(\s*'empower-header-2'/, 'header-2.css is not enqueued unconditionally');
+});
+
+/* wp_script_add_data( $handle, 'type', 'module' ) reads as the fix for the
+   classic-script collision below and is not one: WP_Scripts::do_item()
+   (wp-includes/class-wp-scripts.php on the install, WordPress 7.0.4) builds
+   each script tag's attributes from 'src', 'id', the loading strategy and
+   fetchpriority only, and never reads a 'type' data key. A source-text
+   assertion that a wp_script_add_data('type', 'module') call exists (fix
+   round 1's version of this test) passes on exactly that broken code, which
+   is how the regression this replaces shipped in the first place: js/nav.js,
+   js/reveal.js and js/dropdown.js each declare top-level `const` bindings
+   meant to stay private to their own module scope, loaded as classic
+   scripts they share the global scope instead, js/reveal.js and
+   js/dropdown.js both declare `const root`, and the second to run throws a
+   SyntaxError and never executes. script_loader_tag is the filter that
+   actually controls the emitted tag, so that is what this asserts on. */
+test('the three theme scripts get type="module" from a script_loader_tag filter, not an inert data key', () => {
+  /* js/nav.js, js/reveal.js and js/dropdown.js loaded as classic scripts
+     collide on top-level `const` declarations (js/reveal.js and
+     js/dropdown.js both declare `root`); type="module" gives each its own
+     module scope, which is what the source files were written to rely on. */
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.doesNotMatch(fn, /wp_script_add_data\(\s*'empower-(?:nav|reveal|dropdown)',\s*'type',\s*'module'\s*\)/,
+    'a wp_script_add_data(..., \'type\', \'module\') call is still present; WordPress never reads that data key to emit a type attribute, so this is dead code masking the real fix');
+  assert.match(fn, /add_filter\(\s*'script_loader_tag'/, 'no script_loader_tag filter is registered');
+  const filterBody = fn.slice(fn.indexOf("add_filter( 'script_loader_tag'"));
+  for (const handle of ['empower-nav', 'empower-reveal', 'empower-dropdown']) {
+    assert.ok(filterBody.includes(`'${handle}'`), `script_loader_tag filter does not name ${handle}`);
+  }
+  assert.match(filterBody, /type="module"/, 'script_loader_tag filter does not add type="module" to the tag');
 });
 
 test('the chrome stylesheet loads after site.css, not before it', () => {
@@ -1582,4 +1610,45 @@ test('the podcast library loop grid is scoped to category 133, not the whole sit
   } finally {
     await browser.close();
   }
+});
+
+/* Fix round 2 for the Task 6 regression. The two source-text tests above
+   ("the chrome stylesheet and its script are enqueued unconditionally" and
+   "the three theme scripts get type=\"module\" from a script_loader_tag
+   filter, not an inert data key") both passed while the site shipped five
+   permanently open dropdown panels on every page: they can see that a
+   wp_script_add_data(..., 'type', 'module') call or a script_loader_tag
+   filter exists in the PHP source, but not whether it has any runtime
+   effect. The actual failure is a browser-only fact: js/reveal.js and
+   js/dropdown.js both declare `const root = document.documentElement;` at
+   top level, and loaded as classic scripts (which every prior fix attempt
+   either was, or believed itself not to be) they collide, dropdown.js
+   throws a SyntaxError, and `root.setAttribute('data-dropdown', 'on')` -
+   the gate css/header-2.css keys its closed-by-default panel styles off -
+   never runs. Nothing short of an actual page load, with and without
+   JavaScript, distinguishes "the filter fixed it" from "the filter is
+   present but inert."
+
+   The observable is the same one used to diagnose the regression:
+   .em-header__menu, not a proxy selector. A prior fix round substituted
+   button[aria-expanded="true"] here, got an ambiguous 10-visible/5-visible
+   result (the toggle buttons count alongside the panels), explained the
+   remainder away as "toggle buttons and other elements that remain
+   expanded by design," and shipped the regression anyway. .em-header__menu
+   is unambiguous: five panels ship open in the markup by design (the
+   header's own progressive-enhancement contract, documented in
+   js/dropdown.js), and only js/dropdown.js having actually run sets
+   panel.hidden = true on all five, which css/header-2.css:85 turns into
+   display:none. 5-and-0 is the only reading that proves the script ran; a
+   5-and-5 means it did not, and a 0-and-0 would be false parity from a
+   selector matching nothing on either side. */
+test('the five desktop dropdown panels ship open without JavaScript and close with it', { concurrency: 1 }, async () => {
+  const { checkVisibleWithoutJs, checkVisibleWithJs } = await import('./fidelity-browser.mjs');
+  const url = requireSpikeUrl();
+  const withoutJs = await checkVisibleWithoutJs(url, '.em-header__menu');
+  const withJs = await checkVisibleWithJs(url, '.em-header__menu');
+  assert.equal(withoutJs, 5,
+    `expected 5 dropdown panels visible without JavaScript (the header ships them open by design); got ${withoutJs}`);
+  assert.equal(withJs, 0,
+    `expected 0 dropdown panels visible with JavaScript (js/dropdown.js should have set panel.hidden = true on all five); got ${withJs}. If this is nonzero, js/dropdown.js did not run - check for a classic-script collision on a top-level identifier such as \`root\`.`);
 });

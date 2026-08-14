@@ -1109,6 +1109,72 @@ this adds what each one turns into.
 | | `landing/06-reading` | **Loop Grid** |
 | | `landing-b/03-outcome` | **Not** a Loop Grid — `data-cms="manual"`, three chosen posts in campaign order |
 
+### Phase 2A foundations: the policies every later page inherits
+
+Four rules the fourteen remaining page conversions build on top of, settled
+while converting `podcast-a` and enforced by `test-elementor.mjs` rather than
+left as things to remember:
+
+- **Pages under conversion are published**, not previewed or password-gated,
+  covered only by the install's own `robots.txt` disallowing every crawler.
+  That choice was made because an authenticated Playwright session no longer
+  sees what an anonymous visitor gets (preview bypasses the page cache), and
+  a post password replaces the page's content with a form, which breaks the
+  section and copy checks that read the real markup. It is safe exactly as
+  long as `robots.txt` keeps disallowing everything, linked from nothing, so
+  the harness checks that directly (`checkRobots()` in `fidelity.mjs`) rather
+  than assuming it: if that file ever stops disallowing, nothing else would
+  say so. Unpublishing a page under conversion is one command
+  (`wp post update <id> --post_status=draft`).
+- **The header and footer are Elementor Theme Builder parts**, built from
+  `src/_shared/header-2.html` and `src/_shared/footer.html` and deployed with
+  an Entire Site display condition. **A nav change means editing that static
+  partial and redeploying it through `elementor/deploy.mjs`, never editing
+  the live header or footer inside the Elementor editor.** This is the cost
+  of the header's three verbatim HTML widgets (see the fourth exception,
+  below): the markup that carries `aria-controls` pairs, the split Solutions
+  item and the no-JS open-by-default contract lives in the partial, and an
+  edit made only in Elementor is silently lost the next time the partial is
+  redeployed. Anyone touching the nav later needs to know this before they
+  reach for the editor.
+- **`setConditions()` performs two writes, not one**, because assigning a
+  Theme Builder part to a location is not satisfied by postmeta alone.
+  Elementor Pro's `Conditions_Manager::get_location_templates()` resolves a
+  location's documents from a cached option
+  (`elementor_pro_theme_builder_conditions`), not by scanning postmeta at
+  render time. A part whose `_elementor_conditions` postmeta is correct and
+  whose cache is stale looks perfectly configured in the editor and renders
+  nowhere, with nothing reporting it: Task 3 lost an hour to exactly this.
+  `setConditions()` therefore writes the postmeta, regenerates the conditions
+  cache the same way the editor does on save, and reads the option back to
+  verify the post actually landed under the location before it returns.
+- **A bridge rule overriding an Elementor container property needs two
+  classes, not one.** Elementor resolves container flex-direction through
+  `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` at specificity
+  0,2,0 (two classes), so a bridge rule written as a bare `.your-class` at
+  0,1,0 (one class) loses that tie no matter how late it loads. Writing it as
+  `.your-class.e-con` instead wins, because `bridge.css` is enqueued last.
+  Measured directly on the container width and widget spacing rules in
+  `wp/empowerms-child/css/bridge.css` during Task 7; the single most reusable
+  fact this phase produced, and every later bridge rule overriding a
+  container property needs it.
+
+**The named handover point.** Once Empower has started editing a converted
+page's content inside the WordPress editor, `deployPage()` (and any other
+call that overwrites `_elementor_data` wholesale from this repository) must
+stop being run against that page: a rebuild from the mapping modules here
+would silently destroy Empower's own edits, with no warning and no way to
+tell the two apart afterward. The handover point is per page, not a single
+date for the whole conversion, and belongs in each page's own task report
+once Empower has signed off on it and started using the editor.
+
+**Two live editorial items, not code, and not to be lost:** attachment
+20578, the site logo, has no alt text on the install, so the logo link
+currently has no accessible name at all; and roughly 42 photographs in the
+media library need alt text written before go-live. Neither is fixable from
+this repository: they are WordPress media-library edits Empower or their
+editor needs to make.
+
 ### Per page
 
 | Page | Header | Desktop nav | Stylesheets beyond tokens/components/site |

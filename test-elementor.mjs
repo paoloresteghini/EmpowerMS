@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
-import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
+import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
 import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
 import {
@@ -765,6 +765,15 @@ test('flushPageCache throws loudly when wp page-cache flush does not report succ
   }
 });
 
+test('the install still disallows crawlers, which is what makes publishing during conversion safe', async () => {
+  /* Pages under conversion are published. That is only defensible while
+     robots.txt disallows everything. Checked rather than assumed, because
+     if it ever changes, the policy silently stops being safe. */
+  const robots = await checkRobots('https://empv2.wpenginepowered.com');
+  assert.match(robots, /User-agent:\s*\*/i);
+  assert.match(robots, /Disallow:\s*\//);
+});
+
 /* --- elementor/pages/podcast-a/01-hero.mjs ------------------------------ */
 
 test('the podcast hero mapping carries the section class and its copy', () => {
@@ -1512,6 +1521,12 @@ test('the header markup matches the static partial, string for string', () => {
   }
 });
 
+test('the converted page carries the chrome sections in order', () => {
+  const parts = JSON.stringify([headerPart(), footerPart()]);
+  assert.ok(parts.includes('em-header'));
+  assert.ok(parts.includes('em-footer'));
+});
+
 /* --- fidelity-browser.mjs / the podcast guest filter --------------------- */
 
 /* settleReveal's own wait condition was unsatisfiable on every page and the
@@ -1704,6 +1719,39 @@ test('the five desktop dropdown panels ship open without JavaScript and close wi
     `expected 5 dropdown panels visible without JavaScript (the header ships them open by design); got ${withoutJs}`);
   assert.equal(withJs, 0,
     `expected 0 dropdown panels visible with JavaScript (js/dropdown.js should have set panel.hidden = true on all five); got ${withJs}. If this is nonzero, js/dropdown.js did not run - check for a classic-script collision on a top-level identifier such as \`root\`.`);
+});
+
+test('the live page shows Empower chrome and none of UiCore own', { concurrency: 1 }, async () => {
+  /* flushPageCache() first, not a bare fetchConverted(): by the time this
+     test runs, the browser-driven tests above it have already loaded the
+     page repeatedly and re-warmed WP Engine's page cache past whatever
+     state a run-level flush left it in, and fetchConverted() refuses a
+     cache HIT outright rather than silently checking a stale copy. */
+  await flushPageCache();
+  const html = await fetchConverted(requireSpikeUrl());
+  assert.ok(html.includes('em-header'), 'the Empower header is not on the page');
+  assert.ok(html.includes('em-footer'), 'the Empower footer is not on the page');
+  assert.ok(!html.includes('uicore-header'), 'UiCore is still rendering its header');
+  assert.ok(!html.includes('uicore-footer'), 'UiCore is still rendering its footer');
+});
+
+/* The element-cache trap again (see the loop item's own comment in
+   03-library.mjs), asserted against the real page rather than the JSON. One
+   card carrying the right attribute proves nothing: the failure mode found
+   live was every card carrying the SAME right-looking value, because the
+   pca-ep container was baked once per page load and reused for every
+   iteration. Phase 1 has exactly 9 termed posts (3 lawmaker, 3 expert, 3
+   leader), so 9 is the floor a correctly-scoped, correctly-varying render
+   must clear. */
+test('the live loop grid emits a different guest value on different cards', { concurrency: 1 }, async () => {
+  /* Same reasoning as the chrome test above: flush first, the page cache
+     has almost certainly been re-warmed by the browser tests that ran
+     before this one in the same suite. */
+  await flushPageCache();
+  const html = await fetchConverted(requireSpikeUrl());
+  const values = [...html.matchAll(/data-guest="([^"]+)"/g)].map(m => m[1]);
+  assert.ok(values.length >= 9, `expected at least 9 data-guest attributes, found ${values.length}`);
+  assert.ok(new Set(values).size > 1, 'every card carries the same data-guest value, which is the element cache');
 });
 
 /* Task 7, Step 1. bridge.css is additive by design: the 50 files in css/

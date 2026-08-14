@@ -154,15 +154,15 @@ at `justice`, so our slug is a redirect decision rather than an open question.
 | Environment | WP Engine install that is a clone of live, SSH and WP-CLI | Local WordPress (would need an import step); WP Engine's own staging environment of the production install (this is a separate install, so there is no promote button) |
 | End state | The clone becomes the live site | Reference-only, or a later migration. This is the strictest bar and it pulls the go-live gate into the plan |
 | Undesigned templates | Convert the fifteen now, design single post / archive / search / 404 afterwards | Designing them first. Paolo's call, with the seam accepted and documented |
-| Page architecture | **Native-first**, three named exceptions | Hybrid per section, and HTML-widget-first. Native buys editability, at the cost of CSS work and exact-markup fidelity |
+| Page architecture | **Native-first**, four named exceptions (a fourth added in Phase 2A, see below) | Hybrid per section, and HTML-widget-first. Native buys editability, at the cost of CSS work and exact-markup fidelity |
 | CSS location | Child theme, in git, enqueued in the documented order | Elementor per-widget custom CSS, and a Global Kit. Neither stays diffable or testable |
 | Mechanism | Write `_elementor_data` JSON, verify in the editor | Driving the Elementor UI through the browser |
 | De-risking | Spike `podcast-a` end to end before planning the other fourteen | Planning straight from the audit |
 | Verification | Automated fidelity harness plus a screenshot pass, gating each page | Screenshots alone, or review by eye |
 
-### Native-first, and the three exceptions
+### Native-first, and the four exceptions
 
-Everything is built as real Elementor containers and widgets, except three shapes
+Everything is built as real Elementor containers and widgets, except four shapes
 that cannot be native and still work. Each is a recorded exception, not a
 shortcut:
 
@@ -175,6 +175,16 @@ shortcut:
 3. **`epic-a/03-method`.** The nested containers go native; the scroll-driven
    animation over them is CSS either way. Elementor's own sticky effect must not
    be added on top.
+4. **The header's `.em-header__nav`, `.em-header__actions` and `.em-mobilenav`
+   blocks**, added during Phase 2A. Nothing native emits the `aria-controls`
+   pairs `js/dropdown.js` and `js/nav.js` bind to, the split link-plus-disclosure
+   Solutions item Empower asked for on 2026-08-05, or the `aria-expanded="true"`
+   defaults every panel ships with so the header stays open before JavaScript
+   runs, the build's "visible without JavaScript" contract. Three HTML widgets,
+   verbatim from `src/_shared/header-2.html`. Recorded in full, with the
+   element-by-element table and what stays native around them (the header shell,
+   the utility strip, the logo), in the Phase 2A design:
+   `docs/superpowers/specs/2026-08-14-elementor-phase-2-foundations-design.md`.
 
 ## Architecture
 

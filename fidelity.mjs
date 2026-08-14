@@ -45,6 +45,21 @@ export async function fetchConverted(url) {
   return res.text();
 }
 
+/* robots.txt is the whole basis of the publish-during-conversion policy:
+   pages under conversion are published, linked from nothing, and covered
+   only by this. Fetched and asserted rather than trusted, because the day
+   it changes, nothing else would tell us. Not routed through
+   fetchConverted(): robots.txt is not a per-page conversion target and is
+   never served from WP Engine's page cache the way a post or page is, so
+   the x-cache staleness check that function exists for does not apply
+   here; a plain fetch is the right instrument for a file that is the same
+   for every request regardless of cache state. */
+export async function checkRobots(baseUrl) {
+  const res = await fetch(`${baseUrl.replace(/\/$/, '')}/robots.txt`);
+  if (!res.ok) throw new Error(`robots.txt returned ${res.status}`);
+  return res.text();
+}
+
 /* Shared by segments() (checkCopy's helper) and checkSections(), so the two
    can never drift on what counts as "not really on the page" the way they
    already did once: checkSections searched raw liveHtml while checkCopy

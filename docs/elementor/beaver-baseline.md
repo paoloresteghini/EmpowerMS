@@ -59,9 +59,10 @@ the real Elementor Theme Builder parts. It is flagged here so that once those
 tasks land, nobody reads "the header changed" as evidence of what this task
 was built to check: the CSS restyling below.
 
-**Within the actual Beaver Builder page content, no visible restyling was
-found, and this was checked past the point of eyeballing.** A same-page
-computed-style comparison (`computedStyles()`, both environments, the
+**Within the actual Beaver Builder page content, four of five typography
+properties checked showed no difference; the typeface itself did, and it
+changed on all 45 pages, not just this one.** A same-page computed-style
+comparison (`computedStyles()`, both environments, the
 `save-our-esa-petition` page) was run against `.fl-rich-text p`, the class
 Beaver Builder gives its own text modules and which is present verbatim on
 both installs:
@@ -74,16 +75,34 @@ both installs:
 | `color` | rgb(255,255,255) | rgb(255,255,255) |
 | `font-family` | "Source Sans 3", Whitney, "Helvetica Neue", Helvetica, Arial, sans-serif | "Whitney SSm A", "Whitney SSm B", sans-serif |
 
-Size, weight, line-height and color are identical. Only the declared
-font-family string differs, and even that does not reach Figtree: Beaver
-Builder's own module-scoped styling is winning the cascade over
-`css/site.css`'s bare `p{}` rule for this element, so real body copy is not
-visibly or numerically different between the two.
+Size, weight, line-height and color are identical: Beaver Builder sets
+these explicitly per module, and those explicit values migrated unchanged
+to both sites. `font-family` is the one property Beaver Builder leaves
+unset on this element, so it inherits, and `css/site.css` has no
+`font-family` rule on bare `p` to blame here (its only bare `p` rule is
+`css/site.css:40`, `p{text-wrap:pretty}`). The real source is
+`tokens/base.css:3`, `body{margin:0;font-family:var(--font-body);...}`,
+one of the files Phase 1 made unconditional: nothing between `<body>` and
+this paragraph sets its own `font-family`, so the inherited value from the
+`body` rule wins. `tokens/typography.css:3` defines `--font-body` as
+`'Source Sans 3','Whitney','Helvetica Neue',Helvetica,Arial,sans-serif`,
+character for character the value the table reports for `empv2`, and
+`tokens/fonts.css:8` ships a genuine `@font-face` for Source Sans 3, so
+this is a real, loaded, rendered typeface, not a missing-font fallback.
 
-**The bare `h1`/`p` rules from `css/site.css` do reach elements that Beaver
-Builder does not style, and this is a real, confirmed effect, not a
-false alarm.** Probing the plain `h1` selector (no Beaver scoping) on
-`empv2` returns:
+So the honest reading of this table is that real Beaver Builder body copy
+on all 45 pages is now rendering in Source Sans 3 where the live site
+renders Whitney. This is not simply "the font changed": `tokens/fonts.css:2`
+records that Gotham and Whitney are licensed (Hoefler&Co) faces that were
+not supplied for the static build, and that Figtree and Source Sans 3 are
+deliberate free stand-ins chosen while licensing is pending. Phase 1's
+unconditional enqueue means those stand-ins are now overriding the real
+licensed faces across all 45 Beaver pages, by inheritance from
+`tokens/base.css:3`, not by anything Beaver Builder is doing.
+
+**The unconditional enqueue does reach elements that Beaver Builder does
+not style, and this is a real, confirmed effect, not a false alarm.**
+Probing the plain `h1` selector (no Beaver scoping) on `empv2` returns:
 
 ```
 h1 font-family: Figtree, Gotham, "Avenir Next", Helvetica, Arial, sans-serif
@@ -91,25 +110,32 @@ h1 font-size: 48px
 h1 font-weight: 700
 ```
 
-`tokens/typography.css:2` defines `--font-display` as exactly that stack,
-and `tokens/fonts.css` ships a real `@font-face` for Figtree at weight 700,
-so this is genuine Figtree rendering, not a fallback. The element it lands
-on is the placeholder theme's own page-title band (`<h1 class="uicore-title
-uicore-animate h1 uicore-typo-h1">`), not anything Beaver Builder generates,
-because live has no comparable bare `<h1>` at all (the same probe against
-live returns null: zero elements match the selector). So this specific delta
-cannot be read as "Phase 1 changed a heading that used to look like X and
-now looks like Y" against live, only asserted directly: the unconditional
-enqueue does restyle plain `h1` and `p` elements wherever the surrounding
-theme leaves them unscoped, exactly as predicted, and the placeholder
-header's own title text is the visible proof of it. The same mechanism
-explains the 12px, 12px-line-height paragraph the naive `p` probe first
-turned up: it is the top utility bar's tagline ("Learn as if you will live
-forever...") picking up `css/site.css`'s bare `p{}` rule too, confirmed by
-`tokens/typography.css:3`'s `--font-body` (Source Sans 3, Whitney,
-"Helvetica Neue"...) matching the computed value exactly. Neither of these
-elements belongs to Beaver Builder's own page content, so this is a
-placeholder-theme-chrome effect, not a body-copy effect.
+The source is `tokens/base.css:4`,
+`h1,h2,h3,h4,h5{font-family:var(--font-display);...font-weight:var(--fw-bold)}`,
+for typeface and weight, and `tokens/base.css:5`, `h1{font-size:var(--fs-h1);...}`,
+for size, with `tokens/typography.css:5`'s `--fs-h1:3rem` supplying the 48px.
+Not `css/site.css`: its own bare `h1,h2,h3` rule (`css/site.css:39`) only
+sets `overflow-wrap` and `text-wrap`, nothing about typeface, size or
+weight.
+`tokens/typography.css:2` defines `--font-display` as exactly the stack
+above, and `tokens/fonts.css` ships a real `@font-face` for Figtree at
+weight 700, so this is genuine Figtree rendering, not a fallback. The
+element it lands on is the placeholder theme's own page-title band (`<h1
+class="uicore-title uicore-animate h1 uicore-typo-h1">`), not anything
+Beaver Builder generates, because live has no comparable bare `<h1>` at all
+(the same probe against live returns null: zero elements match the
+selector). So this specific delta cannot be read as "Phase 1 changed a
+heading that used to look like X and now looks like Y" against live, only
+asserted directly: the unconditional enqueue does restyle plain `h1`
+elements wherever the surrounding theme leaves them unscoped, exactly as
+predicted, and the placeholder header's own title text is the visible proof
+of it. The same mechanism, by the same inheritance path described above for
+body copy, explains the 12px, 12px-line-height paragraph the naive `p`
+probe first turned up: it is the top utility bar's tagline ("Learn as if you
+will live forever...") picking up `tokens/base.css:3`'s inherited
+`font-family` too. This one is placeholder-theme chrome, not Beaver Builder
+content, so it is a second, separate sighting of the same mechanism
+documented above for real body copy, not a new one.
 
 **Per page, at 1440, comparing content area only (excluding the header/footer
 chrome difference above):**
@@ -121,9 +147,11 @@ chrome difference above):**
   spacing.
 - `thank-you-saveouresa`: "SHARE YOUR STORY" section, "FREE RESOURCES" with
   two resource cards, and an empty "MORE ESA RESOURCES" placeholder row all
-  match live structurally and typographically. No visible difference.
+  match live in structure, spacing and every typography metric except
+  typeface, which changed here too, by the same site-wide mechanism
+  documented above rather than anything specific to this page.
 - `esa-handbook`: form layout, field order, radio options and button text
-  match live exactly. No visible difference.
+  match live; the same typeface substitution applies here as well.
 - `2025-tax-calculator`: the accordion and the calculator's intro heading
   and note match live. The interactive calculator widget itself renders
   blank (just the page's watermark background) on **both** `empv2` and
@@ -142,26 +170,32 @@ chrome difference above):**
   visual parity between the two environments and someone will notice it
   later if it isn't written down now.
 
-**"No visible difference" is itself the headline finding for the content
-area on all five pages.** Nobody had looked at this before; now it is
-recorded, with computed-style evidence, that Beaver Builder's own styling
-is currently winning over `css/site.css`'s bare selectors for real page
-content, and only unscoped elements belonging to the placeholder theme
-itself are affected.
+**The headline finding for the content area, on all five pages, is mixed
+and nobody had looked at either half of it before.** Layout, spacing,
+section order, colour and every measured typography metric except typeface
+(size, weight, line-height) match live, because Beaver Builder sets those
+explicitly per module and the explicit values migrated unchanged. Typeface
+does not match: real body copy on all 45 pages now inherits Source Sans 3
+and Figtree from `tokens/base.css`'s unconditional `body{}`/`h1..h5{}`
+rules in place of Whitney and Gotham, confirmed with computed-style
+evidence above, not just eyeballed. Both halves are recorded here with the
+same specificity, since a reassuring "nothing changed" would have been as
+misleading as an alarmed "everything changed."
 
 ## Capture limitations found while doing this (harness, not content)
 
 - **`settleReveal`'s warning fired on every single capture, on both
   `empv2` and live**, e.g. `settleReveal: not every [data-reveal] element
   reached is-revealed within 10000ms`. This is not a per-page finding.
-  `js/reveal.js:10` sets `data-reveal="on"` on `document.documentElement`
+  `js/reveal.js:11` sets `data-reveal="on"` on `document.documentElement`
   itself (the gate for the whole page), but `settleReveal`'s wait condition
   in `fidelity-browser.mjs:208` queries `document.querySelectorAll('[data-reveal]')`,
-  not scoped to `document.body` the way `js/reveal.js` scopes its own query.
-  The `<html>` element therefore always matches the selector and never
-  gains `.is-revealed` (only `js/reveal.js`'s own `document.body`-scoped
-  collection ever gets that class), so the `every()` check is structurally
-  unsatisfiable on any page where `js/reveal.js` runs at all. The function
+  not scoped to `document.body` the way `js/reveal.js:16` scopes its own
+  query (`document.body.querySelectorAll('[data-reveal]')`, the collection
+  that actually receives `.is-revealed`). The `<html>` element therefore
+  always matches the selector and never gains `.is-revealed`, so the
+  `every()` check is structurally unsatisfiable on any page where
+  `js/reveal.js` runs at all. The function
   still falls through to its timeout-and-capture-anyway path by design (see
   its own comment about Finding 5.9), and every capture in this before-set
   was inspected by eye and confirmed fully rendered, not a grey ghost, so
@@ -180,6 +214,32 @@ itself are affected.
   window on either environment, not a defect in `settleReveal` itself
   (the surrounding static content around it rendered correctly on both
   sides).
+- **A newsletter-signup modal ("Join 100,000 other Mississippians getting
+  the latest from the Magnolia State!", a Jackson skyline photo, an email
+  field and a Subscribe button) sits open over a dark backdrop in the 1440
+  capture of all five pages**: `save-our-esa-petition`, `thank-you-saveouresa`,
+  `esa-handbook`, `2025-tax-calculator` and `updates`. It covers the header,
+  hero and the top of the first content section in every case. It also
+  appears in its full form at 1024 (confirmed on `updates`). At 768 and 390
+  (confirmed on `save-our-esa-petition` and `esa-handbook`), the same popup
+  renders as a compact pinned "SUBSCRIBE" button with its own close icon
+  instead of the full overlay, so its presentation is tied to viewport
+  width, not just to timing. This is almost certainly the MailMunch popup
+  `fidelity-browser.mjs`'s own `checkFilter` comment already documents as a
+  site-wide, pre-existing plugin behaviour on this install, switching from
+  `display:none` to a full-viewport overlay roughly six to eight seconds
+  after load; `screenshots()`'s settle sequence (scroll, wait out reveal,
+  wait out the slowest transition) plausibly runs long enough for that
+  window to pass before capture, which would explain why it shows up
+  consistently rather than on one or two random captures, though the exact
+  trigger was not independently timed here, so treat that explanation as
+  likely, not confirmed. It is not a rendering failure and not something
+  this task introduced, but it sits directly over the region the per-page
+  findings above make their "no visible difference" claims about, so it
+  should be read as expected background noise in this before-set. It will
+  recur unpredictably in Task 3's after-set unless whoever captures that
+  batch controls for it (dismissing it, or capturing before its trigger
+  window elapses).
 
 ## What the brief got wrong
 

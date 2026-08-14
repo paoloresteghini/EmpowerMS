@@ -48,14 +48,21 @@ export const headerPart = () => [
     container({ cssClass: 'em-container', content_width: 'full' }, [
       container({ cssClass: 'em-header__bar', content_width: 'full' }, [
         /* The logo is the one genuinely native, genuinely editable element
-           in this part: an image with a link and an accessible name. Two
-           costs, recorded rather than fixed (Ruling D): the static
-           .em-header__logo class sat on the <a>; here it lands on the
-           widget's wrapper div instead, and the anchor's own
-           aria-label="Empower Mississippi home" has no equivalent control
-           on the image widget, so the accessible name falls back to the
-           image's own alt text ("Empower Mississippi"), which reads the
-           same to a screen reader user even though the source differs. */
+           in this part: an image with a link. Two costs, recorded rather
+           than fixed (Ruling D): the static .em-header__logo class sat on
+           the <a>; here it lands on the widget's wrapper div instead, and
+           the anchor's own aria-label="Empower Mississippi home" has no
+           equivalent control on the image widget. Ruling D expected the
+           accessible name to fall back to the image's own alt text, but
+           that is not true today: measured against the live install as
+           deployed, attachment 20578 carries no alt text
+           (<img alt="">), so the anchor has no text content, no
+           aria-label and no alt text to fall back to, and the logo link
+           is unlabelled. It stays unlabelled until the go-live editorial
+           task sets real alt text on the attachment, e.g.
+           `wp post meta update 20578 _wp_attachment_image_alt
+           'Empower Mississippi'`, at which point Ruling D's prediction
+           becomes true. See the Task 5 report, defect #6. */
         image({
           ...LOGO,
           cssClass: 'em-header__logo',

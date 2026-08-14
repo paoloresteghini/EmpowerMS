@@ -19,6 +19,7 @@ import { POST_ID as podcastAPostId, sections as podcastASections } from './eleme
 import { deployPage, deployLoopItem, deployThemePart, setConditions } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
+import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
    directly (served locally, not fetched from the live install), so it needs
@@ -1335,6 +1336,73 @@ test('every string in the footer part appears in the static footer partial', () 
   ]) {
     assert.ok(source.includes(copy), `"${copy}" is not in src/_shared/footer.html`);
     assert.ok(JSON.stringify(footerPart()).includes(copy), `"${copy}" is not in the footer part`);
+  }
+});
+
+/* --- elementor/theme-parts/header.mjs ------------------------------------ */
+
+test('the header part keeps the no-JavaScript contract', () => {
+  /* Every panel ships aria-expanded="true" and js/dropdown.js closes them
+     on load. A converted header that ships them closed hides nav content
+     behind a trigger with no script to open it, which is the rule this
+     build has already broken once. */
+  const json = JSON.stringify(headerPart());
+  const expanded = json.match(/aria-expanded=\\"true\\"/g) || [];
+  assert.ok(expanded.length >= 10, `expected every trigger to ship expanded, found ${expanded.length}`);
+  assert.doesNotMatch(json, /aria-expanded=\\"false\\"/);
+});
+
+test('every aria-controls in the header resolves to an id in the same part', () => {
+  const json = JSON.stringify(headerPart());
+  const controls = [...json.matchAll(/aria-controls=\\"([^"\\\\]+)\\"/g)].map(m => m[1]);
+  assert.ok(controls.length >= 11, `expected the desktop and mobile triggers, found ${controls.length}`);
+  for (const id of controls) {
+    assert.ok(json.includes(`id=\\"${id}\\"`), `aria-controls="${id}" points at no id in the header part`);
+  }
+});
+
+test('the Our Solutions item stays a link plus a disclosure button', () => {
+  /* Empower asked for this on 2026-08-05: the words navigate to the
+     Solutions landing page, the caret opens the panel. Collapsing it back
+     into one button silently drops a requirement. */
+  const json = JSON.stringify(headerPart());
+  assert.match(json, /em-header__item--split/);
+  assert.match(json, /em-header__disclosure/);
+  assert.match(json, /href=\\"\/solutions\\"/);
+});
+
+test('the header carries the mobile nav and its toggle', () => {
+  const json = JSON.stringify(headerPart());
+  assert.match(json, /em-header__toggle/);
+  assert.match(json, /aria-controls=\\"mobile-nav\\"/);
+  assert.match(json, /id=\\"mobile-nav\\"/);
+});
+
+test('the header takes exactly three html widgets, and they are the named three', () => {
+  /* The spec sanctions a fourth exception for the nav, the actions and the
+     mobile nav. A fifth html widget here is scope drift and should fail
+     loudly rather than be noticed later by eye. */
+  const json = JSON.stringify(headerPart());
+  const htmlWidgets = json.match(/"widgetType":"html"/g) || [];
+  assert.equal(htmlWidgets.length, 3);
+  for (const marker of ['em-header__nav', 'em-header__actions', 'em-mobilenav']) {
+    assert.ok(json.includes(marker), `the header part is missing ${marker}`);
+  }
+});
+
+test('the header markup matches the static partial, string for string', () => {
+  /* The three html widgets exist to preserve markup exactly. Anything in
+     them that is not in the partial is drift. */
+  const partial = fs.readFileSync('src/_shared/header-2.html', 'utf8');
+  for (const copy of [
+    'A non-profit working to expand opportunity in Mississippi',
+    'Email: info@empowerms.org',
+    'Quality Education',
+    'Connecting Mississippians to careers worth staying for.',
+    'Skip to content',
+  ]) {
+    assert.ok(partial.includes(copy), `"${copy}" is not in src/_shared/header-2.html`);
+    assert.ok(JSON.stringify(headerPart()).includes(copy), `"${copy}" is not in the header part`);
   }
 });
 

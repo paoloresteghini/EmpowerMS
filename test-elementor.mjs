@@ -1110,11 +1110,25 @@ test('deployThemePart refuses a location that is not header or footer', async ()
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
 });
 
-test('setConditions writes the conditions meta as a JSON array', async () => {
-  /* _elementor_conditions is read by Elementor Pro's Conditions_Manager
-     (wp-content/plugins/elementor-pro/modules/theme-builder/classes/
-     conditions-manager.php:53, get_meta). A bare string is not what it
-     expects and produces a part assigned to nothing, silently. */
+test('setConditions writes the conditions meta as a JSON array, then regenerates the conditions cache', async () => {
+  /* _elementor_conditions is written on the document, but it is NOT what
+     Elementor Pro reads at render time. Task 3 proved this on the real
+     install: both posts had a correctly-shaped _elementor_conditions array
+     and UiCore's own chrome still rendered, because
+     Conditions_Manager::get_location_templates()
+     (conditions-manager.php:328, called from :518) resolves a location's
+     documents from a CACHED option, elementor_pro_theme_builder_conditions
+     (conditions-cache.php:15), read via $this->cache->get_by_location()
+     (conditions-manager.php:331), not by scanning postmeta. A part whose
+     postmeta is right and whose cache is stale looks perfectly configured
+     and renders nowhere, with nothing reporting it. So this call must also
+     regenerate that cache, the same way Conditions_Manager::save_conditions()
+     does internally (conditions-manager.php:323) when the editor saves a
+     document's conditions. (An earlier version of this comment cited
+     conditions-manager.php:53, get_meta, as the read path Elementor uses at
+     render time; that is only the meta read the editor uses when loading a
+     document to edit, and citing it here is what let the plan go two tasks
+     deep before the gap was caught.) */
   const { tmpDir, capturePath } = withCapturingSsh('conditions-');
   const originalPath = process.env.PATH;
   process.env.PATH = tmpDir + ':' + originalPath;
@@ -1138,6 +1152,17 @@ test('setConditions writes the conditions meta as a JSON array', async () => {
       'wp post meta update for _elementor_conditions does not read from the temp file (no inline value argument)');
     assert.doesNotMatch(script, new RegExp(`wp post meta update 4242 _elementor_conditions ${json.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
       'the JSON conditions were passed inline as a shell argument');
+
+    /* The cache regeneration must run through wp eval-file against a
+       heredoc'd temp file, not `wp eval` with the PHP inline: inline PHP as
+       a CLI argument goes through two levels of shell quoting, the same
+       problem the JSON heredoc above already exists to avoid. */
+    assert.match(script, /wp eval-file\s+\S+/, 'conditions cache was not regenerated through wp eval-file');
+    assert.match(script, /Module::instance\(\)->get_conditions_manager\(\)/,
+      'the PHP does not reach the conditions manager through the Theme Builder module instance');
+    assert.match(script, /get_cache\(\)->regenerate\(\)/,
+      'the PHP does not call Conditions_Cache::regenerate()');
+    assert.ok(!/wp eval ['"]/.test(script), 'the PHP was passed inline to `wp eval` instead of via `wp eval-file`');
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });

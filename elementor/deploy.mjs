@@ -118,12 +118,43 @@ export async function deployThemePart(postId, elements, location) {
   return deployElements(postId, elements, location);
 }
 
-/* Elementor Pro's Conditions_Manager reads _elementor_conditions off the
-   document (conditions-manager.php:53) and expects an array of condition
-   strings, 'include/general' being the whole site. Written with
-   --format=json so WP-CLI stores an array rather than the literal text of
-   one: a part whose conditions are a string is assigned to nothing, renders
-   nowhere, and reports no error.
+/* Elementor Pro's Conditions_Manager expects _elementor_conditions on the
+   document to be an array of condition strings, 'include/general' being the
+   whole site. Written with --format=json so WP-CLI stores an array rather
+   than the literal text of one: a part whose conditions are a string is
+   assigned to nothing, renders nowhere, and reports no error.
+
+   The postmeta write alone is NOT what Elementor Pro reads at render time,
+   and this was wrong in an earlier version of this comment (it cited
+   conditions-manager.php:53, which is only the meta read used when the
+   editor loads a document for editing, not the render-time resolution
+   path). Task 3 proved this the hard way: both posts had correct
+   _elementor_template_type, _elementor_edit_mode and a correctly-shaped
+   _elementor_conditions array, and UiCore's own chrome still rendered,
+   because Conditions_Manager::get_location_templates()
+   (conditions-manager.php:328, called from :518) resolves a location's
+   documents from a CACHED option, elementor_pro_theme_builder_conditions
+   (conditions-cache.php:15), via $this->cache->get_by_location()
+   (conditions-manager.php:331). Writing postmeta directly through WP-CLI
+   never touches that option, so it stays stale (empty, in Task 3's case),
+   no document is registered to either location, and Elementor Pro never
+   hooks get_header()/get_footer(). A part in this state looks perfectly
+   configured and renders nowhere, with nothing reporting it.
+
+   So the postmeta write is followed by a call to
+   Conditions_Cache::regenerate() (conditions-cache.php:94), reached through
+   the Theme Builder module instance. This is Elementor's own mechanism, not
+   a workaround: it is the same call Conditions_Manager::save_conditions()
+   makes internally (conditions-manager.php:323) when the editor itself
+   saves a document's conditions, so this function now does in one remote
+   call what the editor does in two (save the meta, then regenerate the
+   cache that render time actually reads).
+
+   The PHP goes through `wp eval-file` with a heredoc-and-temp-file, not
+   `wp eval` with the PHP inline: inline PHP passed as a CLI argument goes
+   through two levels of shell quoting (this shell's, then wp-cli's own
+   argument handling), which is exactly the class of problem the heredoc
+   pattern above (and deployElements() at :13-30) already exists to avoid.
 
    Separate from deployThemePart() deliberately. A part with data and no
    condition renders nowhere; a part with a condition and no data renders an
@@ -139,6 +170,13 @@ export async function setConditions(postId, conditions) {
   const suffix = uniqueSuffix();
   const heredoc = `ELEMENTOR_CONDITIONS_${suffix}`;
   const tmpFile = `/tmp/elementor-conditions-${postId}-${suffix}.json`;
+  const phpHeredoc = `ELEMENTOR_CONDITIONS_CACHE_REGEN_${suffix}`;
+  const phpFile = `/tmp/elementor-conditions-cache-regen-${postId}-${suffix}.php`;
+  const regenPhp = [
+    '<?php',
+    '$cm = \\ElementorPro\\Modules\\ThemeBuilder\\Module::instance()->get_conditions_manager();',
+    '$cm->get_cache()->regenerate();',
+  ].join('\n');
   const script = [
     'set -e',
     `cat > ${tmpFile} <<'${heredoc}'`,
@@ -146,6 +184,11 @@ export async function setConditions(postId, conditions) {
     heredoc,
     `wp post meta update ${postId} _elementor_conditions --format=json < ${tmpFile}`,
     `rm -f ${tmpFile}`,
+    `cat > ${phpFile} <<'${phpHeredoc}'`,
+    regenPhp,
+    phpHeredoc,
+    `wp eval-file ${phpFile}`,
+    `rm -f ${phpFile}`,
   ].join('\n');
   return wpe(script);
 }

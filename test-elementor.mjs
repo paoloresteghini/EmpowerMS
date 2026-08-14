@@ -765,15 +765,6 @@ test('flushPageCache throws loudly when wp page-cache flush does not report succ
   }
 });
 
-test('the install still disallows crawlers, which is what makes publishing during conversion safe', async () => {
-  /* Pages under conversion are published. That is only defensible while
-     robots.txt disallows everything. Checked rather than assumed, because
-     if it ever changes, the policy silently stops being safe. */
-  const robots = await checkRobots('https://empv2.wpenginepowered.com');
-  assert.match(robots, /User-agent:\s*\*/i);
-  assert.match(robots, /Disallow:\s*\//);
-});
-
 /* --- elementor/pages/podcast-a/01-hero.mjs ------------------------------ */
 
 test('the podcast hero mapping carries the section class and its copy', () => {
@@ -1571,6 +1562,33 @@ test('settleReveal queries the reveal wait from document.body, not document', ()
    that is missing instead of leaving that to Playwright's type error. */
 const requireSpikeUrl = () => process.env.SPIKE_URL
   ?? assert.fail('SPIKE_URL is not set. These four tests drive a real browser against the deployed page: SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
+
+/* Fix round 1 review finding: this test used to sit outside the
+   requireSpikeUrl()-guarded group and made an unguarded live fetch to the
+   install on every run, on any machine. Before this task, a checkout with
+   no route to empv2.wpenginepowered.com only ever hit that wall inside the
+   seven tests below, each of which fails fast with a message naming
+   SPIKE_URL, never with a bare DNS error or a hang. checkRobots() does not
+   drive a browser, unlike the seven tests around it, but it is gated behind
+   the same requireSpikeUrl() on purpose: robots.txt lives on the same
+   install SPIKE_URL points at, "no network route to the install" is exactly
+   the failure requireSpikeUrl() already turns into a legible message for,
+   and a second, narrower guard (its own env var, a hand-rolled timeout and
+   error message) would duplicate that machinery to say the same thing.
+   checkRobots(baseUrl) wants an origin, not a page path, so the podcast-a
+   URL SPIKE_URL is documented to carry is trimmed down with `new URL()`
+   rather than assuming callers will pass a bare origin. The test is not
+   mocked: proving the crawler-disallow policy actually holds against the
+   real robots.txt is the entire point, and a mocked response would prove
+   nothing. */
+test('the install still disallows crawlers, which is what makes publishing during conversion safe', async () => {
+  /* Pages under conversion are published. That is only defensible while
+     robots.txt disallows everything. Checked rather than assumed, because
+     if it ever changes, the policy silently stops being safe. */
+  const robots = await checkRobots(new URL(requireSpikeUrl()).origin);
+  assert.match(robots, /User-agent:\s*\*/i);
+  assert.match(robots, /Disallow:\s*\//);
+});
 
 /* The check that matters most and that nothing static can make. A Loop Grid
    whose item template does not emit data-guest produces a page where every

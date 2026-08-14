@@ -655,7 +655,7 @@ Requires Node ≥18. No dependencies, no install step.
 node --test test.mjs
 ```
 
-215 tests. They come in two halves.
+228 tests. They come in two halves.
 
 Everything up to the divider comment near the end of `test.mjs` is about the
 **original reference build** specifically — it names `.em-*` section classes
@@ -724,7 +724,9 @@ reaching the install and failing as a permissions error.
 
 Below 960px the desktop nav (`.em-header__nav`) hides and a mobile menu takes over: a
 toggle button in the header actions plus an inline dropdown panel (`.em-mobilenav`,
-in `src/sections/00-header.html`) with accordion sub-items, driven by `js/nav.js`.
+in `src/_shared/header.html` and `src/_shared/header-2.html`, both header
+partials carrying the same mobile nav tree) with accordion sub-items, driven by
+`js/nav.js`.
 
 It is progressively enhanced. The panel and all 16 links ship live in the static
 HTML — every group's sub-list is a real `<ul>` of real `<a href>` elements, with no
@@ -797,8 +799,16 @@ sticky header. It never ships, so this only affects the preview.
 
 Each of the five desktop nav triggers opens a full-width panel: grouped link
 columns on the left, one promoted feature card on the right. Markup lives in
-`src/sections/00-header.html` (five `.em-mega` panels), styles in
+`src/_shared/header.html` (five `.em-mega` panels, present only in that
+header partial, not in `header-2.html`'s simple-dropdown variant), styles in
 `css/megamenu.css`, behaviour in `js/megamenu.js`.
+
+This pair (`css/megamenu.css` / `js/megamenu.js`) applies only to the static
+build's mega-menu header (`current.html`, `homepage-a..d`) and is not part of
+the WordPress conversion: the header shipped there is `header-2.html`'s
+simple-dropdown variant, deployed once as a site-wide Theme Builder part (see
+"Phase 2A foundations" below), so no page converted so far enqueues either
+file, and none is expected to.
 
 Behaviour: hover-intent opens after 120ms and closes after 200ms, but only on a
 fine pointer; moving between triggers while one is open swaps instantly; click
@@ -1007,8 +1017,13 @@ header, a different script set and different partials. Per-page notes follow.
    below.
 6. Ship the scripts the page actually links. `js/nav.js` (mobile menu, sticky
    header condense) and `js/reveal.js` (entrance reveals) are on every page.
-   The desktop navigation is **either** `js/megamenu.js` **or** `js/dropdown.js`,
-   never both — see the per-page notes.
+   In the static build, the desktop navigation is **either** `js/megamenu.js`
+   **or** `js/dropdown.js`, never both — see the per-page notes. That choice
+   no longer applies once a page is converted: as of Phase 2A the header is
+   one site-wide Theme Builder part built from `header-2.html`, so every
+   converted page gets `js/dropdown.js` unconditionally (see "Phase 2A
+   foundations" below) and `js/megamenu.js` is not enqueued anywhere in
+   WordPress.
 
 ### Tokens, and what Elementor has to be told
 
@@ -1049,7 +1064,7 @@ Two cascade traps, both silent:
 
 The default is a **native Elementor container carrying the section's own custom
 class**, with the stylesheets enqueued as above. That keeps the page editable.
-Three shapes are the exception and want an **HTML widget** instead, because
+Four shapes are the exception and want an **HTML widget** instead, because
 Elementor cannot express them without losing the thing that makes them work:
 
 - **Inline SVG.** Several sections draw a glyph or a rule as inline `<svg>`
@@ -1061,6 +1076,13 @@ Elementor cannot express them without losing the thing that makes them work:
   Loop Grid, and `data-cms-item-attrs` is the contract between the two.
 - **The forms.** See the note further down — they are real HTML with real
   labels, and the only change at hand-off is the `action`.
+- **The header's `.em-header__nav`, `.em-header__actions` and `.em-mobilenav`
+  blocks**, added in Phase 2A. Nothing native emits the `aria-controls` pairs
+  `js/dropdown.js` and `js/nav.js` bind to, the split link-plus-disclosure
+  Solutions item, or the `aria-expanded="true"` defaults every panel ships
+  with so the header stays open before JavaScript runs. Three HTML widgets,
+  verbatim from `src/_shared/header-2.html`; see "Phase 2A foundations"
+  below for the redeploy path this creates.
 
 Section by section, for the pages that are settled or in front of Empower now.
 The section list for any page is the `@include` list in its `src/<page>/index.html`;
@@ -1141,11 +1163,12 @@ left as things to remember:
   ```
 
   This is the cost of the header's three verbatim HTML widgets (see the
-  fourth exception, below): the markup that carries `aria-controls` pairs,
-  the split Solutions item and the no-JS open-by-default contract lives in
-  the partial, and an edit made only in Elementor is silently lost the next
-  time the partial is redeployed. Anyone touching the nav later needs to
-  know this before they reach for the editor.
+  fourth exception, above, under "What each block becomes"): the markup
+  that carries `aria-controls` pairs, the split Solutions item and the
+  no-JS open-by-default contract lives in the partial, and an edit made
+  only in Elementor is silently lost the next time the partial is
+  redeployed. Anyone touching the nav later needs to know this before they
+  reach for the editor.
 - **`setConditions()` performs two writes, not one**, because assigning a
   Theme Builder part to a location is not satisfied by postmeta alone.
   Elementor Pro's `Conditions_Manager::get_location_templates()` resolves a
@@ -1186,7 +1209,22 @@ editor needs to make.
 
 ### Per page
 
-| Page | Header | Desktop nav | Stylesheets beyond tokens/components/site |
+The Header and Desktop nav columns below describe the **static build**: which
+header partial and script each `dist/*.html` page links in its own `<head>`.
+They do not describe what WordPress serves. As of Phase 2A the header (and
+its stylesheet and script, `css/header-2.css` and `js/dropdown.js`) is a
+site-wide Theme Builder part, enqueued unconditionally in
+`wp/empowerms-child/functions.php` rather than kept in
+`empower_page_styles()` / `empower_page_scripts()`'s per-page maps (see
+"Phase 2A foundations" above). Every page converted so far gets `header-2`
+and `js/dropdown.js` regardless of what this table says for its static
+counterpart; the `current.html` / `homepage-a..d` row's mega-menu pair
+(`header`, `js/megamenu.js`, `css/megamenu.css`) has no WordPress equivalent
+at all, since none of those pages are part of the conversion. Only the
+Stylesheets column still describes what a page needs enqueued per slug once
+converted.
+
+| Page | Header (static build only) | Desktop nav (static build only) | Stylesheets beyond tokens/components/site |
 | --- | --- | --- | --- |
 | `final.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `homepage.css`, `motion.css`, `option-a.css`, `option-d.css`, `current-2.css`, `final.css` |
 | `who-we-are-*` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `who-we-are-*.css` |
@@ -1200,9 +1238,10 @@ editor needs to make.
 | `give-a/b/c/d.html` | `header-2` | `js/dropdown.js` + `css/header-2.css` | `motion.css`, `give-*.css` |
 
 `css/header-2.css` is the header's own stylesheet — utility strip, centred nav,
-dropdown panels. In WordPress it is one global header block and this is the CSS
-that block needs. **A page that includes `header-2.html` without it renders five
-permanently open panels across its hero.** There is a test.
+dropdown panels. In WordPress it is one global header block, enqueued
+unconditionally, and this is the CSS that block needs. **A page that includes
+`header-2.html` without it renders five permanently open panels across its
+hero.** There is a test.
 
 **Email Sign Up** and the **Ambassador Landing Page**, two readings each, built
 2026-08-08. Empower chose Five Minutes and The Network on 2026-08-11. These two roadmap tabs are the only ones that end on an instruction

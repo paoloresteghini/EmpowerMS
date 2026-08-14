@@ -69,9 +69,14 @@ export const image = ({ id, url, cssClass = '', ...rest } = {}) =>
 export const link = ({ label, href, cssClass = '', ...rest } = {}) =>
   el('widget', { text: label, link: { url: href }, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'button' });
 
-/* The escape hatch for the three named exceptions in the spec, and for
-   nothing else. Markup goes through unaltered. widgetType 'html' and the
-   settings key html are read from the captured html node. */
+/* The escape hatch for the four named exceptions in the spec, and for
+   nothing else. The fourth, added in Phase 2A, is the header's own
+   `.em-header__nav`, `.em-header__actions` and `.em-mobilenav` blocks,
+   which is what this factory builds for header.mjs (see
+   docs/superpowers/specs/2026-08-12-elementor-conversion-design.md,
+   "Native-first, and the four exceptions"). Markup goes through unaltered.
+   widgetType 'html' and the settings key html are read from the captured
+   html node. */
 export const html = ({ markup, cssClass = '', ...rest } = {}) =>
   el('widget', { html: markup, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'html' });
 

@@ -139,9 +139,14 @@ regenerating from the pre-write state), that `wp eval-file` targets the
 `.php` temp file specifically rather than the `.json` one, the fully
 qualified `\ElementorPro\Modules\ThemeBuilder\Module::instance()` class
 name pinned literally rather than matched loosely, and two real-execution
-tests (mirroring `deployPage`'s existing pair, `test-elementor.mjs:1017`
-and `:1038`) that run the captured script through a real local bash with a
-fake `wp`, proving `set -e` genuinely aborts the promise when `wp
+tests (mirroring `deployPage`'s existing pair, `'deployPage rejects when
+the Elementor data write fails partway through the script, instead of
+resolving over a partial deploy'` and `'deployPage still resolves when
+every wp-cli step genuinely succeeds'` in `test-elementor.mjs`, at
+`:1222` and `:1243` as of this correction, not the `:1017` / `:1038` this
+section originally cited, which were never the right pair and had drifted
+further since) that run the captured script through a real local bash with
+a fake `wp`, proving `set -e` genuinely aborts the promise when `wp
 eval-file` fails and does not introduce a false failure on the happy path.
 
 ## Step 3: the postmeta write itself, confirmed correct

@@ -202,6 +202,17 @@ misleading as an alarmed "everything changed."
   the captures themselves are trustworthy. Flagging the warning's cause
   here rather than leaving it looking like 45 pages' worth of per-page
   reveal failures.
+
+  > **Superseded, Phase 2A.** This bug is fixed. `fidelity-browser.mjs`'s
+  > wait condition now reads `document.body.querySelectorAll('[data-reveal]')`
+  > (line 214 as of this note, was `document.querySelectorAll(...)` when this
+  > finding was written), scoped the same way `js/reveal.js`'s own query
+  > already was. Commit `89208bf`; see
+  > `docs/elementor/theme-part-mechanism.md`'s account of the fix (search
+  > "89208bf" there) for what it changed and what it was found to speed up.
+  > Left in place above, not rewritten, because it was a real finding at the
+  > time and is part of this document's record; only the two file:line
+  > citations were true when written and are not true now.
 - **`2025-tax-calculator` timed out on first capture attempt**
   (`page.goto: Timeout 30000ms exceeded` waiting for `load`) and had to be
   retried; the retry succeeded. Only this one page did this, out of the

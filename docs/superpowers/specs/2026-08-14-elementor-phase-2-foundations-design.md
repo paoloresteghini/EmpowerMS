@@ -148,25 +148,48 @@ Pro's and UiCore's source on the install, not from the survey's inventory:
   `ElementorPro\Modules\ThemeBuilder\Classes\Theme_Support::after_register_locations()`
   registers the core `header` and `footer` locations with `overwrite => true`,
   and then hooks `get_header` and `get_footer` **only if at least one document is
-  assigned to those locations**. Its `get_header()` buffers the theme's
+  assigned to those locations**. ~~Its `get_header()` buffers the theme's
   `header.php` and discards the output, printing
   `views/theme-support-header.php` instead, which emits its own doctype, `head`,
-  `wp_head()` and `wp_body_open()` and then calls `do_location('header')`.
+  `wp_head()` and `wp_body_open()` and then calls `do_location('header')`.~~
+  **Corrected 2026-08-14, Task 3 (`docs/elementor/theme-part-mechanism.md`,
+  "`id="uicore-page"` survived, contrary to the spec's prediction"):** this
+  was the wrong mental model for this theme. UiCore ships its own native
+  Theme Builder integration (`uicore-framework`'s
+  `UiCore\ThemeBuilder\Frontend` class), which injects assigned content
+  through the theme's own `uicore_page` / `uicore_content_end` action hooks
+  inside `header.php`/`footer.php`, rather than Elementor Pro's generic
+  fallback replacing those files' output wholesale. `header.php` and
+  `footer.php` both run in full, unconditionally, on a switched page.
 
 Three consequences the implementation must respect:
 
-1. **Both parts ship together or neither does.** Swallowing `header.php`
+1. ~~**Both parts ship together or neither does.** Swallowing `header.php`
    discards UiCore's opening `<div class="uicore-body-content">`,
    `<div id="uicore-page">` and `<div id="content" class="uicore-content">`,
    while `footer.php` still prints their closing tags unless the footer location
    is also filled. A header part with no footer part leaves the document
-   unbalanced.
-2. **UiCore's page wrappers disappear**, so any UiCore rule scoped to
+   unbalanced.~~ **Corrected below (point 2): the wrapper divs are never
+   discarded either way, so this specific mechanism is not why both parts
+   must ship together.** They still should, for the more direct reason that
+   a header with no footer condition leaves whichever one IS assigned
+   inconsistent with the site's actual chrome; verified as still true in
+   practice (Step 5 of the div-balance check: 524 open, 524 close, delta 0)
+   without needing the discarded-`header.php` premise.
+2. ~~**UiCore's page wrappers disappear**, so any UiCore rule scoped to
    `#uicore-page` or `#content.uicore-content` stops applying to page content,
    not just to chrome. Nothing in this build depends on those wrappers, but the
    page body's inherited padding and max-width may move, which is why
    `podcast-a` is re-read at four widths after the switch rather than only its
-   header and footer.
+   header and footer.~~ **Disproved 2026-08-14, Task 3.** Checked directly on
+   the switched `podcast-a` page: `id="uicore-page"` is still present, and
+   `#content.uicore-content` still closes correctly (div balance 0, not
+   negative). None of UiCore's wrapper divs, `wp_head()` or `wp_footer()` are
+   ever part of what a Theme Builder assignment replaces; only the content
+   inside the `uicore_page` / `uicore_content_end` action calls is. This is
+   **less disruption than priced in here**, not more: CSS depending on those
+   wrappers keeps working unchanged. Full account:
+   `docs/elementor/theme-part-mechanism.md`, same section as above.
 3. **The mechanism is verified from source, not yet observed.** A capability
    being present and it producing the output you need are different claims, and
    the second is the one that matters. The plan's first live task proves it with

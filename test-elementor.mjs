@@ -560,6 +560,40 @@ test('no stylesheet is duplicated into the child theme by hand', () => {
   }
 });
 
+/* Task 7 fix round 1, Important finding 1. wp/sync.mjs's third rsync pass
+   (wp/empowerms-child/css/ -> dest/css/, no --delete) is the only thing
+   that gets bridge.css onto the server at all: the first pass excludes
+   /css/ outright, and the second pass (root css/ -> dest/css/, --delete)
+   would erase bridge.css even if the first pass did not already keep it
+   out. This was found by rehearsing both passes against a scratch
+   directory, not by reading the enqueue and assuming it worked (see the
+   task report). A source-text assertion is the right instrument here for
+   the same reason settleReveal's own test above is one: the actual failure
+   is a file not arriving on a remote host over SSH, which no unit test in
+   this repository can observe directly, whether by removing the pass
+   entirely or by reordering it ahead of the FROM_ROOT loop (where the
+   second pass's own --delete would still wipe it straight back out). What
+   a source test CAN check, and must, is that the pass exists, that it
+   comes after the loop, and that it carries no --delete of its own - the
+   three properties an edit to this file could silently drop without
+   breaking anything test.mjs or test-elementor.mjs otherwise runs. */
+test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, without --delete', () => {
+  const src = fs.readFileSync('wp/sync.mjs', 'utf8');
+  const loopMatch = src.match(/for\s*\(\s*const\s+dir\s+of\s+FROM_ROOT\s*\)\s*\{[\s\S]*?\n\s*\}/);
+  assert.ok(loopMatch, 'the FROM_ROOT sync loop was not found in wp/sync.mjs');
+  const loopEnd = loopMatch.index + loopMatch[0].length;
+
+  const bridgePassMatch = src.match(/await run\(\s*'rsync'\s*,\s*\[[^\]]*'wp\/empowerms-child\/css\/'[^\]]*\]\s*\)/);
+  assert.ok(bridgePassMatch, 'no rsync call syncing wp/empowerms-child/css/ was found in wp/sync.mjs');
+  assert.ok(bridgePassMatch.index > loopEnd,
+    'the wp/empowerms-child/css/ sync must run after the FROM_ROOT loop, or the loop\'s own --delete against dest/css/ removes bridge.css straight back out');
+
+  const bridgePass = bridgePassMatch[0];
+  assert.doesNotMatch(bridgePass, /--delete/,
+    'the wp/empowerms-child/css/ sync must not carry --delete: its source is only ever bridge.css, and --delete against dest/css/ would erase every file the previous pass just placed there');
+  assert.match(bridgePass, /`\$\{dest\}\/css\/`|dest\}\/css\//, 'the wp/empowerms-child/css/ sync does not target dest/css/');
+});
+
 /* --- fidelity.mjs ------------------------------------------------------- */
 
 test('checkCopy reports every approved string the page is missing', () => {

@@ -232,13 +232,6 @@
  * than to nothing, picks color and text-transform back up from the wrapper
  * the way the static build's own single <a> always did.
  *
- * `all:unset` clears frontend.min.css's `.elementor-button` rule
- * (background-color, border-radius, padding, font-size, line-height,
- * text-align, transition - one class, 0,1,0; two classes here beats it
- * outright) and, for the inherited properties it resets to inherit rather
- * than to nothing, picks color and text-transform back up from the wrapper
- * the way the static build's own single <a> always did.
- *
  * .em-btn gets position:absolute;inset:0 rather than width/height:100%:
  * its wrapper carries the pill's own padding (34px on podcast-a's large
  * buttons), and a static-flow 100%/100% box only fills the CONTENT area

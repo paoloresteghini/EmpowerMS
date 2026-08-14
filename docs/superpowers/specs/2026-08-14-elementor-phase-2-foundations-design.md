@@ -128,10 +128,49 @@ post, category, author, search and `person` URL on the install, which is a
 larger and quieter break than the one this switch is trying to avoid. Only 29 and
 154 are disabled here; 11365 is looked at first and decided on evidence.
 
-Note what that means for the deferred seam: from this switch onward, posts and
-archives render Beaver's chrome while pages render Empower's. That is the
-already-accepted seam becoming visible, not a new problem, and it is what the
-later template phase closes.
+### Corrected during planning, 2026-08-14: the chrome being replaced is UiCore's, not Beaver's
+
+Established by fetching the install's own homepage and by reading Elementor
+Pro's and UiCore's source on the install, not from the survey's inventory:
+
+- **UiCore renders the chrome on every page.** The homepage carries
+  `uicore-header`, `uicore-footer`, `uicore-body-content` and `id="uicore-page"`,
+  and no `fl-theme-layout` markup. UiCore's `header.php` prints it through
+  `do_action('uicore_page')`.
+- **Beaver's Header (29) and Footer (154) layouts are dormant.** `bb-theme` is
+  inactive and the active theme renders its own chrome, so those two records are
+  not what a visitor sees. Disabling them is hygiene, not the switch. The switch
+  is the Elementor one below. This does not change the ruling on the other six
+  layouts: they stay, and they are still the post, archive, search and `person`
+  templates.
+- **Elementor Pro replaces UiCore's chrome through its theme-support fallback.**
+  UiCore registers no Elementor theme locations, so
+  `ElementorPro\Modules\ThemeBuilder\Classes\Theme_Support::after_register_locations()`
+  registers the core `header` and `footer` locations with `overwrite => true`,
+  and then hooks `get_header` and `get_footer` **only if at least one document is
+  assigned to those locations**. Its `get_header()` buffers the theme's
+  `header.php` and discards the output, printing
+  `views/theme-support-header.php` instead, which emits its own doctype, `head`,
+  `wp_head()` and `wp_body_open()` and then calls `do_location('header')`.
+
+Three consequences the implementation must respect:
+
+1. **Both parts ship together or neither does.** Swallowing `header.php`
+   discards UiCore's opening `<div class="uicore-body-content">`,
+   `<div id="uicore-page">` and `<div id="content" class="uicore-content">`,
+   while `footer.php` still prints their closing tags unless the footer location
+   is also filled. A header part with no footer part leaves the document
+   unbalanced.
+2. **UiCore's page wrappers disappear**, so any UiCore rule scoped to
+   `#uicore-page` or `#content.uicore-content` stops applying to page content,
+   not just to chrome. Nothing in this build depends on those wrappers, but the
+   page body's inherited padding and max-width may move, which is why
+   `podcast-a` is re-read at four widths after the switch rather than only its
+   header and footer.
+3. **The mechanism is verified from source, not yet observed.** A capability
+   being present and it producing the output you need are different claims, and
+   the second is the one that matters. The plan's first live task proves it with
+   marker content before anything real is built on it.
 
 **A finding that resizes this, established 2026-08-14 by reading
 `wp/empowerms-child/functions.php`:** `tokens/*.css`, `components/components.css`,
@@ -229,7 +268,8 @@ rather than a page body, so three checks are added to `test-elementor.mjs`:
 | --- | --- |
 | The site-wide switch changes 45 live-shaped pages at once | Sample screenshotted before and after, spanning page shapes rather than the first five found. Revert written and rehearsed before the switch |
 | Disabling the wrong Beaver layouts strips the template from every post, archive, search and `person` URL | Only Header (29) and Footer (154) are disabled. The six template layouts are named in this document precisely so a brief cannot say "disable the nine" |
-| Beaver's layouts and Elementor's parts both render, giving two headers | Disabled in the same step as the switch, and the after-screenshots are what prove it |
+| Beaver's layouts and Elementor's parts both render, giving two headers | Established 2026-08-14 that Beaver's chrome layouts are dormant and UiCore renders the chrome. The after-screenshots are still what prove it |
+| A header part ships without a footer part, leaving UiCore's opening wrappers discarded and their closing tags printed | Both parts are created and assigned in the same task, marker content first. Never one location filled alone |
 | `.em-header__bar` and other bare class rules are wrong once their class sits on a wrapper, and the selector grep cannot find them | Checked against a rendered page at four widths, not by grep. Whatever it needs goes in the bridge stylesheet |
 | The three header HTML widgets make the header un-editable in practice | Accepted with the trade-off stated. The handover documents that a nav change means editing `src/_shared/header-2.html` and redeploying |
 | Phase 1's unconditional enqueue has already changed the 45 Beaver pages | Its own task, separate from the switch, so the two causes cannot be confused |

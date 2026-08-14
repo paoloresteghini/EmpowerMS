@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
+import { installConfig } from './install.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections } from './fidelity.mjs';
@@ -28,6 +29,20 @@ import { deployPage, deployLoopItem } from './elementor/deploy.mjs';
    build without any signal that anything was wrong. Rebuilding here too
    costs one build.mjs run and removes that gap. */
 execFileSync('node', ['build.mjs'], { stdio: 'inherit' });
+
+/* Most wpe() calls in this file run against a fake ssh binary placed on
+   PATH, which ignores the host and key entirely, but wpe() reads the
+   install's coordinates from the environment and fails loudly when they are
+   unset (see install.mjs). Filling in placeholders ONLY when nothing is set
+   keeps those tests runnable on a checkout with no .env, without overriding
+   real coordinates when a shell does have them: the category-scoping test
+   near the end of this file makes a genuine SSH call, and needs the real
+   ones. Every assertion on a captured script matches a substring, so the
+   values here never change a result. The install.mjs tests below set and
+   restore these themselves. */
+process.env.WPE_SSH_HOST ??= 'test@test.invalid';
+process.env.WPE_SSH_KEY ??= '/dev/null';
+process.env.WPE_ROOT ??= '/test/root';
 
 /* A minimal static file server for the repo root, so the computed-style test
    can serve dist/podcast-a.html (and the tokens/css/js it references via
@@ -60,6 +75,92 @@ function serveRepoRoot() {
     }));
   });
 }
+
+/* --- install.mjs --------------------------------------------------------- */
+
+/* Runs the body with the three install variables set exactly as given
+   (an undefined value deletes the variable), then restores whatever was
+   there before, including the placeholders set at the top of this file. */
+function withInstallEnv(values, body) {
+  const names = ['WPE_SSH_HOST', 'WPE_SSH_KEY', 'WPE_ROOT'];
+  const saved = Object.fromEntries(names.map((n) => [n, process.env[n]]));
+  try {
+    for (const n of names) {
+      if (values[n] === undefined) delete process.env[n];
+      else process.env[n] = values[n];
+    }
+    return body();
+  } finally {
+    for (const n of names) {
+      if (saved[n] === undefined) delete process.env[n];
+      else process.env[n] = saved[n];
+    }
+  }
+}
+
+const FULL_ENV = {
+  WPE_SSH_HOST: 'someone@example.ssh.wpengine.net',
+  WPE_SSH_KEY: '/home/someone/.ssh/example_ed25519',
+  WPE_ROOT: '/nas/content/live/example',
+};
+
+test('installConfig reads all three coordinates from the environment', () => {
+  withInstallEnv(FULL_ENV, () => {
+    assert.deepEqual(installConfig(), {
+      host: 'someone@example.ssh.wpengine.net',
+      key: '/home/someone/.ssh/example_ed25519',
+      root: '/nas/content/live/example',
+    });
+  });
+});
+
+/* Unset is the case a new checkout hits, so the failure has to name the
+   variable and say how to set it, the way the SPIKE_URL guard at the end of
+   this file does. An empty string is the same failure wearing a disguise:
+   `ssh -i '' host` fails much further downstream, with an error about the
+   key rather than about the configuration. */
+for (const missing of ['WPE_SSH_HOST', 'WPE_SSH_KEY', 'WPE_ROOT']) {
+  test(`installConfig fails with a message naming ${missing} when it is unset`, () => {
+    withInstallEnv({ ...FULL_ENV, [missing]: undefined }, () => {
+      assert.throws(() => installConfig(), (err) => {
+        assert.match(err.message, new RegExp(missing));
+        assert.match(err.message, /\.env\.example/, 'the message does not say where to start');
+        return true;
+      });
+    });
+  });
+
+  test(`installConfig treats an empty ${missing} as unset`, () => {
+    withInstallEnv({ ...FULL_ENV, [missing]: '   ' }, () => {
+      assert.throws(() => installConfig(), new RegExp(missing));
+    });
+  });
+}
+
+test('installConfig expands a leading ~/ in the key path', () => {
+  /* ssh -i does no tilde expansion of its own: the shell normally does it,
+     and a value arriving from the environment has not been through one. An
+     unexpanded ~/.ssh/... reaches ssh as a relative path that does not
+     exist, and the failure reads as a permissions problem. */
+  withInstallEnv({ ...FULL_ENV, WPE_SSH_KEY: '~/.ssh/example_ed25519' }, () => {
+    assert.equal(installConfig().key, `${process.env.HOME}/.ssh/example_ed25519`);
+  });
+});
+
+test('no install coordinates are left hard-coded in the source that uses them', () => {
+  /* This repository is public. The coordinates are not a secret in the
+     sense that a key is (WP Engine SSH is key-only and no key is committed),
+     but they were put behind the environment deliberately and the seam is
+     easy to undo by re-typing a constant while debugging. Asserted against
+     the two files that talk to the install, not the whole tree: docs/ keeps
+     the public hostname on purpose, and this file carries the server path
+     inside a captured PHP notice used as a fixture. */
+  for (const file of ['wpe.mjs', 'wp/sync.mjs', 'install.mjs']) {
+    const src = fs.readFileSync(file, 'utf8');
+    assert.doesNotMatch(src, /\bssh\.wpengine\.net/, `${file} hard-codes an SSH host`);
+    assert.doesNotMatch(src, /\/nas\/content\/live\//, `${file} hard-codes an install root`);
+  }
+});
 
 /* Elementor's logger writes deprecation notices into WP-CLI's stdout. They
    arrive in two shapes and BOTH have been seen on this install: as their own

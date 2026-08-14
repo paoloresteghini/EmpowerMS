@@ -1,5 +1,6 @@
 dist/
 _site/
+.env
 .DS_Store
 .superpowers/
 docs/Empower Mississippi Design System/

@@ -1,8 +1,5 @@
 import { spawn } from 'node:child_process';
-
-const HOST = 'empv2@empv2.ssh.wpengine.net';
-const KEY = `${process.env.HOME}/.ssh/wpengine_ed25519`;
-const ROOT = '/nas/content/live/empv2';
+import { installConfig } from './install.mjs';
 
 /* A notice starts at the literal "PHP: " followed by a timestamp, and runs to
    the line that closes its array dump. Matched with the "PHP: " allowed to
@@ -28,13 +25,17 @@ export function stripNotices(raw) {
    (only execFileSync and spawnSync accept it), so the script never reaches
    the remote bash -s, leaving it blocked on stdin. */
 export async function wpe(command) {
+  /* Resolved per call, before anything is spawned, so a missing variable
+     surfaces as its own error rather than as an ssh exit code that reads
+     like the install refusing us. */
+  const { host, key, root } = installConfig();
   return new Promise((resolve, reject) => {
-    const script = `cd ${ROOT} || exit 1\n${command}\n`;
+    const script = `cd ${root} || exit 1\n${command}\n`;
     const child = spawn('ssh', [
-      '-i', KEY,
+      '-i', key,
       '-o', 'BatchMode=yes',
       '-o', 'ConnectTimeout=30',
-      HOST,
+      host,
       'bash', '-s',
     ]);
 

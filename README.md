@@ -698,6 +698,27 @@ SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elemento
 Without it, those four fail on purpose, with a message naming `SPIKE_URL`
 rather than a silent skip.
 
+## The install
+
+Everything that talks to WordPress (`wpe.mjs`, `wp/sync.mjs`, and the
+deployment code in `elementor/` that goes through them) reaches the WP Engine
+install over SSH, and reads that install's coordinates from the environment.
+This repository is public, so they are not written into its source:
+
+```bash
+cp .env.example .env
+# fill in the three values, then, in each shell that runs a deploy:
+set -a; . ./.env; set +a
+```
+
+`.env` is gitignored. `.env.example` documents the three variables:
+`WPE_SSH_HOST`, `WPE_SSH_KEY` and `WPE_ROOT`. Nothing there is a password:
+WP Engine's SSH gateway is key-only, and the key stays in `~/.ssh`.
+
+Unset any of them and the next call fails immediately with a message naming
+the variable, the same way the `SPIKE_URL` guard above does, rather than
+reaching the install and failing as a permissions error.
+
 ## Mobile navigation
 
 Below 960px the desktop nav (`.em-header__nav`) hides and a mobile menu takes over: a

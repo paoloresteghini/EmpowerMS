@@ -17,6 +17,8 @@ import {
 } from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
 import { deployPage, deployLoopItem, deployThemePart, setConditions } from './elementor/deploy.mjs';
+import { extractBlock } from './elementor/theme-parts/extract.mjs';
+import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
    directly (served locally, not fetched from the live install), so it needs
@@ -1252,6 +1254,88 @@ test('setConditions refuses an empty condition list', async () => {
   /* An empty array assigns the part to no location at all, which renders
      nothing and reports success. */
   await assert.rejects(() => setConditions(4242, []), /at least one condition/);
+});
+
+/* --- elementor/theme-parts/extract.mjs ----------------------------------- */
+
+test('extractBlock returns a whole nested element, not a truncated one', () => {
+  const nav = extractBlock(fs.readFileSync('src/_shared/header-2.html', 'utf8'), 'nav', 'em-header__nav');
+  assert.ok(nav.startsWith('<nav'));
+  assert.ok(nav.endsWith('</nav>'));
+  assert.ok(nav.includes('drop-join'), 'the last dropdown panel is missing, so the block was truncated');
+  const opens = (nav.match(/<div\b/g) || []).length;
+  const closes = (nav.match(/<\/div>/g) || []).length;
+  assert.equal(opens, closes, 'the extracted nav has unbalanced divs');
+});
+
+test('extractBlock fails loudly rather than returning a fragment', () => {
+  assert.throws(() => extractBlock('<div class="other"></div>', 'nav', 'em-header__nav'), /no <nav>/);
+  assert.throws(() => extractBlock('<nav class="em-header__nav">', 'nav', 'em-header__nav'), /never closed/);
+});
+
+test('extractBlock stops at the social block\'s own close, not the partial\'s last </a>', () => {
+  /* The defect this module replaces: the brief's original socialMarkup()
+     sliced from <div class="em-footer__social"> to the </div> following the
+     partial's LAST </a>, which is the Privacy Policy link twenty lines past
+     the social block, silently swallowing the Follow and More columns into
+     one HTML widget. extractBlock() must stop at the social div's own
+     matching close instead. */
+  const partial = fs.readFileSync('src/_shared/footer.html', 'utf8');
+  const social = extractBlock(partial, 'div', 'em-footer__social');
+  assert.ok(social.startsWith('<div class="em-footer__social">'));
+  assert.ok(social.endsWith('</div>'));
+  assert.doesNotMatch(social, /Follow/, 'the extracted social block swallowed the Follow column');
+  assert.doesNotMatch(social, /More/, 'the extracted social block swallowed the More column');
+  assert.doesNotMatch(social, /Privacy Policy/, 'the extracted social block swallowed the More column\'s Privacy Policy link');
+});
+
+/* --- elementor/theme-parts/footer.mjs ------------------------------------ */
+
+test('the footer part carries the build own classes and copy', () => {
+  const [root] = footerPart();
+  const json = JSON.stringify(root);
+  assert.equal(root.settings.css_classes, 'em-footer');
+  assert.equal(root.settings.html_tag, 'footer');
+  assert.equal(root.settings.content_width, 'full');
+  assert.match(json, /Empower Mississippi works to Educate, Engage, and Elect/);
+  assert.match(json, /741 Avignon Dr\., Suite C/);
+  assert.match(json, /Privacy Policy/);
+});
+
+test('the footer part keeps the reveal attributes the motion layer needs', () => {
+  /* css/motion.css hides every [data-reveal] element and js/reveal.js is
+     what reveals them. A footer that loses these attributes is not broken;
+     a footer that keeps the stylesheet and loses the script ships blank. */
+  const json = JSON.stringify(footerPart());
+  assert.match(json, /data-reveal-group/);
+  const fades = json.match(/data-reveal\|fade/g) || [];
+  assert.equal(fades.length, 3, 'all three footer columns carry data-reveal="fade"');
+});
+
+test('the footer social icons are one markup block, not four widgets', () => {
+  /* The four social links are inline SVG. Elementor has no widget that
+     emits them, and an icon widget would substitute its own library. */
+  const json = JSON.stringify(footerPart());
+  assert.match(json, /"widgetType":"html"/);
+  for (const network of ['facebook.com/empowerms', 'instagram.com/empowerms', 'x.com/empowerms', 'youtube.com/@empowerms']) {
+    assert.ok(json.includes(network), `footer markup is missing ${network}`);
+  }
+});
+
+test('every string in the footer part appears in the static footer partial', () => {
+  /* The static build is the reference the conversion is measured against.
+     A string here that is not there is invented copy. */
+  const source = fs.readFileSync('src/_shared/footer.html', 'utf8');
+  for (const copy of [
+    'Empower Mississippi works to Educate, Engage, and Elect Mississippians dedicated to removing barriers to opportunity.',
+    'Follow',
+    'More',
+    'Contact Us',
+    '741 Avignon Dr., Suite C',
+  ]) {
+    assert.ok(source.includes(copy), `"${copy}" is not in src/_shared/footer.html`);
+    assert.ok(JSON.stringify(footerPart()).includes(copy), `"${copy}" is not in the footer part`);
+  }
 });
 
 /* --- fidelity-browser.mjs / the podcast guest filter --------------------- */

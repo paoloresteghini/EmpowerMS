@@ -1152,6 +1152,39 @@ test('setConditions refuses an empty condition list', async () => {
 
 /* --- fidelity-browser.mjs / the podcast guest filter --------------------- */
 
+/* settleReveal's own wait condition was unsatisfiable on every page and the
+   defect degraded silently to a passing capture: the timeout fired, its
+   warning logged, and the screenshot was taken anyway, indistinguishable
+   from a correctly-settled one unless someone was watching stderr. That
+   signature, wrong but green, is exactly what a behavioural test cannot
+   catch here without SPIKE_URL and a stderr scrape, so a source-level
+   assertion is the right instrument for once: it reads settleReveal's own
+   text rather than driving a browser through it.
+   js/reveal.js:11 sets data-reveal="on" on <html> itself, the gate for the
+   whole page. js/reveal.js:16 then builds the collection that ever
+   receives .is-revealed by querying from document.body, deliberately
+   excluding that root element. A settleReveal wait that queries from
+   document instead of document.body sweeps <html> into the set it waits
+   on; since <html> never gains .is-revealed, every() can never return
+   true, and the wait times out unconditionally on every page that runs
+   js/reveal.js. */
+test('settleReveal queries the reveal wait from document.body, not document', () => {
+  const src = fs.readFileSync(path.join(process.cwd(), 'fidelity-browser.mjs'), 'utf8');
+  /* Isolated to the waitForFunction call specifically, not the whole
+     settleReveal body: the maxTransitionMs computation further down also
+     queries [data-reveal] unscoped from document, but that query only
+     feeds a max() and including <html> there is harmless (it contributes
+     0ms), unlike the wait's every(), which an included <html> makes
+     unsatisfiable. Only the wait is this test's concern. */
+  const waitMatch = src.match(/await page\.waitForFunction\(\(\) =>[\s\S]*?\{ timeout: 10000 \}\)/);
+  assert.ok(waitMatch, 'settleReveal\'s page.waitForFunction reveal wait not found in fidelity-browser.mjs');
+  const wait = waitMatch[0];
+  assert.match(wait, /document\.body\.querySelectorAll\('\[data-reveal\]'\)/,
+    'settleReveal does not query [data-reveal] scoped to document.body; it will sweep <html> into the set and its wait can never be satisfied');
+  assert.doesNotMatch(wait, /(?<!\.body)\bdocument\.querySelectorAll\('\[data-reveal\]'\)/,
+    'settleReveal queries [data-reveal] from document unscoped; <html> carries data-reveal="on" (js/reveal.js:11) but never gains .is-revealed, so this wait can never resolve');
+});
+
 /* The four tests below drive a real browser against the deployed page, so
    they need a live URL that nothing in this repository can supply on its
    own. Without this guard, a missing SPIKE_URL surfaces as Playwright's own

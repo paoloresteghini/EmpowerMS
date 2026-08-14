@@ -204,8 +204,14 @@ async function settleReveal(page) {
     window.scrollTo(0, height);
     await new Promise(r => requestAnimationFrame(r));
   });
+  /* Query from body, not document, matching js/reveal.js:16 exactly. js/reveal.js:11
+     sets data-reveal="on" on <html> itself as the gate for the whole page; the
+     collection that ever receives .is-revealed is body-scoped, precisely to exclude
+     that root element. A document-wide query here would sweep <html> into the set
+     this waits on, and since <html> never gets .is-revealed, every() could never
+     return true: the wait would time out on every single page, unconditionally. */
   await page.waitForFunction(() =>
-    [...document.querySelectorAll('[data-reveal]')].every(el => el.classList.contains('is-revealed')),
+    [...document.body.querySelectorAll('[data-reveal]')].every(el => el.classList.contains('is-revealed')),
   { timeout: 10000 }).catch(() => {
     /* Finding 5.9's grey-ghost screenshots happened because this timeout was
        swallowed silently: capture proceeded anyway and produced exactly the

@@ -86,6 +86,15 @@ add_action( 'wp_enqueue_scripts', function () {
 		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), $ver );
 		$prev = $handle;
 	}
+
+	/* The bridge stylesheet. Loads after every other Empower stylesheet on
+	 * every page, page-specific sheets included, because it exists to repair
+	 * what Elementor's own markup does to those sheets' selectors: it has to
+	 * see, and win against, whatever came before it. $prev is whatever the
+	 * loop above left it at, empower-header-2 on a page with no per-page
+	 * sheets of its own.
+	 */
+	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), $ver );
 }, EMPOWER_STYLES_PRIORITY );
 
 /**

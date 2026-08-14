@@ -533,10 +533,29 @@ test('no stylesheet is duplicated into the child theme by hand', () => {
      someone hand-copied one of them into wp/empowerms-child/ anyway, and with
      the first rsync now excluding those directories (see wp/sync.mjs), a
      hand-copied directory would sit there uploaded as-is instead of being
-     overwritten by the sync loop. */
+     overwritten by the sync loop.
+
+     wp/empowerms-child/css/ is the one deliberate exception, added by Task 7:
+     it holds bridge.css, which has no counterpart in the root css/ directory
+     at all (test.mjs's own "no stylesheet outside the bridge carries an
+     Elementor selector" test guarantees that), so its existence is not what
+     this test is guarding against. What it must still catch is the root
+     css/'s own files reappearing there by hand: the loop below allows the
+     directory but asserts none of its files also exist, by name, under the
+     protected root css/. */
   const syncSrc = fs.readFileSync('wp/sync.mjs', 'utf8');
   for (const dir of ['tokens', 'components', 'css', 'js', 'assets']) {
     assert.ok(syncSrc.includes(`'${dir}'`), `wp/sync.mjs does not sync ${dir}/`);
+    if (dir === 'css') {
+      const childCssDir = 'wp/empowerms-child/css';
+      if (fs.existsSync(childCssDir)) {
+        for (const file of fs.readdirSync(childCssDir)) {
+          assert.ok(!fs.existsSync(`css/${file}`),
+            `wp/empowerms-child/css/${file} duplicates a root css/ file by hand`);
+        }
+      }
+      continue;
+    }
     assert.ok(!fs.existsSync(`wp/empowerms-child/${dir}`), `wp/empowerms-child/${dir} exists as a hand-made duplicate`);
   }
 });
@@ -1651,4 +1670,53 @@ test('the five desktop dropdown panels ship open without JavaScript and close wi
     `expected 5 dropdown panels visible without JavaScript (the header ships them open by design); got ${withoutJs}`);
   assert.equal(withJs, 0,
     `expected 0 dropdown panels visible with JavaScript (js/dropdown.js should have set panel.hidden = true on all five); got ${withJs}. If this is nonzero, js/dropdown.js did not run - check for a classic-script collision on a top-level identifier such as \`root\`.`);
+});
+
+/* Task 7, Step 1. bridge.css is additive by design: the 50 files in css/
+   stay untouched and stay under test.mjs. Anything Elementor-shaped goes
+   here so a reader knows where to look, and so a later tidy-up of css/
+   cannot silently break the converted pages. */
+test('the bridge stylesheet exists, is enqueued last, and is the only Elementor-shaped file', () => {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.ok(fs.existsSync('wp/empowerms-child/css/bridge.css'));
+  assert.match(fn, /wp_enqueue_style\(\s*'empower-bridge'/);
+  const bridgeAt = fn.indexOf("'empower-bridge'");
+  const pageLoopAt = fn.indexOf('empower_page_styles()[ $slug ]');
+  assert.ok(bridgeAt > pageLoopAt, 'the bridge stylesheet must enqueue after the per-page sheets');
+});
+
+/* Elementor Site Settings cannot be saved on this install: the Components
+   package's __beforeSave hook dereferences undefined on any kit document
+   (Elementor Pro 4.2.1). Container width and widget spacing have nowhere
+   else to live. */
+test('the bridge stylesheet carries the two values Site Settings cannot hold', () => {
+  const css = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  assert.match(css, /1200px/, 'container width is not set');
+  assert.match(css, /e-con|elementor-widget/, 'no Elementor container or widget selector present');
+});
+
+/* The inverse guard. The moment an .e-con or .elementor-widget selector
+   appears in css/, the static build has stopped being buildable on its own
+   and test.mjs is no longer proving what it claims to prove. */
+test('no stylesheet outside the bridge carries an Elementor selector', () => {
+  for (const file of fs.readdirSync('css').filter(f => f.endsWith('.css'))) {
+    const css = fs.readFileSync(`css/${file}`, 'utf8');
+    assert.doesNotMatch(css, /\.e-con\b|\.elementor-widget/, `css/${file} carries an Elementor selector`);
+  }
+});
+
+/* Ruling E, made before Task 5 ran: factory.mjs's link() emits
+   widgetType 'button', so the skip link's em-skip class lands on a wrapper
+   div while the focusable anchor inside carries only .elementor-button. A
+   div never receives focus, so css/site.css's own .em-skip:focus can never
+   match and the skip link is permanently off screen (WCAG 2.4.1). This
+   test asserts the source-level repair; the actual behaviour (tabbing to
+   the live page brings a visible pill into view, verified against the
+   spike URL by hand for this task's report) is not something a source-text
+   assertion can prove on its own, which is why it is recorded in the
+   report rather than asserted here as a browser test. */
+test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', () => {
+  const css = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  assert.match(css, /\.em-skip:focus-within\s*\{[^}]*top:/,
+    'bridge.css must carry a :focus-within rule for .em-skip that moves it into view');
 });

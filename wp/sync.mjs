@@ -18,18 +18,31 @@ export async function syncTheme() {
   const { host, key, root } = installConfig();
   const dest = `${root}/${THEME}`;
   const ssh = `ssh -i ${key} -o BatchMode=yes`;
-  /* wp/empowerms-child/ holds only the four PHP/CSS files that live in this
-     repository; tokens/, components/, css/, js/ and assets/ are synced
-     separately below, from the root, and never exist under wp/empowerms-child/
-     on disk here. Without these excludes, this rsync's own --delete removes
-     all five of those directories from the live theme (they aren't in the
-     source it's syncing from), and the loop below only re-uploads them one at
-     a time afterwards: a failure between the two steps leaves the live site
-     with no CSS or JS and nothing to report it. */
+  /* wp/empowerms-child/ holds the theme's own PHP files plus
+     wp/empowerms-child/css/bridge.css; tokens/, components/, css/, js/ and
+     assets/ are synced separately below, from the root, and (bridge.css
+     aside) never exist under wp/empowerms-child/ on disk here. Without these
+     excludes, this rsync's own --delete removes all five of those
+     directories from the live theme (they aren't in the source it's syncing
+     from), and the loop below only re-uploads them one at a time afterwards:
+     a failure between the two steps leaves the live site with no CSS or JS
+     and nothing to report it. */
   const excludes = FROM_ROOT.flatMap((dir) => ['--exclude', `/${dir}/`]);
   await run('rsync', ['-az', '--delete', ...excludes, '-e', ssh, 'wp/empowerms-child/', `${host}:${dest}/`]);
   for (const dir of FROM_ROOT) {
     await run('rsync', ['-az', '--delete', '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`]);
   }
+  /* bridge.css is excluded above (it lives under wp/empowerms-child/css/,
+     inside the excluded /css/ path) and then overwritten wholesale above
+     (the root css/ -> dest/css/ pass runs --delete against dest/css/,
+     which would remove bridge.css again even if the exclude above did not
+     already keep it out). Without this third pass bridge.css is silently
+     unreachable from the server no matter what this file contains: found by
+     rehearsing the two passes above against a scratch directory before
+     trusting them, not by reading the enqueue and assuming it worked. No
+     --delete here: this source only ever contains bridge.css, and deleting
+     dest/css/ against it would erase everything the previous pass just put
+     there. */
+  await run('rsync', ['-az', '-e', ssh, 'wp/empowerms-child/css/', `${host}:${dest}/css/`]);
   return dest;
 }

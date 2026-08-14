@@ -1,0 +1,304 @@
+/* The bridge stylesheet.
+ *
+ * The only file in this project allowed to carry an Elementor-shaped
+ * selector (.e-con, .elementor-widget, .elementor-button, and the like).
+ * Everything under css/ is written against the static build's own markup,
+ * where a class like .em-header__bar sits directly on the flex container
+ * an author would expect. Elementor does not produce that markup: a
+ * container()'s class lands on a wrapper div that Elementor itself also
+ * classes .e-con, and several widget factories (text(), image(), link())
+ * move the caller's class off the real content element and onto that
+ * element's own wrapper div instead (factory.mjs documents which key does
+ * which; see CONTAINER_CSS_CLASS_KEY vs WIDGET_CSS_CLASS_KEY there). Every
+ * rule below exists because one of those two things broke a selector in
+ * css/, measured against the live install, never guessed.
+ *
+ * Loads last (functions.php enqueues it after every other Empower
+ * stylesheet, page sheets included), because it has to see, and be able to
+ * outrank, whatever came before it: Elementor's own frontend.min.css and
+ * its per-widget-type stylesheets (widget-image.min.css and the like),
+ * which this file is bridging against. Its own specificity choices are
+ * documented rule by rule below rather than reached for by reflex, because
+ * Elementor's core CSS is not shy about winning fights on specificity: see
+ * the flex-direction section for the measurement that made that concrete.
+ */
+
+/* ---------- Structural values, Site Settings cannot hold them ----------
+ * Elementor Site Settings cannot be saved on this install at all: the
+ * Components package's __beforeSave hook dereferences undefined on any kit
+ * document (Elementor Pro 4.2.1, reproduced three ways in Phase 1). The two
+ * values a kit would normally carry, container width and widget spacing,
+ * have no other home, so they live here instead. UiCore's own Site Settings
+ * default to 1170px and 20px; Empower's static build uses 1200px
+ * (--container-max, tokens/spacing.css) and 0.
+ *
+ * Measured on the live install: every container() call in this build
+ * passes content_width: 'full' (podcast-a and both theme parts alike), so
+ * none of these are Elementor's own "boxed" containers, and the actual
+ * width constraint in practice comes from tokens/base.css's own
+ * .em-container{max-width:var(--container-max)} rule, which already
+ * measures 1200px on the live page (getBoundingClientRect on
+ * .em-footer .em-container: width 1200 at a 1440 viewport). This rule is
+ * the belt to that braces' suspenders: it protects any future container
+ * that ships without .em-container, or with content_width left at
+ * Elementor's own "boxed" default, from silently picking up UiCore's
+ * 1170px instead. --container-max-width is Elementor's own custom
+ * property (frontend.min.css: .e-con{--content-width:min(100%,
+ * var(--container-max-width,1140px))...}), read here rather than guessed.
+ */
+.elementor-section.elementor-section-boxed > .elementor-container,
+.e-con{
+  --container-max-width:1200px;
+}
+
+/* Elementor's own widget-spacing default (frontend.min.css:
+ * .elementor-widget:not(:last-child){margin-block-end:
+ * var(--kit-widget-spacing,20px)}) falls back to 20px in the absence of a
+ * savable kit. Measured: a more specific Elementor rule already zeroes this
+ * inside every container on this all-container build
+ * (.e-con .elementor-widget.elementor-widget{margin-block-end:0}, three
+ * classes, beats the two above), so this line is not doing visible work
+ * today; it stays as the documented, spec-mandated fallback for any widget
+ * that is not itself inside a .e-con when a later page adds one. */
+.elementor-widget:not(:last-child){
+  margin-block-end:0;
+}
+
+/* ---------- Header and footer flex-direction ----------
+ * Task 4 and Task 5 both measured .em-footer__bottom, .em-header__bar and
+ * .em-utility__bar computing flex-direction:column where the static build
+ * computes row: container() (elementor/factory.mjs) never passes a
+ * flex_direction setting, so any converted container whose stylesheet says
+ * display:flex without naming a direction gets Elementor's own default
+ * (column) instead of the CSS specification's (row).
+ *
+ * THE DECISION, measured rather than reasoned about. Two candidates existed:
+ * a rule general to Elementor's own .e-con class, or a rule per affected
+ * selector. Measured directly against the live install before choosing
+ * (podcast-a, .pca-ep, css/podcast-a.css:266, a real container whose own
+ * stylesheet sets flex-direction:column explicitly):
+ *
+ *   1. A bare `.e-con{flex-direction:row}` in this file changed nothing on
+ *      ANY of the four probed containers, .pca-ep included. Reading
+ *      Elementor's own frontend.min.css explains why: the actual rule that
+ *      resolves flex-direction on a full-width flex container is
+ *      `.e-con-full.e-flex{flex-direction:var(--flex-direction)}`, TWO
+ *      classes (specificity 0,2,0), fed by `.e-con.e-flex{--flex-direction:
+ *      column}` (also 0,2,0). A single-class bridge rule (0,1,0) cannot
+ *      outrank either one, no matter where it sits in the cascade: this
+ *      file loading last only wins specificity TIES, and 0,1,0 is not a
+ *      tie against 0,2,0. This also disproves the brief's own Step 3
+ *      sketch, which showed a single-class selector; measurement corrected
+ *      it before it shipped.
+ *   2. A two-class `.em-header__bar.e-con{flex-direction:row}` (0,2,0,
+ *      matching Elementor's own specificity, and this file loads after
+ *      frontend.min.css so the tie breaks our way) flipped exactly the
+ *      three targeted containers to row and, confirmed in the same run,
+ *      left .pca-ep computing column, untouched.
+ *
+ * A general rule keyed only to .e-con (even at matching 0,2,0 specificity,
+ * e.g. `.e-con.e-flex{--flex-direction:row}`) was rejected on the second
+ * ground the brief itself raised: eighteen rules across css/ and
+ * components/ set flex-direction:column explicitly on classes that become
+ * containers once their page is converted (.pca-ep among them, already
+ * proven live above; .da-door, .cad-card, .wrb-plate and others not yet
+ * converted). A general .e-con rule at tying specificity would beat every
+ * one of those bare-class rules by source order alone, silently flipping
+ * them to row the day their page ships. Naming the three affected
+ * selectors explicitly is the only form that cannot do that: it cannot
+ * reach a selector it does not name.
+ */
+.em-header__bar.e-con,
+.em-utility__bar.e-con,
+.em-footer__bottom.e-con{
+  flex-direction:row;
+}
+
+/* ---------- Header bar: nav and actions are not real flex children ----------
+ * Task 5's defect #3. header.mjs wraps the nav and the actions group in
+ * html() widgets rather than native ones (its own comment explains why:
+ * the alternative costs a bridge rule on the Donate button instead, and
+ * that cost is paid below anyway for podcast-a's buttons). html() passes
+ * the markup through unaltered, so .em-header__nav and .em-header__actions
+ * keep their own real classes, unlike text()/image()/link() where the
+ * class moves to the wrapper. But the markup still sits one level down:
+ * Elementor wraps every widget in its own div (here,
+ * .elementor-widget.elementor-widget-html, confirmed against the live DOM;
+ * this install emits no further .elementor-widget-container level for
+ * these widget types), so .em-header__nav's real parent is that div, not
+ * .em-header__bar. Every rule in header-2.css and site.css that depends on
+ * .em-header__nav or .em-header__actions being a flex ITEM of
+ * .em-header__bar (flex:, margin-left:auto, min-width:0, gap participation)
+ * does nothing while that div sits in between, even once flex-direction is
+ * fixed above: header-2.css:46-47, site.css:182, site.css:205's
+ * .em-header__actions half.
+ *
+ * display:contents removes the wrapper div from the box tree while leaving
+ * its child in place, so .em-header__nav and .em-header__actions become
+ * .em-header__bar's real, direct flex children and every rule above starts
+ * seeing what it always expected to see. Scoped to .em-header__bar's own
+ * html widgets only, not to .elementor-widget-html generally: this file
+ * has no business changing how an html() block behaves on a page it was
+ * not written for. */
+.em-header__bar > .elementor-widget-html{
+  display:contents;
+}
+
+/* ---------- Utility bar: class-on-wrapper, not class-on-content ---------- */
+/* Task 5 defect #4. text()'s cssClass lands on the widget wrapper
+ * (WIDGET_CSS_CLASS_KEY, factory.mjs), so header-2.css:33's
+ * .em-utility__note{margin:0} zeroes the wrapper, not the real <p> the
+ * markup produces. That <p> is un-classed and falls back to
+ * tokens/base.css's site-wide `p{margin:0 0 var(--space-4)}` (16px),
+ * unopposed. On the static build the class sits on the <p> itself, so
+ * header-2.css's rule, loading after base.css, already won there; here it
+ * has to be told to reach one level deeper. */
+.em-utility__note p{
+  margin:0;
+}
+
+/* Task 5 defect #5. Same class-on-wrapper shape: header-2.css:35-36's
+ * min-height/min-width:24px (the SC 2.5.8 target size) lands on the
+ * wrapper, not the real <a>, which measured 20.7969px live against the
+ * 24px the static build's own <a> gets. No competing Elementor rule here,
+ * just an absence: the fix restates the same declarations one level in. */
+.em-utility__link a{
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  min-width:24px;
+}
+
+/* ---------- Footer: image widget's own default alignment ----------
+ * Task 4 defect #1. Not a class-on-wrapper problem: .em-footer__logo sits
+ * correctly on its own container (footer.mjs wraps the image in a
+ * container() built for exactly this class). The image widget itself is
+ * centred by Elementor's OWN per-widget-type stylesheet instead:
+ * widget-image.min.css ships `.elementor-widget-image{text-align:center}`,
+ * and text-align inherits down onto the inline-block <img>, centring it in
+ * the 424px-wide logo column measured on the live page (rect: container
+ * left 164/right 588, img left 309.8/right 442.2 - equal 145.8px gaps each
+ * side). components/components.css:146's own `.em-footer__logo img` rule
+ * only sets height/width/margin-bottom, never touched alignment, because on
+ * the static build there was nothing to align: a plain <img>, no
+ * text-align ancestor, sits flush left by default. Two classes here
+ * (0,2,0) comfortably beats Elementor's one (0,1,0). */
+.em-footer__logo .elementor-widget-image{
+  text-align:left;
+}
+
+/* Task 4 defects #2 and #3. text()'s class lands correctly on THIS
+ * element (it IS the widget wrapper, confirmed against the live DOM:
+ * <div class="... em-footer__mission elementor-widget
+ * elementor-widget-text-editor">), so site.css:166-167's max-width:40ch
+ * and margin:0 0 var(--space-6) target the right element. They still lose,
+ * to two of Elementor's own rules, both more specific than a single class:
+ * `.elementor.elementor .e-con > .elementor-widget{max-width:100%}`
+ * (frontend.min.css; the doubled .elementor is Elementor's own
+ * specificity-inflation trick, four classes, 0,4,0) and
+ * `.e-con .elementor-widget.elementor-widget{margin-block-end:0}` (three
+ * classes, 0,3,0). Matched directly against the live element's CSSOM
+ * before writing this, not assumed. .em-footer and .em-container are both
+ * real ancestor classes already in the footer's own tree (footerPart());
+ * combined with the widget's own two classes that reaches 0,4,0, a tie
+ * Elementor's rule loses on source order, since this file loads last. */
+.em-footer .em-container .em-footer__mission.elementor-widget{
+  max-width:40ch;
+  margin:0 0 var(--space-6);
+}
+
+/* Task 4 defect #4. Same 0,4,0 fight, the max-width half only:
+ * components/components.css:156's .em-footer__legal{max-width:60ch} is a
+ * single class (0,1,0) against the same
+ * `.elementor.elementor .e-con > .elementor-widget{max-width:100%}` rule. */
+.em-footer .em-container .em-footer__legal.elementor-widget{
+  max-width:60ch;
+}
+
+/* ---------- Native button/link widgets keep Elementor's own chrome ----------
+ * link() (factory.mjs) always emits widgetType 'button', so its cssClass
+ * lands on the wrapper div (WIDGET_CSS_CLASS_KEY) while the real,
+ * focusable, clickable element is Elementor's own
+ * <a class="elementor-button elementor-button-link elementor-size-sm">
+ * inside it. Two independent call sites hit this, both repaired the same
+ * way: the wrapper already renders our own chrome correctly (background,
+ * padding, pill radius, colour - it carries our real classes), so the
+ * anchor just needs Elementor's own button styling stripped and needs to
+ * fill the wrapper so the whole visible pill stays clickable.
+ * `all:unset` clears frontend.min.css's `.elementor-button` rule
+ * (background-color, border-radius, padding, font-size, line-height,
+ * text-align, transition - one class, 0,1,0; two classes here beats it
+ * outright) and, for the inherited properties it resets to inherit rather
+ * than to nothing, picks color and text-transform back up from the wrapper
+ * the way the static build's own single <a> always did.
+ *
+ * `all:unset` clears frontend.min.css's `.elementor-button` rule
+ * (background-color, border-radius, padding, font-size, line-height,
+ * text-align, transition - one class, 0,1,0; two classes here beats it
+ * outright) and, for the inherited properties it resets to inherit rather
+ * than to nothing, picks color and text-transform back up from the wrapper
+ * the way the static build's own single <a> always did.
+ *
+ * .em-btn gets position:absolute;inset:0 rather than width/height:100%:
+ * its wrapper carries the pill's own padding (34px on podcast-a's large
+ * buttons), and a static-flow 100%/100% box only fills the CONTENT area
+ * inside that padding, leaving the padding itself visually part of the
+ * button but not clickable - measured (wrapper rect width 517px, a plain
+ * 100%/100% anchor measuring 445px: a 36px dead rim on each side an
+ * ordinary <a class="em-btn"> on the static build never had, because there
+ * padding and click target were the same element). .em-btn already
+ * establishes a positioning context on its own (position:relative, an
+ * Elementor widget default), so inset:0 sizes the anchor to the wrapper's
+ * full padding box and restores one clickable pill, matching the static
+ * build (measured after: wrapper 516.5px, anchor 512.5px, the remainder
+ * being .em-btn's own 2px transparent border).
+ *
+ * .em-skip stays with width/height:100% instead: it is itself
+ * position:absolute with no explicit width (site.css:51), sized by
+ * shrink-to-fit from its own in-flow content. Giving its anchor
+ * position:absolute too was tried and measured broken: an absolutely
+ * positioned descendant does not contribute to its ancestor's shrink-to-fit
+ * calculation, so with no in-flow content left, .em-skip itself collapsed
+ * to its padding alone (measured 40x24px, "Skip to content" rendered
+ * outside its own visible pill). .em-btn does not share this failure mode
+ * because it is an in-flow flex item of .pca-hero__actions, not itself
+ * absolutely positioned, so its own sizing is untouched by what its
+ * children do. The width/height:100% anchor here does leave the same small
+ * unclickable padding rim .em-btn had before its own fix, accepted
+ * deliberately: a keyboard control that is activated with Enter, not
+ * clicked, and one already verified to focus and become visible correctly
+ * (see the :focus-within rule below). */
+.em-skip .elementor-button{
+  all:unset;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  color:inherit;
+  cursor:pointer;
+}
+.em-btn .elementor-button{
+  all:unset;
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:inherit;
+  cursor:pointer;
+}
+
+/* Task 5 defect #1, the most urgent item on either list: a WCAG 2.4.1
+ * failure. site.css:51-56 reveals .em-skip on :focus, but the class sits
+ * on the wrapper div (see above) and a div is never focusable; the
+ * anchor that actually receives focus carries none of our classes. The
+ * skip link was permanently 100px above the viewport for a keyboard user.
+ * :focus-within matches the wrapper whenever its descendant (the real
+ * anchor) has focus, which is exactly the event site.css's own
+ * .em-skip:focus was trying and failing to catch. Verified by tabbing to
+ * the live page, not just by the rule existing: the first Tab press now
+ * brings a visible "Skip to content" pill into view at the top left. */
+.em-skip:focus-within{
+  top:var(--space-4);
+}

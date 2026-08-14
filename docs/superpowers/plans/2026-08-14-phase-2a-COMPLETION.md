@@ -71,6 +71,27 @@ shape. A general reset was rejected because several other rules set
 `flex-direction:column` explicitly on classes that become containers, `.pca-ep`
 among them, and a general rule at matching specificity would silently flip them.
 
+**Two classes is the container case. Widget wrappers need four.** Elementor
+inflates its own specificity deliberately: `.elementor.elementor .e-con >
+.elementor-widget{max-width:100%}` in `frontend.min.css` is 0,4,0, with the class
+name repeated to get there. So a `text()`-produced widget wrapper fighting
+Elementor's own `max-width` or `margin` defaults cannot be reached by a bare class
+or by two. `bridge.css` uses real ancestor classes already in the tree, as in
+`.em-footer .em-container .em-footer__mission.elementor-widget`, to reach 0,4,0 and
+win on source order. That is the pattern for every later page, not an exception,
+and it is why the footer's `max-width` and `margin-block-end` repairs look
+disproportionately long.
+
+## An operational trap that will waste an afternoon otherwise
+
+**Cloudflare caches static assets by URL for about a year, independently of
+`flushPageCache()`.** `wp page-cache flush` does nothing to it. So a change to
+`bridge.css`, or to anything else under the theme, can be synced and deployed and
+still not be what the browser receives, with every WP-side check saying the deploy
+succeeded. Task 7 found this while measuring the cascade and used `wp cdn-cache
+flush` before every measurement. Any later phase that measures a CSS change against
+the live install needs both flushes, not one.
+
 ## The regression this phase shipped and caught
 
 Moving `js/dropdown.js` to the site-wide enqueue made it collide with

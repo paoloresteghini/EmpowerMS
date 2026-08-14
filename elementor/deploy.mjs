@@ -109,10 +109,30 @@ export async function deployLoopItem(postId, elements) {
    then never renders in a location, with nothing reporting it. */
 const THEME_PART_LOCATIONS = ['header', 'footer'];
 
+/* deployElements() overwrites _elementor_data and _elementor_template_type
+   wholesale, with no check of its own that postId names a document of the
+   type it is about to write. Task 3 proved setConditions() rejects a
+   non-library post (docs/elementor/theme-part-mechanism.md:112-117), but
+   that check runs on the SECOND write, after this function's own call to
+   deployElements() has already clobbered whatever the post held; a wrong id
+   here silently overwrites an unrelated post's Elementor data before
+   anything has a chance to object. So this checks the target's post_type on
+   the install BEFORE deployElements() runs, and fails loudly, naming the id
+   and what it actually found, rather than writing first and letting a later
+   step discover the damage. */
 export async function deployThemePart(postId, elements, location) {
   if (!THEME_PART_LOCATIONS.includes(location)) {
     throw new Error(
       `deployThemePart: location must be one of ${THEME_PART_LOCATIONS.join(', ')}, got ${JSON.stringify(location)}`
+    );
+  }
+  if (!Number.isInteger(postId)) {
+    throw new Error(`deployThemePart: postId must be an integer, got ${JSON.stringify(postId)}`);
+  }
+  const postType = (await wpe(`wp post get ${postId} --field=post_type`)).trim();
+  if (postType !== 'elementor_library') {
+    throw new Error(
+      `deployThemePart: post ${postId} is not an elementor_library post (post_type is '${postType}'); refusing to overwrite its Elementor data`
     );
   }
   return deployElements(postId, elements, location);

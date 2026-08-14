@@ -495,7 +495,19 @@ test('the chrome stylesheet and its script are enqueued unconditionally, not per
    js/dropdown.js both declare `const root`, and the second to run throws a
    SyntaxError and never executes. script_loader_tag is the filter that
    actually controls the emitted tag, so that is what this asserts on. */
-test('the three theme scripts get type="module" from a script_loader_tag filter, not an inert data key', () => {
+/* Fix round: this test used to iterate the same three literal handles the
+   filter itself hard-coded ('empower-nav', 'empower-reveal',
+   'empower-dropdown'), which meant it could never notice a fourth handle
+   going unrecognised. empower_page_scripts() emits handles shaped
+   'empower-script-<name>' (see the per-page enqueue loop above it in
+   functions.php); a filter matching only the three literals by name would
+   let anything routed through that mechanism load as a classic script,
+   which is the exact condition that produced this branch's site-wide
+   dropdown regression. The filter must now derive its handle list from
+   empower_module_script_handles(), which itself reads empower_page_scripts()
+   rather than typing the per-page shape out a second time, so this asserts
+   the derivation exists rather than re-typing the list it must not miss. */
+test('the module-script filter derives its handle list from empower_page_scripts(), not a second hand-typed list', () => {
   /* js/nav.js, js/reveal.js and js/dropdown.js loaded as classic scripts
      collide on top-level `const` declarations (js/reveal.js and
      js/dropdown.js both declare `root`); type="module" gives each its own
@@ -504,11 +516,22 @@ test('the three theme scripts get type="module" from a script_loader_tag filter,
   assert.doesNotMatch(fn, /wp_script_add_data\(\s*'empower-(?:nav|reveal|dropdown)',\s*'type',\s*'module'\s*\)/,
     'a wp_script_add_data(..., \'type\', \'module\') call is still present; WordPress never reads that data key to emit a type attribute, so this is dead code masking the real fix');
   assert.match(fn, /add_filter\(\s*'script_loader_tag'/, 'no script_loader_tag filter is registered');
+
   const filterBody = fn.slice(fn.indexOf("add_filter( 'script_loader_tag'"));
-  for (const handle of ['empower-nav', 'empower-reveal', 'empower-dropdown']) {
-    assert.ok(filterBody.includes(`'${handle}'`), `script_loader_tag filter does not name ${handle}`);
-  }
+  assert.match(filterBody, /empower_module_script_handles\(\)/,
+    'script_loader_tag filter does not call empower_module_script_handles(); a hand-typed handle list here cannot see a handle empower_page_scripts() adds later');
   assert.match(filterBody, /type="module"/, 'script_loader_tag filter does not add type="module" to the tag');
+
+  const handlesStart = fn.indexOf('function empower_module_script_handles');
+  assert.ok(handlesStart > -1, 'no empower_module_script_handles() function is defined');
+  const handlesBody = fn.slice(handlesStart, fn.indexOf('\n}\n', handlesStart));
+  for (const handle of ['empower-nav', 'empower-reveal', 'empower-dropdown']) {
+    assert.ok(handlesBody.includes(`'${handle}'`), `empower_module_script_handles() does not name ${handle}`);
+  }
+  assert.match(handlesBody, /empower_page_scripts\(\)/,
+    'empower_module_script_handles() does not read empower_page_scripts(), so a future per-page script would still be invisible to the filter');
+  assert.match(handlesBody, /'empower-script-'\s*\.\s*\$script/,
+    'empower_module_script_handles() does not build the empower-script-<name> shape empower_page_scripts() actually emits');
 });
 
 test('the chrome stylesheet loads after site.css, not before it', () => {
@@ -945,15 +968,58 @@ test('podcast-a/03-library.mjs points the loop grid at a real integer post id an
    container's grid and be caught only by a human looking at a screenshot.
    Walking every mapping module's tree and asserting the setting on every
    container makes the decision self-enforcing, and generalises unchanged to
-   the 51 compositions Phase 2 writes. */
-test('every container in every podcast-a mapping module sets content_width: \'full\'', () => {
+   the 51 compositions Phase 2 writes.
+
+   Fix round: the trees array below used to be hand-written and left out
+   headerPart() and footerPart() entirely (14 containers, 6 in the header
+   and 8 in the footer, never covered) while a comment claimed it covered
+   "every container in the build". A hand-written list is a coverage bug
+   that reports success, so this test no longer trusts one: discoverTrees()
+   independently counts the tree-shaped exports that actually exist in the
+   two directories this feature depends on (podcast-a's numbered mapping
+   modules and the theme parts), and the walk below fails loudly if the
+   hard-coded trees array has drifted from that count, rather than silently
+   covering less than it claims. */
+async function discoverTrees(dir, { skip = [] } = {}) {
+  const isTreeNode = (x) => x !== null && typeof x === 'object' && typeof x.elType === 'string';
+  const isTree = (x) => (Array.isArray(x) ? x.length > 0 && x.every(isTreeNode) : isTreeNode(x));
+  let found = 0;
+  for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.mjs') && !skip.includes(f))) {
+    const mod = await import(`./${dir}/${file}`);
+    for (const value of Object.values(mod)) {
+      if (typeof value !== 'function') continue;
+      let result;
+      try {
+        result = value();
+      } catch {
+        continue; // not a zero-arg tree builder (e.g. extractBlock(source, tagName, className))
+      }
+      if (isTree(result)) found += 1;
+    }
+  }
+  return found;
+}
+
+test('every container in every podcast-a mapping module and both theme parts sets content_width: \'full\'', async () => {
   function* everyContainer(nodes) {
     for (const n of nodes) {
       if (n.elType === 'container') yield n;
       if (n.elements?.length) yield* everyContainer(n.elements);
     }
   }
-  const trees = [podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem()];
+  const trees = [
+    podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
+    headerPart(), footerPart(),
+  ];
+
+  /* page.mjs is excluded from the podcast-a scan: sections() there just
+     recomposes hero()/about()/library(), so counting it too would double
+     count trees already found in the numbered mapping files. */
+  const discovered = await discoverTrees('elementor/pages/podcast-a', { skip: ['page.mjs'] })
+    + await discoverTrees('elementor/theme-parts', { skip: ['extract.mjs'] });
+  assert.equal(trees.length, discovered,
+    `this test walks ${trees.length} trees but ${discovered} tree-shaped exports actually exist across elementor/pages/podcast-a and elementor/theme-parts; the hard-coded trees array above has drifted from the modules that actually exist`);
+
   let checked = 0;
   for (const tree of trees) {
     for (const c of everyContainer(Array.isArray(tree) ? tree : [tree])) {
@@ -984,6 +1050,22 @@ test('the podcast-a page composes hero, about, then library, in that order', () 
   assert.ok(Number.isInteger(podcastAPostId), 'podcast-a/page.mjs POST_ID is not an integer');
 });
 
+/* --- elementor/theme-parts ------------------------------------------------ */
+
+/* I4 from the final review: HEADER_POST_ID and FOOTER_POST_ID were imported
+   at the top of this file and never used anywhere in it, so a typo in
+   either constant would go unnoticed by the suite. podcast-a's own POST_ID
+   gets exactly this assertion above; the two live theme-part ids get the
+   same treatment here so the imports stop being dead. This does not (and
+   cannot, from source alone) prove 20573 and 20574 are the correct ids on
+   the install; it proves the constants are shaped like ids at all. */
+test('the header and footer theme-part post ids are real integers', () => {
+  assert.equal(typeof HEADER_POST_ID, 'number', 'theme-parts/header.mjs HEADER_POST_ID is not a number');
+  assert.ok(Number.isInteger(HEADER_POST_ID), 'theme-parts/header.mjs HEADER_POST_ID is not an integer');
+  assert.equal(typeof FOOTER_POST_ID, 'number', 'theme-parts/footer.mjs FOOTER_POST_ID is not a number');
+  assert.ok(Number.isInteger(FOOTER_POST_ID), 'theme-parts/footer.mjs FOOTER_POST_ID is not an integer');
+});
+
 /* --- elementor/deploy.mjs ------------------------------------------------ */
 
 /* deployPage() shells out through wpe(), the same as flushPageCache() and
@@ -999,15 +1081,29 @@ function withCapturingSsh(prefix) {
   const capturePath = path.join(tmpDir, 'captured.sh');
   /* Reads all of stdin (the script wpe() pipes in), writes it verbatim to
      capturePath, then reports success so deployPage()'s own checks (if any)
-     do not themselves fail. */
+     do not themselves fail. deployThemePart() now sends a `wp post get
+     ... --field=post_type` script of its own, ahead of deployElements()'s
+     script, to verify the target before writing to it (see deploy.mjs); this
+     fake must answer that one with 'elementor_library' rather than the
+     generic "Success", or every existing deployThemePart() test below would
+     start failing that guard on its own synthetic post ids. Any other
+     command still gets "Success", unchanged. capturePath is overwritten on
+     each call, so a test reading it after deployThemePart() resolves still
+     sees only the LAST script sent (deployElements()'s), which is what the
+     existing per-field assertions below check. */
   fs.writeFileSync(sshPath, [
     '#!/usr/bin/env node',
     'const fs = require("fs");',
     `const chunks = [];`,
     'process.stdin.on("data", c => chunks.push(c));',
     'process.stdin.on("end", () => {',
-    `  fs.writeFileSync(${JSON.stringify(capturePath)}, Buffer.concat(chunks));`,
-    '  process.stdout.write("Success\\n");',
+    '  const script = Buffer.concat(chunks).toString("utf8");',
+    `  fs.writeFileSync(${JSON.stringify(capturePath)}, script);`,
+    '  if (script.includes("--field=post_type")) {',
+    '    process.stdout.write("elementor_library\\n");',
+    '  } else {',
+    '    process.stdout.write("Success\\n");',
+    '  }',
     '});',
   ].join('\n'));
   fs.chmodSync(sshPath, 0o755);
@@ -1217,6 +1313,56 @@ test('deployThemePart refuses a location that is not header or footer', async ()
      post that Elementor then never renders in a location, with no error. */
   await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
+});
+
+/* I4 from the final review: deployElements() validates only postId's shape,
+   never what kind of post it names, and overwrites _elementor_data and
+   _elementor_template_type wholesale. A wrong id passed to deployThemePart()
+   used to clobber whatever post that id names, page or otherwise, before
+   anything downstream (setConditions() included) had a chance to object.
+   This exercises the guard added to close that: a fake ssh that answers the
+   post_type check with 'wp-page', a real type but the wrong one for a theme
+   part, and appends (never overwrites) every script it receives, so the
+   assertion below can prove no second script naming _elementor_data was
+   ever sent once the first one's answer disqualified the post. */
+test('deployThemePart refuses to write when the target post is not an elementor_library post, before any data write', async () => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-wrong-type-'));
+  const sshPath = path.join(tmpDir, 'ssh');
+  const capturePath = path.join(tmpDir, 'captured.sh');
+  fs.writeFileSync(sshPath, [
+    '#!/usr/bin/env node',
+    'const fs = require("fs");',
+    'const chunks = [];',
+    'process.stdin.on("data", c => chunks.push(c));',
+    'process.stdin.on("end", () => {',
+    '  const script = Buffer.concat(chunks).toString("utf8");',
+    `  fs.appendFileSync(${JSON.stringify(capturePath)}, script + "\\n---\\n");`,
+    '  if (script.includes("--field=post_type")) {',
+    '    process.stdout.write("wp-page\\n");',
+    '  } else {',
+    '    process.stdout.write("Success\\n");',
+    '  }',
+    '});',
+  ].join('\n'));
+  fs.chmodSync(sshPath, 0o755);
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await assert.rejects(
+      () => deployThemePart(29, [container({ cssClass: 'em-header' })], 'header'),
+      err => {
+        assert.match(err.message, /\b29\b/, 'error does not name the offending post id');
+        assert.match(err.message, /elementor_library/, 'error does not say the post is not an elementor_library post');
+        return true;
+      },
+    );
+    const captured = fs.existsSync(capturePath) ? fs.readFileSync(capturePath, 'utf8') : '';
+    assert.doesNotMatch(captured, /_elementor_data/,
+      'deployThemePart sent an _elementor_data write even though the post-type guard should have refused first, before deployElements() ran at all');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
 
 test('setConditions writes the conditions meta as a JSON array, then regenerates the conditions cache', async () => {
@@ -1553,15 +1699,18 @@ test('settleReveal queries the reveal wait from document.body, not document', ()
     'settleReveal queries [data-reveal] from document unscoped; <html> carries data-reveal="on" (js/reveal.js:11) but never gains .is-revealed, so this wait can never resolve');
 });
 
-/* The four tests below drive a real browser against the deployed page, so
-   they need a live URL that nothing in this repository can supply on its
-   own. Without this guard, a missing SPIKE_URL surfaces as Playwright's own
-   "page.goto: url: expected string, got undefined", which reads like a
-   broken test rather than a missing environment variable. Failing loudly is
+/* Eight tests below need a live URL that nothing in this repository can
+   supply on its own: five drive a real browser through Playwright, and
+   three (checkRobots, and the two fetchConverted() reads of the live page)
+   do not, but still need the deployed install to check against. Without
+   this guard, a missing SPIKE_URL surfaces on the browser tests as
+   Playwright's own "page.goto: url: expected string, got undefined", which
+   reads like a broken test rather than a missing environment variable, and
+   on the non-browser tests as a bare fetch or SSH failure. Failing loudly is
    still the right call (README.md says the same); this just names the thing
-   that is missing instead of leaving that to Playwright's type error. */
+   that is missing instead of leaving that to the underlying error. */
 const requireSpikeUrl = () => process.env.SPIKE_URL
-  ?? assert.fail('SPIKE_URL is not set. These four tests drive a real browser against the deployed page: SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
+  ?? assert.fail('SPIKE_URL is not set. These eight tests need the deployed page (five drive a real browser, three fetch or check it directly): SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
 
 /* Fix round 1 review finding: this test used to sit outside the
    requireSpikeUrl()-guarded group and made an unguarded live fetch to the
@@ -1740,13 +1889,18 @@ test('the five desktop dropdown panels ship open without JavaScript and close wi
 });
 
 test('the live page shows Empower chrome and none of UiCore own', { concurrency: 1 }, async () => {
-  /* flushPageCache() first, not a bare fetchConverted(): by the time this
+  /* requireSpikeUrl() first, not after the flush: flushPageCache() goes
+     over SSH, and a checkout with no SPIKE_URL must fail on that guard's
+     message before anything reaches the network, not with a bare DNS
+     error from an SSH call this test has no business making yet. */
+  const url = requireSpikeUrl();
+  /* flushPageCache() next, not a bare fetchConverted(): by the time this
      test runs, the browser-driven tests above it have already loaded the
      page repeatedly and re-warmed WP Engine's page cache past whatever
      state a run-level flush left it in, and fetchConverted() refuses a
      cache HIT outright rather than silently checking a stale copy. */
   await flushPageCache();
-  const html = await fetchConverted(requireSpikeUrl());
+  const html = await fetchConverted(url);
   assert.ok(html.includes('em-header'), 'the Empower header is not on the page');
   assert.ok(html.includes('em-footer'), 'the Empower footer is not on the page');
   assert.ok(!html.includes('uicore-header'), 'UiCore is still rendering its header');
@@ -1762,11 +1916,14 @@ test('the live page shows Empower chrome and none of UiCore own', { concurrency:
    leader), so 9 is the floor a correctly-scoped, correctly-varying render
    must clear. */
 test('the live loop grid emits a different guest value on different cards', { concurrency: 1 }, async () => {
-  /* Same reasoning as the chrome test above: flush first, the page cache
-     has almost certainly been re-warmed by the browser tests that ran
-     before this one in the same suite. */
+  /* requireSpikeUrl() before the flush, same reasoning as the chrome test
+     above: flushPageCache() goes over SSH, and this test must fail on the
+     guard's message rather than open an SSH connection first. */
+  const url = requireSpikeUrl();
+  /* flush next: the page cache has almost certainly been re-warmed by the
+     browser tests that ran before this one in the same suite. */
   await flushPageCache();
-  const html = await fetchConverted(requireSpikeUrl());
+  const html = await fetchConverted(url);
   const values = [...html.matchAll(/data-guest="([^"]+)"/g)].map(m => m[1]);
   assert.ok(values.length >= 9, `expected at least 9 data-guest attributes, found ${values.length}`);
   assert.ok(new Set(values).size > 1, 'every card carries the same data-guest value, which is the element cache');
@@ -1795,13 +1952,28 @@ test('the bridge stylesheet carries the two values Site Settings cannot hold', (
   assert.match(css, /e-con|elementor-widget/, 'no Elementor container or widget selector present');
 });
 
-/* The inverse guard. The moment an .e-con or .elementor-widget selector
-   appears in css/, the static build has stopped being buildable on its own
-   and test.mjs is no longer proving what it claims to prove. */
+/* The inverse guard. The moment an Elementor-shaped selector appears
+   outside bridge.css, the static build has stopped being buildable on its
+   own and test.mjs is no longer proving what it claims to prove.
+
+   Fix round: this used to check only /\.e-con\b|\.elementor-widget/ against
+   css/ alone, which is narrower than bridge.css's own stated vocabulary
+   (.e-con, .elementor-widget, .elementor-button, "and the like") and
+   narrower than the protected static build (components/ and tokens/ are
+   equally part of it, and equally untested here before). .elementor-button
+   was the likeliest to leak: it is the selector bridge.css's own two most
+   substantial repairs are built on, so it is what someone fixing a button
+   elsewhere would copy. The regex now matches any .elementor-* class, not
+   just -widget and -button by name, which is what "and the like" actually
+   commits to; the directory list now matches every directory test.mjs
+   protects. */
 test('no stylesheet outside the bridge carries an Elementor selector', () => {
-  for (const file of fs.readdirSync('css').filter(f => f.endsWith('.css'))) {
-    const css = fs.readFileSync(`css/${file}`, 'utf8');
-    assert.doesNotMatch(css, /\.e-con\b|\.elementor-widget/, `css/${file} carries an Elementor selector`);
+  const ELEMENTOR_SELECTOR = /\.e-con\b|\.elementor-[\w-]+/;
+  for (const dir of ['css', 'components', 'tokens']) {
+    for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.css'))) {
+      const css = fs.readFileSync(`${dir}/${file}`, 'utf8');
+      assert.doesNotMatch(css, ELEMENTOR_SELECTOR, `${dir}/${file} carries an Elementor selector`);
+    }
   }
 });
 

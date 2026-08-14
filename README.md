@@ -687,15 +687,16 @@ Adding a page to `PAGES` brings it under all of that automatically.
 `npm test` runs `test.mjs` and then `test-elementor.mjs`, the second file
 covering the Elementor conversion tooling under `elementor/`, `wp/` and the
 harness in `fidelity.mjs` / `fidelity-browser.mjs`. Most of it runs with no
-setup, but four tests in `test-elementor.mjs` drive a real browser (via
-Playwright, already a devDependency) against the live converted page on
-WP Engine, and need `SPIKE_URL` set:
+setup, but eight tests in `test-elementor.mjs` need the live converted page
+on WP Engine and need `SPIKE_URL` set: five of the eight drive a real browser
+(via Playwright, already a devDependency), and three fetch or check the
+install directly without a browser.
 
 ```bash
 SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs
 ```
 
-Without it, those four fail on purpose, with a message naming `SPIKE_URL`
+Without it, those eight fail on purpose, with a message naming `SPIKE_URL`
 rather than a silent skip.
 
 ## The install
@@ -1129,14 +1130,22 @@ left as things to remember:
 - **The header and footer are Elementor Theme Builder parts**, built from
   `src/_shared/header-2.html` and `src/_shared/footer.html` and deployed with
   an Entire Site display condition. **A nav change means editing that static
-  partial and redeploying it through `elementor/deploy.mjs`, never editing
-  the live header or footer inside the Elementor editor.** This is the cost
-  of the header's three verbatim HTML widgets (see the fourth exception,
-  below): the markup that carries `aria-controls` pairs, the split Solutions
-  item and the no-JS open-by-default contract lives in the partial, and an
-  edit made only in Elementor is silently lost the next time the partial is
-  redeployed. Anyone touching the nav later needs to know this before they
-  reach for the editor.
+  partial and redeploying it, never editing the live header or footer inside
+  the Elementor editor:**
+
+  ```bash
+  set -a; . ./.env; set +a
+  node elementor/theme-parts/deploy.mjs          # both parts
+  node elementor/theme-parts/deploy.mjs header   # header only
+  node elementor/theme-parts/deploy.mjs footer   # footer only
+  ```
+
+  This is the cost of the header's three verbatim HTML widgets (see the
+  fourth exception, below): the markup that carries `aria-controls` pairs,
+  the split Solutions item and the no-JS open-by-default contract lives in
+  the partial, and an edit made only in Elementor is silently lost the next
+  time the partial is redeployed. Anyone touching the nav later needs to
+  know this before they reach for the editor.
 - **`setConditions()` performs two writes, not one**, because assigning a
   Theme Builder part to a location is not satisfied by postmeta alone.
   Elementor Pro's `Conditions_Manager::get_location_templates()` resolves a

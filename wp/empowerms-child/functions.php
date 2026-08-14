@@ -113,12 +113,45 @@ const EMPOWER_SCRIPTS_PRIORITY = 20;
  * when the header became a site-wide theme part, since css/header-2.css and
  * js/dropdown.js ship together or the panels never close.
  *
- * The mechanism remains because css/megamenu.css pairs with js/megamenu.js the
- * same way, and this function can route it per-page once empower_page_styles()
- * has an entry for megamenu.css.
+ * js/megamenu.js is not routed through this mechanism and, checked against
+ * the current build, cannot be live today: it binds the header markup in
+ * src/sections/00-header.html (see its own header comment), a file that no
+ * longer exists in this repository (README.md:726 still cites it, which is
+ * the same stale reference). The header this site actually serves is the
+ * Theme Builder part built from src/_shared/header-2.html
+ * (elementor/theme-parts/header.mjs), which js/megamenu.js never queries.
+ * The mechanism is left in place, not because megamenu.css/js are expected
+ * to come back, but because it is the general route any future per-page
+ * script would use, and empower_module_script_handles() below derives its
+ * module-script list from this function specifically so that route can
+ * never silently regress to loading a script as classic.
  */
 function empower_page_scripts() {
 	return array();
+}
+
+/**
+ * Every script handle that must load with type="module": the three
+ * site-wide scripts enqueued unconditionally above, plus every handle
+ * empower_page_scripts() can emit for any page slug. Built from the same
+ * function the per-page enqueue loop below reads, not a second list typed
+ * out by hand, so a handle the enqueue emits can never be one this filter
+ * fails to recognise. That is what actually broke here once already:
+ * empower_page_scripts() emits handles shaped 'empower-script-<name>'
+ * (see the enqueue loop below), and a filter matching only
+ * 'empower-nav' / 'empower-reveal' / 'empower-dropdown' by name would let
+ * any future entry in empower_page_scripts() load as a classic script,
+ * which is the exact condition that produced this branch's site-wide
+ * dropdown regression.
+ */
+function empower_module_script_handles() {
+	$handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown' );
+	foreach ( empower_page_scripts() as $scripts ) {
+		foreach ( $scripts as $script ) {
+			$handles[] = 'empower-script-' . $script;
+		}
+	}
+	return $handles;
 }
 
 /**
@@ -188,8 +221,7 @@ add_action( 'wp_enqueue_scripts', function () {
  * so each enqueue call keeps documenting its own ordering intent.
  */
 add_filter( 'script_loader_tag', function ( $tag, $handle, $src ) {
-	static $module_handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown' );
-	if ( ! in_array( $handle, $module_handles, true ) ) {
+	if ( ! in_array( $handle, empower_module_script_handles(), true ) ) {
 		return $tag;
 	}
 	return preg_replace( '/<script /', '<script type="module" ', $tag, 1 );

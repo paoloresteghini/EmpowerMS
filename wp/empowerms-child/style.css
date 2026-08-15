@@ -1,6 +1,23 @@
 /*
-Theme Name: Empower Mississippi child
-Template: uicore-pro
-Version: 1.0.0
-Description: Carries the Empower design tokens and page stylesheets. All styling lives in enqueued files under this theme, never in Elementor's per-widget custom CSS.
+Theme Name: Empower Mississippi
+Version: 2.0.0
+Description: Empower Mississippi's own theme. Carries the design tokens and page stylesheets, and renders Elementor's Theme Builder locations directly. All styling lives in enqueued files under this theme, never in Elementor's per-widget custom CSS.
 */
+
+/*
+ * STANDALONE SINCE 2026-08-15. This file used to carry `Template: uicore-pro`,
+ * which made it a child theme and let every template fall through to UiCore.
+ * That line is gone, and with it the whole reason UiCore had to stay installed.
+ *
+ * WHY THE DIRECTORY IS STILL CALLED empowerms-child. The folder name is load
+ * bearing in several places that have nothing to do with parenthood:
+ * wp/sync.mjs derives the deploy target from it, functions.php enqueues every
+ * stylesheet relative to it, and bridge.css reaches the install through it.
+ * Renaming the folder buys a tidier name and costs a change to the deploy path
+ * plus a move on the server, so the folder stays and this comment explains it.
+ * The theme's NAME, which is what a human sees, is now just "Empower
+ * Mississippi".
+ *
+ * Nothing is styled from this file. It exists for the header block above, which
+ * is how WordPress identifies a theme at all.
+ */

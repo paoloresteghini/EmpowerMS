@@ -823,6 +823,83 @@ test('the podcast hero mapping carries the section class and its copy', () => {
   assert.ok(flat.includes('pca-hero'), 'hero mapping does not carry the pca-hero class');
 });
 
+/* --- wp/empowerms-child, as a standalone theme --------------------------- */
+
+const THEME = 'wp/empowerms-child';
+const themeFile = (name) => fs.readFileSync(`${THEME}/${name}`, 'utf8');
+
+test('the theme is standalone, with no parent to inherit templates from', () => {
+  /* The whole point of the exercise. `Template:` in style.css is what makes
+     WordPress treat this as a child of uicore-pro and fall back to its
+     templates for everything this theme does not define. While that line is
+     present, deactivating UiCore leaves the site with no templates at all. */
+  const style = themeFile('style.css');
+  assert.ok(!/^\s*Template:/m.test(style),
+    'style.css still declares a parent theme, so this is still a child theme');
+  assert.match(style, /^\s*Theme Name:/m, 'style.css has no Theme Name header');
+});
+
+test('the theme defines the templates WordPress needs to render this site', () => {
+  /* A REQUIRED-MINIMUM list, which is the legitimate use of an enumerated set:
+     these are named because WordPress's own template hierarchy names them, not
+     because somebody looked at this site and listed what it happens to use.
+     index.php is the only one WordPress strictly requires; the rest are the
+     routes this install actually serves (pages, 490 posts, category and author
+     archives, search, and misses). */
+  for (const file of ['index.php', 'page.php', 'single.php', 'archive.php',
+    'search.php', '404.php', 'header.php', 'footer.php', 'functions.php', 'style.css']) {
+    assert.ok(fs.existsSync(`${THEME}/${file}`), `the theme has no ${file}`);
+  }
+});
+
+test('the theme renders the Elementor header and footer locations itself', () => {
+  /* Measured on the install before writing the theme: elementor_theme_do_location()
+     is called ONLY by uicore-framework, and uicore-pro declares no Elementor
+     theme support. That function is what puts the Phase 2A header and footer
+     parts on every page, so removing UiCore does not degrade them, it removes
+     them. This test is the reason the theme cannot forget. */
+  assert.match(themeFile('header.php'), /elementor_theme_do_location|empower_do_elementor_location/,
+    'header.php never renders the Elementor header location');
+  assert.match(themeFile('footer.php'), /elementor_theme_do_location|empower_do_elementor_location/,
+    'footer.php never renders the Elementor footer location');
+});
+
+test('the theme opens and closes a main landmark carrying the skip link target', () => {
+  /* The header part carries the build's skip link and it points at #main.
+     UiCore supplied that wrapper; if this theme does not, the WCAG 2.4.1
+     repair made in Phase 2A silently becomes inert again, with the link
+     present, focusable, and targeting nothing. */
+  assert.match(themeFile('header.php'), /<main[^>]*id=["']main["']/,
+    'header.php does not open <main id="main">, so the skip link targets nothing');
+  assert.match(themeFile('footer.php'), /<\/main>/, 'footer.php never closes <main>');
+});
+
+test('the theme calls the two WordPress hooks everything else depends on', () => {
+  assert.match(themeFile('header.php'), /wp_head\s*\(/, 'header.php never calls wp_head()');
+  assert.match(themeFile('header.php'), /wp_body_open\s*\(/, 'header.php never calls wp_body_open()');
+  assert.match(themeFile('footer.php'), /wp_footer\s*\(/, 'footer.php never calls wp_footer()');
+});
+
+test('the theme declares featured-image support, which the homepage loop depends on', () => {
+  /* Without post-thumbnails, has_post_thumbnail() is false site-wide and
+     Elementor's featured-image dynamic tag renders nothing. The homepage's
+     Community Stories cards would come back with a title and no photograph,
+     which is exactly how they looked when the dynamic tag name was wrong, and
+     it fails silently in the same way. */
+  assert.match(themeFile('functions.php'), /add_theme_support\(\s*'post-thumbnails'/,
+    'the theme does not declare post-thumbnails support');
+  assert.match(themeFile('functions.php'), /add_theme_support\(\s*'title-tag'/,
+    'the theme does not declare title-tag support, so nothing outputs <title>');
+});
+
+test('the theme registers its Elementor locations so later parts can be assigned', () => {
+  /* Without this hook the header and footer still render, because the
+     templates call the location directly, but Elementor's Theme Builder UI
+     cannot offer single or archive as somewhere to put a new part. */
+  assert.match(themeFile('functions.php'), /elementor\/theme\/register_locations/,
+    'the theme never registers its Elementor locations');
+});
+
 /* --- elementor/pages/final/ (the homepage) ------------------------------ */
 
 test('the homepage hero mapping carries the section class and its copy', () => {

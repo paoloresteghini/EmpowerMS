@@ -16,6 +16,72 @@ require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
 require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
 
 /**
+ * Theme supports. Added 2026-08-15, when this stopped being a child theme and
+ * had to declare for itself everything it previously inherited from uicore-pro.
+ *
+ * post-thumbnails is the one that would fail silently and expensively. Without
+ * it has_post_thumbnail() is false site-wide, and Elementor's
+ * post-featured-image dynamic tag renders nothing at all: the homepage's
+ * Community Stories cards would come back with a title and no photograph, which
+ * is precisely how they looked while the dynamic tag name was wrong, with no
+ * error anywhere to distinguish the two causes.
+ *
+ * title-tag is the second: without it nothing outputs <title>, because this
+ * theme's header.php deliberately does not hand-write one.
+ */
+add_action( 'after_setup_theme', function () {
+	add_theme_support( 'title-tag' );
+	add_theme_support( 'post-thumbnails' );
+	add_theme_support( 'html5', array( 'search-form', 'gallery', 'caption', 'style', 'script' ) );
+	add_theme_support( 'responsive-embeds' );
+	add_theme_support( 'automatic-feed-links' );
+	register_nav_menus( array(
+		/* Registered so WordPress has somewhere to hang the existing menus, not
+		   because this theme renders them: the navigation lives in the Elementor
+		   header part, built from src/_shared/header-2.html. */
+		'primary' => __( 'Primary', 'empowerms' ),
+	) );
+} );
+
+/**
+ * Renders an Elementor Theme Builder location, and reports whether anything was
+ * actually rendered.
+ *
+ * THE REASON THIS FUNCTION EXISTS AT ALL. Until 2026-08-15 the site's Elementor
+ * header and footer reached the page because uicore-framework's own templates
+ * called elementor_theme_do_location(); nothing in the theme did, and uicore-pro
+ * declared no Elementor theme support. Removing UiCore therefore does not
+ * degrade those parts, it removes them. Wrapped in one function rather than
+ * called directly in six templates so that the function_exists() guard is
+ * written once: without it, deactivating Elementor Pro turns every template in
+ * this theme into a fatal error, which is a worse failure than the one being
+ * fixed.
+ *
+ * Returns false when Elementor Pro is absent OR when it is present but no
+ * document is assigned to the location, which is what lets each template fall
+ * back to plain markup instead of rendering nothing.
+ */
+function empower_do_elementor_location( $location ) {
+	if ( ! function_exists( 'elementor_theme_do_location' ) ) {
+		return false;
+	}
+	return elementor_theme_do_location( $location );
+}
+
+/**
+ * Tells Elementor Pro which locations this theme supports, so the Theme Builder
+ * UI can offer them when someone creates a new part.
+ *
+ * Distinct from the calls in the templates, and both are needed. The template
+ * calls are what RENDER a part; this registration is what lets a part be
+ * ASSIGNED to a location in the editor. Phase 2A's header and footer were
+ * assigned through wp-cli, which is why they worked without this.
+ */
+add_action( 'elementor/theme/register_locations', function ( $manager ) {
+	$manager->register_all_core_location();
+} );
+
+/**
  * UiCore enqueues its own global stylesheet (handle uicore_global) at
  * priority 50, in its own frontend_css() method
  * (wp-content/plugins/uicore-framework/includes/class-frontend.php).

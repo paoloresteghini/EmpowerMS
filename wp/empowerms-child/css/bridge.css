@@ -378,65 +378,99 @@
   top:var(--space-4);
 }
 
-/* ---------- The homepage: images that were direct children ----------
- * css/homepage.css styles three of the homepage's photographs through CHILD
- * combinators, because in the static build the <img> is a direct child of the
- * card it sits in: `.em-stories__lead-card>img` (:261),
- * `.em-stories__mini>img` (:279) and `.em-insights__row>img` (:307). image()
- * puts the <img> inside Elementor's own widget wrapper, so the img stops being
- * a direct child and all three rules stop matching.
+/* ---------- Images the build addresses as DIRECT children ------------------
+ * REWRITTEN 2026-08-15, replacing four separate restatement rules with one
+ * declaration, after Paolo looked at the header and a box-property sweep found
+ * the images were wrong too.
  *
- * Measured rather than assumed, which is why only ONE of the three is repaired
- * here. On the converted homepage, `.em-insights__row img` computed width 184px
- * and `.em-stories__lead-card img` computed width 256px, both matching the
- * static build exactly: those declarations are arriving from elsewhere in the
- * cascade and need nothing. The single measured difference was object-fit,
- * `fill` live against `cover` static, which is the one declaration in the
- * lead-card rule with no other source. Restating the whole rule "to be safe"
- * would have added three declarations that do nothing and one that does, with
- * no way for a later reader to tell which was which.
+ * css/ styles most of this build's photographs through a CHILD combinator,
+ * because in the static build the <img> is a direct child of the box it sits
+ * in: `.fp-hero__media>img` (option-a.css:75), `.fp-hero__aside>img` (:85),
+ * `.em-stories__lead-card>img` (homepage.css:261), `.em-stories__mini>img`
+ * (:279) and `.em-insights__row>img` (:307). image() puts the <img> inside
+ * Elementor's own widget wrapper, so the img stops being a direct child and
+ * every one of those rules stops matching.
  *
- * `.em-stories__mini>img` is deliberately NOT repaired yet. Its images come out
- * of the Loop Grid's featured-image tag, and on the live page that selector
- * currently matches nothing at all, so there is no measurement to write a rule
- * against. A rule written now would be guessing at an element that does not
- * exist; it is repaired once the loop renders images.
+ * The first repair restated the declarations one block at a time. That worked
+ * for what it measured and missed what it did not: border-radius vanished from
+ * the three insight thumbnails (16px to 0), the hero aside rendered 168x213
+ * against 168x168, and the two `@media (max-width:600px)` overrides at
+ * homepage.css:534 and :537 were never restated at all, so the narrow layout
+ * was wrong in ways nobody had looked at. Restating a rule means restating all
+ * of it, including the responsive half, and doing that five times is five
+ * chances to miss a line.
  *
- * Three classes plus the element (0,3,1) rather than restating the original's
- * one: the rule has to reach INTO the widget wrapper, so it cannot simply be
- * the source selector with the combinator dropped. */
-.em-stories .em-stories__lead-card .elementor-widget-image img{
-  object-fit:cover;
+ * `display:contents` removes the wrapper from the box tree, which makes the
+ * <img> a direct child of its block again and hands every one of those rules
+ * back unaltered, media queries included. There is nothing left to keep in sync
+ * with css/ afterwards, which is the real argument for it: a restatement is a
+ * copy that goes stale the day somebody edits the stylesheet, and this is not
+ * a copy.
+ *
+ * It also fixes the `height:100%` cases specifically. `.fp-hero__media` and
+ * `.fp-hero__aside` size themselves with `aspect-ratio` and ask the image for
+ * `height:100%`; with a wrapper in between, that percentage resolves against a
+ * box of automatic height, so it falls back to the image's intrinsic size and
+ * the picture grows. The hero aside was 45px too tall for exactly this reason.
+ *
+ * NAMED per block rather than written for `.elementor-widget-image` generally,
+ * because the wrapper is load-bearing elsewhere in this very file: the footer
+ * logo's `text-align:left` repair addresses the wrapper, and a general rule
+ * would delete the box it targets. */
+.elementor .fp-hero__media > .elementor-widget-image,
+.elementor .fp-hero__aside > .elementor-widget-image,
+.elementor .em-stories__lead-card > .elementor-widget-image,
+.elementor .em-stories__mini > .elementor-widget-image,
+.elementor .em-insights__row > .elementor-widget-image{
+  display:contents;
 }
 
-/* The other three declarations of homepage.css:261, added 2026-08-15 after
- * measuring section heights rather than computed styles. The comment above is
- * right that width and height were ARRIVING at the right numbers, and wrong
- * that this meant nothing was needed: they arrive as the image's own intrinsic
- * size, and an image sized intrinsically is what decides how tall the grid row
- * is. Measured: the featured story card came out 596px tall against the static
- * build's 374px, its grid row sized to 596px, while the image inside it
- * rendered 325px and the body column wanted exactly 374px. Nothing on the page
- * asked for 596px; it is what the grid computes when a replaced element is
- * allowed to contribute its own height to an auto row.
+/* AND the restatements, because `display:contents` alone is not enough and the
+ * distinction cost a deploy to learn. It changes the BOX tree: the wrapper
+ * stops generating a box, so the image becomes the real grid or flex item and
+ * a percentage height finally has a definite box to resolve against. It does
+ * NOT change the tree selectors are matched against, which is the DOM. So
+ * `.em-insights__row > img` still does not match, and measuring after the first
+ * deploy showed exactly that: the thumbnails took the grid column's 184px width
+ * (proof the box-tree half worked) and were still 161px tall with square
+ * corners (proof the selector half did not).
  *
- * `height:100%` is the declaration that stops it. On a grid item it resolves
- * against the row rather than against the content, so the image follows the row
- * instead of driving it, which is exactly what it does in the static build.
- * min-height:336px moves to the WRAPPER, because the wrapper is the grid item
- * now, and that is the floor that keeps the card from collapsing when the copy
- * is short.
+ * That is why the two hero blocks above need nothing further and these three
+ * do. option-a.css writes `.fp-hero__media img` and `.fp-hero__aside img` as
+ * DESCENDANT selectors, so they were always matching and only the percentage
+ * height was broken; homepage.css writes its three as CHILD selectors, so those
+ * rules stopped matching altogether.
  *
- * This is the difference a computed-style comparison cannot see: every property
- * on both sides agreed, and the card was still 222px too tall. Heights needed
- * measuring separately. */
-.elementor .em-stories__lead-card > .elementor-widget-image{
-  height:100%;
-  min-height:336px;
-}
+ * Restated with a descendant selector and the media queries brought along,
+ * which is the half the first attempt at this repair left out. */
 .elementor .em-stories__lead-card .elementor-widget-image img{
   width:100%;
   height:100%;
+  object-fit:cover;
+  min-height:336px; /* homepage.css:261 */
+}
+.elementor .em-stories__mini .elementor-widget-image img{
+  width:80px;
+  height:80px;
+  flex:0 0 auto;
+  border-radius:var(--radius-pill);
+  object-fit:cover; /* homepage.css:279 */
+}
+.elementor .em-insights__row .elementor-widget-image img{
+  width:184px;
+  height:172px;
+  object-fit:cover;
+  border-radius:var(--radius-media); /* homepage.css:307 */
+}
+@media (max-width:600px){
+  /* homepage.css:534 and :537, the responsive half. */
+  .elementor .em-stories__lead-card .elementor-widget-image img{
+    height:220px;
+    min-height:0;
+  }
+  .elementor .em-insights__row .elementor-widget-image img{
+    width:100%;
+  }
 }
 
 /* ---------- A Loop Grid inside a grid the build wrote for its items ---------
@@ -494,33 +528,6 @@
  * blamed on the same generated stylesheet. Only one of them was actually
  * caused by it, which is the argument for re-measuring per rule rather than
  * deleting the group. */
-
-/* The second of the three homepage child-combinator image rules, repaired now
- * that there is something to measure. css/homepage.css:279 is
- * `.em-stories__mini>img{width:80px;height:80px;flex:0 0 auto;
- * border-radius:var(--radius-pill);object-fit:cover}`, the round 80px thumbnail
- * on each Community Story card. Those cards come out of the Loop Grid, so this
- * could not be measured until the loop rendered its featured images: before
- * that the selector matched nothing at all and any rule here would have been
- * written against an element that did not exist. Measured after: the image came
- * out 432px wide against the static build's 80px.
- *
- * Split across two selectors because the original rule does two different jobs
- * to one element, and conversion separates them. `flex:0 0 auto` is about how
- * the image behaves as a FLEX ITEM of the card, and the flex item is now
- * Elementor's widget wrapper, not the img. The size and shape are about the
- * image itself. Putting flex on the img would leave the wrapper free to grow,
- * which is the 432px; putting the width on the wrapper would size the box and
- * leave the img overflowing it. */
-.em-stories .em-stories__mini > .elementor-widget-image{
-  flex:0 0 auto;
-}
-.em-stories .em-stories__mini .elementor-widget-image img{
-  width:80px;
-  height:80px;
-  border-radius:var(--radius-pill);
-  object-fit:cover;
-}
 
 /* ---------- The homepage: Elementor makes every container a flex column ----
  * The single largest source of difference on the first converted page, and a
@@ -686,25 +693,47 @@
  * The competitor is Elementor's own Site Settings kit, and the section headed
  * "Elementor's KIT styles every native <button>" near the end of this file is
  * the measurement that found it and the repair for the rest of the buttons it
- * affects. Its selector list is wider than the two elements repaired here:
- * post-20547.css targets `button`, `input[type=button]`, `input[type=submit]`
- * AND `.elementor-button`, so a native button, a submit and Elementor's own
- * button widget are all hit by the same declarations. */
+ * affects.
+ *
+ * WIDENED 2026-08-15, in the same pass that corrected the header. This rule
+ * restated font-family and line-height, because those were the properties the
+ * typography census compared. The kit sets ten, and the newsletter submit was
+ * still taking five of them: padding 17px/40px against the build's 13px/26px,
+ * border-radius 6px against the pill, border 0 against 2px, font-weight 500
+ * against 700, and letter-spacing 0 against --ls-caps. Restated from
+ * components.css:.em-btn and its --md and --inverse modifiers, which is where
+ * this button's real values live. Only the modifiers this build actually uses
+ * on a native button are restated; the others are not written blind. */
 .elementor button.em-btn,
 .elementor input[type="submit"].em-btn{
   font-family:var(--font-display);
-  /* line-height added 2026-08-15, the last difference on either converted
-   * page. The kit rule documented near the end of this file sets 15px on
-   * every native button; components.css declares no line-height on .em-btn at
-   * all, so the static build computes `normal` and there is nothing in css/
-   * to restore it. Restated here for the same reason the form-control rule
-   * used to restate it: a value the build never sets cannot win a fight it
-   * does not know it is in. */
+  font-weight:var(--type-button-weight);
+  letter-spacing:var(--ls-caps);
+  /* text-transform is the tenth and last of the kit's declarations, and the
+   * easiest to miss because it changes no box property directly: the kit sets
+   * `None` and components.css sets `uppercase`, so the label rendered
+   * "Subscribe" against the static build's "SUBSCRIBE" and the button measured
+   * 133px against 145px. Every other property already matched. A width that is
+   * off by a dozen pixels with the whole box model agreeing is a text
+   * difference, not a layout one. */
+  text-transform:uppercase;
   line-height:normal;
+  border:2px solid transparent;
+  border-radius:var(--radius-button);
+}
+.elementor button.em-btn--md,
+.elementor input[type="submit"].em-btn--md{
+  padding:13px 26px;
+  font-size:var(--fs-small);
+}
+.elementor button.em-btn--lg,
+.elementor input[type="submit"].em-btn--lg{
+  padding:17px 34px;
+  font-size:var(--fs-body);
 }
 .elementor button.em-btn--inverse,
 .elementor input[type="submit"].em-btn--inverse{
-  background:var(--white);
+  background-color:var(--white);
   color:var(--em-blue);
 }
 
@@ -1125,62 +1154,170 @@
  * with no hover feedback at all. Found by reading the specificity before
  * deploying rather than by a visitor noticing. */
 
-/* Fully styled by the build: font, colour and background all restated. */
-.elementor .em-header__link,
-.elementor .em-mobilenav__trigger{
+/* CORRECTED 2026-08-15 after Paolo looked at the header. The first version of
+ * this block restated five of the kit's declarations, because five were what
+ * the census compared. The kit sets TEN, and the five omitted ones are the ones
+ * a person notices first:
+ *
+ *   padding:17px 40px   border-radius:6px   font-weight:500
+ *   letter-spacing:0em  border-style:none
+ *
+ * The 40px horizontal padding is the visible defect. Each nav disclosure button
+ * came out 51px wider and 14px taller than the static build, which pushed
+ * .em-header__nav from 641px to 899px, and .em-header__logo is `flex:1 1 0` so
+ * it absorbed the whole overflow: the wordmark rendered 15px wide against
+ * 112px, a vertical sliver. Nothing in the census moved, because the census
+ * compared type and colour and deliberately ignored width and height.
+ *
+ * SCOPED TO `button` NOW, which the first version was not. The kit's selector
+ * list is `button, input[type=button], input[type=submit], .elementor-button`.
+ * It never matches an anchor, so the first version's `.em-header__link` rule
+ * was reaching the nav's ANCHORS as well and giving them `line-height:normal`,
+ * which a button gets from the browser and an anchor does not: Home measured
+ * 38px tall against the static build's 44px, a defect this file introduced
+ * rather than repaired. Every selector below names the element.
+ *
+ * Values are read from the build's own stylesheets, not from the measurement:
+ * header-2.css:57 and :59, site.css:85, :96 and :120, components.css:133,
+ * podcast-a.css:224. `revert` is used only where the static build genuinely
+ * renders a browser default, which is the type on the three icon-sized
+ * controls, and never for a property the build declares. */
+
+/* The nav's disclosure buttons. components.css:133 styles .em-header__link for
+ * both the anchors and the buttons that carry it; only the buttons need this. */
+.elementor button.em-header__link{
+  padding:10px 14px;
+  border:0;
+  border-radius:var(--radius-pill);
   font-family:var(--font-display);
+  font-weight:var(--fw-semibold);
   font-size:var(--fs-small);
+  letter-spacing:.01em;
   line-height:normal;
   color:var(--em-blue);
   background-color:transparent;
 }
-.elementor .em-header__link:hover,
-.elementor .em-header__item--open .em-header__link{
+/* header-2.css:57, the split pair's link half carries a narrower right padding
+ * so the caret sits against it rather than a gap away. */
+.elementor .em-header__item--split button.em-header__link{
+  padding-right:var(--space-2);
+}
+.elementor button.em-header__link:hover,
+.elementor .em-header__item--open button.em-header__link{
   background-color:var(--blue-100);
   color:var(--blue-800);
 }
-.elementor .em-mobilenav__trigger:hover{
-  color:var(--blue-800);
-}
 
-/* Styled by the build for colour and background only: the font is the browser
- * default in the static build (measured: Arial 13.3333px, line-height normal),
- * because site.css:85 and site.css:96 set size, border and background on these
- * two and never touch type. `revert` is right for the font here and wrong for
- * the colour, which the build does set on the search control. */
-.elementor .em-header__search,
-.elementor .em-header__toggle,
-.elementor .em-header__disclosure{
+/* header-2.css:59. Sized by its own min-width/min-height and an asymmetric
+ * padding, with the browser's own type, since the rule never sets any. */
+.elementor button.em-header__disclosure{
+  padding:0 10px 0 4px;
+  border:0;
+  border-radius:var(--radius-pill);
   font-family:revert;
   font-size:revert;
+  font-weight:revert;
   line-height:revert;
+  letter-spacing:normal;
+  color:var(--em-blue);
   background-color:transparent;
 }
-.elementor .em-header__search{
+
+/* site.css:85 and :96. Both are 38px squares with a real border, no padding,
+ * and browser type: the icon inside is placed by `place-items:center`, so any
+ * padding the kit adds pushes the square out of shape. */
+.elementor button.em-header__search,
+.elementor button.em-header__toggle{
+  padding:0;
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-pill);
+  font-family:revert;
+  font-size:revert;
+  font-weight:revert;
+  line-height:revert;
+  letter-spacing:normal;
+  background-color:transparent;
+}
+.elementor button.em-header__search{
   color:var(--em-blue);
 }
-.elementor .em-header__disclosure{
-  color:var(--blue-800);
-}
-.elementor .em-header__toggle{
+.elementor button.em-header__toggle{
   color:revert;
 }
-.elementor .em-header__search:hover,
-.elementor .em-header__toggle:hover{
+.elementor button.em-header__search:hover,
+.elementor button.em-header__toggle:hover{
   background-color:var(--blue-100);
+  border-color:var(--blue-400);
 }
 
-/* podcast-a's filter reset. podcast-a.css:224 gives it a real background of its
- * own rather than none, so this one is restated from the stylesheet and not
- * reverted. */
-.elementor .pca-facets__clear{
+/* site.css:120. Full-width rows in the mobile drawer, square rather than
+ * pill, and left-aligned. */
+.elementor button.em-mobilenav__trigger{
+  padding:var(--space-4) var(--gutter);
+  border:0;
+  border-radius:0;
   font-family:var(--font-display);
+  font-weight:var(--fw-semibold);
   font-size:var(--fs-small);
+  letter-spacing:normal;
+  line-height:normal;
+  color:var(--em-blue);
+  background-color:transparent;
+}
+.elementor button.em-mobilenav__trigger:hover{
+  color:var(--blue-800);
+}
+/* site.css:202, restated because the rule above would otherwise bury it. A
+ * media query adds no specificity, so the build's own narrow-screen override
+ * (0,1,0) cannot outrank the 0,2,1 restatement above it, and the drawer's rows
+ * kept a 24px gutter at 390px where the static build gives them 16px. Caught by
+ * re-running the comparison at a mobile width rather than only at 1440: every
+ * one of these controls is display:none at desktop, so nothing about this was
+ * visible in the measurement that motivated the repair.
+ *
+ * Worth generalising for the pages still to convert. Restating a build
+ * declaration at raised specificity silently disables every responsive override
+ * of that declaration, because those overrides are written at the ORIGINAL
+ * specificity and rely on source order. Any restatement here has to bring its
+ * media queries with it. This was the only one across the six classes repaired
+ * above, checked by parsing every @media block in css/ and components/ rather
+ * than by reading. */
+@media (max-width:420px){
+  .elementor button.em-mobilenav__trigger{
+    padding-left:16px;
+    padding-right:16px;
+  }
+}
+
+/* site.css:138, the same problem one variant down and found the same way. The
+ * caret half of a split drawer row is a 56px control with its own
+ * `padding-inline:var(--space-4)` and a 44px minimum target, deliberately
+ * sized so a thumb cannot miss it. The restatement above set `padding` as a
+ * shorthand at 0,2,1 and buried it, giving the caret the full row's 24px
+ * inline padding instead of 16px. Restated at 0,3,1, and `padding-inline` is
+ * kept rather than flattened into the shorthand so the vertical padding still
+ * comes from the rule above. */
+.elementor button.em-mobilenav__trigger--caret{
+  padding-inline:var(--space-4);
+  min-height:44px;
+}
+
+/* podcast-a.css:224. The one control here with a real background of its own
+ * rather than none, so this is restated from the stylesheet and not reverted. */
+.elementor button.pca-facets__clear{
+  padding:0 var(--space-4);
+  min-height:40px;
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-pill);
+  font-family:var(--font-display);
+  font-weight:var(--fw-bold);
+  font-size:var(--fs-small);
+  letter-spacing:normal;
   line-height:normal;
   color:var(--text-strong);
   background-color:var(--surface-page);
 }
-.elementor .pca-facets__clear:hover{
+.elementor button.pca-facets__clear:hover{
   background-color:var(--surface-subtle);
 }
 

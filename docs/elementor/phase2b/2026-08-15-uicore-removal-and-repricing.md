@@ -15,7 +15,7 @@ is measured on the live install unless it says otherwise.
 | `node --test test.mjs` | 228 |
 | `node --test test-elementor.mjs` | 125 |
 | Computed-style differences against the static build | **Zero on both pages** |
-| Homepage height against the static build | **182px taller**, from roughly a thousand |
+| Homepage height against the static build | **158px taller**, from roughly a thousand. Header and footer match exactly |
 
 Reverting the whole night is still two commands and a sync:
 
@@ -120,6 +120,17 @@ Four further findings from the same sweep, each of them site-wide:
 - **Positional selectors break on wrapping.** `p:last-child` matches every
   paragraph once each is alone in its own wrapper; `margin-bottom:auto` computes
   to 0 once the paragraph is no longer the flex item.
+- **Margins do not collapse in a flex container**, and Elementor makes every
+  container flex. Anywhere the build relies on two adjacent siblings' margins
+  collapsing into one gap, the converted page pays both. This was 24px in the
+  footer, so 24px on every page on the install. Like the Loop Grid finding, it
+  is invisible to a computed-style comparison: every margin value on both sides
+  agrees.
+
+What is left on the homepage is `.em-insights` at +91px, and that one is
+**content**: its three rows measure 194, 351 and 266 live against 230, 262 and
+229 static, differing in both directions because the live page renders real
+posts where the static build renders placeholders.
 
 ## 5. The one thing not done, and it needs Paolo
 

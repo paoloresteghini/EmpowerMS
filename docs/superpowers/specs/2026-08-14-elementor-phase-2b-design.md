@@ -7,58 +7,73 @@ correcting it is the first section.
 
 **Status: written, not approved. No conversion has started.**
 
-## 1. Phase 2B is ten pages, not fourteen
+## 1. Scope: fourteen pages, and `dist/index.html` is what says so
 
-Phase 2A's completion record and README both describe Phase 2B as "the fourteen
-remaining page conversions". Checked against the recorded decisions rather than
-carried forward: **four page sets have not been chosen by Empower**, and a page
-nobody has chosen cannot be converted, because converting it is work that gets
-thrown away the moment they pick the other reading.
+**The chooser is the register of what Empower has signed off, and it is the only
+thing to read for this.** `src/chooser.html` carries a `data-state` on every
+set, `decided` or `open`, and a `Chosen: <reading>` tag on the picked card
+inside each decided set. Counted directly: **fourteen sets decided, two open.**
 
-**Settled, and convertible now.** Ten pages, each one a reading Empower has
-picked, with the decision dated.
+An earlier draft of this document said ten pages and four open sets. That was
+wrong. It was written from the working memory notes rather than from the
+chooser, and those notes record each set as it stood on the day it was written,
+so four of them were still describing an open choice that has since been made.
+The correction is not just to the number: it reverses a claim about the solution
+pages, below. **The rule this establishes: the chooser is the source of truth
+for what is chosen; a note that says otherwise is stale by construction, because
+a note is written once and the choice happens later.**
 
-| Page | What it is | Chosen |
+**Decided, and convertible now.**
+
+| Page | Reading chosen | Note |
 | --- | --- | --- |
-| `final` | The homepage, a per-section combination | 2026-08-07 |
-| `who-we-are-a` | The Table | 2026-08-05 |
-| `what-we-do-a` | Three Doors | 2026-08-05 |
-| `team-a` | The Roster | 2026-08-05 |
-| `team-bio` | The one bio screen, template for the other nine | with the Team set |
-| `solutions-b` | The Throughline Down | 2026-08-05 |
-| `epic-a` | The Pinned Method, with The Instrument's method rows swapped in | 2026-08-11 |
-| `mail-a` | Five Minutes | 2026-08-11 |
-| `amb-a` | The Network | 2026-08-11 |
-| `give-c` | One Screen | 2026-08-12 |
+| `final` | The homepage, a per-section combination | Chosen pending the Join Us copy question |
+| `who-we-are-a` | The Table | |
+| `what-we-do-a` | Three Doors | |
+| `team-a` | The Roster | |
+| `team-bio` | The one bio screen | Template the other nine are cut from |
+| `solutions-b` | The Throughline Down | |
+| `safety` | The Streetlight | The template the other two solution pages are filled from |
+| `work` | The Streetlight, with Meaningful Work's copy | Five work areas where Safety carries four |
+| `education` | The Streetlight, with Quality Education's copy | |
+| `podcast-a` | The Studio | **Already converted**, the Phase 1 spike, and it is the chosen reading |
+| `capitol-a` | The Dome | |
+| `epic-a` | The Pinned Method, with The Instrument's method rows swapped in | |
+| `mail-a` | Five Minutes | |
+| `amb-a` | The Network | |
+| `give-c` | One Screen | |
 
-**Blocked on Empower.** Four sets, and the ask that unblocks each one.
+Fourteen conversions remain, since `podcast-a` is done. That matches README's
+own "fourteen remaining page conversions" exactly, which the earlier draft of
+this document wrongly treated as stale.
+
+**Open, and not to be converted.** Two sets.
 
 | Set | Readings | What is needed |
 | --- | --- | --- |
-| Podcast | `podcast-a` / `podcast-b`, `capitol-a` / `capitol-b` | A pick per show. Two shows, two readings each |
 | All Content | `content-a` / `content-b` | A pick, plus the axis question (type-first vs subject-first), plus a ruling on the missing Research & Reports category |
 | Landing templates | `landing` / `landing-b` | A pick. B additionally needs one Elementor setting A does not (right column sticky, Advanced > Motion Effects) |
-| Solution detail | `work-a/b/c`, `safety-a/c` | A pick per solution. Quality Education is **not built** and gets cut from whichever reading they pick |
 
-### 1.1 Two documentation defects this surfaced, both to be fixed before work starts
+### 1.1 The solution pages are one template filled three times, and that is settled
 
-**The README block table's `work, safety, education` row is wrong.** It says
-"**One template across all three** (`css/solution.css`, seven `sol-*` blocks),
-so build it once as an Elementor saved template and fill it three times". The
-decision of record says the opposite: Paolo chose independently composed pages
-rather than one template filled repeatedly, asked before building each time and
-answered the same way twice, so **there is no solution-page template to hand
-off, and the winner has to become the template**. The row describes
-`dist/work.html`, `safety.html` and `education.html`, which are the older
-template-shaped pages that the six readings supersede. Converting from that row
-would build the wrong thing three times.
+README's block table says the three solution pages are **one template across all
+three** (`css/solution.css`, seven `sol-*` blocks), built once as an Elementor
+saved template and filled three times. That is correct and is what the chooser
+records: Empower chose **The Streetlight** for Public Safety, and `work.html`
+and `education.html` are that same template carrying their own copy. The chooser
+says so in as many words on both: "the template Empower chose for Public Safety,
+filled with this page's own copy".
 
-**`podcast-a` is converted and live on the install, and the podcast set is
-unchosen.** That is not a defect in itself, since it was the Phase 1 spike and
-its job was to prove the machinery, but it means the install currently shows a
-reading Empower has not picked. If they pick `podcast-b`, the converted page is
-discarded and the Loop Grid work is rebuilt against a different composition.
-Worth saying out loud rather than discovering at handover.
+This document withdrew that row in an earlier draft, on the strength of a note
+recording an older state in which the readings were independent compositions,
+Empower had not chosen, and Quality Education was unbuilt. All three of those
+facts have since changed. `dist/education.html` exists and is built. The
+withdrawal was reverted.
+
+The practical consequence stands and is now load-bearing rather than
+hypothetical: `work`, `safety` and `education` are **one conversion and two
+fills**, not three conversions, and the saved-template question in section 5.3
+governs three pages rather than one.
 
 ## 2. What Phase 2B does not do
 
@@ -106,30 +121,37 @@ in the repository today, not designed fresh.
    two classes (`.your-class.e-con`); one fighting Elementor's widget defaults
    needs four, because Elementor repeats its own class to reach 0,4,0.
 
-## 4. Order, and the reasoning behind it
+## 4. Order: the homepage first, then the rest
 
-Not alphabetical and not by importance. The order front-loads the cheapest page
-that exercises the whole pipeline, then spends the unknowns one at a time, then
-finishes with the page that needs everything.
+**`final` is converted first, as a single page, and stops there for review.**
+Paolo's call on 2026-08-14, and the instruction was explicit: the homepage is
+the first test before anything else goes ahead.
 
-| # | Page | Why here |
-| --- | --- | --- |
-| 1 | `who-we-are-a` | Containers plus one inline-SVG HTML widget. The cheapest complete instance of the recipe, so the first task proves the pipeline rather than a page |
-| 2 | `what-we-do-a` | Same shape. Proves the pipeline repeats without new machinery, which is the only way to know step 1 built a pipeline and not a one-off |
-| 3 | `solutions-b` | Same shape again, one more inline-SVG widget. Last of the cheap three |
-| 4 | `team-a` | Containers, but every portrait is a placeholder tile, so it is the first page where a content gap is visible rather than structural |
-| 5 | `team-bio` | Five inline SVGs and the first **saved template**, since nine more bios are cut from it |
-| 6 | `mail-a` | The first form. Settles the form question (section 5.1) for three later pages |
-| 7 | `amb-a` | The second form, applying whatever 6 settled, plus Ashley Green stays unlinked |
-| 8 | `give-c` | The form slot for Gravity Forms and embedded Stripe, plus three outstanding implementation asks (section 5.4) |
-| 9 | `epic-a` | Scroll-driven motion inside Elementor containers, the highest-risk page in the phase (section 5.2) |
-| 10 | `final` | The homepage. Two Loop Grids, a form, and a composition drawing on five stylesheets. Highest value and highest cost, taken when every mechanism it needs has already been proven on a cheaper page |
+An earlier draft of this document argued for `final` last, on the ground that it
+is the only page needing Loop Grids, a form, inline SVG widgets and a
+five-stylesheet cascade at once, so a failure in it could not be attributed to
+one cause. That argument is real and is answered rather than ignored: it is an
+argument about **diagnosis**, and it is outweighed by what going first buys.
 
-**The argument against doing `final` first**, which is the obvious alternative
-since it is the page Empower will look at: it is the only page that needs Loop
-Grids, a form, inline SVG widgets and a five-stylesheet cascade at once, so a
-failure in it cannot be attributed. Every one of those is proven separately by
-the time it is reached, and the Loop Grid half is already proven on `podcast-a`.
+- It is the page Empower will actually look at, so it is the one whose fidelity
+  is worth learning about early rather than late.
+- It is the most expensive page in the phase, so it produces the **real** per-page
+  cost rather than an optimistic one taken from the cheapest page. A phase
+  estimate built on `who-we-are-a` would have been wrong in the direction that
+  hurts.
+- The Loop Grid half is already proven on `podcast-a`, so of the four mechanisms
+  it needs, only the form is genuinely unknown. That is one unknown, not four.
+- Attribution is recoverable anyway: the sections deploy from separate modules
+  and the manifest composes them, so a section can be deployed alone to isolate
+  a fault.
+
+The remaining thirteen are ordered after `final` lands and its cost is known,
+which is the whole point of doing it as a test first. The provisional order,
+cheapest complete instance of the recipe onward, is `who-we-are-a`,
+`what-we-do-a`, `solutions-b`, `team-a`, `team-bio`, `safety`, then `work` and
+`education` as fills of it, `capitol-a`, `mail-a`, `amb-a`, `give-c`, `epic-a`
+last as the highest-risk. That order is not committed here and should be
+rewritten against `final`'s measured cost.
 
 ## 5. The open questions, each with the observable that settles it
 

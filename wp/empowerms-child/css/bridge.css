@@ -409,6 +409,71 @@
   object-fit:cover;
 }
 
+/* The other three declarations of homepage.css:261, added 2026-08-15 after
+ * measuring section heights rather than computed styles. The comment above is
+ * right that width and height were ARRIVING at the right numbers, and wrong
+ * that this meant nothing was needed: they arrive as the image's own intrinsic
+ * size, and an image sized intrinsically is what decides how tall the grid row
+ * is. Measured: the featured story card came out 596px tall against the static
+ * build's 374px, its grid row sized to 596px, while the image inside it
+ * rendered 325px and the body column wanted exactly 374px. Nothing on the page
+ * asked for 596px; it is what the grid computes when a replaced element is
+ * allowed to contribute its own height to an auto row.
+ *
+ * `height:100%` is the declaration that stops it. On a grid item it resolves
+ * against the row rather than against the content, so the image follows the row
+ * instead of driving it, which is exactly what it does in the static build.
+ * min-height:336px moves to the WRAPPER, because the wrapper is the grid item
+ * now, and that is the floor that keeps the card from collapsing when the copy
+ * is short.
+ *
+ * This is the difference a computed-style comparison cannot see: every property
+ * on both sides agreed, and the card was still 222px too tall. Heights needed
+ * measuring separately. */
+.elementor .em-stories__lead-card > .elementor-widget-image{
+  height:100%;
+  min-height:336px;
+}
+.elementor .em-stories__lead-card .elementor-widget-image img{
+  width:100%;
+  height:100%;
+}
+
+/* ---------- A Loop Grid inside a grid the build wrote for its items ---------
+ * The featured story card measured 596px against the static build's 374px, and
+ * the rule above was written first on the assumption that the image was driving
+ * the row. It was not. Isolated in the browser by hiding one element at a time:
+ * hiding the image changed nothing, hiding the card's body changed nothing, and
+ * hiding the SIBLING column dropped the card to exactly 374. The lead card was
+ * never too tall. It was being stretched by the column beside it.
+ *
+ * homepage.css:276 is `.em-stories__col{display:grid;grid-template-rows:1fr 1fr;
+ * gap:var(--space-6)}`, and it is written for exactly two children: the two mini
+ * story cards. Converted, its only child is the Loop Grid widget, and the two
+ * `1fr` rows then both size to that single widget's content: 286 + 24 + 286 =
+ * 596, which is the number on the page to the pixel.
+ *
+ * `display:contents` on the three wrappers between the column and the loop items
+ * removes them from the box tree and makes the two rendered cards the column's
+ * real grid children, which is the structure homepage.css:276 was written
+ * against. The rows then behave as designed: two equal rows stretched to the
+ * height of the lead card beside them, each mini filling its row.
+ *
+ * The general shape, which is worth more than this one card: a Loop Grid does
+ * not drop its items where a static build put them. It inserts a widget, a
+ * widget container and a loop container in between, so any build rule about how
+ * the ITEMS sit in their parent (grid rows, flex, nth-child, direct-child
+ * selectors) stops describing the page. Scoped to this column rather than
+ * written for .elementor-loop-container generally, because a Loop Grid whose
+ * own grid settings are doing the layout needs those wrappers and would lose
+ * its own columns and gap to this. */
+.elementor .em-stories__col > .elementor-widget-loop-grid,
+.elementor .em-stories__col .elementor-widget-container,
+.elementor .em-stories__col .elementor-loop-container,
+.elementor .em-stories__col .e-loop-item{
+  display:contents;
+}
+
 /* ---------- Form controls: DELETED 2026-08-15, the competitor is gone -------
  * The rule was `.elementor input.em-input, .elementor textarea.em-textarea,
  * .elementor select.em-select{font-family:var(--font-body);

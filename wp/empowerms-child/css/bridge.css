@@ -674,12 +674,22 @@
  * uicore-framework's generated CSS: that is gone with the plugin.
  *
  * The first guess at the real competitor, written here and then disproved
- * within the hour, was the uicore-pro parent theme, which this install does
- * still load. It is not that either: blocking every request to that theme's
- * directory and reloading changed not one computed value. The competitor is
- * Elementor's own Site Settings kit, and the section headed "Elementor's KIT
- * styles every native <button>" near the end of this file is the measurement
- * that found it and the repair for the rest of the buttons it affects. */
+ * within the hour, was the uicore-pro parent theme, which the install was still
+ * loading at the time because its `template` option still named it. It was not
+ * that either: blocking every request to that theme's directory and reloading
+ * changed not one computed value. That prediction has since been confirmed the
+ * hard way. The template option was corrected later the same day, the theme
+ * stopped loading entirely (the two converted pages went from eight references
+ * to `uicore` in their markup to none), and this rule was still needed and every
+ * measurement on both pages was unchanged.
+ *
+ * The competitor is Elementor's own Site Settings kit, and the section headed
+ * "Elementor's KIT styles every native <button>" near the end of this file is
+ * the measurement that found it and the repair for the rest of the buttons it
+ * affects. Its selector list is wider than the two elements repaired here:
+ * post-20547.css targets `button`, `input[type=button]`, `input[type=submit]`
+ * AND `.elementor-button`, so a native button, a submit and Elementor's own
+ * button widget are all hit by the same declarations. */
 .elementor button.em-btn,
 .elementor input[type="submit"].em-btn{
   font-family:var(--font-display);

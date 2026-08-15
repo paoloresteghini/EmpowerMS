@@ -10,8 +10,8 @@ is measured on the live install unless it says otherwise.
 | --- | --- |
 | `uicore-framework`, `uicore-elements`, `uicore-animate` | **Deactivated.** Not deleted, so the comparison is still available |
 | `empowerms-child` | Active, standalone in its own `style.css` |
-| `template` option in the database | **Still `uicore-pro`.** See section 5 |
-| `/final/` (post 20588) and `/podcast-a/` (post 20568) | Render `em-header`, `em-footer`, `main#main`, one `<h1>`, no fatal |
+| `template` option in the database | **`empowerms-child`.** Corrected 2026-08-15 by Paolo. UiCore no longer loads at all |
+| `/final/` (post 20588) and `/podcast-a/` (post 20568) | Render `em-header`, `em-footer`, `main#main`, one `<h1>`, no fatal, and **zero `uicore` references** in their markup |
 | `node --test test.mjs` | 228 |
 | `node --test test-elementor.mjs` | 125 |
 | Computed-style differences against the static build | **Zero on both pages** |
@@ -132,30 +132,31 @@ What is left on the homepage is `.em-insights` at +91px, and that one is
 229 static, differing in both directions because the live page renders real
 posts where the static build renders placeholders.
 
-## 5. The one thing not done, and it needs Paolo
+## 5. The template option, since corrected
 
-**The install still names `uicore-pro` as its `template`.** Removing
-`Template: uicore-pro` from the child theme's `style.css` did not change the
-database, so WordPress still loads the parent theme's `functions.php` and still
-enqueues `uicore-icons`, `uicore-script` and a Google Fonts request from it.
-
-I could not run the fix: the permission classifier declined both
-`wp theme activate` and `wp option update` against the live install, twice, and
-routing around that with a different tool would be evading the intent rather
-than the command. It is one command:
+Removing `Template: uicore-pro` from the child theme's `style.css` did not
+change the database, so WordPress went on loading the parent theme's
+`functions.php` and enqueueing `uicore-icons`, `uicore-script` and a Google
+Fonts request from it. `wp theme activate` cannot fix this: the theme is already
+active, so the command is a no-op and the option is never re-derived. The only
+route is the option itself.
 
 ```bash
-set -a; . ./.env; set +a
-node -e "import('./wpe.mjs').then(m => m.wpe('wp theme activate empowerms-child'))"
-node -e "import('./wpe.mjs').then(m => m.wpe('wp option get template'))"   # expect empowerms-child
+node -e "import('./wpe.mjs').then(m => m.wpe('wp option update template empowerms-child'))"
 ```
 
-Then flush both caches and re-run the census (section 7). **This is now known
-not to be urgent**: blocking every uicore-pro asset in the browser changed not
-one computed value, so the parent theme is contributing nothing visible. It is
-housekeeping and a real reduction in requests, not a fix.
+Run by Paolo on 2026-08-15, followed by `wp cache flush` and both front-end
+flushes. Revert is the same command with `uicore-pro`.
 
-Revert is `wp option update template uicore-pro`.
+**Result, measured after.** Both converted pages went from eight `uicore`
+references in their markup to **none**. Every other number was unchanged: zero
+computed-style differences on both pages, the same section heights to the pixel,
+228 and 125 passing. That is the confirmation of the prediction made earlier in
+the day by blocking every uicore-pro asset in the browser and watching nothing
+move. The parent theme had been contributing requests and nothing else.
+
+UiCore is now off this install entirely, apart from what it wrote into
+Elementor's own kit, which is section 3.
 
 ## 6. Phase 2B, re-priced against what the homepage actually cost
 

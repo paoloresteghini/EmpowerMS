@@ -89,6 +89,50 @@
   --container-default-padding-left:0px;
 }
 
+/* The fourth kit value, found on 2026-08-15 by measuring section heights after
+ * every typographic difference on the converted homepage had been repaired and
+ * the page was still 779px taller than the static build. Six of its seven
+ * sections reported `row-gap: 20px` live against `normal` static, and the
+ * header and footer did too, which is why it is here rather than in a
+ * page-specific rule.
+ *
+ * Same shape as the padding above, same reason, same safety argument.
+ * Elementor's frontend.min.css carries
+ * `.e-con{--gap:var(--widgets-spacing,20px);--row-gap:var(--widgets-spacing-row,20px);
+ * --column-gap:var(--widgets-spacing-column,20px)}`, and those three variables
+ * are what Site Settings writes for "Widgets Space". With no savable kit the
+ * 20px fallback applies to every container on the install, and a container that
+ * the build's own stylesheet gives no gap to therefore gets 20px between every
+ * child that the static build does not have.
+ *
+ * Zeroing the DEFAULT rather than `gap` itself is what makes this safe, exactly
+ * as with the padding: the build's own gaps are ordinary declarations that
+ * already beat Elementor's var-driven one, and this leaves them alone.
+ * Confirmed in the same measurement pass before writing it: .em-join computes
+ * 64.8px on BOTH sides, because css/homepage.css sets it and wins, while
+ * .fp-hero computes 20px live and normal static, because nothing in the build
+ * sets a gap there at all. The first of those is the control: if this rule
+ * reached real gaps, .em-join would be the section to lose one.
+ *
+ * NOT on :root, and the first version of this rule was, which is why the note
+ * is here. Written on :root it deployed, served, and changed nothing: the
+ * variable computed 0px on the document element and 20px on the section, which
+ * inheritance cannot do. The kit does not leave these variables to a fallback
+ * the way it leaves the padding ones. post-20547.css carries
+ * `.elementor-element{--widgets-spacing:20px 20px;--widgets-spacing-row:20px;
+ * --widgets-spacing-column:20px}`, setting them directly on every Elementor
+ * element, and a declaration on the element always beats a value inherited from
+ * an ancestor whatever the ancestor's specificity. So this has to be written at
+ * the same place, one class higher. The padding block above genuinely can live
+ * on :root because the kit sets no equivalent there, and the difference between
+ * the two is worth keeping straight: :root works for a variable nobody claims,
+ * and never for one somebody sets on the element itself. */
+.elementor .elementor-element{
+  --widgets-spacing:0px;
+  --widgets-spacing-row:0px;
+  --widgets-spacing-column:0px;
+}
+
 /* Elementor's own widget-spacing default (frontend.min.css:
  * .elementor-widget:not(:last-child){margin-block-end:
  * var(--kit-widget-spacing,20px)}) falls back to 20px in the absence of a

@@ -16,7 +16,9 @@ import {
   LOOP_ITEM_POST_ID as podcastLoopItemPostId, PODCAST_CATEGORY_ID as podcastCategoryId,
 } from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
-import { deployPage, deployLoopItem, deployThemePart, setConditions } from './elementor/deploy.mjs';
+import { section as finalHero } from './elementor/pages/final/01-hero.mjs';
+import { PHOTOS } from './elementor/pages/final/media.mjs';
+import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
@@ -815,6 +817,77 @@ test('the podcast hero mapping carries the section class and its copy', () => {
   assert.ok(flat.includes('pca-hero'), 'hero mapping does not carry the pca-hero class');
 });
 
+/* --- elementor/pages/final/ (the homepage) ------------------------------ */
+
+test('the homepage hero mapping carries the section class and its copy', () => {
+  const tree = finalHero();
+  const flat = JSON.stringify(tree);
+  const source = fs.readFileSync('src/final/sections/01-hero.html', 'utf8');
+
+  /* Same derivation as the podcast tests above: the copy deck is read out of
+     the source partial by regex, never typed here. Note what this admits on
+     this particular partial, because it is load-bearing rather than
+     incidental: the <h1> is `Your American&nbsp;Dream <em>Starts Here.</em>`,
+     so the regex yields TWO strings, `Your American&nbsp;Dream` and
+     `Starts Here.`, and the mapping only passes if it carries the entity and
+     the inline <em> exactly as authored rather than flattening the heading to
+     plain text. */
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `homepage hero mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('fp-hero'), 'homepage hero mapping does not carry the fp-hero class');
+});
+
+test('the homepage hero photographs resolve through the shared media map, not typed urls', () => {
+  /* Four of the homepage's six sections use the same nine photographs, and
+     several use the same file twice. A url or an attachment id typed at the
+     point of use is a second copy of an install fact, and the copies drift
+     silently: a wrong id renders SOMEBODY ELSE'S photograph and every
+     structural test still passes. So the ids and urls live in one map and the
+     sections read from it, which this test holds by checking the hero's two
+     images against the map rather than against literals. */
+  const flat = JSON.stringify(finalHero());
+  assert.ok(flat.includes(String(PHOTOS['father-children-field'].id)),
+    'the hero is not using the mapped attachment id for father-children-field');
+  assert.ok(flat.includes(PHOTOS['children-running-parent'].url),
+    'the hero is not using the mapped url for children-running-parent');
+
+  for (const [name, entry] of Object.entries(PHOTOS)) {
+    assert.ok(Number.isInteger(entry.id) && entry.id > 0, `${name} has no attachment id`);
+    assert.ok(entry.url.startsWith('https://') && entry.url.endsWith(`${name}.jpg`),
+      `${name}'s url does not end in its own filename, so the map has two entries crossed over`);
+  }
+});
+
+test('every photograph the homepage sections reference exists in the media map', () => {
+  /* The coverage half, derived rather than enumerated: the set of photographs
+     is read out of the six source partials, so a section that starts using a
+     tenth image fails this test instead of shipping a broken <img>. An
+     enumerated list here would report success over exactly that case. */
+  const partials = [
+    'src/final/sections/01-hero.html',
+    'src/option-d/sections/02-solutions.html',
+    'src/current-2/sections/03-foundations.html',
+    'src/sections/04-stories.html',
+    'src/sections/05-insights.html',
+    'src/sections/06-joinus.html',
+  ];
+  const used = new Set();
+  for (const p of partials) {
+    for (const m of fs.readFileSync(p, 'utf8').matchAll(/assets\/photography\/([a-z0-9-]+)\.jpg/g)) {
+      used.add(m[1]);
+    }
+  }
+  assert.ok(used.size > 0, 'no photography found across the homepage partials');
+  for (const name of used) {
+    assert.ok(PHOTOS[name], `the homepage uses assets/photography/${name}.jpg with no entry in the media map`);
+  }
+});
+
 /* --- elementor/pages/podcast-a/02-about.mjs ----------------------------- */
 
 test('the podcast about mapping carries the section class and its copy', () => {
@@ -1591,6 +1664,51 @@ test('setConditions still resolves when every wp-cli step genuinely succeeds', a
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+/* --- disableThemePageTitle() -------------------------------------------- */
+
+test('disableThemePageTitle writes the page_options JSON UiCore actually reads', async () => {
+  /* Found by measuring the first converted homepage section on the live
+     install, and it turned out to be true of podcast-a as well, since Phase 1:
+     UiCore prints its own <h1 class="uicore-title"> page-title banner above the
+     converted content, so every converted page shipped TWO h1 elements and a
+     title bar that is not in the design. Nothing caught it, because the
+     fidelity checks look for the build's own copy and computed styles, and both
+     were present and correct; the extra chrome sat above them.
+
+     The gate is UiCore's own, read from the plugin rather than guessed:
+     should_render_page_title() (includes/templates/page-title.php:605) asks
+     Helper::po('pagetitle', 'pagetitle', 'true', $post_id), and po()
+     (includes/extra/helper.php:20) reads the post's `page_options` meta as
+     JSON, mapping the value 'disable' to 'false'. Hence this exact key, this
+     exact value, and JSON rather than a serialized array.
+
+     Automated rather than left as a step in the recipe because it has to happen
+     for all fourteen pages of this phase, and a manual step repeated fourteen
+     times is a step that gets missed once and produces a defect nobody looks
+     for again. */
+  const { tmpDir, capturePath } = withCapturingSsh('page-options-');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    await disableThemePageTitle(4242);
+    const script = fs.readFileSync(capturePath, 'utf8');
+    assert.match(script, /wp post meta update 4242 page_options/,
+      'does not write the page_options meta UiCore reads');
+    assert.match(script, /"pagetitle"\s*:\s*"disable"/,
+      'does not set pagetitle to the literal value po() maps to false');
+    assert.ok(!/--format=json/.test(script),
+      'writes page_options with --format=json, which stores a PHP-serialized array; ' +
+      'Helper::isJson() then fails and the setting is ignored while looking correct');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('disableThemePageTitle refuses a non-integer post id', async () => {
+  await assert.rejects(() => disableThemePageTitle('20588'), /must be an integer/);
 });
 
 test('setConditions refuses an empty condition list', async () => {

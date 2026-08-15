@@ -147,6 +147,46 @@ export async function deployThemePart(postId, elements, location) {
   return deployElements(postId, elements, location);
 }
 
+/* Turns off UiCore's own page-title banner on a converted page.
+ *
+ * Found by measuring the first converted homepage section on the live install,
+ * and it was true of podcast-a too, all the way back to Phase 1: UiCore prints
+ * <h1 class="uicore-title uicore-animate ..."> above the page's own content, so
+ * every converted page shipped TWO h1 elements and a title bar the design does
+ * not have. Nothing reported it. The fidelity checks look for the build's own
+ * copy and computed styles, and all of that was present and correct; the extra
+ * chrome sat above it, and a screenshot comparison read it as a header
+ * difference rather than as a duplicate heading.
+ *
+ * The gate is UiCore's own, read from the plugin rather than guessed:
+ * should_render_page_title() (uicore-framework/includes/templates/page-title.php
+ * :605) asks Helper::po('pagetitle', 'pagetitle', 'true', $post_id), and po()
+ * (includes/extra/helper.php:20, the branch at :81) reads the post's
+ * `page_options` meta, requires it to be JSON via Helper::isJson(), and maps the
+ * value 'disable' to 'false'. So all three of these matter and none is a
+ * preference: the key is `page_options`, the setting is `pagetitle`, and the
+ * value is the literal string 'disable'.
+ *
+ * Written as plaintext JSON, NOT with --format=json. WP-CLI's --format=json
+ * json_decodes the value and stores a PHP-serialized array, which
+ * Helper::isJson() then rejects, so the setting would be silently ignored while
+ * reading back as perfectly correct in the admin. This is the same trap
+ * deployElements() documents for _elementor_data, in the opposite direction.
+ *
+ * Its own function rather than a step folded into deployPage(), for the same
+ * reason setConditions() is separate from deployThemePart(): they are two
+ * writes with two independent failure modes. A page with content and a title
+ * banner is wrong in a way that is visible; a page with a suppressed banner and
+ * no content is wrong in a different way. Callers do both.
+ */
+export async function disableThemePageTitle(postId) {
+  if (!Number.isInteger(postId)) {
+    throw new Error(`disableThemePageTitle: postId must be an integer, got ${JSON.stringify(postId)}`);
+  }
+  const value = JSON.stringify({ pagetitle: 'disable' });
+  return wpe(`set -e\nwp post meta update ${postId} page_options '${value}'`);
+}
+
 /* Elementor Pro's Conditions_Manager expects _elementor_conditions on the
    document to be an array of condition strings, 'include/general' being the
    whole site. Written with --format=json so WP-CLI stores an array rather

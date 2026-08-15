@@ -42,6 +42,14 @@ const EMPOWER_STYLES_PRIORITY = 60;
 function empower_page_styles() {
 	return array(
 		'podcast-a' => array( 'motion', 'podcast-a' ),
+		/* The homepage. Read off dist/final.html's own <head>, in its order,
+		   not from the README row: final.html composes from four other pages'
+		   stylesheets plus its own, and the order between them is the whole
+		   reason the composition renders. README's own hand-off notes flag
+		   consolidating these into one sheet as cleanup that has not been
+		   done, so the list stays exactly as the static page loads it until
+		   that happens. */
+		'final'     => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
 	);
 }
 

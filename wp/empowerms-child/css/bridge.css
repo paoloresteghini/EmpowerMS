@@ -705,3 +705,200 @@
  * made in the admin with nothing in this repository changing, silently
  * restyled every Elementor heading on the install. That is the finding that
  * justified removing UiCore at all, and it outlives the rule. */
+
+/* ---------- Class-on-wrapper, the whole category, measured on 2026-08-15 ----
+ * The largest remaining difference on the converted homepage, and the one that
+ * UiCore was hiding. It is the same defect .em-utility__note p repairs near the
+ * top of this file, but that was written as one page's oddity and it is not: it
+ * is every text() and heading() widget on every page.
+ *
+ * THE MECHANISM, and it has two halves that have to be repaired separately.
+ * text() and heading() put the caller's class on Elementor's widget WRAPPER
+ * (WIDGET_CSS_CLASS_KEY, elementor/factory.mjs), never on the <p> or the <h3>
+ * the markup produces. So:
+ *
+ *   1. The inner element is un-classed and falls back to tokens/base.css's
+ *      site-wide defaults: `p{margin:0 0 var(--space-4)}` (16px) and
+ *      `h3{font-size:var(--fs-h3)}` (25.6px). Confirmed exactly:
+ *      .em-article__title computed 25.6px live where the static build computes
+ *      20px, which is --fs-h4, the value components.css:160 sets on the class.
+ *   2. The wrapper DOES carry the class, so the class's own margin ought to
+ *      apply there instead. It does not, because Elementor's
+ *      `.e-con .elementor-widget.elementor-widget{margin-block-end:0}` is 0,3,0
+ *      and every rule in css/ that sets a margin on one of these classes is
+ *      0,1,0 or 0,2,0. Probed on the live page: twenty-one wrappers carrying a
+ *      build class, every one of them computing margin-bottom 0.
+ *
+ * So the margin the build intended is lost twice over, and the inner element
+ * supplies 16px of its own in its place. Twenty-one elements on the homepage
+ * measured wrong this way, against a static build that variously wants 0, 12,
+ * 24, 32 and 40.
+ *
+ * WHY UICORE HID IT: uicore-framework's generated CSS set `p{margin-bottom:0}`
+ * at a specificity that beat tokens/base.css, so every one of these paragraphs
+ * computed 0 instead of 16. That is the right answer for the fourteen of them
+ * whose class wants margin 0, and it made the other seven the only visible
+ * ones. The moment the plugin went, all twenty-one became visible at once. The
+ * page did not get worse; it got measured.
+ *
+ * WHY THIS IS NAMED RATHER THAN GENERAL, again. The obvious repair is
+ * `.elementor .elementor-widget-text-editor p{margin-bottom:0}`, and it is the
+ * same trap this file has now recorded three times. At 0,2,1 it would beat
+ * current-2.css:324's `.c2-panel__more p{margin:var(--space-5) 0 var(--space-6)}`
+ * (0,1,1), which is a rule that reaches the inner paragraph correctly TODAY and
+ * measures correct today: those paragraphs compute 24px live and 24px static.
+ * A general rule would break the things that already work in order to fix the
+ * things that do not. Every selector below names a class, so it cannot reach a
+ * paragraph nobody listed.
+ */
+
+/* Half one: the inner element stops supplying a margin of its own. Every class
+ * here is one whose wrapper carries the real margin, either because the class
+ * declares zero (tl-lede, c2-foundations__lede, c2-panel__promise, em-lead,
+ * em-stories__attr, em-join__lead, em-newsletter__note all set margin:0) or
+ * because a rule below, or the .em-footer__mission rule further up, restores
+ * it on the wrapper. */
+.elementor .fp-tagline p,
+.elementor .fp-hero__lede p,
+.elementor .tl-lede p,
+.elementor .tl-label p,
+.elementor .c2-foundations__lede p,
+.elementor .c2-panel__promise p,
+.elementor .em-eyebrow p,
+.elementor .em-lead p,
+.elementor .em-stories__attr p,
+.elementor .em-insights__lede p,
+.elementor .em-join__lead p,
+.elementor .em-newsletter__note p,
+.elementor .em-footer__mission p,
+.elementor .em-article__title h3{
+  margin:0;
+}
+
+/* Half two: the wrapper gets back the margin Elementor zeroes. 0,4,0, one step
+ * above Elementor's 0,3,0, written against margin-block-end rather than
+ * margin-bottom so it is the same property Elementor set rather than a second
+ * property that happens to resolve to the same physical edge.
+ *
+ * Only the six classes whose intended margin is not zero appear. The other
+ * eight want zero, which is what Elementor's own rule already gives them, so
+ * naming them here would add a rule that changes nothing. Each value is the
+ * token the build's own rule uses, read from the stylesheet rather than from
+ * the measurement, with the measured static pixel value in the comment as the
+ * check that they agree. */
+.elementor .fp-tagline.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-6); /* 24px, option-a.css:53 */
+}
+.elementor .fp-hero__lede.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-8); /* 40px, option-a.css:65 */
+}
+.elementor .tl-label.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-8); /* 40px, option-d.css:24 */
+}
+.elementor .em-eyebrow.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-3); /* 12px, tokens/base.css:17 */
+}
+.elementor .em-insights__lede.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-7); /* 32px, homepage.css:292 */
+}
+.elementor .em-article__title.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-3); /* 12px, homepage.css:309 */
+}
+
+/* Half one repairs .em-article__title's margin; its SIZE needs the same
+ * treatment for the same reason. components.css:160 sets font-size:var(--fs-h4)
+ * on the class, the class is on the wrapper, and the un-classed <h3> inside
+ * takes tokens/base.css's `h3{font-size:var(--fs-h3)}` instead: 25.6px live
+ * against 20px static, measured on all three insight cards.
+ *
+ * line-height has to be restated too, and the first attempt at this rule left
+ * it out on the argument that a unitless line-height inherits as a ratio, so
+ * the <h3> would resolve components.css:160's 1.25 against its own font-size
+ * on its own. Deployed and measured: the <h3> computed 20px, not the 25px that
+ * argument predicts. The argument is true about inheritance and irrelevant
+ * here, because tokens/base.css sets a line-height on the h3 ELEMENT, and an
+ * element's own matching rule beats an inherited value outright, whatever the
+ * inherited value's form. Inheritance only reaches a property nothing else
+ * claims. Restated from the class's own declaration, and re-measured after:
+ * 20px / 25px live, 20px / 25px static. */
+.elementor .em-article__title h3{
+  font-size:var(--fs-h4);
+  line-height:1.25;
+}
+
+/* ---------- Elementor flattens every heading's line-height to 1 -------------
+ * Not UiCore, and not class-on-wrapper: this one is Elementor's own default and
+ * it has been on both converted pages since Phase 1, hidden until the headings
+ * above stopped being wrong for larger reasons.
+ *
+ * tokens/base.css:4 sets `h1,h2,h3,h4,h5{line-height:var(--lh-heading)}` (1.08)
+ * on the ELEMENTS, specificity 0,0,1. Elementor's frontend.min.css sets
+ * `.elementor-widget-heading .elementor-heading-title{line-height:1}` at 0,2,0
+ * and wins. Measured: six headings across the homepage and the footer computing
+ * a line-height exactly equal to their own font-size, 36px on 36px, 25.6px on
+ * 25.6px, 13px on 13px, against a static build computing 38.88px, 27.648px and
+ * 14.04px. Every one of them is 1.08 times the font size, which is the token,
+ * so the value to restore is not in doubt.
+ *
+ * NAMED, and this is the case where the temptation to go general is strongest,
+ * because the defect really is site-wide and one rule at 0,2,0 in this file
+ * would fix every heading on all fourteen pages by tying with Elementor and
+ * winning on source order. It is still wrong, and the evidence is in css/:
+ * .wc-entity h3 wants 1.3, .lnb-step__title 1.35, mail-a's headings 1.1,
+ * give-c's 1.12, chooser's 1.2, who-we-are-a's entity headings 1.25. All of
+ * those sit at 0,1,0 or 0,1,1 and would lose to a 0,2,0 rule here, on pages
+ * that are not converted yet and would therefore break silently on the day
+ * they ship, which is precisely how the two reverted rules recorded above
+ * behaved. Each block that measured wrong is named instead.
+ *
+ * .em-footer__top is the highest-value line here: the footer is a theme part,
+ * so those two headings are on every page on the install. */
+.elementor .em-stories__head h2,
+.elementor .em-insights__aside h2,
+.elementor .em-join__way h3,
+.elementor .em-footer__top h3{
+  line-height:var(--lh-heading);
+}
+
+/* ---------- podcast-a: the same class-on-wrapper category, its own classes ---
+ * Measured on the converted spike after the homepage repairs above, using the
+ * same instrument. Identical mechanism, so the same two halves: the inner
+ * paragraph stops supplying base.css's 16px, and the wrapper gets back the
+ * margin Elementor zeroes at 0,3,0. Values read from css/podcast-a.css.
+ *
+ * .pca-lede is scoped to .pca-about__copy rather than repaired globally,
+ * because the class itself declares no margin at all (podcast-a.css:50) and
+ * only podcast-a.css:131 gives it one, in that one context. A bare
+ * `.pca-lede p{margin:0}` would zero a paragraph that is supposed to keep
+ * base.css's 16px anywhere else the class is used. */
+.elementor .pca-eyebrow p,
+.elementor .pca-hero__lede p,
+.elementor .pca-about__copy .pca-lede p,
+.elementor .pca-about__where p{
+  margin:0;
+}
+.elementor .pca-eyebrow.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-5); /* 20px, podcast-a.css:45 */
+}
+.elementor .pca-hero__lede.elementor-widget.elementor-widget{
+  margin-block-end:clamp(var(--space-8), 4vw, var(--space-10)); /* 56px at 1440, podcast-a.css:73 */
+}
+.elementor .pca-about__copy .pca-lede.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-6); /* 24px, podcast-a.css:131 */
+}
+
+/* .pca-about__where loses three inherited properties rather than a margin, and
+ * they are repaired with `inherit` rather than by restating the values. The
+ * class sets font-size, line-height and colour (podcast-a.css:142); it sits on
+ * the wrapper, so the wrapper already computes all three correctly. The inner
+ * <p> does not inherit them only because tokens/base.css claims each one on the
+ * `p` element itself, and an element's own rule beats an inherited value.
+ * `inherit` hands back exactly what the wrapper resolved, so this rule never
+ * needs updating if podcast-a.css changes its mind about the values, which
+ * restating them would. Measured before: 27.2px line-height and rgb(74,74,74)
+ * against the static build's 22.95px and rgb(0,60,80). */
+.elementor .pca-about__where p{
+  font-size:inherit;
+  line-height:inherit;
+  color:inherit;
+}

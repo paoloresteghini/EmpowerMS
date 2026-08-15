@@ -1173,3 +1173,41 @@
 .elementor .pca-facets__clear:hover{
   background-color:var(--surface-subtle);
 }
+
+/* ---------- Margins do not collapse in a flex container --------------------
+ * The footer measured 24px taller than the static build on every page, and the
+ * footer is a theme part, so this was 24px on every page on the install.
+ *
+ * The first attempt blamed the logo. tokens/base.css:12 sets img{display:block}
+ * at 0,0,1 and Elementor's widget-image.min.css puts it back to inline-block at
+ * 0,1,1, and .em-footer__logo img carries a 20px bottom margin that a block
+ * child would collapse out through its parent. That rule was written, deployed
+ * and measured: the image duly became display:block and the logo box stayed at
+ * 80px against the static build's 60px. So the rule was removed again rather
+ * than left in place looking like it was doing something.
+ *
+ * The reason it could not work is the actual finding. Elementor makes every
+ * container display:flex, and MARGINS DO NOT COLLAPSE IN A FLEX CONTAINER. Not
+ * the image's margin through its parent, and more importantly not two adjacent
+ * siblings' margins with each other. The footer's first column is exactly that
+ * case: components.css gives .em-footer__mission a 24px bottom margin and
+ * .em-footer__social a 24px top margin, and on the static build those two
+ * collapse to a single 24px gap. Converted, they stop collapsing and both are
+ * charged, which is the 24px, to the pixel:
+ *
+ *   static  60 + 20 + 72 + 24 + 40 = 216
+ *   live    80      + 96      + 64 = 240
+ *
+ * Zeroing one of the pair restores the single gap the static build renders. The
+ * social block's top margin is the one removed, because the mission's bottom
+ * margin already has a rule of its own further up this file and is the one that
+ * still applies when nothing follows it.
+ *
+ * The general form is worth carrying into the remaining pages, because nothing
+ * in a computed-style comparison can see it: every margin value on both sides
+ * agrees, and the page is taller because the boxes stopped collapsing. Any
+ * place the build relies on adjacent-sibling margin collapsing becomes a double
+ * gap once its parent is a converted container. */
+.elementor .em-footer__top .em-footer__social{
+  margin-top:0;
+}

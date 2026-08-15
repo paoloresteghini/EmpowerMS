@@ -1105,7 +1105,9 @@ this adds what each one turns into.
 | `team-bio` | `01-profile`, `02-back` | HTML widgets (five inline SVGs between them). This is the template the other nine bios are cut from, so it is the one worth making an Elementor **saved template** |
 | `solutions-b` | `01-hero`, `03-research`, `04-stories` | Containers |
 | | `02-solutions` | Container + HTML widget (three inline SVGs) |
-| ~~`work`, `safety`, `education`~~ | ~~`01`–`05`, `06-stories`, `07-latest`~~ | **Withdrawn 2026-08-14, and do not convert from this row.** It described `dist/work.html`, `safety.html` and `education.html` as one template built once and filled three times. The decision of record is the opposite: Paolo chose **independently composed** solution pages, asked before building each time and answered the same way twice, so there is **no solution-page template to hand off** and the winner has to become one. Those three files are the older template-shaped pages that `work-a/b/c` and `safety-a/c` supersede, and Quality Education is not built at all; it gets cut from whichever reading Empower pick. Converting from this row would build the wrong thing three times. The real row cannot be written until Empower choose |
+| `work`, `safety`, `education` | `01`–`05` | Containers. **One template across all three** (`css/solution.css`, seven `sol-*` blocks), so build it once as an Elementor saved template and fill it three times |
+| | `06-stories` | **Loop Grid** (`data-cms`) |
+| | `07-latest` | **Loop Grid** (`data-cms`) |
 | `podcast-a` | `01-hero`, `02-about` | Containers |
 | | `03-library` | HTML widget for the filter controls + **Loop Grid** for the episodes. `data-cms-item-attrs="data-topic,data-guest"` |
 | `capitol-a` | `01-hero`, `02-about` | Containers |

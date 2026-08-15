@@ -902,3 +902,45 @@
   line-height:inherit;
   color:inherit;
 }
+
+/* ---------- Two rules that are about POSITION IN A PARENT, not about a class
+ * The last two differences on the two converted pages, and they are a distinct
+ * species from everything above. Neither paragraph carries a build class in the
+ * static build either, so nothing was lost by moving a class to a wrapper. What
+ * broke is that both build rules select on the paragraph's position among its
+ * siblings, and wrapping every widget in its own div changes what its siblings
+ * are.
+ *
+ * homepage.css:450 is `.em-join__way p:last-of-type{margin-bottom:auto;
+ * padding-bottom:var(--space-6)}`, the trick that pushes each card's link to
+ * the bottom of the card however long the copy runs. On the static build the
+ * paragraph is a flex item of .em-join__way, so `auto` absorbs the card's spare
+ * height. Converted, the flex item is the widget wrapper and the paragraph is a
+ * block inside it, where `auto` computes to 0 and the link sits straight under
+ * the text: measured 0px live against 27.1875px static, and 27.1875px is not a
+ * value anyone typed, it is the spare height that run of copy happened to
+ * leave. So the declarations move to the wrapper, which is the element that is
+ * actually the flex item now. padding-bottom moves with it because the two work
+ * as a pair.
+ *
+ * podcast-a.css:127-129 is `.pca-about__copy p{margin:0 0 var(--space-5)}` with
+ * `p:last-child{margin-bottom:0}`. Converted, EVERY paragraph is the only child
+ * of its own wrapper, so every one of them is `:last-child` and every one takes
+ * the zero: measured 0px live against 20px static on the middle paragraph. The
+ * faithful translation is not to name that paragraph, which has no name, but to
+ * apply the same last-one-is-different logic one level up, where the widgets
+ * are now the siblings the rule was written about. :not(:last-child) on the
+ * wrappers reproduces exactly the set the original rule leaves at 20px, and it
+ * keeps working if the section gains or loses a paragraph, which a positional
+ * selector written against today's three would not.
+ *
+ * The .pca-lede rule above is 0,5,0 and this is 0,4,0, so the first paragraph
+ * keeps its own 24px rather than picking up the 20px here, which is what
+ * podcast-a.css:131 asks for. */
+.elementor .em-join__way > .elementor-widget-text-editor{
+  margin-block-end:auto;
+  padding-bottom:var(--space-6);
+}
+.elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){
+  margin-block-end:var(--space-5);
+}

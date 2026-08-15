@@ -220,12 +220,23 @@ This section is what happened afterwards, in a session that started by running
 the verification the list above asks for. Numbering follows "What still needs
 doing".
 
-**1. The branch is merged.** Paolo chose merge to `master` locally, out of
-merge / push and open a PR / leave it. `master` was a strict ancestor, so this
-was a fast-forward, not a merge commit: all 55 commits of Phases 1 and 2A are
-on `master` with their history intact. **Nothing was pushed**, so `origin/master`
-is still at the old head and the GitHub Pages review site is unchanged. The
-branch `elementor-phase-1` still exists and now points at the same commit.
+**1. The branch is merged and pushed.** Paolo chose merge to `master`, out of
+merge / push and open a PR / leave it, and later handed over the push decision
+too. `master` was a strict ancestor, so this was a fast-forward, not a merge
+commit: all 55 commits of Phases 1 and 2A are on `master` with their history
+intact, and `origin/master` moved `2172dae..486ec27`.
+
+Three things were checked before pushing and are worth repeating before any
+later one, because this repository is public and serves the client review site
+from `master` via GitHub Pages. `dist/` was **byte-identical** across the push,
+so the review site did not change; `.env` is gitignored and was never tracked in
+any of the 63 commits; and nothing key-shaped or credential-shaped was added
+(every hit on a secret-shaped grep turned out to be the phrase "design tokens").
+The accepted cost is that a public repository now carries the staging hostname,
+the WP-CLI mechanics, and the install's post ids and plugin versions. Keeping
+the hostname in `docs/` was already the standing decision and this is a staging
+install, but it is now published rather than merely written down. The branch
+`elementor-phase-1` still exists locally and points at the same commit.
 
 **2. The full suite was run and is green.** `SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ npm test`
 returned **228 of 228** in `test.mjs` and **100 of 100** in `test-elementor.mjs`,

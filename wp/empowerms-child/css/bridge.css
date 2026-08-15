@@ -365,44 +365,26 @@
   object-fit:cover;
 }
 
-/* ---------- Form controls: UiCore restyles them, the build's rule loses ----
- * Measured on the converted homepage's newsletter input: font-family computed
- * as Inter, font-size 16px and line-height 30px, against the static build's
- * Source Sans 3, 17px and normal. The control came out 64px tall against 58px.
+/* ---------- Form controls: DELETED 2026-08-15, the competitor is gone -------
+ * The rule was `.elementor input.em-input, .elementor textarea.em-textarea,
+ * .elementor select.em-select{font-family:var(--font-body);
+ * font-size:var(--fs-body);line-height:normal}` at 0,2,1. It existed because
+ * uicore-framework generates its typography CSS at runtime through
+ * class-inline-style.php, and that generated rule beat
+ * components/components.css:107. Deactivating the plugin removes the generated
+ * stylesheet, so the build's own rule wins with nothing in its way.
  *
- * This is NOT an Elementor class-on-wrapper problem, and it is worth being
- * precise about that because it is the first repair in this file that is not.
- * The form is an html() widget, so its markup reaches the page byte for byte,
- * and components/components.css:107 does set font-family and font-size on
- * .em-input. It loses on specificity to a UiCore rule that this project cannot
- * read: UiCore generates its typography CSS at runtime through
- * uicore-framework's class-inline-style.php rather than shipping it in a
- * stylesheet, so there is no file to grep for the selector and no way to state
- * its specificity here from evidence. What IS evidence: .em-input at 0,1,0 was
- * beaten, so the winning selector is at least 0,1,1.
+ * Measured with the rule neutralised before deleting it, on the converted
+ * homepage's newsletter input, which is the element the original repair was
+ * written against: 17px / normal / Source Sans 3 / rgb(0,60,80) on white, 58px
+ * tall, live, and the same six values static. The original defect was 16px /
+ * 30px / Inter and a 64px control.
  *
- * Native form controls are the case where this bites hardest, because they do
- * not inherit font from body the way everything else in this build does. The
- * build compensates by setting font explicitly on .em-input, and that is the
- * declaration being overridden.
- *
- * Scoped to Elementor's own content wrapper and written as class-plus-element
- * (0,2,1) so it clears 0,1,1 without reaching for more than it needs. Deliberately
- * covers the three control classes together rather than just the one measured:
- * mail-a, amb-a and give-c are the pages built around real forms, they use the
- * same component classes, and a repair that fixed only the class the homepage
- * happens to use would leave the same defect waiting on all three.
- *
- * line-height is restated as `normal` rather than left alone: it is not in the
- * build's own rule at all, so with UiCore's 30px removed there is nothing to
- * put it back, and `normal` is what the static build computes. */
-.elementor input.em-input,
-.elementor textarea.em-textarea,
-.elementor select.em-select{
-  font-family:var(--font-body);
-  font-size:var(--fs-body);
-  line-height:normal;
-}
+ * Worth contrasting with the native-button rule below, which was on the same
+ * list of expected deletions and did NOT survive re-measurement. Both were
+ * blamed on the same generated stylesheet. Only one of them was actually
+ * caused by it, which is the argument for re-measuring per rule rather than
+ * deleting the group. */
 
 /* The second of the three homepage child-combinator image rules, repaired now
  * that there is something to measure. css/homepage.css:279 is
@@ -574,6 +556,17 @@
  * Scoped to Elementor content and written as class-plus-element (0,2,1). Only
  * the base and the --inverse modifier are restated, because those are what this
  * page uses and what was measured; the other modifiers are not written blind. */
+/* KEPT, and re-measured on 2026-08-15 with the three UiCore plugins
+ * deactivated. This was on the list of rules expected to become unnecessary,
+ * and it did not: neutralised and re-measured, the newsletter submit computed
+ * Inter, white on rgb(0,196,154) green, against the static build's Figtree,
+ * rgb(0,60,80) on white. Identical symptom to the original measurement, which
+ * means the competitor was misidentified the first time. It is not
+ * uicore-framework's generated CSS: that is gone with the plugin. It is the
+ * uicore-pro PARENT THEME, which this install still loads, because the
+ * `template` option in the database still names it (see the note at the end of
+ * this file). Restored unchanged, and due one more re-measurement once the
+ * install stops loading that theme. */
 .elementor button.em-btn,
 .elementor input[type="submit"].em-btn{
   font-family:var(--font-display);
@@ -605,71 +598,68 @@
  * at 0,2,1, both naming the block or the widget class rather than the element
  * alone. Nothing else's typography is touched by this file. */
 
-/* The colour half, and it needs its own selector rather than folding into the
- * block above. `.em-join__slab h2{color:var(--text-inverse)}` is 0,1,1 and was
- * measured losing to UiCore, so UiCore's own heading rule is at least 0,1,1 and
- * wins on source order. Two classes plus the element (0,2,1) clears it while
- * staying specific to the one block that was measured wrong, so no other
- * heading's colour is touched by this file at all. */
-.elementor .em-join__slab h2{
-  color:var(--text-inverse);
-}
+/* The colour half is gone too, deleted 2026-08-15 in the same pass and for the
+ * same reason: `.elementor .em-join__slab h2{color:var(--text-inverse)}` existed
+ * only because UiCore's own heading colour beat `.em-join__slab h2` at 0,1,1.
+ * With the plugins off, the build's own rule wins unopposed. Measured with the
+ * rule removed: the Join Us heading computes rgb(255,255,255) live and
+ * rgb(255,255,255) static, and no other heading's colour moved. */
 
-/* The size half needed one more step, and the step is evidence about what
- * UiCore is actually doing. After the block above, the Join Us <h2> took the
- * build's colour but still computed 48px against the static build's 36px, so
- * UiCore's font-size rule is more specific than 0,1,1. The heading Elementor
- * renders carries `.elementor-heading-title` on the element itself, which is
- * what UiCore's own Elementor-facing typography hooks onto, so naming that
- * class is both sufficient and honest about why.
+/* The size half of that repair is GONE, deleted 2026-08-15 once the three
+ * UiCore plugins were deactivated, and the measurement that removed it is worth
+ * keeping because it is the same trap this file has now fallen into twice.
  *
- * h1 is DELIBERATELY ABSENT. It measured 72px live and 72px static before any
- * of this, because option-a.css styles it through `.fp-hero h1` and that
- * already wins. Adding an `h1.elementor-heading-title` rule at 0,2,1 here would
- * outrank that per-page rule and hand the hero whatever --fs-h1 evaluates to,
- * changing a heading that was already correct. Repairing only what measured
- * wrong is the whole discipline of this file. */
-.elementor h2.elementor-heading-title{font-size:var(--fs-h2)}
-.elementor h3.elementor-heading-title{font-size:var(--fs-h3)}
-.elementor h4.elementor-heading-title{font-size:var(--fs-h4)}
-.elementor h5.elementor-heading-title{font-size:var(--fs-h5)}
+ * The four deleted rules were
+ * `.elementor h2.elementor-heading-title{font-size:var(--fs-h2)}` and the h3,
+ * h4 and h5 equivalents, at 0,2,1. They were written to beat UiCore's own
+ * `.elementor-widget-heading h1.elementor-heading-title` rule, and they did.
+ * They also beat every per-page heading rule in css/, which sits at 0,1,1, and
+ * with UiCore's rule gone that was all they were still doing. Measured on the
+ * live install with the plugins off and these rules still in place: the
+ * homepage's two section headings computed 36px against the static build's
+ * 48px, its story and insight card titles 25.6px against 20px, its foundation
+ * titles 25.6px against 26.88px, and podcast-a's two headings 36px against
+ * 48px and 44px. Nine headings across two pages, every one of them pushed to a
+ * global token by a rule whose only job had been to fight a plugin that is no
+ * longer running.
+ *
+ * The general form of the lesson, already recorded once in the paragraph note
+ * further down and now proven a second time: a rule specific enough to beat a
+ * third-party stylesheet is specific enough to beat the build's own per-page
+ * rules, so it stops being a repair and becomes a defect the moment the third
+ * party leaves. */
 
-/* ---------- Paragraph line-height: measured, diagnosed, and NOT repaired ----
- * The converted homepage runs roughly a thousand pixels taller than the static
- * build, and this is why. Measured inside an insights row: line-height 30px
- * live against 24px static, with font-size identical at 15px. tokens/base.css
- * sets line-height on `body` and lets paragraphs inherit it; UiCore sets it on
- * `p` directly, so the inherited value never reaches them and every paragraph
- * on the page runs 25% looser. Invisible per line, and it accumulates over a
- * page of copy into the height difference.
+/* ---------- Paragraph line-height: RESOLVED 2026-08-15, by deletion ---------
+ * This note used to record the one difference on the converted homepage that
+ * no selector could repair: paragraphs computed line-height 30px live against
+ * 24px static, because tokens/base.css sets line-height on `body` and lets
+ * paragraphs inherit it while uicore-framework set it on `p` directly, so the
+ * inherited value never reached them. Every paragraph on the page ran 25%
+ * looser, which is invisible per line and accumulated into roughly a thousand
+ * pixels of extra page height.
  *
- * A blanket repair was written, deployed, measured, and REVERTED, and the
- * reason it cannot work is the useful part of this note.
+ * It predicted that with the plugins deactivated the difference would
+ * disappear with no bridge rule at all. Measured on 2026-08-15 with the three
+ * plugins off: `.fp-hero p` computes 15px/24px live and 15px/24px static,
+ * `.em-join__pitch p` 22px/36.3px on both sides, and no paragraph anywhere on
+ * either converted page reports a line-height difference. Nothing was written
+ * to achieve that. The prediction held exactly.
  *
- * `.elementor p{line-height:var(--lh-body);margin:0 0 var(--space-4)}` is
- * specificity 0,1,1. It duly beat UiCore. It also beat the build's OWN
- * per-block paragraph rules, which are the same 0,1,1 and load earlier:
- * `.tl-node p{margin:0;line-height:1.65}` (option-d.css:105),
- * `.c2-panel__more p{margin:var(--space-5) 0 var(--space-6)}`
- * (current-2.css:324), `.fp-way p`, `.fp-northstar p`, and dozens more across
- * css/ (ten stylesheets carry at least one). Measured after deploying it: the
- * solutions model section went from 1230px to 1288px, FURTHER from the static
- * build's 1164px, because every `.tl-node p{margin:0}` had just been overridden
- * to a 16px bottom margin.
+ * What the note got wrong is worth keeping, because it is the reason the page
+ * is still not the right height. The 30px line-height was blamed for the whole
+ * of the difference, and it was not the whole of it. UiCore was also zeroing
+ * the bottom margin of every paragraph, which happened to agree with the
+ * build's own per-block rules often enough to look like agreement. With that
+ * gone, tokens/base.css's site-wide `p{margin:0 0 var(--space-4)}` reaches
+ * paragraphs the build intended to have some other margin, and fifteen of them
+ * on the homepage now compute 16px against a static build that says 0, 12, 24,
+ * 32 or 40. See the class-on-wrapper section below, which is the actual cause
+ * and the actual repair.
  *
- * There is no selector that fixes this. Anything specific enough to beat
- * UiCore's `p` rule is also specific enough to beat the build's own `.foo p`
- * rules, because they sit at the same 0,1,1 and this file loads last. `:where()`
- * lowers specificity to 0,0,1 and then loses to UiCore instead. Naming every
- * affected block one at a time would mean auditing every paragraph on all
- * fourteen pages and would still be wrong the day a new one is added.
- *
- * So this is recorded as a measured, understood, unrepaired difference rather
- * than papered over. It is the strongest single argument in favour of removing
- * UiCore: this is not a conversion problem, it is a theme whose typography is
- * applied at a specificity the build cannot cooperate with, and with UiCore
- * gone the build's own `body` line-height simply inherits and the difference
- * disappears with no bridge rule at all. */
+ * The general lesson: a measured difference can be masked by a second one
+ * pointing the other way, and removing the masker makes the page look worse
+ * before it looks better. That is not a regression, it is the first honest
+ * measurement. */
 
 /* ---------- UiCore sizes Elementor's heading widget, and outranks the build --
  * Found by asking the browser which rule won rather than by reasoning about it.
@@ -701,7 +691,17 @@
  * what the homepage's own rule computes. That is luck, not agreement, and it
  * will stop being true the next time somebody saves UiCore's settings.
  *
- * 0,3,1, one step above UiCore's, restating podcast-a.css:69 exactly. */
-.elementor .pca-hero h1.elementor-heading-title{
-  font-size:clamp(2.1rem, 1.1rem + 3.2vw, 3.5rem);
-}
+ * DELETED 2026-08-15. The rule was `.elementor .pca-hero
+ * h1.elementor-heading-title{font-size:clamp(2.1rem,1.1rem + 3.2vw,3.5rem)}`,
+ * 0,3,1, restating podcast-a.css:69 exactly to outrank uicore-global.css. That
+ * stylesheet is generated by uicore-framework, so deactivating the plugin
+ * removes it and podcast-a.css:69 wins on its own. Measured with the rule
+ * removed: the podcast hero h1 computes the same font-size, line-height,
+ * family and colour live as static, and the existing heroTitle probe test
+ * still passes.
+ *
+ * The section above is kept rather than deleted with the rule, because what it
+ * records is not the repair: it is the evidence that a UiCore settings save,
+ * made in the admin with nothing in this repository changing, silently
+ * restyled every Elementor heading on the install. That is the finding that
+ * justified removing UiCore at all, and it outlives the rule. */

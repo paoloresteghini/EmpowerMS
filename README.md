@@ -1200,7 +1200,12 @@ tell the two apart afterward. The handover point is per page, not a single
 date for the whole conversion, and belongs in each page's own task report
 once Empower has signed off on it and started using the editor.
 
-**One live editorial item, not code, and not to be lost.** The site logo no
+**Editorial, and deliberately deferred until the design is in.** Paolo's call on
+2026-08-14: alt text is not a gate on the conversion and is not to be treated as
+one. It is written down here so the size of it is known when it does get picked
+up, not so it blocks anything before then.
+
+The site logo no
 longer has an accessible-name problem: attachments 20578 (primary) and 20577
 (reversed) were given the alt text `Empower Mississippi` on 2026-08-14, so the
 logo link now has a name. The library behind them has not been dealt with.

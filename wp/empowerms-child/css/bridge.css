@@ -561,15 +561,27 @@
  * and it did not: neutralised and re-measured, the newsletter submit computed
  * Inter, white on rgb(0,196,154) green, against the static build's Figtree,
  * rgb(0,60,80) on white. Identical symptom to the original measurement, which
- * means the competitor was misidentified the first time. It is not
- * uicore-framework's generated CSS: that is gone with the plugin. It is the
- * uicore-pro PARENT THEME, which this install still loads, because the
- * `template` option in the database still names it (see the note at the end of
- * this file). Restored unchanged, and due one more re-measurement once the
- * install stops loading that theme. */
+ * means the competitor was misidentified when the rule was written. It is not
+ * uicore-framework's generated CSS: that is gone with the plugin.
+ *
+ * The first guess at the real competitor, written here and then disproved
+ * within the hour, was the uicore-pro parent theme, which this install does
+ * still load. It is not that either: blocking every request to that theme's
+ * directory and reloading changed not one computed value. The competitor is
+ * Elementor's own Site Settings kit, and the section headed "Elementor's KIT
+ * styles every native <button>" near the end of this file is the measurement
+ * that found it and the repair for the rest of the buttons it affects. */
 .elementor button.em-btn,
 .elementor input[type="submit"].em-btn{
   font-family:var(--font-display);
+  /* line-height added 2026-08-15, the last difference on either converted
+   * page. The kit rule documented near the end of this file sets 15px on
+   * every native button; components.css declares no line-height on .em-btn at
+   * all, so the static build computes `normal` and there is nothing in css/
+   * to restore it. Restated here for the same reason the form-control rule
+   * used to restate it: a value the build never sets cannot win a fight it
+   * does not know it is in. */
+  line-height:normal;
 }
 .elementor button.em-btn--inverse,
 .elementor input[type="submit"].em-btn--inverse{
@@ -943,4 +955,112 @@
 }
 .elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){
   margin-block-end:var(--space-5);
+}
+
+/* ---------- Elementor's KIT styles every native <button> on the install -----
+ * The twelve button differences left on both converted pages, and the
+ * attribution written beside the .em-btn rule earlier in this session was
+ * WRONG. It blamed the uicore-pro parent theme. Tested directly by blocking
+ * every request to wp-content/themes/uicore-pro/ and to fonts.googleapis.com
+ * and reloading: not one computed value changed. The parent theme is not
+ * styling these buttons.
+ *
+ * The rule that wins, found by asking the CSSOM which rules match the element
+ * rather than by reasoning about it:
+ *
+ *   .elementor-kit-20547 button,
+ *   .elementor-kit-20547 input[type="button"]{
+ *     background-color:var(--e-global-color-uicore_primary);
+ *     font-family:Inter, sans-serif; font-size:15px; ... }
+ *
+ * from post-20547.css, which is Elementor's own Site Settings kit, generated
+ * from post 20547. Specificity 0,1,1, and every button rule in css/ and
+ * components/ is a single class at 0,1,0, so the kit beats all of them: the
+ * nav disclosures render white Inter on rgb(0,196,154) instead of Figtree
+ * var(--em-blue) on nothing.
+ *
+ * Two things follow that matter more than the repair.
+ *
+ * First, the green is var(--e-global-color-uicore_primary): a global colour
+ * UiCore seeded into Elementor's kit. Deactivating the plugins does not remove
+ * it and neither will removing the theme, because it was copied into
+ * Elementor's own settings. This is UiCore's longest shadow on the install.
+ *
+ * Second, the kit is precisely what cannot be saved: the Elementor Pro 4.2.1
+ * __beforeSave bug (docs/elementor/pro-kit-save-bug-report.md) means nobody can
+ * open Site Settings and turn this off. So it is repaired here, like the
+ * container width and widget spacing at the top of this file, and for the same
+ * reason.
+ *
+ * NAMED PER CLASS, and here the general form is genuinely tempting because the
+ * kit's own rule is general and every button in this build is styled by the
+ * build. It is still wrong, and this time the reason is `revert` rather than
+ * specificity: `.elementor button{font-family:revert;...}` at 0,1,1 would tie
+ * the kit and win on source order, but `revert` rolls back the whole AUTHOR
+ * origin, so it would discard components.css's own declarations along with the
+ * kit's and leave every button at browser defaults.
+ *
+ * The hover rules are restated too, and that is not padding. Each base rule
+ * below is 0,2,0, which outranks the build's own `:hover` rules at 0,1,1, so
+ * writing the base without the hover would leave every one of these buttons
+ * with no hover feedback at all. Found by reading the specificity before
+ * deploying rather than by a visitor noticing. */
+
+/* Fully styled by the build: font, colour and background all restated. */
+.elementor .em-header__link,
+.elementor .em-mobilenav__trigger{
+  font-family:var(--font-display);
+  font-size:var(--fs-small);
+  line-height:normal;
+  color:var(--em-blue);
+  background-color:transparent;
+}
+.elementor .em-header__link:hover,
+.elementor .em-header__item--open .em-header__link{
+  background-color:var(--blue-100);
+  color:var(--blue-800);
+}
+.elementor .em-mobilenav__trigger:hover{
+  color:var(--blue-800);
+}
+
+/* Styled by the build for colour and background only: the font is the browser
+ * default in the static build (measured: Arial 13.3333px, line-height normal),
+ * because site.css:85 and site.css:96 set size, border and background on these
+ * two and never touch type. `revert` is right for the font here and wrong for
+ * the colour, which the build does set on the search control. */
+.elementor .em-header__search,
+.elementor .em-header__toggle,
+.elementor .em-header__disclosure{
+  font-family:revert;
+  font-size:revert;
+  line-height:revert;
+  background-color:transparent;
+}
+.elementor .em-header__search{
+  color:var(--em-blue);
+}
+.elementor .em-header__disclosure{
+  color:var(--blue-800);
+}
+.elementor .em-header__toggle{
+  color:revert;
+}
+.elementor .em-header__search:hover,
+.elementor .em-header__toggle:hover{
+  background-color:var(--blue-100);
+}
+
+/* podcast-a's filter reset. podcast-a.css:224 gives it a real background of its
+ * own rather than none, so this one is restated from the stylesheet and not
+ * reverted. */
+.elementor .pca-facets__clear{
+  font-family:var(--font-display);
+  font-size:var(--fs-small);
+  line-height:normal;
+  color:var(--text-strong);
+  background-color:var(--surface-page);
+}
+.elementor .pca-facets__clear:hover{
+  background-color:var(--surface-subtle);
 }

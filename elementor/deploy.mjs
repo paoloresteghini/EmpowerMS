@@ -66,11 +66,20 @@ function deployElements(postId, elements, templateType) {
 
   const script = [
     'set -e',
+    /* Registered before the heredoc that creates the file, so an abort during
+       the write itself is covered too, and left as the ONLY cleanup path
+       rather than sitting alongside the `rm -f` that used to follow the meta
+       update: two cleanup lines for one file can drift apart, and it was
+       exactly the mid-script one that `set -e` never reached. EXIT fires on
+       the abort path as well as the normal one, so the file goes either way.
+       Unquoted expansion is safe here: postId is an integer (asserted above)
+       and uniqueSuffix() is digits and hex, so the path holds no whitespace
+       or shell metacharacter. */
+    `trap 'rm -f ${tmpFile}' EXIT`,
     `cat > ${tmpFile} <<'${heredoc}'`,
     json,
     heredoc,
     `wp post meta update ${postId} _elementor_data < ${tmpFile}`,
-    `rm -f ${tmpFile}`,
     `wp post meta update ${postId} _elementor_edit_mode builder`,
     `wp post meta update ${postId} _elementor_template_type ${templateType}`,
     `wp post meta update ${postId} _elementor_version ${ELEMENTOR_VERSION}`,
@@ -228,16 +237,21 @@ export async function setConditions(postId, conditions) {
   ].join('\n');
   const script = [
     'set -e',
+    /* Both files in one trap, registered before either exists, for the reason
+       deployElements() documents above. This function is the one that proved
+       the need: its whole purpose is to fail loudly when the regeneration
+       leaves the post unassigned, and every one of those deliberate failures
+       used to abort at `wp eval-file` with the PHP script still sitting in the
+       install's /tmp, one file per failed attempt. */
+    `trap 'rm -f ${tmpFile} ${phpFile}' EXIT`,
     `cat > ${tmpFile} <<'${heredoc}'`,
     json,
     heredoc,
     `wp post meta update ${postId} _elementor_conditions --format=json < ${tmpFile}`,
-    `rm -f ${tmpFile}`,
     `cat > ${phpFile} <<'${phpHeredoc}'`,
     regenPhp,
     phpHeredoc,
     `wp eval-file ${phpFile}`,
-    `rm -f ${phpFile}`,
   ].join('\n');
   return wpe(script);
 }

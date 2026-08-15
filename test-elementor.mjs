@@ -1257,6 +1257,94 @@ test('deployPage still resolves when every wp-cli step genuinely succeeds', asyn
   }
 });
 
+/* The temp files the two deploy paths write are removed by an `rm -f` line
+   partway down their own script, which a `set -e` abort never reaches. On the
+   happy path that is invisible; on the failure path every aborted run leaves a
+   file behind on the install's /tmp forever, and nothing ever reports it. These
+   three tests run the real script through real bash (the same withExecutingSsh
+   fake the pair above uses) and assert on the filesystem afterwards, because
+   that is the only place the behaviour is observable: a structural assertion
+   that the script "contains a trap line" would pass over a trap that fires on
+   the wrong signal, or names the wrong file, or is written after the file it
+   guards is created.
+
+   The scripts hard-code /tmp, so these read /tmp directly rather than
+   os.tmpdir(), which on macOS is a per-user directory the script never touches.
+   Each test uses its own post id so a leak from one cannot be read as a pass
+   in another.
+
+   clearTmpLeaks() runs before each of them AND in each finally, rather than the
+   before-state merely being asserted. Asserting it was the first shape written
+   here and it is the wrong one: the very first (correctly failing) run leaves
+   files behind for its own post id, after which the before-assertion fails on
+   every subsequent run and the test can never go green again without someone
+   emptying /tmp by hand. Clearing keeps the test hermetic and repeatable; the
+   assertion immediately after keeps it from being vacuous, since a clear that
+   silently matched nothing would still have to produce an empty directory for
+   the after-check to mean anything. */
+const tmpLeaks = (glob) => fs.readdirSync('/tmp').filter(f => f.startsWith(glob));
+const clearTmpLeaks = (glob) => tmpLeaks(glob).forEach(f => fs.rmSync(path.join('/tmp', f), { force: true }));
+
+test('deployPage leaves no temp file on the install when the deploy fails partway through', async () => {
+  const postId = 909091;
+  const glob = `elementor-data-${postId}-`;
+  const { tmpDir } = withExecutingSsh('deploy-exec-leak-', '_elementor_data');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    clearTmpLeaks(glob);
+    assert.deepEqual(tmpLeaks(glob), [], 'the temp directory was not clean before the run, so the check below proves nothing');
+    await assert.rejects(() => deployPage(postId, [podcastHero()]));
+    assert.deepEqual(tmpLeaks(glob), [],
+      'the JSON temp file survived the aborted deploy; the script\'s own rm -f line is never reached on the set -e path');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    clearTmpLeaks(glob);
+  }
+});
+
+test('setConditions leaves no temp file on the install when the postmeta write fails', async () => {
+  /* Fails at the first wp-cli line, so the JSON file exists and the PHP file
+     has not been written yet. */
+  const postId = 909092;
+  const glob = `elementor-conditions-${postId}-`;
+  const { tmpDir } = withExecutingSsh('conditions-leak-meta-', '_elementor_conditions');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    clearTmpLeaks(glob);
+    assert.deepEqual(tmpLeaks(glob), [], 'the temp directory was not clean before the run, so the check below proves nothing');
+    await assert.rejects(() => setConditions(postId, ['include/general']));
+    assert.deepEqual(tmpLeaks(glob), [], 'the conditions JSON temp file survived the aborted write');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    clearTmpLeaks(glob);
+  }
+});
+
+test('setConditions leaves no temp file on the install when the cache regeneration fails', async () => {
+  /* Fails at wp eval-file, the later of the two failure points: by then the
+     JSON file has already been removed by the script's own rm -f and the PHP
+     file is the one left behind. This is the exact path Task 3 hit for real. */
+  const postId = 909093;
+  const glob = `elementor-conditions-cache-regen-${postId}-`;
+  const { tmpDir } = withExecutingSsh('conditions-leak-regen-', 'eval-file');
+  const originalPath = process.env.PATH;
+  process.env.PATH = tmpDir + ':' + originalPath;
+  try {
+    clearTmpLeaks(glob);
+    assert.deepEqual(tmpLeaks(glob), [], 'the temp directory was not clean before the run, so the check below proves nothing');
+    await assert.rejects(() => setConditions(postId, ['include/general']));
+    assert.deepEqual(tmpLeaks(glob), [], 'the PHP regeneration script survived the aborted run');
+  } finally {
+    process.env.PATH = originalPath;
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    clearTmpLeaks(glob);
+  }
+});
+
 /* deployLoopItem() shares deployElements() with deployPage() (see
    elementor/deploy.mjs's own comment on the factoring); the one thing to
    prove independently is the one thing that differs: the template type
@@ -1460,10 +1548,12 @@ test('setConditions writes the conditions meta as a JSON array, then regenerates
 
 /* withCapturingSsh() above only inspects the script setConditions() sends,
    never runs it, so (per the same reasoning deployPage's equivalent pair of
-   tests at :1017 and :1038 already documents) it cannot see whether `set -e`
-   actually stops the deploy when `wp eval-file` fails: the script's last
-   line is `rm -f ${phpFile}`, which succeeds almost unconditionally, so a
-   `setConditions()` that dropped `set -e` (or that never checked
+   tests already documents) it cannot see whether `set -e` actually stops the
+   deploy when `wp eval-file` fails. That used to be because the script's last
+   line was `rm -f ${phpFile}`, which succeeds almost unconditionally; the
+   cleanup now runs from a `trap ... EXIT` instead, which does not change the
+   argument, because a trap's own exit status does not replace the script's
+   either. Either way a `setConditions()` that dropped `set -e` (or that never checked
    eval-file's exit code some other way) would still resolve. Mirrors
    deployPage's real-execution pair exactly, using withExecutingSsh() rather
    than a second capture-only fake. */

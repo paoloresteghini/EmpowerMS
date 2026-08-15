@@ -5,11 +5,11 @@ Everything below is verified state, not intention.
 
 ## Read these three, in this order
 
-1. `docs/superpowers/specs/2026-08-15-standalone-theme-design.md` — the design
+1. `docs/superpowers/specs/2026-08-15-standalone-theme-design.md`: the design
    for removing UiCore, including what is deliberately not done.
-2. `docs/elementor/phase2b/homepage-evaluation.md` — what the first converted
+2. `docs/elementor/phase2b/homepage-evaluation.md`: what the first converted
    page cost, how close it got, and the evidence behind the UiCore decision.
-3. `docs/superpowers/specs/2026-08-14-elementor-phase-2b-design.md` — the
+3. `docs/superpowers/specs/2026-08-14-elementor-phase-2b-design.md`: the
    fourteen-page scope, the per-page recipe, and the conversion order.
 
 `wp/empowerms-child/css/bridge.css` carries its reasoning inline and is worth

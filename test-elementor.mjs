@@ -17,6 +17,12 @@ import {
 } from './elementor/pages/podcast-a/03-library.mjs';
 import { POST_ID as podcastAPostId, sections as podcastASections } from './elementor/pages/podcast-a/page.mjs';
 import { section as finalHero } from './elementor/pages/final/01-hero.mjs';
+import { section as finalSolutions } from './elementor/pages/final/02-solutions.mjs';
+import { section as finalFoundations } from './elementor/pages/final/03-foundations.mjs';
+import { section as finalStories, loopItem as finalStoriesLoopItem, STORIES_CATEGORY_ID, STORIES_LOOP_ITEM_POST_ID } from './elementor/pages/final/04-stories.mjs';
+import { section as finalInsights } from './elementor/pages/final/05-insights.mjs';
+import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
+import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
 import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
@@ -840,6 +846,180 @@ test('the homepage hero mapping carries the section class and its copy', () => {
     assert.ok(flat.includes(s.replace(/"/g, '\\"')), `homepage hero mapping is missing: ${s.slice(0, 48)}`);
   }
   assert.ok(flat.includes('fp-hero'), 'homepage hero mapping does not carry the fp-hero class');
+});
+
+test('the homepage solutions-model mapping carries the section class and its copy', () => {
+  const flat = JSON.stringify(finalSolutions());
+  const source = fs.readFileSync('src/option-d/sections/02-solutions.html', 'utf8');
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `solutions mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('tl-change'), 'solutions mapping does not carry the tl-change class');
+});
+
+test('the homepage solutions model stays a real ordered list', () => {
+  /* The whole reason that section uses an html() widget. Elementor's container
+     html_tag control offers no ol and no li, so a native conversion turns a
+     five-step ordered sequence into anonymous divs and a screen reader stops
+     announcing "list, 5 items" and "item 2 of 5". This test is what stops a
+     later tidy-up "simplifying" the html widget into containers, which would
+     look identical in a screenshot and pass every copy check. */
+  const flat = JSON.stringify(finalSolutions());
+  assert.ok(flat.includes('<ol class=\\"tl-line\\"'), 'the solutions model is no longer a real <ol>');
+  assert.equal((flat.match(/<li class=\\"tl-node\\"/g) || []).length, 5,
+    'the solutions model does not carry exactly five real <li> steps');
+  assert.ok(flat.includes('data-reveal-group'), 'the <ol> lost its reveal group');
+});
+
+test('the homepage foundations mapping carries the section class and its copy', () => {
+  const flat = JSON.stringify(finalFoundations());
+  const source = fs.readFileSync('src/current-2/sections/03-foundations.html', 'utf8');
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `foundations mapping is missing: ${s.slice(0, 48)}`);
+  }
+  assert.ok(flat.includes('c2-foundations'), 'foundations mapping does not carry the c2-foundations class');
+});
+
+test('every decorative photograph on the homepage is hidden from the accessibility tree', () => {
+  /* Derived from the source partials rather than enumerated: every <img> that
+     carries alt="" in the static build is decorative, and its converted
+     counterpart has to be hidden at the point of use. It cannot rely on the
+     attachment's own alt being empty, because one of these files
+     (child-classroom-tablet) is decorative in the foundations panels and
+     MEANINGFUL in the insights rows, and an attachment has exactly one alt
+     text. So the rule is aria-hidden on the widget, and the count is what this
+     checks: three decorative backgrounds in foundations, one aside in the hero.
+
+     Counting rather than spot-checking, because the failure mode is a fourth
+     panel added later with no aria-hidden, which no spot check would see. */
+  const decorativeInSource = (file) =>
+    (fs.readFileSync(file, 'utf8').match(/<img[^>]*\balt=""/g) || []).length;
+
+  const heroDecorative = decorativeInSource('src/final/sections/01-hero.html');
+  const foundationsDecorative = decorativeInSource('src/current-2/sections/03-foundations.html');
+  assert.ok(heroDecorative > 0 && foundationsDecorative > 0, 'the source partials carry no decorative images, so this test proves nothing');
+
+  const hidden = (tree) => (JSON.stringify(tree).match(/aria-hidden\|true/g) || []).length;
+  assert.equal(hidden(finalHero()), heroDecorative,
+    'the hero hides a different number of images than the source marks decorative');
+  assert.equal(hidden(finalFoundations()), foundationsDecorative,
+    'the foundations section hides a different number of images than the source marks decorative');
+});
+
+test('the homepage stories mapping keeps the authored story and loops only the placeholders', () => {
+  const flat = JSON.stringify(finalStories());
+  const source = fs.readFileSync('src/sections/04-stories.html', 'utf8');
+
+  /* A NAMED EXEMPTION, which is the inverse of the derived-set rule and is
+     commented as such. Everything in this section's copy has to survive
+     conversion EXCEPT the two mini cards, whose own copy says it is
+     auto-populated and which become a Loop Grid over Community Stories. Those
+     strings are expected to disappear, so they are excluded here by name; every
+     other string in the partial is still checked. */
+  const REPLACED_BY_THE_LOOP = [
+    '“Community story pull-quote — auto-populated from the latest Community Stories.”',
+    'Name · Jackson, MS',
+    'Name · Tupelo, MS',
+  ];
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@') && !REPLACED_BY_THE_LOOP.includes(s));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `stories mapping is missing: ${s.slice(0, 48)}`);
+  }
+
+  /* The half that matters most on this section: a real named Mississippian's
+     quote is authored content and must NOT be inside the loop, or the homepage
+     replaces her words with whatever is newest. */
+  assert.ok(flat.includes('Jodi Berry'), 'the authored featured story lost its attribution');
+  assert.ok(flat.includes('blockquote'), 'the featured quote is no longer a blockquote');
+  const heroCardIdx = flat.indexOf('Jodi Berry');
+  const loopIdx = flat.indexOf('loop-grid');
+  assert.ok(heroCardIdx !== -1 && loopIdx !== -1 && heroCardIdx < loopIdx,
+    'the authored lead card is not ahead of the loop grid, so the loop may have swallowed it');
+});
+
+test('the homepage stories loop queries Community Stories, not the whole site', () => {
+  /* podcast-a shipped this exact defect once: a Loop Grid with no term filter
+     renders every post on the install and looks plausible. Category 9 is
+     Community Stories, read from `wp term list category` on the install. */
+  const flat = JSON.stringify(finalStories());
+  assert.ok(flat.includes('"post_query_include":"terms"'), 'the stories loop does not filter by term at all');
+  assert.ok(flat.includes(`"${STORIES_CATEGORY_ID}"`), 'the stories loop does not name the Community Stories term id');
+  assert.equal(STORIES_CATEGORY_ID, 9, 'Community Stories is category 9 on this install');
+});
+
+test('the homepage stories loop item defers Elementor element caching', () => {
+  /* Without _element_cache the container is baked into a shared cache on
+     whichever post renders first, and every later card serves that post's
+     wrapper markup while its title still varies, which reads as correct.
+     podcast-a's module carries the full proof. */
+  assert.ok(JSON.stringify(finalStoriesLoopItem()).includes('"_element_cache":"yes"'),
+    'the stories loop item container will be served from Elementor\'s shared element cache');
+});
+
+test('the homepage insights mapping carries the section class and its copy', () => {
+  const flat = JSON.stringify(finalInsights());
+  const source = fs.readFileSync('src/sections/05-insights.html', 'utf8');
+  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+    .map(m => m[1].trim())
+    .filter(s => s && !s.startsWith('@'));
+  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  for (const s of strings) {
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `insights mapping is missing: ${s.slice(0, 48)}`);
+  }
+  /* Deliberately NOT a Loop Grid, and the test says so, so that a later pass
+     adding one has to change this line and read the reason. The middle row is a
+     research report and the install has no Research & Reports category, so any
+     query chosen for it today would be a guess rendering plausible wrong
+     content on the homepage. */
+  assert.ok(!flat.includes('loop-grid'),
+    'the insights section grew a Loop Grid; the research row still has no category to query');
+});
+
+test('the homepage join-us form stays a real form element', () => {
+  /* Elementor's container html_tag control offers no `form`, so this block is
+     an html() widget carrying the authored markup. The accessibility contract
+     test.mjs already holds against the static build has to survive the
+     conversion, and this is where it is checked on the converted tree. */
+  const flat = JSON.stringify(finalJoinUs());
+  assert.ok(flat.includes('<form'), 'the newsletter form is no longer a real <form>');
+  assert.ok(flat.includes('for=\\"join-email\\"'), 'the email label lost its for attribute');
+  assert.ok(flat.includes('id=\\"join-email\\"'), 'the email input lost the id its label points at');
+  assert.ok(flat.includes('type=\\"email\\"'), 'the email input is no longer type=email');
+  assert.ok(flat.includes('autocomplete=\\"email\\"'), 'the email input lost its autocomplete token');
+  assert.ok(flat.includes('required'), 'the email input is no longer required');
+  assert.ok(flat.includes('type=\\"submit\\"'), 'the subscribe control is no longer a submit button');
+});
+
+test('the homepage manifest carries all six sections in the order dist/final.html includes them', () => {
+  /* The manifest is what deployPage() is called with, and deployPage overwrites
+     _elementor_data wholesale, so a dropped import here publishes a homepage
+     missing a section that still renders and still returns 200. Derived from
+     the source page rather than enumerated: the order comes out of
+     src/final/index.html's own @include list. */
+  const index = fs.readFileSync('src/final/index.html', 'utf8');
+  const included = [...index.matchAll(/@include\s+(?:[a-z0-9-]+\/)*sections\/(\d\d)-([a-z]+)\.html/g)]
+    .map(m => m[2]);
+  assert.equal(included.length, 6, 'src/final/index.html no longer includes six sections');
+
+  const classes = ['fp-hero', 'tl-change', 'c2-foundations', 'em-stories', 'em-insights-wrap', 'em-join-wrap'];
+  const flat = finalSections().map(s => JSON.stringify(s));
+  assert.equal(flat.length, included.length,
+    `the manifest carries ${flat.length} sections and the page includes ${included.length}`);
+  flat.forEach((s, i) => {
+    assert.ok(s.includes(classes[i]),
+      `manifest position ${i + 1} is not ${included[i]} (expected the ${classes[i]} class)`);
+  });
 });
 
 test('the homepage hero photographs resolve through the shared media map, not typed urls', () => {

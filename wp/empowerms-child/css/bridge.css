@@ -51,6 +51,44 @@
   --container-max-width:1200px;
 }
 
+/* The third value a kit would hold, found while converting the homepage and
+ * belonging in exactly this block for exactly the same reason as the two
+ * around it: Elementor Site Settings cannot be saved on this install.
+ *
+ * Elementor gives every container 10px of padding on all four sides by
+ * default, and it reads that default through its OWN custom properties:
+ * frontend.min.css has `.e-con{--padding-top:var(--container-default-padding-top,10px); ...}`
+ * for all four edges. Those four variables are precisely what Site Settings
+ * writes when a human sets "Container Padding" in the Layout panel, so setting
+ * them here is not a workaround at a different level, it is the same value
+ * written in the only place it can be written.
+ *
+ * Measured on the converted homepage before writing this, not assumed. Two
+ * blocks whose own stylesheets set no padding came out 20px narrower than the
+ * static build (`.em-stories__feature` 636.5/471.5 against 648/480,
+ * `.em-join__ways` 538/538 against 558/558), and probing the elements directly
+ * showed padding-left and padding-right of 10px live against 0px static: the
+ * 40px is Elementor's default, on both sides, on every container the build
+ * does not give a padding of its own.
+ *
+ * Set on the DEFAULT rather than on `padding` itself, and that distinction is
+ * the whole safety argument. A rule like `.e-con{padding:0}` would be 0,1,0 and
+ * would load after every Empower stylesheet, so it would silently flatten every
+ * real padding the build does set: `.em-insights` carries 24px, and the two
+ * `.c2-foundations` blocks and the join slab carry their own. Zeroing the
+ * default instead leaves any real `padding` declaration untouched, because the
+ * build's own rules are ordinary declarations that already beat Elementor's
+ * var-driven one. That was confirmed live in the same measurement pass:
+ * `.em-insights` computed 24px on both sides while the two unpadded blocks
+ * computed 10px, which is only possible if the build's rule already wins.
+ * The re-measurement after this rule landed is the proof it stayed that way. */
+:root{
+  --container-default-padding-top:0px;
+  --container-default-padding-right:0px;
+  --container-default-padding-bottom:0px;
+  --container-default-padding-left:0px;
+}
+
 /* Elementor's own widget-spacing default (frontend.min.css:
  * .elementor-widget:not(:last-child){margin-block-end:
  * var(--kit-widget-spacing,20px)}) falls back to 20px in the absence of a
@@ -294,4 +332,376 @@
  * brings a visible "Skip to content" pill into view at the top left. */
 .em-skip:focus-within{
   top:var(--space-4);
+}
+
+/* ---------- The homepage: images that were direct children ----------
+ * css/homepage.css styles three of the homepage's photographs through CHILD
+ * combinators, because in the static build the <img> is a direct child of the
+ * card it sits in: `.em-stories__lead-card>img` (:261),
+ * `.em-stories__mini>img` (:279) and `.em-insights__row>img` (:307). image()
+ * puts the <img> inside Elementor's own widget wrapper, so the img stops being
+ * a direct child and all three rules stop matching.
+ *
+ * Measured rather than assumed, which is why only ONE of the three is repaired
+ * here. On the converted homepage, `.em-insights__row img` computed width 184px
+ * and `.em-stories__lead-card img` computed width 256px, both matching the
+ * static build exactly: those declarations are arriving from elsewhere in the
+ * cascade and need nothing. The single measured difference was object-fit,
+ * `fill` live against `cover` static, which is the one declaration in the
+ * lead-card rule with no other source. Restating the whole rule "to be safe"
+ * would have added three declarations that do nothing and one that does, with
+ * no way for a later reader to tell which was which.
+ *
+ * `.em-stories__mini>img` is deliberately NOT repaired yet. Its images come out
+ * of the Loop Grid's featured-image tag, and on the live page that selector
+ * currently matches nothing at all, so there is no measurement to write a rule
+ * against. A rule written now would be guessing at an element that does not
+ * exist; it is repaired once the loop renders images.
+ *
+ * Three classes plus the element (0,3,1) rather than restating the original's
+ * one: the rule has to reach INTO the widget wrapper, so it cannot simply be
+ * the source selector with the combinator dropped. */
+.em-stories .em-stories__lead-card .elementor-widget-image img{
+  object-fit:cover;
+}
+
+/* ---------- Form controls: UiCore restyles them, the build's rule loses ----
+ * Measured on the converted homepage's newsletter input: font-family computed
+ * as Inter, font-size 16px and line-height 30px, against the static build's
+ * Source Sans 3, 17px and normal. The control came out 64px tall against 58px.
+ *
+ * This is NOT an Elementor class-on-wrapper problem, and it is worth being
+ * precise about that because it is the first repair in this file that is not.
+ * The form is an html() widget, so its markup reaches the page byte for byte,
+ * and components/components.css:107 does set font-family and font-size on
+ * .em-input. It loses on specificity to a UiCore rule that this project cannot
+ * read: UiCore generates its typography CSS at runtime through
+ * uicore-framework's class-inline-style.php rather than shipping it in a
+ * stylesheet, so there is no file to grep for the selector and no way to state
+ * its specificity here from evidence. What IS evidence: .em-input at 0,1,0 was
+ * beaten, so the winning selector is at least 0,1,1.
+ *
+ * Native form controls are the case where this bites hardest, because they do
+ * not inherit font from body the way everything else in this build does. The
+ * build compensates by setting font explicitly on .em-input, and that is the
+ * declaration being overridden.
+ *
+ * Scoped to Elementor's own content wrapper and written as class-plus-element
+ * (0,2,1) so it clears 0,1,1 without reaching for more than it needs. Deliberately
+ * covers the three control classes together rather than just the one measured:
+ * mail-a, amb-a and give-c are the pages built around real forms, they use the
+ * same component classes, and a repair that fixed only the class the homepage
+ * happens to use would leave the same defect waiting on all three.
+ *
+ * line-height is restated as `normal` rather than left alone: it is not in the
+ * build's own rule at all, so with UiCore's 30px removed there is nothing to
+ * put it back, and `normal` is what the static build computes. */
+.elementor input.em-input,
+.elementor textarea.em-textarea,
+.elementor select.em-select{
+  font-family:var(--font-body);
+  font-size:var(--fs-body);
+  line-height:normal;
+}
+
+/* The second of the three homepage child-combinator image rules, repaired now
+ * that there is something to measure. css/homepage.css:279 is
+ * `.em-stories__mini>img{width:80px;height:80px;flex:0 0 auto;
+ * border-radius:var(--radius-pill);object-fit:cover}`, the round 80px thumbnail
+ * on each Community Story card. Those cards come out of the Loop Grid, so this
+ * could not be measured until the loop rendered its featured images: before
+ * that the selector matched nothing at all and any rule here would have been
+ * written against an element that did not exist. Measured after: the image came
+ * out 432px wide against the static build's 80px.
+ *
+ * Split across two selectors because the original rule does two different jobs
+ * to one element, and conversion separates them. `flex:0 0 auto` is about how
+ * the image behaves as a FLEX ITEM of the card, and the flex item is now
+ * Elementor's widget wrapper, not the img. The size and shape are about the
+ * image itself. Putting flex on the img would leave the wrapper free to grow,
+ * which is the 432px; putting the width on the wrapper would size the box and
+ * leave the img overflowing it. */
+.em-stories .em-stories__mini > .elementor-widget-image{
+  flex:0 0 auto;
+}
+.em-stories .em-stories__mini .elementor-widget-image img{
+  width:80px;
+  height:80px;
+  border-radius:var(--radius-pill);
+  object-fit:cover;
+}
+
+/* ---------- The homepage: Elementor makes every container a flex column ----
+ * The single largest source of difference on the first converted page, and a
+ * bigger version of the flex-direction section above. Elementor's container is
+ * display:flex;flex-direction:column whatever the build's own stylesheet says,
+ * because container() passes neither property (elementor/factory.mjs), so every
+ * converted container starts as a flex column and only the build's own rules
+ * can pull it back.
+ *
+ * MEASURED ACROSS THE WHOLE PAGE RATHER THAN FIXED WHERE IT LOOKED WRONG. All
+ * twenty-five containers on the homepage were probed for display and
+ * flex-direction, live against the static build. That matters, because reading
+ * the flex-direction differences alone suggests twenty repairs and the real
+ * number is eight:
+ *
+ *   - Fourteen of the twenty containers whose flex-direction differs are
+ *     display:grid on BOTH sides, because the build's own stylesheet says so
+ *     and that rule wins. flex-direction on a grid container is inert. Writing
+ *     a rule for any of them would be writing a rule that changes nothing,
+ *     and worse, would suggest to the next reader that it was load-bearing.
+ *   - Five are display:flex live and display:BLOCK in the static build. These
+ *     are the ones that actually break, and the fix is display, not direction:
+ *     their children were never flex items and every margin, width and
+ *     text-flow rule written for them assumes normal flow.
+ *   - Three are display:flex on both sides with a genuine direction difference.
+ *
+ * Two classes throughout (`.your-class.e-con`, specificity 0,2,0), which is the
+ * rule Phase 2A established by measurement: Elementor resolves these through
+ * its own two-class selectors, so a bare single-class rule here ships inert no
+ * matter that this file loads last. Named selectors rather than a general
+ * `.e-con` rule, for the reason Phase 2A recorded and this page confirms: many
+ * classes in css/ set flex-direction:column deliberately, and a general rule at
+ * tying specificity would flip every one of them the day their page ships. */
+.fp-hero__copy.e-con,
+.fp-hero__stack.e-con,
+.c2-panel__body.e-con,
+.em-insights__aside.e-con,
+.em-join__pitch.e-con{
+  display:block;
+}
+
+.fp-hero__actions.e-con,
+.c2-panels.e-con,
+.em-stories__mini.e-con{
+  flex-direction:row;
+}
+
+/* ---------- Native button widgets, second pass: UiCore outranks Phase 2A ----
+ * The `.em-skip .elementor-button` and `.em-btn .elementor-button` rules above
+ * strip Elementor's own button chrome with `all:unset` so the wrapper's real
+ * .em-btn styling shows through, and they were measured working on the header
+ * and on podcast-a. On the homepage they are being beaten: the anchor computed
+ * background-color rgb(0, 196, 154), a green belonging to neither this build
+ * nor Elementor's own defaults, while the wrapper underneath computed the
+ * correct rgb(230, 90, 40) orange. The anchor is position:absolute;inset:0, so
+ * it covers the wrapper completely and the green is all a visitor sees.
+ *
+ * The winning rule is UiCore's, and as with the form controls above it is
+ * generated at runtime by uicore-framework rather than shipped in a stylesheet,
+ * so its selector cannot be read and quoted here. What is evidence: 0,2,0 lost.
+ *
+ * Raised to 0,3,1 by scoping to Elementor's own content wrapper and naming the
+ * anchor element, which is the smallest step that clears it. Written as a
+ * separate block rather than by editing the rules above, so the original
+ * measurement and this one both stay readable: the first pass is still correct
+ * about what it found on the header, and this is a second, later finding about
+ * a different competitor on a different page. */
+.elementor .em-skip a.elementor-button,
+.elementor .em-btn a.elementor-button{
+  all:unset;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:inherit;
+  cursor:pointer;
+}
+.elementor .em-skip a.elementor-button{
+  width:100%;
+  height:100%;
+}
+.elementor .em-btn a.elementor-button{
+  position:absolute;
+  inset:0;
+}
+
+/* ---------- .em-btn's anchor must stay in flow, and this reverses a
+ *            Phase 2A decision on the strength of a new measurement ----------
+ * The `.em-btn .elementor-button` rule above gives the anchor
+ * position:absolute;inset:0 so the whole padded pill stays clickable, and its
+ * own comment argues that .em-btn is safe from the shrink-to-fit collapse that
+ * forced .em-skip to use width/height:100% instead, "because it is an in-flow
+ * flex item of .pca-hero__actions, not itself absolutely positioned, so its own
+ * sizing is untouched by what its children do".
+ *
+ * That was true on podcast-a and is false here. Measured on the converted
+ * homepage: .fp-hero__actions .em-btn computed 72px wide against the static
+ * build's 282.312px. 72px is exactly its own padding (34 + 34) plus its 2px
+ * borders, which is the signature of a box with no in-flow content at all. The
+ * anchor is the only thing inside it, absolute positioning takes the anchor out
+ * of flow, and an out-of-flow descendant contributes nothing to its ancestor's
+ * shrink-to-fit width. The button rendered as a 72px orange stub with its label
+ * spilling out of it, which is precisely the failure mode the .em-skip note
+ * describes and predicts.
+ *
+ * The general lesson, worth more than the fix: .em-btn's sizing is untouched by
+ * an absolutely positioned child ONLY where something else gives the wrapper a
+ * width. On podcast-a that something was the surrounding flex layout; here it
+ * is not, and there is no way to tell which case a page is from the module
+ * alone. So the safe form is the one that never depends on it.
+ *
+ * Reverted to the same shape .em-skip already uses, and accepted with the same
+ * cost .em-skip already accepts: the padding rim is no longer part of the click
+ * target. That is a real regression against the static build, where padding and
+ * click target are the same element, and it is the smaller of the two: a button
+ * whose visible pill is 210px narrower than its label is broken for everyone,
+ * a 34px rim is a slightly smaller target for a pointer. If the rim matters
+ * later, the fix is to move .em-btn's padding onto the anchor rather than to
+ * reintroduce absolute positioning. */
+.elementor .em-btn a.elementor-button{
+  position:static;
+  inset:auto;
+  width:100%;
+  height:100%;
+}
+
+/* ---------- Native buttons carrying build classes, same UiCore fight --------
+ * The newsletter form's submit is a real <button class="em-btn em-btn--inverse
+ * em-btn--md"> inside an html() widget, so its markup reaches the page exactly
+ * as authored and components/components.css styles it at 0,1,0. Measured:
+ * background rgb(0, 196, 154) against the static build's white, colour white
+ * against rgb(0, 60, 80), font Inter against Figtree. The same UiCore runtime
+ * CSS that was beating .em-input beats .em-btn on native <button> elements too,
+ * and for the same reason: form controls do not inherit typography, and UiCore
+ * styles them deliberately.
+ *
+ * Elementor's own button widget is NOT affected, because the rule above already
+ * strips it with all:unset and the wrapper carries our chrome; this is only
+ * about real <button> and <input type=submit> elements the build authors
+ * itself, which is the newsletter here and the submit on mail-a and amb-a
+ * later.
+ *
+ * Scoped to Elementor content and written as class-plus-element (0,2,1). Only
+ * the base and the --inverse modifier are restated, because those are what this
+ * page uses and what was measured; the other modifiers are not written blind. */
+.elementor button.em-btn,
+.elementor input[type="submit"].em-btn{
+  font-family:var(--font-display);
+}
+.elementor button.em-btn--inverse,
+.elementor input[type="submit"].em-btn--inverse{
+  background:var(--white);
+  color:var(--em-blue);
+}
+
+/* ---------- Heading typography, and a general rule that was reverted --------
+ * tokens/base.css styles headings as BARE ELEMENTS (`h1,h2,h3,h4,h5{...}`,
+ * `h2{font-size:var(--fs-h2)}`), specificity 0,0,1, so any theme rule with a
+ * single class in front of it wins, and UiCore has many. Measured on the
+ * converted homepage: the Join Us <h2> computed rgb(7,7,7) at 48px against the
+ * static build's white at 36px.
+ *
+ * A general repair was written, deployed, measured and REVERTED, for exactly
+ * the reason the paragraph note at the end of this file records. `.elementor
+ * h1,.elementor h2,...` at 0,1,1 beat UiCore and also beat the build's own
+ * per-page heading rules, which sit at the same 0,1,1 and load earlier. It was
+ * caught by an existing test rather than by eye: podcast-a's hero heading is
+ * `.pca-hero h1{font-size:56px}`, and the general rule silently pushed it to
+ * 72px on a page this work was not even touching. That test
+ * ("the converted page matches the static build on four computed-style probes")
+ * earned its keep in one run.
+ *
+ * So only the two things that were actually measured wrong are repaired, both
+ * at 0,2,1, both naming the block or the widget class rather than the element
+ * alone. Nothing else's typography is touched by this file. */
+
+/* The colour half, and it needs its own selector rather than folding into the
+ * block above. `.em-join__slab h2{color:var(--text-inverse)}` is 0,1,1 and was
+ * measured losing to UiCore, so UiCore's own heading rule is at least 0,1,1 and
+ * wins on source order. Two classes plus the element (0,2,1) clears it while
+ * staying specific to the one block that was measured wrong, so no other
+ * heading's colour is touched by this file at all. */
+.elementor .em-join__slab h2{
+  color:var(--text-inverse);
+}
+
+/* The size half needed one more step, and the step is evidence about what
+ * UiCore is actually doing. After the block above, the Join Us <h2> took the
+ * build's colour but still computed 48px against the static build's 36px, so
+ * UiCore's font-size rule is more specific than 0,1,1. The heading Elementor
+ * renders carries `.elementor-heading-title` on the element itself, which is
+ * what UiCore's own Elementor-facing typography hooks onto, so naming that
+ * class is both sufficient and honest about why.
+ *
+ * h1 is DELIBERATELY ABSENT. It measured 72px live and 72px static before any
+ * of this, because option-a.css styles it through `.fp-hero h1` and that
+ * already wins. Adding an `h1.elementor-heading-title` rule at 0,2,1 here would
+ * outrank that per-page rule and hand the hero whatever --fs-h1 evaluates to,
+ * changing a heading that was already correct. Repairing only what measured
+ * wrong is the whole discipline of this file. */
+.elementor h2.elementor-heading-title{font-size:var(--fs-h2)}
+.elementor h3.elementor-heading-title{font-size:var(--fs-h3)}
+.elementor h4.elementor-heading-title{font-size:var(--fs-h4)}
+.elementor h5.elementor-heading-title{font-size:var(--fs-h5)}
+
+/* ---------- Paragraph line-height: measured, diagnosed, and NOT repaired ----
+ * The converted homepage runs roughly a thousand pixels taller than the static
+ * build, and this is why. Measured inside an insights row: line-height 30px
+ * live against 24px static, with font-size identical at 15px. tokens/base.css
+ * sets line-height on `body` and lets paragraphs inherit it; UiCore sets it on
+ * `p` directly, so the inherited value never reaches them and every paragraph
+ * on the page runs 25% looser. Invisible per line, and it accumulates over a
+ * page of copy into the height difference.
+ *
+ * A blanket repair was written, deployed, measured, and REVERTED, and the
+ * reason it cannot work is the useful part of this note.
+ *
+ * `.elementor p{line-height:var(--lh-body);margin:0 0 var(--space-4)}` is
+ * specificity 0,1,1. It duly beat UiCore. It also beat the build's OWN
+ * per-block paragraph rules, which are the same 0,1,1 and load earlier:
+ * `.tl-node p{margin:0;line-height:1.65}` (option-d.css:105),
+ * `.c2-panel__more p{margin:var(--space-5) 0 var(--space-6)}`
+ * (current-2.css:324), `.fp-way p`, `.fp-northstar p`, and dozens more across
+ * css/ (ten stylesheets carry at least one). Measured after deploying it: the
+ * solutions model section went from 1230px to 1288px, FURTHER from the static
+ * build's 1164px, because every `.tl-node p{margin:0}` had just been overridden
+ * to a 16px bottom margin.
+ *
+ * There is no selector that fixes this. Anything specific enough to beat
+ * UiCore's `p` rule is also specific enough to beat the build's own `.foo p`
+ * rules, because they sit at the same 0,1,1 and this file loads last. `:where()`
+ * lowers specificity to 0,0,1 and then loses to UiCore instead. Naming every
+ * affected block one at a time would mean auditing every paragraph on all
+ * fourteen pages and would still be wrong the day a new one is added.
+ *
+ * So this is recorded as a measured, understood, unrepaired difference rather
+ * than papered over. It is the strongest single argument in favour of removing
+ * UiCore: this is not a conversion problem, it is a theme whose typography is
+ * applied at a specificity the build cannot cooperate with, and with UiCore
+ * gone the build's own `body` line-height simply inherits and the difference
+ * disappears with no bridge rule at all. */
+
+/* ---------- UiCore sizes Elementor's heading widget, and outranks the build --
+ * Found by asking the browser which rule won rather than by reasoning about it.
+ * The winner on podcast-a's hero is UiCore's:
+ *
+ *   .elementor-widget-heading h1.elementor-heading-title{
+ *     font-size:var(--uicore-typography--h1-s,"10px") }
+ *
+ * from uicore-global.css, specificity 0,2,1, computing 72px. The build's own
+ * `.pca-hero h1{font-size:clamp(2.1rem,1.1rem + 3.2vw,3.5rem)}` is 0,1,1 and
+ * loses, so the podcast hero rendered at 72px against the static build's 56px.
+ *
+ * THIS WAS NOT CAUSED BY THE HOMEPAGE CONVERSION, and the evidence matters
+ * because the timing looks otherwise. uicore-global.css is GENERATED, and its
+ * `?ver=1183` changes whenever UiCore's settings are saved. Paolo saved UiCore
+ * settings on the evening of 2026-08-14; the same suite had been green earlier
+ * the same evening with podcast-a untouched in between. So a theme settings
+ * save, made in the admin, silently restyled every Elementor heading on the
+ * install. That is the sharpest illustration available of why this theme is a
+ * liability under conversion: nothing in this repository changed, no deploy
+ * ran, and a page that was correct stopped being correct.
+ *
+ * Repaired per page rather than generally, and only where measured wrong. There
+ * is no general form: "UiCore must not size Elementor headings" is not
+ * expressible in CSS, because a rule specific enough to beat it must also
+ * supply a value, and the right value differs per page (podcast-a's hero is a
+ * clamp, the homepage's is its own). The homepage needs nothing: its hero
+ * measured 72px live and 72px static, because UiCore's h1 size happens to equal
+ * what the homepage's own rule computes. That is luck, not agreement, and it
+ * will stop being true the next time somebody saves UiCore's settings.
+ *
+ * 0,3,1, one step above UiCore's, restating podcast-a.css:69 exactly. */
+.elementor .pca-hero h1.elementor-heading-title{
+  font-size:clamp(2.1rem, 1.1rem + 3.2vw, 3.5rem);
 }

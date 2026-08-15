@@ -1,4 +1,9 @@
 import { section as hero } from './01-hero.mjs';
+import { section as solutions } from './02-solutions.mjs';
+import { section as foundations } from './03-foundations.mjs';
+import { section as stories } from './04-stories.mjs';
+import { section as insights } from './05-insights.mjs';
+import { section as joinus } from './06-joinus.mjs';
 
 /* The homepage's composition contract: which sections it carries, and in what
    order. Same shape and same reasoning as podcast-a/page.mjs, which documents
@@ -25,4 +30,4 @@ import { section as hero } from './01-hero.mjs';
 
 export const POST_ID = 20588;
 
-export const sections = () => [hero()];
+export const sections = () => [hero(), solutions(), foundations(), stories(), insights(), joinus()];

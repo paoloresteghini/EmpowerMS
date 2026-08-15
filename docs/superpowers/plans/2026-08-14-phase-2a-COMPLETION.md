@@ -213,6 +213,77 @@ Phase 2B: the fourteen remaining page conversions, fifty-one compositions, ten L
 Grid slots. Plan it with the foundations' real costs known. Nothing in Phase 2A
 converted a page.
 
+## Addendum, the evening of 2026-08-14: what has since been closed
+
+Everything above is the record as Phase 2A left it and has not been rewritten.
+This section is what happened afterwards, in a session that started by running
+the verification the list above asks for. Numbering follows "What still needs
+doing".
+
+**1. The branch is merged.** Paolo chose merge to `master` locally, out of
+merge / push and open a PR / leave it. `master` was a strict ancestor, so this
+was a fast-forward, not a merge commit: all 55 commits of Phases 1 and 2A are
+on `master` with their history intact. **Nothing was pushed**, so `origin/master`
+is still at the old head and the GitHub Pages review site is unchanged. The
+branch `elementor-phase-1` still exists and now points at the same commit.
+
+**2. The full suite was run and is green.** `SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ npm test`
+returned **228 of 228** in `test.mjs` and **100 of 100** in `test-elementor.mjs`,
+exit 0, at `104c138` with a clean tree. Both suites were run again after each
+change below.
+
+**3. 11365 is published again.** Paolo chose to reverse the draft. `wp post
+update 11365 --post_status=publish` ran, and the layout table is now 29 and 154
+draft, everything else including 11365 published. Verified inert rather than
+assumed: after a `flushPageCache()`, Home, `/about/` and `/updates/`, its three
+assigned locations, contain neither `Stay in Touch` nor `gform_wrapper`, and all
+three still render Empower's header (`em-header` present, `uicore-header`
+absent). Republishing restored the dormant intent and changed nothing visible,
+which is exactly what the evidence predicted.
+
+**4. Both logos have alt text.** `_wp_attachment_image_alt` is now
+`Empower Mississippi` on 20578 (primary) and on 20577 (reversed), which was not
+on the original list and had the same problem. The logo link has an accessible
+name. Note for anyone repeating this: two `wp post meta update` calls against
+this install took over three minutes to return. They succeeded; they are just
+slow.
+
+**5. The photograph count was wrong, by a lot.** Counted on the install rather
+than estimated: **2,372 images, 2,343 with no alt text**. Restricted to images
+actually in use (attached to a post, or a featured image) it is **1,341 of
+1,355**. The "roughly 42" figure is the new build's own photography, not the
+library. This is not a pre-go-live task at 1,341 items; the recommendation,
+written into README's hand-off section, is to scope it to the images that appear
+on the fourteen pages being converted and treat the rest as a separate backlog.
+
+**6. The Elementor bug report is drafted, not sent.** `docs/elementor/pro-kit-save-bug-report.md`
+carries a complete report with the reproduction, the three independent routes
+that fail, what was ruled out, the suggested fix and the exact environment
+(WordPress 7.0.4, PHP 8.4.23, Elementor 4.2.2, Elementor Pro 4.2.1, both
+reporting `update: none`). Sending it is outward-facing and Paolo's call. It
+goes to Elementor Pro support at `my.elementor.com`, not the public
+`elementor/elementor` tracker, which is the free plugin only.
+
+**9. The README em dashes are gone.** 187 em dash characters across 174 lines,
+now zero, each rewritten individually rather than swept, because the correct
+replacement is not uniform. Sixteen lines gained a connective word; the other
+158 differ by punctuation alone, verified by comparing each changed line's word
+multiset against the original rather than by eye. No heading was renamed, which
+matters because `test.mjs` asserts README content by substring.
+
+**10. The temp files no longer leak.** `deployElements()` and `setConditions()`
+now register a `trap ... EXIT` before the heredoc that creates each file, and
+the mid-script `rm -f` lines that `set -e` never reached are gone rather than
+left beside the trap. Three tests, written first and watched fail: each runs the
+real script through real bash and reads `/tmp` afterwards. This was not
+theoretical, and the evidence is worth keeping: the development machine's own
+`/tmp` held **168** leaked files from local test runs alone. `test-elementor.mjs`
+is now **103** tests, not 100.
+
+**Still open from that list:** 7 and 8, which are things to tell Empower rather
+than tasks, and 11, the seven minors in the task reports. Item 5 is open but
+reframed. Phase 2B is still not started.
+
 ## Reading order for whoever picks this up
 
 1. This document.

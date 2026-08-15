@@ -1200,12 +1200,24 @@ tell the two apart afterward. The handover point is per page, not a single
 date for the whole conversion, and belongs in each page's own task report
 once Empower has signed off on it and started using the editor.
 
-**Two live editorial items, not code, and not to be lost:** attachment
-20578, the site logo, has no alt text on the install, so the logo link
-currently has no accessible name at all; and roughly 42 photographs in the
-media library need alt text written before go-live. Neither is fixable from
-this repository: they are WordPress media-library edits Empower or their
-editor needs to make.
+**One live editorial item, not code, and not to be lost.** The site logo no
+longer has an accessible-name problem: attachments 20578 (primary) and 20577
+(reversed) were given the alt text `Empower Mississippi` on 2026-08-14, so the
+logo link now has a name. The library behind them has not been dealt with.
+Counted directly on the install on the same day: **2,372 images, of which 2,343
+have no alt text**. Narrowing to images that are actually in use, meaning
+attached to a post or set as a featured image, still leaves **1,341 of 1,355**
+without any.
+
+That number is much larger than the "roughly 42 photographs" this section used
+to give, and both are true of different sets: 42 is the new build's own
+photography, and the rest is the legacy library this install came with. Writing
+alt text for 1,341 images is not a realistic pre-go-live task and should not be
+priced as one. The recommendation is to scope it to the images that actually
+appear on the fourteen pages being converted, which is a finite list that can be
+produced per page at conversion time, and to leave the rest of the library as a
+separate editorial backlog. Either way it is a WordPress media-library edit
+Empower or their editor makes, not something this repository can do for them.
 
 ### Per page
 

@@ -227,29 +227,27 @@
 }
 
 /* ---------- Utility bar: class-on-wrapper, not class-on-content ---------- */
-/* Task 5 defect #4. text()'s cssClass lands on the widget wrapper
- * (WIDGET_CSS_CLASS_KEY, factory.mjs), so header-2.css:33's
- * .em-utility__note{margin:0} zeroes the wrapper, not the real <p> the
- * markup produces. That <p> is un-classed and falls back to
- * tokens/base.css's site-wide `p{margin:0 0 var(--space-4)}` (16px),
- * unopposed. On the static build the class sits on the <p> itself, so
- * header-2.css's rule, loading after base.css, already won there; here it
- * has to be told to reach one level deeper. */
-.em-utility__note p{
-  margin:0;
-}
+/* Task 5 defect #4, DELETED 2026-08-17 by Task 3. text()'s cssClass used to
+ * land on the widget wrapper (WIDGET_CSS_CLASS_KEY, factory.mjs), so
+ * header-2.css:33's .em-utility__note{margin:0} zeroed the wrapper, not the
+ * real <p> the markup produces, which fell back to tokens/base.css's
+ * site-wide `p{margin:0 0 var(--space-4)}` (16px), unopposed. header.mjs now
+ * carries the class on the <p> itself (Task 3, class-in-markup), so
+ * header-2.css's rule, loading after base.css, reaches the real element on
+ * its own the same way the static build always did, and this restatement is
+ * redundant. Measured before deleting and after, live against the static
+ * build: no change either time. */
 
-/* Task 5 defect #5. Same class-on-wrapper shape: header-2.css:35-36's
- * min-height/min-width:24px (the SC 2.5.8 target size) lands on the
- * wrapper, not the real <a>, which measured 20.7969px live against the
- * 24px the static build's own <a> gets. No competing Elementor rule here,
- * just an absence: the fix restates the same declarations one level in. */
-.em-utility__link a{
-  display:inline-flex;
-  align-items:center;
-  min-height:24px;
-  min-width:24px;
-}
+/* Task 5 defect #5, DELETED 2026-08-17 by Task 3. Same class-on-wrapper
+ * shape used to apply: header-2.css:35-36's min-height/min-width:24px (the
+ * SC 2.5.8 target size) landed on the wrapper, not the real <a>, which
+ * measured 20.7969px live against the 24px the static build's own <a> gets.
+ * header.mjs now carries the class on the <a> itself (Task 3,
+ * class-in-markup), so this selector reached an anchor inside an anchor
+ * (`.em-utility__link a` selecting a descendant `a` of what is itself the
+ * classed anchor) and was both wrong and unnecessary. Measured before
+ * deleting: 170.8x24 live and static at both 1440 and 390, min-height:24px
+ * already applying from header-2.css's own class rule on both sides. */
 
 /* ---------- Footer: image widget's own default alignment ----------
  * Task 4 defect #1. Not a class-on-wrapper problem: .em-footer__logo sits
@@ -269,33 +267,28 @@
   text-align:left;
 }
 
-/* Task 4 defects #2 and #3. text()'s class lands correctly on THIS
- * element (it IS the widget wrapper, confirmed against the live DOM:
- * <div class="... em-footer__mission elementor-widget
+/* Task 4 defects #2 and #3, DELETED 2026-08-17 by Task 3. text()'s class
+ * used to land on THIS element (it WAS the widget wrapper, confirmed
+ * against the live DOM: <div class="... em-footer__mission elementor-widget
  * elementor-widget-text-editor">), so site.css:166-167's max-width:40ch
- * and margin:0 0 var(--space-6) target the right element. They still lose,
+ * and margin:0 0 var(--space-6) targeted the right element but still lost
  * to two of Elementor's own rules, both more specific than a single class:
  * `.elementor.elementor .e-con > .elementor-widget{max-width:100%}`
  * (frontend.min.css; the doubled .elementor is Elementor's own
  * specificity-inflation trick, four classes, 0,4,0) and
  * `.e-con .elementor-widget.elementor-widget{margin-block-end:0}` (three
- * classes, 0,3,0). Matched directly against the live element's CSSOM
- * before writing this, not assumed. .em-footer and .em-container are both
- * real ancestor classes already in the footer's own tree (footerPart());
- * combined with the widget's own two classes that reaches 0,4,0, a tie
- * Elementor's rule loses on source order, since this file loads last. */
-.em-footer .em-container .em-footer__mission.elementor-widget{
-  max-width:40ch;
-  margin:0 0 var(--space-6);
-}
+ * classes, 0,3,0). footer.mjs now carries the class on the <p> itself
+ * (Task 3, class-in-markup), so this selector, which named the WRAPPER's
+ * class, no longer matches anything: `.elementor-widget` still lands on the
+ * wrapper, but `.em-footer__mission` no longer does. site.css:166-167
+ * reaches the real paragraph directly instead and needs no restatement. */
 
-/* Task 4 defect #4. Same 0,4,0 fight, the max-width half only:
- * components/components.css:156's .em-footer__legal{max-width:60ch} is a
- * single class (0,1,0) against the same
- * `.elementor.elementor .e-con > .elementor-widget{max-width:100%}` rule. */
-.em-footer .em-container .em-footer__legal.elementor-widget{
-  max-width:60ch;
-}
+/* Task 4 defect #4, DELETED 2026-08-17 by Task 3. Same 0,4,0 fight, the
+ * max-width half only: components/components.css:156's
+ * .em-footer__legal{max-width:60ch} was a single class (0,1,0) against the
+ * same `.elementor.elementor .e-con > .elementor-widget{max-width:100%}`
+ * rule. Made inert by the same migration as the rule above: the class now
+ * lands on the <p> itself, not on the wrapper this selector named. */
 
 /* ---------- Native button/link widgets keep Elementor's own chrome ----------
  * link() (factory.mjs) always emits widgetType 'button', so its cssClass
@@ -1125,12 +1118,19 @@
  * they ship, which is precisely how the two reverted rules recorded above
  * behaved. Each block that measured wrong is named instead.
  *
- * .em-footer__top is the highest-value line here: the footer is a theme part,
- * so those two headings are on every page on the install. */
+ * .em-footer__top used to be the highest-value line here: the footer is a
+ * theme part, so those two headings were on every page on the install. That
+ * selector is DELETED 2026-08-17 by Task 3. footer.mjs no longer builds
+ * Follow/More with heading() (which produced Elementor's own heading
+ * widget, `.elementor-widget-heading .elementor-heading-title`, the
+ * competitor this rule was written to beat); it now uses text() with a
+ * bare `<h3>` (Task 3, class-in-markup), which is not a heading widget at
+ * all, so the competing 0,2,0 rule no longer applies and the real element
+ * falls back to tokens/base.css's own `h3{line-height:var(--lh-heading)}`
+ * unopposed, matching the static build with nothing restated here. */
 .elementor .em-stories__head h2,
 .elementor .em-insights__aside h2,
-.elementor .em-join__way h3,
-.elementor .em-footer__top h3{
+.elementor .em-join__way h3{
   line-height:var(--lh-heading);
 }
 

@@ -39,8 +39,8 @@ export const headerPart = () => [
     container({ cssClass: 'em-utility', content_width: 'full' }, [
       container({ cssClass: 'em-container', content_width: 'full' }, [
         container({ cssClass: 'em-utility__bar', content_width: 'full' }, [
-          text({ markup: '<p>A non-profit working to expand opportunity in Mississippi</p>', cssClass: 'em-utility__note' }),
-          text({ markup: '<a href="mailto:info@empowerms.org">Email: info@empowerms.org</a>', cssClass: 'em-utility__link' }),
+          text({ markup: '<p class="em-utility__note">A non-profit working to expand opportunity in Mississippi</p>' }),
+          text({ markup: '<a class="em-utility__link" href="mailto:info@empowerms.org">Email: info@empowerms.org</a>' }),
         ]),
       ]),
     ]),

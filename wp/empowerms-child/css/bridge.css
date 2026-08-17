@@ -473,6 +473,64 @@
   }
 }
 
+/* ---------- Decorative washes sized through a class ON THE <img> -----------
+ * Task 1.5. The box sweep landed as a permanent test in Task 1 and its first
+ * run found five defects invisible for two days: css/current-2.css:260-261
+ * (`.c2-panel__bg`) and css/homepage.css:427-431 (`.em-join__wash`, with its
+ * two `object-position` modifiers) both size a decorative photograph with
+ * `width:100%;height:100%;object-fit:cover` directly on the <img>, and
+ * image() moves cssClass to the widget wrapper instead, same mechanism as the
+ * section above. Measured live at 1440px before this rule: every affected
+ * image reported its own intrinsic aspect ratio at the column's width (374x327,
+ * 374x253, 374x251, 558x708, 558x377), the signature of `height:100%`
+ * resolving against nothing.
+ *
+ * display:contents is the WRONG tool here, unlike the section above: both
+ * wrappers ARE the positioned box (`position:absolute;inset:0` is what puts
+ * the photograph behind the panel), and removing them from the box tree would
+ * destroy that positioning. So the repair restates only the two properties
+ * that address the replaced element itself: `object-fit` and the width/height
+ * that fill the wrapper. `position`, `inset`, `z-index`, `opacity`, `filter`,
+ * `mask-image`, `transition` and `transform` already land correctly on the
+ * wrapper and do their job there; `filter` and `mask-image` apply to the whole
+ * rendered subtree rather than by inheritance, so the image is already masked
+ * and filtered correctly with no rule needed for it here.
+ *
+ * Read the live DOM between each wrapper and its <img> before writing this,
+ * per the brief: on both pages the <img> is a DIRECT child of the wrapper, no
+ * `.elementor-widget-container` in between, so a descendant selector reaches
+ * it with nothing further to handle for that risk. */
+.c2-panel__bg img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* Confirmed after the rule above landed: all three panels measured 374x600
+ * live and 374x600 static, matching the table this task started from. The
+ * wrapper's own height was already 600px before this rule (position:absolute;
+ * inset:0 against `.c2-panel`, a real box with a definite height), so the
+ * percentage-height risk the brief raised did not apply here; only the img
+ * itself needed the fill.
+ *
+ * `.em-join__wash` is the harder case: same mechanism, but with a per-photo
+ * `object-position` the box sweep cannot see (checked separately below), and
+ * a `@media (max-width:600px)` override at homepage.css:526 that only touches
+ * `opacity` and `mask-image`, neither of which this rule restates, so nothing
+ * here needs to bring a media query with it. */
+.em-join__wash img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 34%;
+}
+.em-join__wash--community img{
+  object-position:center 62%;
+}
+.em-join__wash--work img{
+  object-position:center 40%;
+}
+
 /* ---------- A Loop Grid inside a grid the build wrote for its items ---------
  * The featured story card measured 596px against the static build's 374px, and
  * the rule above was written first on the assumption that the image was driving
@@ -1079,9 +1137,31 @@
  * block inside it, where `auto` computes to 0 and the link sits straight under
  * the text: measured 0px live against 27.1875px static, and 27.1875px is not a
  * value anyone typed, it is the spare height that run of copy happened to
- * leave. So the declarations move to the wrapper, which is the element that is
- * actually the flex item now. padding-bottom moves with it because the two work
- * as a pair.
+ * leave. So `margin-block-end:auto` moves to the wrapper, which is the element
+ * that is actually the flex item now.
+ *
+ * `padding-bottom` was ALSO restated on the wrapper in the first version of
+ * this rule, on the reasoning that the two declarations work as a pair. That
+ * was wrong, and Task 1.5 found it while chasing a different defect: the wash
+ * photograph behind these two cards, being fixed in the same pass, only
+ * resolves its `height:100%` correctly once `.em-join__way`'s own height is
+ * right, and it measured 24px too tall on BOTH cards. `homepage.css:450`'s
+ * selector is `.em-join__way p:last-of-type`, a TAG selector, so it already
+ * reaches the real `<p>` regardless of the class-on-wrapper problem; the class
+ * was never what stood between it and `padding-bottom`. Restating
+ * `padding-bottom` on the wrapper as well charged it twice: the text-editor
+ * widget measured 156.75px live on both the community and the work card
+ * (identically, because the shorter card's own `margin-block-end:auto` grows
+ * to absorb the second, spurious 24px along with the real one), against a
+ * static build where the two cards differ, 132.75px and 105.5625px, because
+ * only one 24px padding was ever there to absorb into. Removed here, keeping
+ * only `margin-block-end:auto`, which is the one property that genuinely
+ * needed to move. Re-measured after: the text-editor widget computes
+ * 132.75px live and 132.75px static on the community card, 105.5625px live
+ * and 105.5625px static on the work card, `.em-join__way` itself computes
+ * 306.765625px on both cards, live and static (previously 330.765625px live),
+ * and the wash image, now sized by the rule two sections above, computes
+ * 558x307 on both cards, matching static.
  *
  * podcast-a.css:127-129 is `.pca-about__copy p{margin:0 0 var(--space-5)}` with
  * `p:last-child{margin-bottom:0}`. Converted, EVERY paragraph is the only child
@@ -1099,7 +1179,6 @@
  * podcast-a.css:131 asks for. */
 .elementor .em-join__way > .elementor-widget-text-editor{
   margin-block-end:auto;
-  padding-bottom:var(--space-6);
 }
 .elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){
   margin-block-end:var(--space-5);

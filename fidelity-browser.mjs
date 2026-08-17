@@ -702,7 +702,18 @@ export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
        changed every run would report a difference on every run. What a
        comparison needs to know is that one side settled and the other did
        not. */
-    if (unsettled) boxes.__unsettled__ = true;
+    /* Always present, and always a TRUTHY string, which is not fussiness.
+       The census test builds its comparison set with
+       `Object.keys(live).filter((k) => stat[k])`, so a key that is absent on
+       one side, or present with a falsy value, never enters the comparison
+       at all. Setting this only when unsettled reproduced exactly that: at
+       390 the live page settled and the static build did not, the two sides
+       genuinely disagreed, and the test passed because the key existed on
+       one side only. This file has already been bitten by that once, with
+       __excluded_count__ and a count of zero. A marker that reports a
+       difference must be comparable on both sides even when there is
+       nothing to report. */
+    boxes.__unsettled__ = unsettled ? 'unsettled' : 'settled';
     return boxes;
   } finally {
     await browser.close();

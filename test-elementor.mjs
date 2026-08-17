@@ -2503,6 +2503,22 @@ test('every control and image on the converted homepage matches the static build
     for (const width of [1440, 390]) {
       const live = await controlBoxes(url, { width });
       const stat = await controlBoxes(`${server.url}/dist/final.html`, { width });
+      /* Asserted before the diff, not folded into it: __excluded_count__ is
+         a scalar, not a box, and `stat[k]` below is falsy for a static
+         count of 0, so a live-side regression would silently drop out of
+         `shared` and never reach the diff check at all. Asserted as
+         exactly 0, not as "the two sides agree": two sides that both
+         silently excluded the same element would agree and still be a
+         coverage gap. If either count is ever nonzero, the cause is an
+         element whose tag controlBoxes()'s key cascade has no identity
+         rule for; the remedy is to extend that cascade, not to raise this
+         expected number. */
+      assert.equal(live.__excluded_count__, 0,
+        `controlBoxes excluded ${live.__excluded_count__} element(s) on the live page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+      assert.equal(stat.__excluded_count__, 0,
+        `controlBoxes excluded ${stat.__excluded_count__} element(s) on the static page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+      delete live.__excluded_count__;
+      delete stat.__excluded_count__;
       const shared = Object.keys(live).filter((k) => stat[k]);
       const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
         .map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);

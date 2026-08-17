@@ -633,6 +633,62 @@
   flex-direction:row;
 }
 
+/* ---------- The mobile scroll rail: same competitor, a narrower breakpoint --
+ * Fix round 1 on Task 1.5. The box sweep's three `.c2-panel__bg` images
+ * measured 342 wide live against 304 static at 390px, heights already
+ * matching at 440 (the image rule two sections up is not implicated; both the
+ * wrapper and the img correctly inherit whatever width `.c2-panel` gives
+ * them). `.c2-panel` itself is the defect: `css/current-2.css:355`'s
+ * `.c2-panel{flex:0 0 min(78vw,340px)}`, inside `@media (max-width:860px)`,
+ * is meant to build a horizontally-scrolling rail of narrow panels on small
+ * screens. 78vw of 390 is 304.2, the static number to the pixel.
+ *
+ * The same competitor as the rule above, `.e-con.e-flex` (0,2,0) from
+ * frontend.min.css, beats it: `--flex-basis:auto;--flex-grow:0;
+ * --flex-shrink:1;flex:var(--flex-grow) var(--flex-shrink) var(--flex-basis)`.
+ * Measured live at 390: `flex: 0 1 auto` on `.c2-panel`, against the static
+ * build's `flex: 0 0 304.2px`.
+ *
+ * A second half of the same rule also matters here and did not at the
+ * flex-direction fight above: `.e-con{--flex-wrap-mobile:wrap}` unconditionally,
+ * consumed by `.e-con.e-flex{--flex-wrap:var(--flex-wrap-mobile)}` inside
+ * Elementor's OWN `@media (max-width:767px)`, which the real declaration
+ * (`.elementor-element:where(.e-con-full,.elementor-widget){flex-wrap:
+ * var(--flex-wrap)}`) then applies. Measured live at 390: `.c2-panels`
+ * computes `flex-wrap: wrap` against the static build's `nowrap` (the build
+ * never declares `flex-wrap` at all; it relies on the flex spec's own
+ * default, which only Elementor's variable displaces). Restoring the basis
+ * alone is not enough: with wrap still active, three items whose combined
+ * basis exceeds the row still stack one per line regardless of what basis
+ * they carry. Both were checked before writing anything, not assumed.
+ *
+ * Two things confirmed NOT broken, so not touched: `.c2-panels`'s own
+ * `overflow-x:auto` and `scroll-snap-type:x mandatory` (current-2.css:353)
+ * both measured identically live and static. And `.c2-panel:hover,
+ * .c2-panel:focus-within{flex-grow:0}` (current-2.css:356) needs no source-
+ * order handling here: at this breakpoint the base rule ALSO wants
+ * flex-grow:0, so the hover rule and the restatement below agree on the
+ * only property they share; the hover-only conflict Phase 2A found (`1 1 0`
+ * base vs `flex-grow:1.9` on hover) belongs to the desktop rule, not this one.
+ *
+ * Two-class selectors at 0,2,0, matching this file's established form,
+ * inside the SAME `@media (max-width:860px)` as the declarations they
+ * restore: a restatement that does not bring its media query with it
+ * silently disables the responsive half, which this file has paid for once
+ * already. Confirmed after: `.c2-panel` computes `flex: 0 0 304.2px` and
+ * `.c2-panels` computes `flex-wrap: nowrap`, live and static both, and the
+ * three panel images measure 304x440 live and 304x440 static. Confirmed by
+ * eye as well as by measurement: the panels form a horizontally-snapping
+ * rail at 390px, not a stack. */
+@media (max-width:860px){
+  .c2-panel.e-con{
+    flex:0 0 min(78vw,340px);
+  }
+  .c2-panels.e-con{
+    flex-wrap:nowrap;
+  }
+}
+
 /* ---------- Native button widgets, second pass: UiCore outranks Phase 2A ----
  * The `.em-skip .elementor-button` and `.em-btn .elementor-button` rules above
  * strip Elementor's own button chrome with `all:unset` so the wrapper's real
@@ -1182,6 +1238,39 @@
 }
 .elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){
   margin-block-end:var(--space-5);
+}
+
+/* ---------- The action link is not a flex item either, same mechanism as
+ *            the header's html widgets, a narrower symptom ----------------
+ * Fix round 1 on Task 1.5. The box sweep's two wash images measured 307
+ * live against 306 static at 390px only (1440 was already exact). Every
+ * other number in the card matched, live and static, down to the wash and
+ * text-editor widgets: only `.em-join__action`, the html widget holding the
+ * card's link, differed, 45px against 44px, and `.em-join__way` is
+ * `inset:0` on the wash, so that single pixel is the whole card difference.
+ *
+ * `homepage.css:455` is `.em-join__action{display:inline-flex}`. On the
+ * static build the anchor is a DIRECT child of `.em-join__way`, a flex
+ * container, so the flex spec blockifies it: an `inline-flex` flex ITEM
+ * computes to `display:flex`. Converted, `html()` wraps the anchor in its
+ * own widget div (`elementor-widget-html`, no further
+ * `.elementor-widget-container` level, confirmed against the live DOM,
+ * consistent with every other html() widget on this install), so the anchor
+ * is no longer a flex item, the blockification never happens, and it keeps
+ * the inline-level half of `inline-flex`. An inline-level box sits on a text
+ * baseline, and the wrapper's line box is taller than the anchor's own
+ * content by the descender space that leaves. Measured live: the anchor
+ * itself computes `display: inline-flex`, height 44px identically to
+ * static, so the anchor is not the wrong size; the WRAPPER around it is.
+ *
+ * Same mechanism as `.em-header__bar > .elementor-widget-html{display:
+ * contents}` above, applied to `.em-join__way`'s own html widget and scoped
+ * no wider, for the same reason that rule gives: display:contents removes
+ * the wrapper from the box tree, so the anchor becomes `.em-join__way`'s
+ * real, direct flex child again and the blockification the static build
+ * relies on happens the same way it always did. */
+.em-join__way > .elementor-widget-html{
+  display:contents;
 }
 
 /* ---------- Elementor's KIT styles every native <button> on the install -----

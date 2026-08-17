@@ -50,8 +50,23 @@ export const heading = ({ text, tag = 'h2', cssClass = '', ...rest } = {}) =>
    stays available for a class the markup does NOT carry, which is how a
    layout hook on the wrapper is still expressed. */
 export const text = ({ markup, cssClass = '', ...rest } = {}) => {
+  /* Token equality, not a regex substring test: a \b word boundary treats
+     a hyphen as a separator, so a boundary-based match on 'em-eyebrow'
+     would also fire on 'em-eyebrow-large' or 'large-em-eyebrow', classes
+     that share no token and do not conflict. This codebase's own class
+     names are hyphen-extended (em-eyebrow appears at
+     elementor/pages/final/04-stories.mjs and 05-insights.mjs), so that
+     false positive is live vocabulary, not a hypothetical, and the guard
+     throws rather than warns. Collecting the markup's actual class tokens
+     and testing set membership also means a class name containing a regex
+     metacharacter cannot change matching semantics, and reading both
+     quote styles means a single-quoted class attribute is not missed. */
+  const markupClasses = new Set(
+    [...String(markup).matchAll(/class\s*=\s*("([^"]*)"|'([^']*)')/g)]
+      .flatMap((m) => (m[2] ?? m[3]).split(/\s+/).filter(Boolean)),
+  );
   for (const c of cssClass.split(/\s+/).filter(Boolean)) {
-    if (new RegExp(`class="[^"]*\\b${c}\\b`).test(markup)) {
+    if (markupClasses.has(c)) {
       throw new Error(`text(): cssClass "${c}" is already carried by the markup. The class belongs in one place, and measurement says that place is the markup.`);
     }
   }

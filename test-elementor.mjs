@@ -315,6 +315,19 @@ test('text() still accepts a cssClass the markup does not carry', () => {
   assert.equal(made.settings._css_classes, 'zz-layout-hook');
 });
 
+test('text() does not treat a hyphen as a class-name boundary', () => {
+  /* A regex \b boundary treats '-' as a token separator, so a
+     boundary-based match on 'em-eyebrow' would also fire on
+     'em-eyebrow-large' or 'large-em-eyebrow', classes that share no real
+     token and do not conflict. This is not a hypothetical: both directions
+     are live vocabulary here (elementor/pages/final/04-stories.mjs and
+     05-insights.mjs both pass cssClass: 'em-eyebrow'), and the guard
+     throws rather than warns, so a false positive here hard-fails a build
+     that was correct. */
+  assert.doesNotThrow(() => text({ markup: '<p class="em-eyebrow-large">x</p>', cssClass: 'em-eyebrow' }));
+  assert.doesNotThrow(() => text({ markup: '<p class="large-em-eyebrow">x</p>', cssClass: 'em-eyebrow' }));
+});
+
 test('image() matches the captured image shape', () => {
   const ref = findByClass(REF, 'zz-probe__photo');
   assert.ok(ref, 'fixture has no .zz-probe__photo image; recapture it');
@@ -380,23 +393,66 @@ test('loopGrid() rejects a non-integer templateId before building anything', () 
   assert.throws(() => loopGrid({ templateId: undefined }), /templateId/);
 });
 
-/* Extracts the balanced-parenthesis call text starting at the '(' found at
-   openIdx, so a multi-line heading({...}) call can be tested as a whole
-   rather than line by line. Tracks string literals so a stray '(' or ')'
-   inside a quoted string does not desync the depth count. */
-const extractBalancedCall = (src, openIdx) => {
-  let depth = 0;
-  let inString = null;
-  for (let i = openIdx; i < src.length; i++) {
+/* Classifies every character of src as 'code', 'string', or 'comment':
+   tracks // line comments, /* block comments, and '"' / '\'' / '`' quoted
+   strings (with backslash escapes), one pass, one state machine. Both
+   blankNonCode() and extractBalancedCall() below read this same array
+   rather than each re-deriving string/comment boundaries, so the tracking
+   logic exists exactly once. */
+const scanSource = (src) => {
+  const kinds = new Array(src.length);
+  let mode = 'code';
+  let quote = null;
+  for (let i = 0; i < src.length; i++) {
     const c = src[i];
-    if (inString) {
-      if (c === '\\') { i++; continue; }
-      if (c === inString) inString = null;
+    const next = src[i + 1];
+    if (mode === 'line-comment') {
+      kinds[i] = 'comment';
+      if (c === '\n') mode = 'code';
       continue;
     }
-    if (c === '"' || c === '\'' || c === '`') { inString = c; continue; }
-    if (c === '(') depth++;
-    else if (c === ')') {
+    if (mode === 'block-comment') {
+      kinds[i] = 'comment';
+      if (c === '*' && next === '/') { kinds[i + 1] = 'comment'; i++; mode = 'code'; }
+      continue;
+    }
+    if (mode === 'string') {
+      kinds[i] = 'string';
+      if (c === '\\' && i + 1 < src.length) { kinds[i + 1] = 'string'; i++; continue; }
+      if (c === quote) { mode = 'code'; quote = null; }
+      continue;
+    }
+    if (c === '/' && next === '/') { kinds[i] = 'comment'; mode = 'line-comment'; continue; }
+    if (c === '/' && next === '*') { kinds[i] = 'comment'; mode = 'block-comment'; continue; }
+    if (c === '"' || c === '\'' || c === '`') { kinds[i] = 'string'; mode = 'string'; quote = c; continue; }
+    kinds[i] = 'code';
+  }
+  return kinds;
+};
+
+/* Same length as src, so offsets found in the blanked string line up
+   exactly with the original. Every comment or string character is
+   replaced with a space, EXCEPT a newline is kept as a newline, so the
+   `^` line-start anchor in callRe still lands on real line boundaries.
+   Matching heading( against this instead of the raw source means a
+   `// heading({...})` comment or a template literal that merely contains
+   the word cannot be read as a real call. */
+const blankNonCode = (src, kinds) =>
+  Array.from(src, (c, i) => (kinds[i] === 'code' || c === '\n' ? c : ' ')).join('');
+
+/* Extracts the balanced-parenthesis call text starting at the '(' found at
+   openIdx, so a multi-line heading({...}) call can be tested as a whole
+   rather than line by line. Only counts parens where kinds says 'code', so
+   a stray '(' or ')' inside a quoted string or a comment within the call's
+   own text does not desync the depth count. Reads from the ORIGINAL src
+   (not the blanked copy) so the extracted call text still carries
+   __dynamic__ and every other real character for the exemption check. */
+const extractBalancedCall = (src, openIdx, kinds) => {
+  let depth = 0;
+  for (let i = openIdx; i < src.length; i++) {
+    if (kinds[i] !== 'code') continue;
+    if (src[i] === '(') depth++;
+    else if (src[i] === ')') {
       depth--;
       if (depth === 0) return src.slice(openIdx, i + 1);
     }
@@ -404,7 +460,7 @@ const extractBalancedCall = (src, openIdx) => {
   return src.slice(openIdx);
 };
 
-test('no page module or theme part builds a heading widget', async () => {
+test('no page module or theme part builds a heading widget', async (t) => {
   const { readdir, readFile } = await import('node:fs/promises');
 
   /* The directory list is DERIVED, not hand-typed: this repo has already
@@ -419,18 +475,29 @@ test('no page module or theme part builds a heading widget', async () => {
     ...pageEntries.filter((e) => e.isDirectory()).map((e) => `${pagesRoot}/${e.name}`),
     'elementor/theme-parts',
   ];
+  /* The derivation cannot silently cover nothing today (theme-parts is
+     appended unconditionally), but this repo has already shipped a sweep
+     that passed green while covering less than it claimed, so the
+     invariant is asserted rather than trusted: a one-or-zero-directory
+     result means the derivation broke, not that the codebase is clean. */
+  assert.ok(dirs.length > 1,
+    `derived directory sweep found only ${dirs.length} director${dirs.length === 1 ? 'y' : 'ies'} (expected elementor/pages/* plus elementor/theme-parts); the derivation is broken, not the codebase clean`);
 
+  let filesSwept = 0;
   const offenders = [];
   for (const dir of dirs) {
     for (const f of await readdir(dir)) {
       if (!f.endsWith('.mjs')) continue;
-      const src = (await readFile(`${dir}/${f}`, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+      filesSwept++;
+      const src = await readFile(`${dir}/${f}`, 'utf8');
+      const kinds = scanSource(src);
+      const blanked = blankNonCode(src, kinds);
       const callRe = /(^|[^a-zA-Z_$.])heading\s*\(/gm;
       let match;
       let fileOffends = false;
-      while ((match = callRe.exec(src))) {
+      while ((match = callRe.exec(blanked))) {
         const openIdx = match.index + match[0].length - 1;
-        const call = extractBalancedCall(src, openIdx);
+        const call = extractBalancedCall(src, openIdx, kinds);
         /* NAMED EXEMPTION: a heading() call bound to a dynamic tag does not
            get reported. A text widget binds exactly one dynamic field
            (editor), so it can carry a post title OR a per-post href but not
@@ -450,8 +517,12 @@ test('no page module or theme part builds a heading widget', async () => {
     }
   }
 
+  /* Coverage is visible on a red run (in the failure message) and on a
+     green run (as a diagnostic line), so a future reader never has to
+     instrument the test to see how much of the tree it actually swept. */
+  t.diagnostic(`swept ${filesSwept} files across ${dirs.length} directories: ${dirs.join(', ')}`);
   assert.deepEqual(offenders, [],
-    'heading() cannot put a class on the heading element, and Elementor sets line-height:1 on heading widgets at 0,2,0; use text() with real heading markup');
+    `heading() cannot put a class on the heading element, and Elementor sets line-height:1 on heading widgets at 0,2,0; use text() with real heading markup (swept ${filesSwept} files across ${dirs.length} directories)`);
 });
 
 test('container() nests its children', () => {

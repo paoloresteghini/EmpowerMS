@@ -302,6 +302,19 @@ test('text() matches the captured text-editor shape', () => {
   assert.ok('editor' in ref.settings, 'captured text-editor has no editor key; the schema notes are wrong');
 });
 
+test('text() refuses a cssClass the markup already carries', () => {
+  assert.throws(
+    () => text({ markup: '<p class="em-eyebrow">x</p>', cssClass: 'em-eyebrow' }),
+    /em-eyebrow/,
+    'the belt-and-braces form measured WORSE than either alone and must not be constructible',
+  );
+});
+
+test('text() still accepts a cssClass the markup does not carry', () => {
+  const made = text({ markup: '<p class="em-eyebrow">x</p>', cssClass: 'zz-layout-hook' });
+  assert.equal(made.settings._css_classes, 'zz-layout-hook');
+});
+
 test('image() matches the captured image shape', () => {
   const ref = findByClass(REF, 'zz-probe__photo');
   assert.ok(ref, 'fixture has no .zz-probe__photo image; recapture it');
@@ -365,6 +378,80 @@ test('loopGrid() passes query settings through to the widget settings unnamed', 
 test('loopGrid() rejects a non-integer templateId before building anything', () => {
   assert.throws(() => loopGrid({ templateId: 'not-a-number' }), /templateId/);
   assert.throws(() => loopGrid({ templateId: undefined }), /templateId/);
+});
+
+/* Extracts the balanced-parenthesis call text starting at the '(' found at
+   openIdx, so a multi-line heading({...}) call can be tested as a whole
+   rather than line by line. Tracks string literals so a stray '(' or ')'
+   inside a quoted string does not desync the depth count. */
+const extractBalancedCall = (src, openIdx) => {
+  let depth = 0;
+  let inString = null;
+  for (let i = openIdx; i < src.length; i++) {
+    const c = src[i];
+    if (inString) {
+      if (c === '\\') { i++; continue; }
+      if (c === inString) inString = null;
+      continue;
+    }
+    if (c === '"' || c === '\'' || c === '`') { inString = c; continue; }
+    if (c === '(') depth++;
+    else if (c === ')') {
+      depth--;
+      if (depth === 0) return src.slice(openIdx, i + 1);
+    }
+  }
+  return src.slice(openIdx);
+};
+
+test('no page module or theme part builds a heading widget', async () => {
+  const { readdir, readFile } = await import('node:fs/promises');
+
+  /* The directory list is DERIVED, not hand-typed: this repo has already
+     shipped the hand-written-list failure once (a side-stripe test whose
+     page list was hand-written stayed green while four pages added later
+     carried the violation). Reading elementor/pages fresh means a page
+     added after this test was written is swept automatically instead of
+     silently escaping it. */
+  const pagesRoot = 'elementor/pages';
+  const pageEntries = await readdir(pagesRoot, { withFileTypes: true });
+  const dirs = [
+    ...pageEntries.filter((e) => e.isDirectory()).map((e) => `${pagesRoot}/${e.name}`),
+    'elementor/theme-parts',
+  ];
+
+  const offenders = [];
+  for (const dir of dirs) {
+    for (const f of await readdir(dir)) {
+      if (!f.endsWith('.mjs')) continue;
+      const src = (await readFile(`${dir}/${f}`, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '');
+      const callRe = /(^|[^a-zA-Z_$.])heading\s*\(/gm;
+      let match;
+      let fileOffends = false;
+      while ((match = callRe.exec(src))) {
+        const openIdx = match.index + match[0].length - 1;
+        const call = extractBalancedCall(src, openIdx);
+        /* NAMED EXEMPTION: a heading() call bound to a dynamic tag does not
+           get reported. A text widget binds exactly one dynamic field
+           (editor), so it can carry a post title OR a per-post href but not
+           both; Elementor's dynamic tags replace a whole field value, never
+           an attribute fragment inside authored markup. A heading widget's
+           title and link fields bind separately, which is what a headline
+           that must link to the post it names (the project's own rule)
+           requires. podcast-a/03-library.mjs's loopItem() pca-ep__title is
+           the one call this exempts today; see the test at
+           "the podcast loop item title is a Heading widget..." for its
+           asserted shape. Do not widen this into a blanket allowance: the
+           test is for __dynamic__ presence on THIS call, not for a filename
+           or caller name. */
+        if (!/__dynamic__/.test(call)) fileOffends = true;
+      }
+      if (fileOffends) offenders.push(`${dir}/${f}`);
+    }
+  }
+
+  assert.deepEqual(offenders, [],
+    'heading() cannot put a class on the heading element, and Elementor sets line-height:1 on heading widgets at 0,2,0; use text() with real heading markup');
 });
 
 test('container() nests its children', () => {

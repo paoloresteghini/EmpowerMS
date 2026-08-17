@@ -40,9 +40,23 @@ export const heading = ({ text, tag = 'h2', cssClass = '', ...rest } = {}) =>
   el('widget', { title: text, header_size: tag, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'heading' });
 
 /* widgetType 'text-editor' and the settings key editor are read from the
-   captured text-editor node. */
-export const text = ({ markup, cssClass = '', ...rest } = {}) =>
-  el('widget', { editor: markup, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'text-editor' });
+   captured text-editor node.
+
+   The class travels in the MARKUP now (see
+   docs/superpowers/specs/2026-08-15-class-in-markup-design.md). Passing the
+   same class both ways is not redundancy, it is a conflict: the widget class
+   makes bridge.css's class-on-wrapper repair match the wrapper and zero the
+   real element, which the spike on post 20591 measured directly. cssClass
+   stays available for a class the markup does NOT carry, which is how a
+   layout hook on the wrapper is still expressed. */
+export const text = ({ markup, cssClass = '', ...rest } = {}) => {
+  for (const c of cssClass.split(/\s+/).filter(Boolean)) {
+    if (new RegExp(`class="[^"]*\\b${c}\\b`).test(markup)) {
+      throw new Error(`text(): cssClass "${c}" is already carried by the markup. The class belongs in one place, and measurement says that place is the markup.`);
+    }
+  }
+  return el('widget', { editor: markup, [WIDGET_CSS_CLASS_KEY]: cssClass, ...rest }, { widgetType: 'text-editor' });
+};
 
 /* widgetType 'image' and the settings.image shape ({ id, url }) are read from
    the captured image node. No alt field: the image widget has no alt control

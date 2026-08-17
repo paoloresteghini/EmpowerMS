@@ -2457,3 +2457,58 @@ test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', (
   assert.match(css, /\.em-skip:focus-within\s*\{[^}]*top:/,
     'bridge.css must carry a :focus-within rule for .em-skip that moves it into view');
 });
+
+/* --- fidelity-browser.mjs / the homepage's two measuring instruments ----- */
+
+/* The homepage's ~40 defects were found by two throwaway session scripts,
+   not by anything in this suite. They are load-bearing for thirteen more
+   page conversions and must stop being throwaway. Guarded the same way the
+   SPIKE_URL group above guards itself: a checkout with no HOME_URL must
+   fail on a message naming the variable, not on a bare Playwright error. */
+const requireHomeUrl = () => process.env.HOME_URL
+  ?? assert.fail('HOME_URL is not set. These two tests need the deployed homepage: HOME_URL=https://empv2.wpenginepowered.com/final/ node --test test-elementor.mjs');
+
+/* The 32 hand-picked probes reported 31 of 32 matching on a page the census
+   found 40 differences on. A curated check set can only find the failures
+   somebody already imagined; this enumerates both sides and compares on a key
+   the conversion cannot move, which is the element's own text. */
+test('every paragraph and heading on the converted homepage matches the static build', { concurrency: 1 }, async () => {
+  const { census } = await import('./fidelity-browser.mjs');
+  const url = requireHomeUrl();
+  const server = await serveRepoRoot();
+  try {
+    const live = await census(url);
+    const stat = await census(`${server.url}/dist/final.html`);
+    const shared = Object.keys(live).filter((k) => stat[k]);
+    assert.ok(shared.length > 40, `only ${shared.length} elements matched by text on both sides; the key is not lining up`);
+    const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
+      .map((k) => `${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+    assert.deepEqual(diffs, [], `${diffs.length} computed-style differences:\n${diffs.join('\n')}`);
+  } finally {
+    await server.close();
+  }
+});
+
+/* The census compares values. This compares boxes, and the two find disjoint
+   defects: a Loop Grid wrapper cost 222px of card height with every property on
+   both sides agreeing, and a kit padding pushed the nav 258px wide while no
+   colour moved. Anchors inside Elementor's button widget are skipped: link()
+   renders the pill on the WRAPPER and the anchor fills it, which is by design
+   and measured correct against the static build's own anchor. */
+test('every control and image on the converted homepage matches the static build box for box', { concurrency: 1 }, async () => {
+  const { controlBoxes } = await import('./fidelity-browser.mjs');
+  const url = requireHomeUrl();
+  const server = await serveRepoRoot();
+  try {
+    for (const width of [1440, 390]) {
+      const live = await controlBoxes(url, { width });
+      const stat = await controlBoxes(`${server.url}/dist/final.html`, { width });
+      const shared = Object.keys(live).filter((k) => stat[k]);
+      const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
+        .map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+      assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
+    }
+  } finally {
+    await server.close();
+  }
+});

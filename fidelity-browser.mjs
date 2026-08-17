@@ -234,6 +234,93 @@ async function settleReveal(page) {
   await page.evaluate(() => window.scrollTo(0, 0));
 }
 
+/* Keyed on the element's own text, never on a selector: the conversion moves
+   classes onto wrapper divs, so a selector-keyed comparison silently matches
+   nothing on one side and scores that as agreement. Scrolls the whole page
+   first, because js/reveal.js only reveals on intersection and a lazily loaded
+   image settles at a different height before and after. */
+export async function census(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(url, { waitUntil: 'load' });
+    await settleReveal(page);
+    /* Awaited, not returned bare: the same trap checkVisibleWithJs's own
+       comment above documents. A bare `return page.evaluate(...)` hands the
+       caller a pending promise while this function's body is considered
+       finished, so `finally`'s browser.close() races it and the read fails
+       with "Target page, context or browser has been closed" instead of
+       ever resolving. Reproduced live running this against the deployed
+       homepage before adding the await. */
+    return await page.evaluate(() => {
+      const out = {}; const seen = {};
+      for (const el of document.querySelectorAll('h1,h2,h3,h4,h5,p,blockquote')) {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none') continue;
+        const text = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+        let key = `${el.tagName.toLowerCase()}|${text}`;
+        seen[key] = (seen[key] || 0) + 1;
+        if (seen[key] > 1) key = `${key}#${seen[key]}`;
+        /* The margin a converted page renders can legitimately sit on a
+           wrapper the static build does not have, so charge the element and
+           every widget wrapper around it, stopping at the first container. */
+        let mb = parseFloat(cs.marginBottom) || 0;
+        let node = el.parentElement;
+        while (node && node.matches('.elementor-widget, .elementor-widget-container') && !node.matches('.e-con')) {
+          mb += parseFloat(getComputedStyle(node).marginBottom) || 0;
+          node = node.parentElement;
+        }
+        out[key] = {
+          fontSize: cs.fontSize,
+          lineHeight: cs.lineHeight,
+          fontFamily: cs.fontFamily.split(',')[0].replace(/["']/g, ''),
+          color: cs.color,
+          background: cs.backgroundColor,
+          marginBottom: `${mb}px`,
+        };
+      }
+      return out;
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+/* The census compares values. This compares boxes: width, height, padding,
+   border radius and width, and the type properties that decide a control's
+   footprint. Anchors inside Elementor's button widget are skipped: link()
+   renders the pill on the WRAPPER and the anchor fills it, which is by
+   design and measured correct against the static build's own anchor. */
+export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(url, { waitUntil: 'load' });
+    await settleReveal(page);
+    /* Awaited for the same reason as census() above. */
+    return await page.evaluate(() => {
+      const out = {}; const seen = {};
+      for (const el of document.querySelectorAll('a,button,input,select,textarea,img')) {
+        if (el.closest('.elementor-widget-button')) continue;
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        let key = `${el.tagName.toLowerCase()}|${(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 20)
+          || el.getAttribute('alt') || '?'}`;
+        seen[key] = (seen[key] || 0) + 1;
+        if (seen[key] > 1) key = `${key}#${seen[key]}`;
+        out[key] = {
+          w: Math.round(r.width), h: Math.round(r.height),
+          padding: cs.padding, borderRadius: cs.borderRadius, borderWidth: cs.borderWidth,
+          fontWeight: cs.fontWeight, letterSpacing: cs.letterSpacing, fontSize: cs.fontSize,
+        };
+      }
+      return out;
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function screenshots(url, dir) {
   const browser = await chromium.launch();
   try {

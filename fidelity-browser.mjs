@@ -318,14 +318,39 @@ export async function census(url, { width = 1440, height = 900 } = {}) {
    page.
    a: text, else aria-label, else the URL's pathname. Pathname, not the raw
    href: live's hrefs are absolute against empv2 and the static build's are
-   relative, so a raw-href key would silently stop comparing the header
-   logo link, one of the real defects this sweep exists to find.
+   relative, so a raw-href key would silently stop comparing anchors that
+   share no text or aria-label at all.
    button/input/select/textarea: text, else aria-label, else name, else
    type.
    An element that yields none of those is EXCLUDED from the returned
    object rather than bucketed under a shared fallback key: an excluded
    element is a visible gap in coverage, counted per side below; a
-   positionally bucketed one is an invisible false finding. */
+   positionally bucketed one is an invisible false finding.
+
+   aria-label is unstable across this conversion for the same reason alt
+   is: Elementor's image widget has no control for either, so an anchor
+   that carries one in the static build carries neither live, and neither
+   can ever serve as identity. The header logo link is the measured
+   instance: static's anchor keys on its aria-label ("Empower Mississippi
+   home"), live's carries neither text nor aria-label and falls through to
+   pathname, so the two deliberately do not pair. That is not a coverage
+   gap; pairing them would produce a FALSE finding rather than recover a
+   real one. Measured at 1440px: .em-header__logo (flex: 1 1 0px, 232x52),
+   .em-header__nav (641px) and .em-header__bar (1152px) are identical on
+   both sides, and the only difference is which element carries the
+   .em-header__logo class. Static puts it on the <a>, so the anchor is the
+   232px flex item; live puts it on the image widget's wrapper (header.mjs's
+   own comment already records that class move as a known cost), so the
+   wrapper is the 232px flex item and the anchor inside shrink-wraps to its
+   image at 112px. Comparing those two anchors' boxes would score that
+   shrink-wrap as a size defect on an element that, at the header's own
+   level, is not wrong at all.
+
+   The general limit this illustrates: a box sweep cannot tell "this
+   element is the wrong size" from "this element is no longer the element
+   the rule applies to". That is the census's job, keyed on the text the
+   conversion cannot move; the plan lands two instruments rather than one
+   for exactly this reason. */
 export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
   const browser = await chromium.launch();
   try {

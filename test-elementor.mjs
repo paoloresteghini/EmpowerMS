@@ -395,10 +395,34 @@ test('loopGrid() rejects a non-integer templateId before building anything', () 
 
 /* Classifies every character of src as 'code', 'string', or 'comment':
    tracks // line comments, /* block comments, and '"' / '\'' / '`' quoted
-   strings (with backslash escapes), one pass, one state machine. Both
-   blankNonCode() and extractBalancedCall() below read this same array
-   rather than each re-deriving string/comment boundaries, so the tracking
-   logic exists exactly once. */
+   strings (with backslash escapes), one pass, one state machine, indexed
+   by UTF-16 code unit so it stays aligned with src's own indices (a
+   surrogate-pair emoji is two code units here, matching src.length, not
+   one, which is what a code-point-based walk would collapse it to). Both
+   blankNonCode() and extractBalancedCall() below read this same
+   kinds array rather than each re-deriving string/comment boundaries, so
+   the tracking logic exists exactly once. Returns finalMode alongside
+   kinds: real JavaScript never ends a file mid-string or mid-block-comment,
+   so a scan finishing in either state has desynced against something it
+   doesn't understand, which the caller below turns into a loud failure
+   naming the file rather than a silently narrowed sweep.
+
+   Known limits, recorded rather than fixed:
+   - A regex literal containing a quote, e.g. /["']/. This scanner has no
+     regex-literal handling at all: telling a regex literal from a
+     division operator requires knowing whether the previous token was a
+     value or an operator, the classic hard problem in JS lexing, and a
+     hand-rolled attempt that gets it subtly wrong reintroduces silent
+     under-detection wearing a different hat. So the '"' inside the regex
+     is read as opening a string that never closes, and finalMode ends as
+     'string'. That is exactly the case the caller's invariant catches.
+   - Nested template literals, e.g. `${`x`}`. The naive backtick toggle
+     miscounts the inner backticks, but two nested opens and closes happen
+     to rebalance by EOF, so finalMode still ends as 'code' and the
+     invariant below does NOT catch this one. Nothing in the swept tree
+     uses a nested template literal today. Not fixed, for the same reason
+     as the regex case: a partial fix here is a worse failure mode than an
+     honestly documented gap. */
 const scanSource = (src) => {
   const kinds = new Array(src.length);
   let mode = 'code';
@@ -427,18 +451,49 @@ const scanSource = (src) => {
     if (c === '"' || c === '\'' || c === '`') { kinds[i] = 'string'; mode = 'string'; quote = c; continue; }
     kinds[i] = 'code';
   }
-  return kinds;
+  return { kinds, finalMode: mode };
 };
 
 /* Same length as src, so offsets found in the blanked string line up
-   exactly with the original. Every comment or string character is
-   replaced with a space, EXCEPT a newline is kept as a newline, so the
-   `^` line-start anchor in callRe still lands on real line boundaries.
-   Matching heading( against this instead of the raw source means a
-   `// heading({...})` comment or a template literal that merely contains
-   the word cannot be read as a real call. */
-const blankNonCode = (src, kinds) =>
-  Array.from(src, (c, i) => (kinds[i] === 'code' || c === '\n' ? c : ' ')).join('');
+   exactly with the original. Built with an index-based loop over
+   src.length, NOT Array.from(src, ...) or [...src]: both of those iterate
+   by Unicode CODE POINT, which collapses a surrogate pair into a single
+   step and desyncs the output length against src.length (and therefore
+   against kinds, which is code-UNIT indexed) the moment an astral
+   character (an emoji, for instance) appears anywhere earlier in the
+   file. Every comment or string character is replaced with a space,
+   EXCEPT a newline is kept as a newline, so the `^` line-start anchor in
+   callRe still lands on real line boundaries. Matching heading( against
+   this instead of the raw source means a `// heading({...})` comment or a
+   template literal that merely contains the word cannot be read as a real
+   call. */
+const blankNonCode = (src, kinds) => {
+  let out = '';
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    out += (kinds[i] === 'code' || c === '\n') ? c : ' ';
+  }
+  return out;
+};
+
+/* Runs scanSource and blankNonCode for one file (or fixture) and asserts
+   the two invariants the rest of the sweep depends on, instead of only
+   claiming them in a comment: the blanked copy is exactly as long as the
+   source (the astral-character bug above, should it recur, fails here
+   rather than silently misreading a call's offset), and the scan did not
+   end inside a string or a block comment (the regex-literal case above,
+   and anything else the scanner doesn't understand yet, fails here rather
+   than silently reporting zero offenders for a file it couldn't actually
+   read). label is the file path (or fixture name) named in the failure. */
+const scanForSweep = (src, label) => {
+  const { kinds, finalMode } = scanSource(src);
+  const blanked = blankNonCode(src, kinds);
+  assert.strictEqual(blanked.length, src.length,
+    `${label}: blanked copy is ${blanked.length} chars, source is ${src.length}; the scanner desynced and this file's sweep cannot be trusted`);
+  assert.ok(finalMode !== 'string' && finalMode !== 'block-comment',
+    `${label}: scan ended inside a ${finalMode === 'string' ? 'string that never closed' : 'block comment that never closed'}; the scanner does not understand some construct in this file (a regex literal containing a quote is the known one) and the sweep cannot be trusted for it until it does`);
+  return { kinds, blanked };
+};
 
 /* Extracts the balanced-parenthesis call text starting at the '(' found at
    openIdx, so a multi-line heading({...}) call can be tested as a whole
@@ -490,8 +545,7 @@ test('no page module or theme part builds a heading widget', async (t) => {
       if (!f.endsWith('.mjs')) continue;
       filesSwept++;
       const src = await readFile(`${dir}/${f}`, 'utf8');
-      const kinds = scanSource(src);
-      const blanked = blankNonCode(src, kinds);
+      const { kinds, blanked } = scanForSweep(src, `${dir}/${f}`);
       const callRe = /(^|[^a-zA-Z_$.])heading\s*\(/gm;
       let match;
       let fileOffends = false;
@@ -523,6 +577,21 @@ test('no page module or theme part builds a heading widget', async (t) => {
   t.diagnostic(`swept ${filesSwept} files across ${dirs.length} directories: ${dirs.join(', ')}`);
   assert.deepEqual(offenders, [],
     `heading() cannot put a class on the heading element, and Elementor sets line-height:1 on heading widgets at 0,2,0; use text() with real heading markup (swept ${filesSwept} files across ${dirs.length} directories)`);
+});
+
+test('the heading-widget sweep fails loudly on a source it cannot classify, rather than reporting zero offenders', () => {
+  /* A regex literal containing a quote is the scanner's known, recorded
+     limit (see the comment above scanSource): the '"' inside /["']/
+     is read as opening a string that never closes, so finalMode ends as
+     'string'. Without the invariant this fixture's real, non-exempt
+     heading() call would simply vanish from the sweep: the whole file
+     from the regex onward reads as one unterminated string and blanks to
+     nothing. The fixture is a string here, not a file in a swept
+     directory, so it cannot pollute the real 10-file offender list. */
+  const fixture = "const re = /[\"']/;\nheading({ text: 'T' });\n";
+  assert.throws(() => scanForSweep(fixture, 'fixture'),
+    /does not understand some construct/,
+    'a source the scanner cannot classify must fail loudly, not silently report zero offenders');
 });
 
 test('container() nests its children', () => {

@@ -1,4 +1,4 @@
-import { container, heading, text, image, html } from '../../factory.mjs';
+import { container, text, image, html } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/sections/06-joinus.html.
@@ -95,7 +95,7 @@ const way = (w) =>
         cssClass: `em-join__wash ${w.wash}`,
         _attributes: 'aria-hidden|true',
       }),
-      heading({ text: w.title, tag: 'h3' }),
+      text({ markup: `<h3>${w.title}</h3>` }),
       text({ markup: `<p>${w.body}</p>` }),
       html({
         markup: `<a class="em-join__action" href="${w.href}"><span class="em-join__action-label">${w.label}</span><span class="em-join__arrow" aria-hidden="true">→</span></a>`,
@@ -120,14 +120,14 @@ export function section() {
               { cssClass: 'em-join__slab', content_width: 'full', _attributes: 'data-reveal|rise' },
               [
                 container({ cssClass: 'em-join__pitch', content_width: 'full' }, [
-                  heading({ text: PITCH_HEADLINE, tag: 'h2', _element_id: 'join-title' }),
-                  text({ markup: `<p>${PITCH_LEAD}</p>`, cssClass: 'em-join__lead' }),
+                  text({ markup: `<h2 id="join-title">${PITCH_HEADLINE}</h2>` }),
+                  text({ markup: `<p class="em-join__lead">${PITCH_LEAD}</p>` }),
                 ]),
                 container(
                   { cssClass: 'em-newsletter em-newsletter--light em-join__signup', content_width: 'full' },
                   [
                     html({ markup: FORM_MARKUP }),
-                    text({ markup: `<p>${NOTE}</p>`, cssClass: 'em-newsletter__note' }),
+                    text({ markup: `<p class="em-newsletter__note">${NOTE}</p>` }),
                   ],
                 ),
               ],

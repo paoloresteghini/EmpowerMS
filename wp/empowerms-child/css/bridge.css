@@ -1019,79 +1019,43 @@
  * paragraph nobody listed.
  */
 
-/* Half one: the inner element stops supplying a margin of its own. Every class
- * here is one whose wrapper carries the real margin, either because the class
- * declares zero (tl-lede, c2-foundations__lede, c2-panel__promise, em-lead,
- * em-stories__attr, em-join__lead, em-newsletter__note all set margin:0) or
- * because a rule below, or the .em-footer__mission rule further up, restores
- * it on the wrapper. */
-.elementor .fp-tagline p,
-.elementor .fp-hero__lede p,
-.elementor .tl-lede p,
-.elementor .tl-label p,
-.elementor .c2-foundations__lede p,
-.elementor .c2-panel__promise p,
-.elementor .em-eyebrow p,
-.elementor .em-lead p,
-.elementor .em-stories__attr p,
-.elementor .em-insights__lede p,
-.elementor .em-join__lead p,
-.elementor .em-newsletter__note p,
-.elementor .em-footer__mission p,
-.elementor .em-article__title h3{
+/* Half one, DELETED 2026-08-17 by Task 4's class-in-markup migration, down to
+ * one surviving selector. Every class here except em-stories__attr moved off
+ * the widget wrapper and onto the real <p> or <h3> its markup produces
+ * (elementor/pages/final/01-hero.mjs through 06-joinus.mjs), so tl-lede,
+ * c2-foundations__lede, c2-panel__promise, em-lead, em-insights__lede,
+ * em-join__lead, em-newsletter__note and em-article__title (its h3 half) now
+ * reach the real element directly through the build's own stylesheets and
+ * this restatement is redundant. fp-tagline, fp-hero__lede and tl-label were
+ * also migrated; they lived in the margin-block-end group below, not here,
+ * and are deleted there. em-footer__mission was already made inert by Task 3,
+ * which moved that class onto the footer's own <p>; carried here unused
+ * since Task 3 and deleted now with the rest.
+ *
+ * .elementor .em-stories__attr p is the ONE exception and is KEPT, per
+ * RULING R10: its widget (04-stories.mjs's loopItem()) carries markup: '' and
+ * gets its content from a dynamic tag (post-title) at render time, so there
+ * is no authored <p> in this repository for the class to travel onto. The
+ * class stays on the wrapper Elementor renders at request time, and this
+ * rule still has to reach the <p> inside it.
+ *
+ * Measured with the deletion deployed: both instruments green, matching the
+ * pre-deletion measurement exactly. */
+.elementor .em-stories__attr p{
   margin:0;
 }
 
-/* Half two: the wrapper gets back the margin Elementor zeroes. 0,4,0, one step
- * above Elementor's 0,3,0, written against margin-block-end rather than
- * margin-bottom so it is the same property Elementor set rather than a second
- * property that happens to resolve to the same physical edge.
- *
- * Only the six classes whose intended margin is not zero appear. The other
- * eight want zero, which is what Elementor's own rule already gives them, so
- * naming them here would add a rule that changes nothing. Each value is the
- * token the build's own rule uses, read from the stylesheet rather than from
- * the measurement, with the measured static pixel value in the comment as the
- * check that they agree. */
-.elementor .fp-tagline.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-6); /* 24px, option-a.css:53 */
-}
-.elementor .fp-hero__lede.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-8); /* 40px, option-a.css:65 */
-}
-.elementor .tl-label.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-8); /* 40px, option-d.css:24 */
-}
-.elementor .em-eyebrow.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-3); /* 12px, tokens/base.css:17 */
-}
-.elementor .em-insights__lede.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-7); /* 32px, homepage.css:292 */
-}
-.elementor .em-article__title.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-3); /* 12px, homepage.css:309 */
-}
-
-/* Half one repairs .em-article__title's margin; its SIZE needs the same
- * treatment for the same reason. components.css:160 sets font-size:var(--fs-h4)
- * on the class, the class is on the wrapper, and the un-classed <h3> inside
- * takes tokens/base.css's `h3{font-size:var(--fs-h3)}` instead: 25.6px live
- * against 20px static, measured on all three insight cards.
- *
- * line-height has to be restated too, and the first attempt at this rule left
- * it out on the argument that a unitless line-height inherits as a ratio, so
- * the <h3> would resolve components.css:160's 1.25 against its own font-size
- * on its own. Deployed and measured: the <h3> computed 20px, not the 25px that
- * argument predicts. The argument is true about inheritance and irrelevant
- * here, because tokens/base.css sets a line-height on the h3 ELEMENT, and an
- * element's own matching rule beats an inherited value outright, whatever the
- * inherited value's form. Inheritance only reaches a property nothing else
- * claims. Restated from the class's own declaration, and re-measured after:
- * 20px / 25px live, 20px / 25px static. */
-.elementor .em-article__title h3{
-  font-size:var(--fs-h4);
-  line-height:1.25;
-}
+/* Half two, DELETED 2026-08-17 by Task 4's class-in-markup migration, and the
+ * .em-article__title size/line-height restatement that followed it, deleted
+ * with it. All seven classes named across both rules migrated: the class now
+ * sits on the real element the markup produces, not on the widget wrapper
+ * these rules named, so the wrapper margin they restored is no longer needed
+ * (the un-classed element beside it is what needed the margin, and Half one
+ * above stopped supplying it there instead of here) and the h3 size/line-
+ * height restatement for .em-article__title has nothing left to repair:
+ * components.css's own .em-article__title{font-size:var(--fs-h4);...} now
+ * reaches the real <h3> directly (elementor/pages/final/05-insights.mjs).
+ * Measured with the deletion deployed: both instruments green. */
 
 /* ---------- Elementor flattens every heading's line-height to 1 -------------
  * Not UiCore, and not class-on-wrapper: this one is Elementor's own default and
@@ -1118,21 +1082,23 @@
  * they ship, which is precisely how the two reverted rules recorded above
  * behaved. Each block that measured wrong is named instead.
  *
- * .em-footer__top used to be the highest-value line here: the footer is a
- * theme part, so those two headings were on every page on the install. That
- * selector is DELETED 2026-08-17 by Task 3. footer.mjs no longer builds
- * Follow/More with heading() (which produced Elementor's own heading
- * widget, `.elementor-widget-heading .elementor-heading-title`, the
- * competitor this rule was written to beat); it now uses text() with a
- * bare `<h3>` (Task 3, class-in-markup), which is not a heading widget at
- * all, so the competing 0,2,0 rule no longer applies and the real element
- * falls back to tokens/base.css's own `h3{line-height:var(--lh-heading)}`
- * unopposed, matching the static build with nothing restated here. */
-.elementor .em-stories__head h2,
-.elementor .em-insights__aside h2,
-.elementor .em-join__way h3{
-  line-height:var(--lh-heading);
-}
+ * .em-footer__top was the first selector removed from this rule, DELETED
+ * 2026-08-17 by Task 3. footer.mjs no longer builds Follow/More with
+ * heading() (which produced Elementor's own heading widget, the competitor
+ * this rule was written to beat); it now uses text() with a bare `<h3>`
+ * (class-in-markup), which is not a heading widget at all, so the competing
+ * 0,2,0 rule no longer applies there.
+ *
+ * The remaining three, `.em-stories__head h2`, `.em-insights__aside h2` and
+ * `.em-join__way h3`, are DELETED 2026-08-17 by Task 4 for the identical
+ * reason: 04-stories.mjs's, 05-insights.mjs's and 06-joinus.mjs's section
+ * headings all move from heading() to text() carrying a bare heading tag in
+ * this same migration, so none of the three is Elementor's own heading
+ * widget any longer and none of them meets Elementor's own competing
+ * selector. Every heading this rule named now falls back to tokens/base.css's
+ * `h1,h2,h3,h4,h5{line-height:var(--lh-heading)}` unopposed, which is what
+ * the static build always relied on, with nothing left to restate. This
+ * whole rule is gone; nothing across either converted page still needs it. */
 
 /* ---------- podcast-a: the same class-on-wrapper category, its own classes ---
  * Measured on the converted spike after the homepage repairs above, using the
@@ -1232,8 +1198,32 @@
  *
  * The .pca-lede rule above is 0,5,0 and this is 0,4,0, so the first paragraph
  * keeps its own 24px rather than picking up the 20px here, which is what
- * podcast-a.css:131 asks for. */
-.elementor .em-join__way > .elementor-widget-text-editor{
+ * podcast-a.css:131 asks for.
+ *
+ * SCOPED TO `:has(> p)`, ADDED 2026-08-17 by Task 4's class-in-markup
+ * migration. Before this task, `.em-join__way`'s two authored widgets were a
+ * heading() (the card's <h3>, widgetType `heading`, wrapper class
+ * `elementor-widget-heading`) and a text() (the card's <p>, widgetType
+ * `text-editor`), so `> .elementor-widget-text-editor` could only ever match
+ * one direct child: the paragraph. The migration converts the heading() to a
+ * text() carrying a bare `<h3>`, which is also widgetType `text-editor`, so
+ * both the title and the body are now `.elementor-widget-text-editor` direct
+ * children of `.em-join__way` and the old selector matched both. Measured on
+ * the "Fund the work" card before this fix: the h3 itself picked up
+ * `margin-block-end:auto` it was never meant to have (29.5938px live against
+ * the static build's 16px, the card's own margin-bottom on an <h3> element),
+ * and the same auto margin on the paragraph shrank to compensate (13.5938px
+ * against 27.1875px), because two flex items sharing one auto margin split
+ * the available free space between them instead of one item absorbing all of
+ * it. `:has(> p)` restricts the match to the widget whose real content is a
+ * `<p>`, which is exactly the distinction homepage.css:450's own `p:last-of-
+ * type` makes by tag rather than by position, and is the same fix in the
+ * same spirit as the rest of this section: select on what the static build
+ * selected on, not on a structural accident of which widget type Elementor
+ * happens to wrap it in. Re-measured after: 132.75px / 105.5625px live on the
+ * two cards, matching static exactly as before this migration touched the
+ * heading. */
+.elementor .em-join__way > .elementor-widget-text-editor:has(> p){
   margin-block-end:auto;
 }
 .elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){

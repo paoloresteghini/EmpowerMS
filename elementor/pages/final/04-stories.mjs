@@ -1,4 +1,4 @@
-import { container, heading, text, image, link, html, loopGrid, elementId } from '../../factory.mjs';
+import { container, text, image, link, html, loopGrid, elementId } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/sections/04-stories.html.
@@ -87,6 +87,14 @@ export function loopItem() {
           url: '',
           __dynamic__: { image: dynamicTag('post-featured-image') },
         }),
+        /* NOT touched by the class-in-markup migration (2026-08-17). Both
+           widgets below carry `markup: ''`; Elementor supplies the actual
+           content at render time through __dynamic__, so there is no
+           authored element in this file for a class to move onto. The
+           second widget's cssClass stays on the wrapper, and the bridge
+           rule that repairs it (`.elementor .em-stories__attr p{margin:0}`)
+           stays too, kept out of the deletion that removes the rest of its
+           group. */
         container({ content_width: 'full' }, [
           text({
             markup: '',
@@ -117,13 +125,13 @@ export function section() {
           { cssClass: 'em-stories__head', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
             container({ content_width: 'full', _attributes: 'data-reveal|rise' }, [
-              text({ markup: `<p>${EYEBROW}</p>`, cssClass: 'em-eyebrow' }),
-              heading({ text: HEADLINE, tag: 'h2', _element_id: 'stories-title' }),
+              text({ markup: `<p class="em-eyebrow">${EYEBROW}</p>` }),
+              text({ markup: `<h2 id="stories-title">${HEADLINE}</h2>` }),
               /* A decorative 56x4 rule, the build's own section motif. A <span>
                  with no content: an empty container carries it fine, and it must
                  keep aria-hidden so it is never announced. */
               container({ cssClass: 'em-rule', content_width: 'full', _attributes: 'aria-hidden|true' }),
-              text({ markup: `<p>${LEAD}</p>`, cssClass: 'em-lead' }),
+              text({ markup: `<p class="em-lead">${LEAD}</p>` }),
             ]),
             link({
               label: 'Read Community Stories',
@@ -146,7 +154,7 @@ export function section() {
               [
                 image({ ...photo('girl-writing-bw') }),
                 container({ cssClass: 'em-stories__lead-body', content_width: 'full' }, [
-                  text({ markup: '<p>Featured story</p>', cssClass: 'em-eyebrow' }),
+                  text({ markup: '<p class="em-eyebrow">Featured story</p>' }),
                   /* <blockquote><p>…</p></blockquote>. Elementor's container
                      html_tag offers no blockquote, and a quotation that stops
                      being a quotation is a semantic loss rather than a styling
@@ -157,8 +165,7 @@ export function section() {
                      as a nested span the CSS sets on its own line. text()'s
                      markup passes through, so this needs no exception. */
                   text({
-                    markup: '<p>Jodi Berry<span>Sumrall, MS</span></p>',
-                    cssClass: 'em-stories__attr',
+                    markup: '<p class="em-stories__attr">Jodi Berry<span>Sumrall, MS</span></p>',
                   }),
                 ]),
               ],

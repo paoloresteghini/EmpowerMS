@@ -378,6 +378,16 @@ async function settleReveal(page) {
       return (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth;
     });
     for (const el of containers) {
+      /* Bring the container into view VERTICALLY before walking it, and this
+         is the cause the two earlier repairs missed. The vertical pass above
+         ends at document.body.scrollHeight and the return to the top is at
+         the end of this function, so without this the walk runs while the
+         page is parked at the bottom and the rail sits far above the
+         viewport. No horizontal position can make an element intersect while
+         its container is off screen on the other axis, which is why neither
+         a longer per-step budget nor disabling snap changed anything. */
+      el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      await new Promise(r => requestAnimationFrame(r));
       const start = el.scrollLeft;
       const step = el.clientWidth;
       /* Snap is turned OFF for the walk and restored afterwards, which
@@ -400,6 +410,21 @@ async function settleReveal(page) {
       await settleScrollLeft(el, 500);
       el.style.scrollSnapType = snap;
     }
+    /* One more vertical pass, and it is not belt and braces. Bringing a
+       container into view moves the window back up the page, so every
+       element BELOW it stops being on screen and, if it had not already
+       revealed, never will: the first vertical pass is over and nothing
+       else scrolls past them. Measured directly when this was missing: 27
+       of 38 revealed, the unrevealed set being the whole insights section,
+       which sits below the rail. Whatever scrolls the page must be the LAST
+       thing that runs before the wait. */
+    const vstep = window.innerHeight;
+    for (let y = 0; y < document.body.scrollHeight; y += vstep) {
+      window.scrollTo(0, y);
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+    await new Promise(r => requestAnimationFrame(r));
   });
   /* Query from body, not document, matching js/reveal.js:16 exactly. js/reveal.js:11
      sets data-reveal="on" on <html> itself as the gate for the whole page; the
@@ -604,9 +629,30 @@ export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
   try {
     const page = await browser.newPage({ viewport: { width, height } });
     await page.goto(url, { waitUntil: 'load' });
-    await settleReveal(page);
+    /* An unsettled page is an ERROR for census() and a DATUM here, and the
+       two instruments genuinely want different answers.
+       census() asserts on visibility now: it reports each element's opacity
+       and visibility, so measuring a half-revealed page would manufacture
+       false differences, and it must refuse. It gets the throw.
+       This instrument measures BOXES. Reveal changes opacity and transform,
+       and neither changes the width or height recorded below, so an
+       unrevealed element measures the same as a revealed one. Throwing here
+       buys nothing and costs a flake, measured repeatedly today: the box
+       sweep passes when run alone and fails when run after the census in the
+       same process, on different elements on different runs, on the live
+       page and on a local file alike. That is contention between repeated
+       browser sessions, not a property of either page.
+       So the failure is recorded rather than thrown, under a key the
+       comparison reads like any other. A page that settles DIFFERENTLY from
+       its counterpart still surfaces as a difference. A page that merely
+       settles slowly does not.
+       The one case where reveal does change a measured box is
+       data-reveal="clip", which starts at transform: scale(1.04). An
+       unexplained size difference on a clip element should suspect this
+       first. */
+    const unsettled = await settleReveal(page).then(() => null, (e) => e.message);
     /* Awaited for the same reason as census() above. */
-    return await page.evaluate(() => {
+    const boxes = await page.evaluate(() => {
       const out = {}; const seen = {}; let excluded = 0;
       const clean = (s) => (s || '').replace(/\s+/g, ' ').trim().slice(0, 20) || null;
       for (const el of document.querySelectorAll('a,button,input,select,textarea,img')) {
@@ -643,8 +689,21 @@ export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
          key like any other, so a coverage gap on one side and not the
          other becomes a visible diff instead of a silent one. */
       out.__excluded_count__ = excluded;
+      /* Whether the page finished revealing, recorded rather than thrown.
+         The string is deliberately reduced to a boolean-ish marker: the
+         throw's own message names counts and elements that differ run to
+         run, and a key that changes every run would report a difference on
+         every run. What matters for a comparison is that one side settled
+         and the other did not. */
       return out;
     });
+    /* Reduced to a marker rather than carrying the message: the throw names
+       counts and elements that vary run to run, and a key whose value
+       changed every run would report a difference on every run. What a
+       comparison needs to know is that one side settled and the other did
+       not. */
+    if (unsettled) boxes.__unsettled__ = true;
+    return boxes;
   } finally {
     await browser.close();
   }

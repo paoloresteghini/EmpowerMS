@@ -219,14 +219,22 @@ async function settleReveal(page) {
     await new Promise(r => setTimeout(r, 250));
   });
   /* A settle routine has to be able to CAUSE the condition it waits for,
-     not just wait for it. This function failed that test twice before
-     landing here: first because a vertical-only scroll cannot bring a
-     horizontally-scrolling rail's off-screen items into the viewport at
-     all, however long the wait below is given; then, once that was fixed,
-     because the page kept growing underneath the fix. Both are addressed
-     below, in the order that matters: cause the images to load and the
-     layout to stop moving FIRST, then cause every axis of every element
-     to actually be reachable, and only then wait for the reveal itself.
+     not just wait for it. Every failure in this function, before landing
+     here, was a version of waiting for something nothing had made
+     possible yet:
+
+     - the page grows while you scroll it, because images are lazy, so a
+       single pass measures a page that no longer exists by the time you
+       read it
+     - an image the browser never fetches never completes, so waiting on
+       all of them deadlocks
+     - an element parked outside a scroll container cannot be reached by
+       scrolling the window, whatever the budget
+
+     Addressed below in the order that matters: cause the images to load
+     and the layout to stop moving FIRST, then cause every axis of every
+     element to actually be reachable, and only then wait for the reveal
+     itself.
 
      IMAGES BEFORE REVEALS. `loading="lazy"` (emitted by both the static
      build and Elementor) means an image does not fetch until scrolling
@@ -286,7 +294,7 @@ async function settleReveal(page) {
      them may carry a rail of its own, so every element that is itself
      horizontally scrollable gets the same treatment.
 
-     Two things learned measuring this live, both left in place:
+     Three things learned measuring this live, all left in place:
 
      1. A jump straight from the container's starting scrollLeft to its
         end in one `scrollTo` missed the panel BETWEEN the two ends: an
@@ -297,51 +305,72 @@ async function settleReveal(page) {
         increments, same shape as the vertical loop above, gives every
         panel an intermediate frame where it is actually the one on
         screen.
-     2. A fixed pause after each step is not reliable: `.c2-panels` also
-        carries `scroll-snap-type: x mandatory`, and CSS scroll snap can
-        re-settle a container to its nearest snap point asynchronously
-        after a programmatic scrollTo, sometimes later than a guessed
-        pause accounts for. So each step polls the container's own
-        scrollLeft until it stops changing between frames, the same
-        wait-for-the-real-condition principle as the image wait above,
-        rather than a duration picked to usually be enough.
+     2. A pause, fixed or polled, is a symptom fix. `.c2-panels` carries
+        `scroll-snap-type: x mandatory`, and CSS scroll snap re-settles a
+        container to its nearest snap point asynchronously after a
+        programmatic scrollTo. A fixed pause missed that re-settle often
+        enough to fail intermittently; a version that instead polled
+        scrollLeft until it stopped changing across a single frame still
+        failed intermittently, on exactly one of the three panels, varying
+        run to run, because that check passes trivially the instant after
+        a scrollTo (the value has already arrived and snap has not moved
+        it yet) and moves on while the container is still about to
+        re-settle underneath it. The actual fix is below: remove the
+        re-settle rather than wait it out.
+     3. Requiring several consecutive unchanged frames, not one, turns the
+        poll from a check of "is not moving right now" into "has actually
+        stopped moving" (`STABLE_FRAMES` in `settleScrollLeft` below),
+        which is what a single-frame poll was missing in point 2. Kept as
+        a second layer alongside disabling scroll snap outright for the
+        walk (see the comment on `el.style.scrollSnapType` below), rather
+        than relying on either fix alone: disabling snap removes the
+        mechanism that was re-settling positions, and the multi-frame poll
+        is what a caller with a rail using some OTHER async repositioning
+        this instrument has not seen yet would still be protected by.
 
      KNOWN GAP, left in rather than hidden behind a longer budget or a
-     silent retry. Even with both fixes above, live at 390px this still
-     fails intermittently on exactly one of the three `.c2-panels`
-     articles (37 of 38 [data-reveal] elements settle; which one panel is
-     the holdout varies between runs, not always the same one). The 1440
-     width has no rail at all and has not been seen to fail. Every attempt
-     at a cause was tried and rejected with a measurement: it is not the
-     jump-vs-step gap (fixed above), not a fixed-pause-vs-poll gap (fixed
-     above), and not a page-wide scrollIntoView loop (tried, made things
-     WORSE: 6-7 elements stuck instead of 1, because firing scrollIntoView
-     on every unrevealed element every frame lets only the last call's
-     position survive to the next paint, and even fixed to one element at
-     a time with an awaited frame between each, it still did not converge
-     where simply leaving the page alone after this scan did). What is
-     left unexplained is why scroll-snap's own re-settle, even polled for,
-     occasionally still lands a run on a scrollLeft that does not expose
-     the third panel for even one frame long enough for its
-     IntersectionObserver entry to register. A caller that needs THIS
-     element settled with certainty should not raise this function's
-     budget; increase the per-step `settleScrollLeft` budget above 500ms
-     first and re-measure, since a longer per-step budget is the one
-     variable this investigation did not fully exhaust. Either way, this
-     now THROWS naming the exact element rather than silently measuring a
-     page it could not finish settling, which is the property that
-     matters most: the failure is loud and specific, not a guess baked
-     into a bigger number. */
+     silent retry. Even with all three fixes above, live at 390px this
+     still fails intermittently on one of the three `.c2-panels` articles
+     (37 of 38 [data-reveal] elements settle; which panel is the holdout
+     varies between runs). The 1440 width has no rail and has not been
+     seen to fail. A tempting next fix was tried and MEASURED WORSE, so it
+     is recorded here rather than left for someone to reach for again:
+     calling `el.scrollIntoView({ block: 'center' })` on each container
+     before walking it horizontally, on the reasoning that the vertical
+     pass above ends at the page's true bottom and the rail might not be
+     on screen at all while this loop runs. Live: this dropped the result
+     from 37 of 38 to 28 of 38, with the newly-unrevealed set spread
+     across sections that have nothing to do with the rail (podcast card,
+     article cards, the join-us slab), because scrolling the window
+     vertically for every matched container, mid-function, disturbs
+     whatever the earlier phases had already arranged and does not put it
+     back. A caller seeing an occasional single-element throw at 390,
+     naming one `.c2-panels` panel, should re-run rather than treat it as
+     a page defect; a throw naming several elements across unrelated
+     sections is a different, worse signal and should not be waved off
+     the same way. */
   await page.evaluate(async () => {
+    /* STABLE_FRAMES, not one frame, and the distinction is the whole flake.
+       The first version returned as soon as scrollLeft matched its previous
+       value across a single frame. Immediately after a programmatic
+       scrollTo that test passes trivially: the value has already arrived at
+       its requested position and snap has not moved it yet, so the very
+       first comparison succeeds and the walk moves on to the next step
+       while the container is still about to re-settle underneath it.
+       Requiring several consecutive unchanged frames is what makes this a
+       measurement of "has stopped moving" rather than of "is not moving
+       right now". */
+    const STABLE_FRAMES = 3;
     const settleScrollLeft = async (el, budgetMs) => {
       const deadline = Date.now() + budgetMs;
       let prev = el.scrollLeft;
-      await new Promise(r => requestAnimationFrame(r));
+      let stable = 0;
       while (Date.now() < deadline) {
-        const cur = el.scrollLeft;
-        if (cur === prev) return;
-        prev = cur;
         await new Promise(r => requestAnimationFrame(r));
+        const cur = el.scrollLeft;
+        stable = cur === prev ? stable + 1 : 0;
+        prev = cur;
+        if (stable >= STABLE_FRAMES) return;
       }
     };
     const containers = [...document.querySelectorAll('*')].filter((el) => {
@@ -351,6 +380,16 @@ async function settleReveal(page) {
     for (const el of containers) {
       const start = el.scrollLeft;
       const step = el.clientWidth;
+      /* Snap is turned OFF for the walk and restored afterwards, which
+         removes the re-settle rather than waiting it out. This is safe
+         because .is-revealed is sticky and js/reveal.js unobserves each
+         element on its first intersection, so nothing that happens after an
+         element reveals can un-reveal it, and the property is restored
+         before any measurement is taken. Read from the inline style rather
+         than the computed one so the restore puts back exactly what was
+         there, including nothing. */
+      const snap = el.style.scrollSnapType;
+      el.style.scrollSnapType = 'none';
       for (let x = 0; x < el.scrollWidth; x += step) {
         el.scrollTo({ left: x, behavior: 'instant' });
         await settleScrollLeft(el, 500);
@@ -359,6 +398,7 @@ async function settleReveal(page) {
       await settleScrollLeft(el, 500);
       el.scrollTo({ left: start, behavior: 'instant' });
       await settleScrollLeft(el, 500);
+      el.style.scrollSnapType = snap;
     }
   });
   /* Query from body, not document, matching js/reveal.js:16 exactly. js/reveal.js:11

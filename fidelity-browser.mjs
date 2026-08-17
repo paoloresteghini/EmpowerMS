@@ -245,7 +245,7 @@ export async function census(url, { width = 1440, height = 900 } = {}) {
     const page = await browser.newPage({ viewport: { width, height } });
     await page.goto(url, { waitUntil: 'load' });
     await settleReveal(page);
-    /* Awaited, not returned bare: the same trap checkVisibleWithJs's own
+    /* Awaited, not returned bare: the same trap checkVisibleWithoutJs's own
        comment above documents. A bare `return page.evaluate(...)` hands the
        caller a pending promise while this function's body is considered
        finished, so `finally`'s browser.close() races it and the read fails
@@ -290,7 +290,42 @@ export async function census(url, { width = 1440, height = 900 } = {}) {
    border radius and width, and the type properties that decide a control's
    footprint. Anchors inside Elementor's button widget are skipped: link()
    renders the pill on the WRAPPER and the anchor fills it, which is by
-   design and measured correct against the static build's own anchor. */
+   design and measured correct against the static build's own anchor.
+
+   Keyed by identity, never by position. A first pass fell back to a shared
+   '?' bucket for every element with neither text nor alt, and matched
+   entries across the two sides by encounter order rather than by what they
+   actually are: live's 80x80 mini-card avatar landed in the same bucket as
+   static's 374x600 panel photograph, because the two pages carry different
+   photographs in the mini cards and everything after that divergence shifts
+   by one position. census()'s own comment above states the principle this
+   violates from the value side, that a key the comparison can move
+   "silently matches nothing on one side and scores that as agreement"; the
+   positional bucket is the same failure one level over, scoring a
+   difference against the wrong element instead of against no element.
+
+   img: the src basename, normalized, and nothing else. Never alt: alt is a
+   per-usage attribute, not an identity of the photograph. Measured live:
+   .c2-panel__bg carries alt "A child working on a tablet in a classroom"
+   where the static build's identical photograph carries alt="" (decorative
+   there, meaningful in the insights row for the same file), so an
+   alt-first key pairs live's panel background with static's insights
+   thumbnail instead of with its own static counterpart. Normalized by
+   stripping WordPress's generated size suffix (-300x136) and then a
+   trailing dedupe suffix (-1), in that order: the footer logo is
+   logo-reversed-300x136-1.png live against logo-reversed-300x136.png
+   static, and without the dedupe strip it drops out of the sweep on every
+   page.
+   a: text, else aria-label, else the URL's pathname. Pathname, not the raw
+   href: live's hrefs are absolute against empv2 and the static build's are
+   relative, so a raw-href key would silently stop comparing the header
+   logo link, one of the real defects this sweep exists to find.
+   button/input/select/textarea: text, else aria-label, else name, else
+   type.
+   An element that yields none of those is EXCLUDED from the returned
+   object rather than bucketed under a shared fallback key: an excluded
+   element is a visible gap in coverage, counted per side below; a
+   positionally bucketed one is an invisible false finding. */
 export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
   const browser = await chromium.launch();
   try {
@@ -299,21 +334,42 @@ export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
     await settleReveal(page);
     /* Awaited for the same reason as census() above. */
     return await page.evaluate(() => {
-      const out = {}; const seen = {};
+      const out = {}; const seen = {}; let excluded = 0;
+      const clean = (s) => (s || '').replace(/\s+/g, ' ').trim().slice(0, 20) || null;
       for (const el of document.querySelectorAll('a,button,input,select,textarea,img')) {
         if (el.closest('.elementor-widget-button')) continue;
-        const cs = getComputedStyle(el);
-        const r = el.getBoundingClientRect();
-        let key = `${el.tagName.toLowerCase()}|${(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 20)
-          || el.getAttribute('alt') || '?'}`;
+        let ident;
+        if (el.tagName === 'IMG') {
+          const src = el.currentSrc || el.src || '';
+          const base = src.split('/').pop().split('?')[0].split('#')[0];
+          const dot = base.lastIndexOf('.');
+          const name = dot === -1 ? base : base.slice(0, dot);
+          const ext = dot === -1 ? '' : base.slice(dot);
+          const stripped = name.replace(/-\d+x\d+$/, '').replace(/-\d+$/, '');
+          ident = stripped ? `${stripped}${ext}` : null;
+        } else if (el.tagName === 'A') {
+          ident = clean(el.textContent) || clean(el.getAttribute('aria-label'))
+            || (el.href ? new URL(el.href).pathname : null);
+        } else {
+          ident = clean(el.textContent) || clean(el.getAttribute('aria-label'))
+            || el.getAttribute('name') || el.getAttribute('type');
+        }
+        if (!ident) { excluded += 1; continue; }
+        let key = `${el.tagName.toLowerCase()}|${ident}`;
         seen[key] = (seen[key] || 0) + 1;
         if (seen[key] > 1) key = `${key}#${seen[key]}`;
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
         out[key] = {
           w: Math.round(r.width), h: Math.round(r.height),
           padding: cs.padding, borderRadius: cs.borderRadius, borderWidth: cs.borderWidth,
           fontWeight: cs.fontWeight, letterSpacing: cs.letterSpacing, fontSize: cs.fontSize,
         };
       }
+      /* Reported per side, not summed or dropped: the test compares this
+         key like any other, so a coverage gap on one side and not the
+         other becomes a visible diff instead of a silent one. */
+      out.__excluded_count__ = excluded;
       return out;
     });
   } finally {

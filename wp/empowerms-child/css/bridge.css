@@ -1217,12 +1217,59 @@
  * the available free space between them instead of one item absorbing all of
  * it. `:has(> p)` restricts the match to the widget whose real content is a
  * `<p>`, which is exactly the distinction homepage.css:450's own `p:last-of-
- * type` makes by tag rather than by position, and is the same fix in the
- * same spirit as the rest of this section: select on what the static build
- * selected on, not on a structural accident of which widget type Elementor
- * happens to wrap it in. Re-measured after: 132.75px / 105.5625px live on the
- * two cards, matching static exactly as before this migration touched the
- * heading. */
+ * type` makes by tag rather than by position. Re-measured after:
+ * 132.75px / 105.5625px live on the two cards, matching static exactly as
+ * before this migration touched the heading.
+ *
+ * WHAT THIS SELECTOR ACTUALLY GUARANTEES, narrowed 2026-08-17 in Task 4.5's
+ * review: an earlier version of this comment called `:has(> p)` a general
+ * principle, select on what the static build selected on, not on a
+ * structural accident of which widget type Elementor wraps it in. That
+ * overclaims in two ways.
+ *
+ * First, it restricts WHICH widget type can take the auto margin, but not
+ * HOW MANY. Two paragraph-only text-editor() widgets as direct children of
+ * the same card would both match `:has(> p)`, and the rule would land back
+ * where it started: one auto margin split between two flex items instead
+ * of absorbed by one, the exact bug this rule exists to close (the
+ * 29.5938px/13.5938px split measured above). Today's two cards each carry
+ * exactly one such widget, so the rule is correct for them, not because
+ * `:has(> p)` counts candidates, but because nothing on this page
+ * currently gives it two to count.
+ *
+ * Second, it assumes the `<p>` is a direct child of the widget wrapper.
+ * True for both cards today, verified against the live page, but not true
+ * everywhere on this install: elementor/pages/podcast-a/03-library.mjs
+ * (note 9) documents Elementor inserting `.elementor-widget-container` as
+ * an extra layer between a widget's wrapper and its real content, which
+ * would put a `<p>` two levels down instead of one and make `:has(> p)`
+ * fail to match at all. Nothing here builds that extra layer, but nothing
+ * here rules it out for a future card either.
+ *
+ * A THIRD WAY CARD should be re-measured, not assumed to inherit this fix:
+ * confirm it authors exactly one paragraph-bearing text-editor() widget as
+ * a direct child of `.em-join__way` (a second one re-creates the split-
+ * margin bug above), and confirm the rendered `<p>` is still a direct
+ * child of that widget's own `.elementor-widget-text-editor` wrapper
+ * rather than nested behind `.elementor-widget-container`. Read the
+ * computed `margin-block-end` on both widgets in the card, not just the
+ * card's total height, since a split margin and an absorbed one can land
+ * on a similar total by coincidence.
+ *
+ * NO `@supports not selector(:has(...))` FALLBACK, unlike every other
+ * `:has()` use in this codebase (css/chooser.css, css/podcast-a.css,
+ * css/podcast-b.css, css/content-a.css, css/content-b.css,
+ * css/capitol-a.css, css/capitol-b.css, css/motion.css each guard their
+ * own). Those rules gate an entire interactive feature or a clip
+ * boundary, so a browser without `:has()` needs an explicit fallback path
+ * or the feature dead-ends outright. This rule has nowhere worse to fall
+ * to: without `:has()` support, `.em-join__way`'s two widgets simply go
+ * back to being unmatched by anything scoped this narrowly, and the card
+ * reads exactly as it did before this fix, one auto margin split across
+ * two flex items instead of one absorbing it whole. That is a return to a
+ * documented, already-measured spacing defect, not a broken layout, and a
+ * judgement that it does not earn a fallback branch of its own, not an
+ * oversight. */
 .elementor .em-join__way > .elementor-widget-text-editor:has(> p){
   margin-block-end:auto;
 }

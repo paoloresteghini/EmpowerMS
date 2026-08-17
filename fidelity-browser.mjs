@@ -194,15 +194,172 @@ export async function computedStyles(url, probes) {
    sample and the converted page's 66-card grid alike, rather than a fixed
    guess tuned to whichever page happened to be captured last. */
 async function settleReveal(page) {
+  /* The height is re-read every iteration rather than cached once, and the
+     loop is followed by one more explicit scroll to whatever the height
+     reads AFTER the loop, not the height it started with. The live install
+     loads real photographs over the network, so document.body.scrollHeight
+     can still be growing while this loop is running: a height cached at
+     the top can be stale by the time the loop reaches what was the bottom
+     when it started, and the steps stop short of the page's actual last
+     section, exactly the elements settleReveal exists to give time to. */
   await page.evaluate(async () => {
-    const height = document.documentElement.scrollHeight;
     const step = window.innerHeight;
-    for (let y = 0; y < height; y += step) {
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
       window.scrollTo(0, y);
       await new Promise(r => requestAnimationFrame(r));
     }
-    window.scrollTo(0, height);
+    window.scrollTo(0, document.body.scrollHeight);
     await new Promise(r => requestAnimationFrame(r));
+    /* A short pause at the true bottom, re-read just above, before this
+       function moves on to waiting for .is-revealed: one rAF frame is
+       enough for the scroll itself to paint, but IntersectionObserver
+       callbacks and any image decode they trigger are not guaranteed to
+       land inside that single frame on a page still loading over the
+       network. */
+    await new Promise(r => setTimeout(r, 250));
+  });
+  /* A settle routine has to be able to CAUSE the condition it waits for,
+     not just wait for it. This function failed that test twice before
+     landing here: first because a vertical-only scroll cannot bring a
+     horizontally-scrolling rail's off-screen items into the viewport at
+     all, however long the wait below is given; then, once that was fixed,
+     because the page kept growing underneath the fix. Both are addressed
+     below, in the order that matters: cause the images to load and the
+     layout to stop moving FIRST, then cause every axis of every element
+     to actually be reachable, and only then wait for the reveal itself.
+
+     IMAGES BEFORE REVEALS. `loading="lazy"` (emitted by both the static
+     build and Elementor) means an image does not fetch until scrolling
+     brings it near the viewport, and each one that resolves from nothing
+     to its real intrinsic height pushes everything below it down. That is
+     the actual mechanism behind a multi-thousand-pixel vertical drift
+     measured live at 390px during this task's own investigation: one
+     element's own rect.y moved by roughly 7200px in under 4 seconds with
+     window.scrollTo never once called, because content above it kept
+     growing as images resolved. Waiting for images to finish before
+     asking anything to have revealed fixes the cause rather than chasing
+     the symptom with an ever-larger budget.
+
+     Filtered to images that actually have a rendered box. A strict "every
+     entry in document.images" wait deadlocks forever on this page: the
+     hero carries an `fp-hero__aside` column that is `display:none` below
+     a breakpoint (a desktop-only photograph), and a display:none ancestor
+     means the browser's own native lazy-loading never bothers fetching
+     it, so `.complete` never becomes true, for a reason that has nothing
+     to do with a broken asset. An image with no rendered box can never
+     affect layout or ever need to reveal, so it is excluded rather than
+     waited on. Measured live at 390px: 14 of 15 images unfiltered, one of
+     them (the hidden hero photo) never completing; filtered to the 14
+     that actually render, the wait settles in about 200ms once the
+     vertical pass above has already run. */
+  await page.waitForFunction(() =>
+    [...document.images].filter((img) => {
+      const r = img.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }).every(img => img.complete),
+  { timeout: 15000 }).catch(async () => {
+    const { total, incomplete, srcs } = await page.evaluate(() => {
+      const imgs = [...document.images].filter((img) => {
+        const r = img.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      const stillLoading = imgs.filter(img => !img.complete);
+      return {
+        total: imgs.length,
+        incomplete: stillLoading.length,
+        srcs: stillLoading.slice(0, 5).map(img => img.currentSrc || img.src),
+      };
+    });
+    throw new Error(
+      `settleReveal: ${incomplete} of ${total} rendered images never finished loading within 15000ms on `
+      + `${page.url()}. Still loading: ${srcs.join(' | ')}`,
+    );
+  });
+  /* EVERY AXIS REACHABLE. A vertical-only scroll can never bring a
+     horizontally-scrolling rail's off-screen items into view. Found live
+     at 390px: `.c2-panels` holds three `.c2-panel` articles in a snapped
+     horizontal rail (`overflow-x:auto`, `css/current-2.css:353`), and the
+     third sits at x=632 while the viewport itself is only 390 wide, its
+     scrollLeft never having moved past 24 of a possible 595. The vertical
+     pass above walks straight past it. Not scoped to `.c2-panels` by
+     name: this instrument gates twelve more page conversions and any of
+     them may carry a rail of its own, so every element that is itself
+     horizontally scrollable gets the same treatment.
+
+     Two things learned measuring this live, both left in place:
+
+     1. A jump straight from the container's starting scrollLeft to its
+        end in one `scrollTo` missed the panel BETWEEN the two ends: an
+        instant jump sets the final position directly, with no
+        intermediate frame at any position in between, so a middle panel
+        that never fully overlaps the viewport at either end is never
+        seen intersecting at all. Stepping through in clientWidth
+        increments, same shape as the vertical loop above, gives every
+        panel an intermediate frame where it is actually the one on
+        screen.
+     2. A fixed pause after each step is not reliable: `.c2-panels` also
+        carries `scroll-snap-type: x mandatory`, and CSS scroll snap can
+        re-settle a container to its nearest snap point asynchronously
+        after a programmatic scrollTo, sometimes later than a guessed
+        pause accounts for. So each step polls the container's own
+        scrollLeft until it stops changing between frames, the same
+        wait-for-the-real-condition principle as the image wait above,
+        rather than a duration picked to usually be enough.
+
+     KNOWN GAP, left in rather than hidden behind a longer budget or a
+     silent retry. Even with both fixes above, live at 390px this still
+     fails intermittently on exactly one of the three `.c2-panels`
+     articles (37 of 38 [data-reveal] elements settle; which one panel is
+     the holdout varies between runs, not always the same one). The 1440
+     width has no rail at all and has not been seen to fail. Every attempt
+     at a cause was tried and rejected with a measurement: it is not the
+     jump-vs-step gap (fixed above), not a fixed-pause-vs-poll gap (fixed
+     above), and not a page-wide scrollIntoView loop (tried, made things
+     WORSE: 6-7 elements stuck instead of 1, because firing scrollIntoView
+     on every unrevealed element every frame lets only the last call's
+     position survive to the next paint, and even fixed to one element at
+     a time with an awaited frame between each, it still did not converge
+     where simply leaving the page alone after this scan did). What is
+     left unexplained is why scroll-snap's own re-settle, even polled for,
+     occasionally still lands a run on a scrollLeft that does not expose
+     the third panel for even one frame long enough for its
+     IntersectionObserver entry to register. A caller that needs THIS
+     element settled with certainty should not raise this function's
+     budget; increase the per-step `settleScrollLeft` budget above 500ms
+     first and re-measure, since a longer per-step budget is the one
+     variable this investigation did not fully exhaust. Either way, this
+     now THROWS naming the exact element rather than silently measuring a
+     page it could not finish settling, which is the property that
+     matters most: the failure is loud and specific, not a guess baked
+     into a bigger number. */
+  await page.evaluate(async () => {
+    const settleScrollLeft = async (el, budgetMs) => {
+      const deadline = Date.now() + budgetMs;
+      let prev = el.scrollLeft;
+      await new Promise(r => requestAnimationFrame(r));
+      while (Date.now() < deadline) {
+        const cur = el.scrollLeft;
+        if (cur === prev) return;
+        prev = cur;
+        await new Promise(r => requestAnimationFrame(r));
+      }
+    };
+    const containers = [...document.querySelectorAll('*')].filter((el) => {
+      const cs = getComputedStyle(el);
+      return (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth;
+    });
+    for (const el of containers) {
+      const start = el.scrollLeft;
+      const step = el.clientWidth;
+      for (let x = 0; x < el.scrollWidth; x += step) {
+        el.scrollTo({ left: x, behavior: 'instant' });
+        await settleScrollLeft(el, 500);
+      }
+      el.scrollTo({ left: el.scrollWidth, behavior: 'instant' });
+      await settleScrollLeft(el, 500);
+      el.scrollTo({ left: start, behavior: 'instant' });
+      await settleScrollLeft(el, 500);
+    }
   });
   /* Query from body, not document, matching js/reveal.js:16 exactly. js/reveal.js:11
      sets data-reveal="on" on <html> itself as the gate for the whole page; the
@@ -212,13 +369,40 @@ async function settleReveal(page) {
      return true: the wait would time out on every single page, unconditionally. */
   await page.waitForFunction(() =>
     [...document.body.querySelectorAll('[data-reveal]')].every(el => el.classList.contains('is-revealed')),
-  { timeout: 10000 }).catch(() => {
+  { timeout: 10000 }).catch(async () => {
     /* Finding 5.9's grey-ghost screenshots happened because this timeout was
        swallowed silently: capture proceeded anyway and produced exactly the
        unusable screenshot this function exists to prevent, with no signal
-       anywhere. Warn rather than throw, since a partial reveal is still worth
-       looking at, but never let it pass without saying so. */
-    console.warn(`settleReveal: not every [data-reveal] element reached is-revealed within 10000ms on ${page.url()}`);
+       anywhere. Worse, census() and controlBoxes() compare layout
+       properties (font-size, margins, box dimensions) that a mid-reveal
+       element still satisfies identically to a settled one; neither
+       instrument would ever notice a partial reveal on its own. A
+       measurement taken against a partially revealed page is worse than no
+       measurement, because it is indistinguishable from a good one, so
+       this throws instead of warning. Gathered fresh here, not carried
+       over from the failed wait: how many of how many elements actually
+       settled, and the first few that did not, identified by tag plus
+       either the element's own leading text or its class list, whichever
+       exists (an element with neither is otherwise indistinguishable from
+       any other of the same tag in the message). */
+    const { total, revealed, stuck } = await page.evaluate(() => {
+      const els = [...document.body.querySelectorAll('[data-reveal]')];
+      const notRevealed = els.filter(el => !el.classList.contains('is-revealed'));
+      const describe = el => {
+        const text = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 30);
+        const label = text || (el.className && String(el.className).trim()) || '(no text, no class)';
+        return `<${el.tagName.toLowerCase()}> ${label}`;
+      };
+      return {
+        total: els.length,
+        revealed: els.length - notRevealed.length,
+        stuck: notRevealed.slice(0, 5).map(describe),
+      };
+    });
+    throw new Error(
+      `settleReveal: only ${revealed} of ${total} [data-reveal] elements reached is-revealed within `
+      + `10000ms on ${page.url()}. First unrevealed: ${stuck.join(' | ')}`,
+    );
   });
   const maxTransitionMs = await page.evaluate(() => {
     const toMs = v => (v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000);
@@ -270,6 +454,27 @@ export async function census(url, { width = 1440, height = 900 } = {}) {
           mb += parseFloat(getComputedStyle(node).marginBottom) || 0;
           node = node.parentElement;
         }
+        /* Finding 5.9's own root cause, closed here: a fully laid-out,
+           perfectly positioned element that is simply invisible matched on
+           every property above, because none of them is opacity,
+           visibility or size. Three fields, the smallest set that catches
+           it: opacity, visibility (a `[data-reveal]` element or an
+           accessibility utility class can hide either way, and the two are
+           independent: `visibility:hidden` still occupies its box while an
+           element clipped to nothing does not), and whether the element's
+           own box has collapsed to zero in either dimension (a box that
+           overflow:hidden or a broken flex/grid track can crush even when
+           opacity and visibility both read as fully shown).
+           Opacity is rounded to 2 decimal places rather than compared as
+           the raw string getComputedStyle returns. By the time this runs,
+           settleReveal() has already waited out every element's own
+           transition-delay plus transition-duration (or thrown, if it
+           could not), so a genuinely settled element should read exactly 0
+           or 1; rounding absorbs the sub-percent float noise browsers can
+           still leave behind (0.99999994 rather than 1) without hiding a
+           real difference, so two elements legitimately invisible on both
+           sides still compare equal instead of failing on decimal dust. */
+        const rect = el.getBoundingClientRect();
         out[key] = {
           fontSize: cs.fontSize,
           lineHeight: cs.lineHeight,
@@ -277,6 +482,9 @@ export async function census(url, { width = 1440, height = 900 } = {}) {
           color: cs.color,
           background: cs.backgroundColor,
           marginBottom: `${mb}px`,
+          opacity: Math.round(parseFloat(cs.opacity) * 100) / 100,
+          visibility: cs.visibility,
+          zeroSized: rect.width === 0 || rect.height === 0,
         };
       }
       return out;

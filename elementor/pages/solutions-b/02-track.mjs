@@ -60,18 +60,27 @@ import { photo } from './media.mjs';
       team-lead, a depth-tracking DOM scan of the deployed page): `.sb-
       stations` has exactly three direct children, all `.sb-station`
       containers, nothing of Elementor's inserted between them. The
-      alternating layout (lines 97, 99, 128 and the 780px media query at
-      183 of css/solutions-b.css) renders correctly at both 1440 and 390,
-      confirmed by eye against the deployed page's own screenshots.
+      alternating layout (FIVE rules in css/solutions-b.css: lines 97, 99
+      and 128, plus two inside the 780px media query at 183 and 186;
+      corrected in fix round 1, this comment previously undercounted at
+      four and omitted 186, caught in review as M1) renders correctly at
+      both 1440 and 390, confirmed by eye against the deployed page's own
+      screenshots.
 
-      THE COST OF THIS DECISION, recorded rather than left implicit: ARIA
-      has no ordered-list role, so role="list" announces "a list of three
-      items" but not that their order is meaningful (the way a real <ol>'s
-      own "item 2 of 3" would). The static build already hides any visible
-      ordinal with `list-style:none`, so nothing visible is lost and no
-      ordinal was ever announced as a number either; only the sequencing
-      cue an <ol> gives assistive technology is gone. Accepted, not
-      silently dropped.
+      THE COST OF THIS DECISION, recorded rather than left implicit, and
+      CORRECTED in fix round 1 after review (M2) caught the first version
+      overstating it: a role="listitem" that is a direct child of a
+      role="list" DOES get its position-in-set announced, the same as a
+      real <li> would (<ol> and <ul> both map to the single ARIA role
+      "list", so "item 2 of 3" survives here). The actual residual loss is
+      only the ordered-versus-unordered distinction itself, which most
+      screen readers do not announce either way and which the static
+      build's own `list-style:none` had already suppressed visually.
+      Accepted, not silently dropped, and arguably not even a net loss:
+      Safari and VoiceOver strip list semantics entirely from a real list
+      carrying `list-style:none`, so the explicit role="list"/
+      role="listitem" pair used here may be MORE accessible than a genuine
+      <ol> styled the same way would have been.
 
    2. `.sb-station__node` IS A DECORATIVE, EMPTY CONTAINER, the same pattern
       as this page's own `.sb-hero__lead-in` (01-hero.mjs) and
@@ -206,7 +215,8 @@ export function section() {
       tag: 'section',
       cssClass: 'sb-track',
       content_width: 'full',
-      _attributes: 'id|solutions\naria-labelledby|solutions-head',
+      _element_id: 'solutions',
+      _attributes: 'aria-labelledby|solutions-head',
     },
     [
       container({ cssClass: 'em-container', content_width: 'full' }, [

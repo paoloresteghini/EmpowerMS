@@ -1788,34 +1788,77 @@
  * one), because it asks "is this element the last child of ITS PARENT",
  * and the parent there is `.sb-hero__copy` itself. 01-hero.mjs builds both
  * paragraphs as separate text() widgets; Elementor wraps each one in its
- * own `.elementor-widget-text-editor > .elementor-widget-container`, and
- * within THAT wrapper the real `<p>` is the ONLY child, so `:last-child` is
- * true of it too, on every text widget on this install, regardless of
- * where that widget actually sits among its real siblings. The two
- * paragraphs are no longer siblings sharing one parent for the purpose of
- * this selector; each is an only child of its own private box. So
- * `.sb-hero__copy p:last-child` now matches BOTH paragraphs, not one, and
- * at specificity 0,2,1 (one class, one pseudo-class, one element) it
- * outranks `.sb-hero__copy .sb-hero__lede`'s 0,2,0 (two classes) even
- * where the two rules disagree, which is exactly the lede.
+ * own `.elementor-widget-text-editor` (this install's optimized DOM output
+ * puts the real `<p>` directly inside that div, with no further
+ * `.elementor-widget-container` level between them, the same shape the
+ * `.da-door__body > .elementor-widget-text-editor > p` rule 64 lines above
+ * this one already establishes and measures correct against; an earlier
+ * version of this comment named that extra level here too and was wrong,
+ * caught in review round 1) and within it the real `<p>` is the ONLY
+ * child, so `:last-child` is true of it too, on every text widget on this
+ * install, regardless of where that widget actually sits among its real
+ * siblings. The two paragraphs are no longer siblings sharing one parent
+ * for the purpose of this selector; each is an only child of its own
+ * private box. So `.sb-hero__copy p:last-child` now matches BOTH
+ * paragraphs, not one, and at specificity 0,2,1 (one class, one
+ * pseudo-class, one element) it outranks `.sb-hero__copy .sb-hero__lede`'s
+ * 0,2,0 (two classes) even where the two rules disagree, which is exactly
+ * the lede.
  *
  * THE DISCRIMINATOR FOR THIS CATEGORY, distinct from the child-combinator
- * one already documented above (what-we-do-a's `.da-door__body>p` note):
- * a structural pseudo-class keyed to sibling position
- * (:last-child/:first-child/:only-child/:nth-child on an ELEMENT, not on a
- * container) needs a bridge rule whenever the elements it distinguishes are
- * built as separate WIDGETS, because each widget's own wrapper makes it an
- * only child regardless of true position. It needs none when what the
- * pseudo-class targets is a CONTAINER: `.sb-station:nth-child(2)`
- * (02-track.mjs) is unaffected, because content_width:'full' containers
- * insert no wrapper of their own and each `.sb-station` remains a real,
- * directly-positioned sibling of the others under `.sb-stations`, confirmed
- * live (both `.sb-station:nth-child(2)` rules render correctly, the second
- * station's copy/media columns swap as designed). Checked before writing
- * this rule: css/solutions-b.css has exactly one structural pseudo-class
- * keyed to a widget, this one; every other instance (`:nth-child(2)`,
- * five times, all `.sb-station`) is the container case above and needed
- * nothing.
+ * one already documented above (what-we-do-a's `.da-door__body>p` note),
+ * and CORRECTED here in review round 1 after the first version overreached:
+ * a position-dependent selector (a structural pseudo-class -
+ * :last-child/:first-child/:only-child/:nth-child - or a combinator) needs
+ * a bridge rule when the widget wrapper Elementor inserts falls BETWEEN the
+ * selector's reference point and its target. It does NOT need one merely
+ * because the target is "built as a widget": the wrapper only matters if it
+ * actually sits in the selector's own path. That single sentence covers
+ * three cases, not two:
+ *   - CONTAINER case: nothing is inserted at all, so no rule is needed.
+ *     `.sb-station:nth-child(2)` (02-track.mjs, five instances: lines 97,
+ *     99, 128, 183 and 186) is this case, confirmed live: content_width:
+ *     'full' containers insert no wrapper of their own and each
+ *     `.sb-station` remains a real, directly-positioned sibling of the
+ *     others under `.sb-stations`.
+ *   - INSIDE-ONE-WIDGET case: the selector's reference point and its target
+ *     both sit inside the SAME html()/text() markup string, so nothing
+ *     Elementor inserts can fall between them; the whole subtree reaches
+ *     the page unaltered and no rule is needed either. Verified against the
+ *     shared cascade every converted page loads, not only against
+ *     css/solutions-b.css (an earlier version of this comment checked only
+ *     the page's own sheet and read as though it covered the cascade,
+ *     caught in review round 1): css/site.css:104-106
+ *     (`.em-header__toggle[aria-expanded="true"]
+ *     .em-header__toggle-bar:nth-child(1|2|3)`), css/site.css:119
+ *     (`.em-mobilenav__item:last-child`) and css/header-2.css:89
+ *     (`[data-dropdown="on"] .em-header__item:last-child .em-header__menu`)
+ *     are five structural pseudo-class hits in the shared sheets, every one
+ *     targeting content built as a widget, and every one needs nothing,
+ *     because elementor/theme-parts/header.mjs:72,81,85 delivers
+ *     `.em-header__nav`, `.em-header__actions` and `.em-mobilenav` as three
+ *     html() blobs and the whole subtree inside each is authored markup,
+ *     this case exactly.
+ *   - BROKEN case, this page's own defect: the reference point and the
+ *     target are built as SEPARATE widgets, so Elementor's wrapper for one
+ *     of them sits directly between them. `.sb-hero__copy p:last-child` is
+ *     this case: `.sb-hero__copy` is the container, and its two `<p>`
+ *     children are two separate text() widgets, so each widget's own
+ *     wrapper falls between `.sb-hero__copy` and that widget's `<p>`.
+ *
+ * THE ASYMMETRY THIS CREATES, which changes the repair and not only the
+ * count, added in review round 1: once an element is the only child of its
+ * own wrapper, `:last-child`, `:first-child` and `:only-child` become
+ * ALWAYS true, which OVER-matches and shows up as the wrong rule winning
+ * (this page's defect, loud: the lede visibly rendered as the wrong
+ * paragraph). `:nth-child(n)` for n greater than 1 becomes NEVER true,
+ * which UNDER-matches: the rule goes inert and nothing wins that should,
+ * silently, with no visible symptom to notice by eye. The over-match case
+ * is repaired by restating at raised specificity, the way the rule below
+ * does; the under-match case needs the declaration restated on the element
+ * that should have had it, with no specificity fight at all, because
+ * nothing is competing for it: there is simply no rule reaching it any
+ * more.
  *
  * Restated at raised specificity via the doubled class rather than a
  * `:not()` exclusion on the `:last-child` rule, matching this file's own
@@ -1835,4 +1878,78 @@
   letter-spacing:var(--ls-heading);
   color:var(--white);
   max-width:46ch;
+}
+
+/* ---------- solutions-b: the image widget wrapper does not stretch to fill
+ *            a fixed-height flex container ----------
+ * Task 7, fix round 1 (M3, overriding the original DEFER). The box sweep
+ * found four img|... differences (child-classroom-tablet 348 against 318px,
+ * worker-workshop-bw 269 against 318px, grandparents-grandchild 266 against
+ * 318px, video-still-man-outdoors 824 against 374px, all at 1440), first
+ * triaged as placeholder-photograph deferrals because each containing block
+ * (`.sb-station__media`, `.sb-stories__band`) measured identically live and
+ * static. Review corrected that triage: the cause is not the photograph. It
+ * is the same defect this file already repairs twice for
+ * `.c2-panel__bg img`/`.em-join__wash img` above (Task 1.5), just one level
+ * removed: css/solutions-b.css:129 is `.sb-station__media img{...height:
+ * 100%...}` (css/solutions-b.css:160 for `.sb-stories__band img`), a
+ * descendant selector that still MATCHES the real `<img>` regardless of
+ * what Elementor inserts above it (descendant selectors do not care about
+ * depth), but `height:100%` is a percentage, and a percentage height
+ * resolves against the element's own immediate containing block, which is
+ * a DOM-tree fact, not a selector-matching one. In dist/solutions-b.html
+ * the `<img>`'s immediate parent IS `.sb-station__media` (a fixed-height
+ * box via `aspect-ratio:5/4`), so the percentage resolves correctly. On the
+ * converted page the `<img>`'s immediate parent is `.elementor-widget-image`,
+ * a div Elementor inserts between them (confirmed live, one level, no
+ * further `.elementor-widget-container`), and that div's own height is
+ * auto, sized to its content, i.e. the image's own intrinsic height at the
+ * rendered width. `height:100%` on the `<img>` then resolves against THAT
+ * auto height, which is a percentage of nothing useful, so the browser
+ * falls back to the image's intrinsic size, exactly the "reported its own
+ * intrinsic aspect ratio" signature the Task 1.5 comment above names.
+ *
+ * WHY THE WRAPPER DOES NOT ALREADY STRETCH, checked rather than assumed:
+ * both containers are `e-flex` (Elementor's own flex container class), and
+ * plain CSS flexbox defaults `align-items` to `stretch`, which would have
+ * closed this gap for free if it applied. It does not: Elementor's own
+ * frontend.min.css sets a different default on `.e-con` that this file does
+ * not own or repair (out of scope here, matching this file's own rule of
+ * fixing only what a page's own conversion breaks), confirmed live before
+ * writing this rule: `.elementor-widget-image` measures 348.109px for the
+ * child-classroom-tablet station, identical to the `<img>` inside it, while
+ * `.sb-station__media` itself stays 320px, so no stretch is happening.
+ *
+ * THE REPAIR TARGETS THE WRAPPER, not the `<img>`, unlike the Task 1.5 rule
+ * above. That rule restated properties on the `<img>` itself because in
+ * that case the wrapper WAS the positioned box (`position:absolute;inset:0`)
+ * and had to stay exactly as sized; only the img itself needed filling.
+ * Here the wrapper has no positioning role at all, it is purely an inserted
+ * box in the height-percentage chain, so giving IT `height:100%` (filling
+ * its own parent, the real fixed-height container) is what lets the
+ * existing, unmodified `.sb-station__media img{height:100%}` rule resolve
+ * against something correct, with nothing about that rule needing to
+ * change. `width` needs no rule: percentage widths resolve against the
+ * containing block's WIDTH, and a block-level `.elementor-widget-image`
+ * already fills its parent's width by default (block boxes are 100% width
+ * of their containing block unless told otherwise), confirmed live: the
+ * wrapper's width already matched `.sb-station__media`'s own 400px before
+ * this rule, only height was wrong.
+ *
+ * Checked for @media interference before writing: no `@media` rule in
+ * css/solutions-b.css touches `.sb-station__media` or `.sb-stories__band`,
+ * so nothing responsive is at risk of going silently unrestored.
+ *
+ * ONE rule, not two: the station and the band need the identical
+ * declaration (nothing about the band's own `object-position` modifiers or
+ * its different height source, `height:clamp(...)` against
+ * `aspect-ratio:5/4`, changes what the WRAPPER needs), so they are grouped
+ * in one selector list rather than repeated as two separate rules with the
+ * same body, matching this file's own convention elsewhere (the two
+ * `.c2-panel__bg`/`.em-join__wash` rules above are separate because their
+ * declarations genuinely differ, `object-position` included; these two do
+ * not differ at all). */
+.sb-station__media > .elementor-widget-image,
+.sb-stories__band > .elementor-widget-image{
+  height:100%;
 }

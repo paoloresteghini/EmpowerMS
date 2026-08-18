@@ -168,59 +168,38 @@ export const DEFERRED_IMAGES = [
       + 'static at 1440 and 390, so only the clipped image itself differs',
     date: '2026-08-18',
   },
-  /* Task 7's four entries, solutions-b's own photographs, triaged the same
-     way against the same rule. THE MEASUREMENT THAT DECIDED IT:
-     getBoundingClientRect() on the containing box of each photograph
-     (`.sb-station__media` for the three stations, `.sb-stories__band` for
-     the fourth), live against dist/solutions-b.html served locally, at
-     1440 and 390, after a full settleReveal-equivalent pass (scroll to
-     bottom, wait for every rendered image to load, wait for every
-     [data-reveal] element to reach is-revealed). Every containing box is
-     IDENTICAL live and static at both widths: `.sb-station__media` measures
-     400x320 (1440) / 308x246.39 (390) on both sides for all three stations,
-     and `.sb-stories__band` measures 1440x374.4 (1440) / 390x220 (390) on
-     both sides, because both boxes size from CSS (aspect-ratio and a fixed
-     clamp() height respectively) and never from their content. Only the
-     `<img>` element's own box differs (child-classroom-tablet 348/318px,
-     worker-workshop-bw 269/318px, grandparents-grandchild 266/318px,
-     video-still-man-outdoors 824/374px, live/static at 1440), and each
-     oversized or undersized image is clipped by its container's own
-     overflow:hidden, invisible to anything below or beside it. So none of
-     the four moves the layout of anything else; every one is a DEFER under
-     the recipe's own rule (the only keys that differ are the image's own). */
-  {
-    page: 'solutions-b',
-    key: 'img|child-classroom-tablet.jpg',
-    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
-      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
-      + 'static at 1440 and 390, so only the clipped image itself differs',
-    date: '2026-08-18',
-  },
-  {
-    page: 'solutions-b',
-    key: 'img|worker-workshop-bw.jpg',
-    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
-      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
-      + 'static at 1440 and 390, so only the clipped image itself differs',
-    date: '2026-08-18',
-  },
-  {
-    page: 'solutions-b',
-    key: 'img|grandparents-grandchild.jpg',
-    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
-      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
-      + 'static at 1440 and 390, so only the clipped image itself differs',
-    date: '2026-08-18',
-  },
-  {
-    page: 'solutions-b',
-    key: 'img|video-still-man-outdoors.jpg',
-    reason: 'placeholder photograph (Paolo, will be replaced); stories band renders at its own intrinsic '
-      + 'ratio inside .sb-stories__band (height:clamp(220px,26vw,400px), overflow:hidden), which measures '
-      + 'identically live and static at 1440 and 390, so only the clipped image itself differs',
-    date: '2026-08-18',
-  },
 ];
+
+/* Task 7 (solutions-b) originally added four entries here, one per station
+   photograph plus the stories band, triaged as defers by the same
+   containing-block measurement the four above used: every containing box
+   (`.sb-station__media`, `.sb-stories__band`) measured identically live and
+   static at both widths, so only the `<img>` itself differed.
+
+   REMOVED in fix round 1 (M3), on review: the cause was not the photograph.
+   `.elementor-widget-image` (Elementor's own wrapper around the image()
+   widget) sits between each container and its real `<img>` and does not
+   stretch to fill its fixed-height flex parent, so `.sb-station__media
+   img{height:100%}` (css/solutions-b.css:129) and `.sb-stories__band
+   img{height:100%}` (css/solutions-b.css:160) resolve that percentage
+   against the wrapper's own auto height instead of the container's fixed
+   one. That is structural: ANY photograph placed the same way would differ
+   the same way, so these four entries could never legitimately expire, the
+   exact failure mode "an exemption that has expired is a defect in the
+   exemption list" warns against, just never triggered because the
+   underlying cause never goes away on its own. This project has already
+   ruled on this precise defect twice (`.c2-panel__bg img`/`.em-join__wash
+   img`, Task 1.5, above in this file), so deferring a third instance of it
+   here would have been inconsistent with a decision already taken. Fixed
+   instead with a named bridge rule targeting the wrapper
+   (`.sb-station__media > .elementor-widget-image{height:100%}` and the
+   band's own equivalent, this file, after the `.sb-hero__lede` rule),
+   confirmed live: all four images now measure identically to the static
+   build (398x318 at 1440 for each of the three stations, 1440.2x374.4 for
+   the band at 1440). Kept as a comment rather than deleted
+   outright, so the next implementer who hits this shape of defect (an
+   image() widget inside a fixed-height container) finds the ruling here
+   rather than rediscovering it. */
 DEFERRED_IMAGES.forEach(validateDeferredEntry);
 
 /* Pure: two controlBoxes()-shaped objects in (bookkeeping keys already

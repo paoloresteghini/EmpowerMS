@@ -43,7 +43,7 @@ look cheaper than the first two.
 
 | Page | Structural hits | Notes |
 | --- | --- | --- |
-| `amb-a` | 0 | predicted zero bridge rules |
+| `amb-a` | 0 | but see the third category below: NOT a zero-cost page |
 | `team-a` | 1 | |
 | `mail-a` | 1 | |
 | `capitol-a` | 2 | in progress at time of writing |
@@ -90,3 +90,29 @@ on a container (measured on `solutions-b`, 2026-08-18). Six remaining pages
 carry in-page anchors onto section ids and every one needs the working route.
 No bridge rules, but it is real work and it fails invisibly if done the obvious
 way.
+
+## A THIRD cost category, added after `capitol-a`: native controls
+
+Neither grep sees it, and it corrects this document's own first draft, which
+called `amb-a` a likely-zero page on the strength of its zero structural hits.
+
+Elementor's kit styles every native `<button>`, `<input>`, `<select>` and
+`<textarea>` on the page, so any native control the build styles itself needs a
+named bridge rule. `bridge.css` already carries a group of these, and
+`capitol-a` added one more for a `<button type="reset">` in its filter form,
+the same shape as `podcast-a`'s `.pca-facets__clear`.
+
+Counted across the remaining pages. Most carry exactly TWELVE native controls
+and all twelve are header chrome (`.em-header__link`, `.em-header__toggle`,
+`.em-header__search`, `.em-mobilenav__trigger`), already bridged site-wide by
+the theme-part work. Only two pages carry page-specific ones:
+
+| Page | Page-specific native controls |
+| --- | --- |
+| `amb-a` | 6: four `.em-input`, one `.em-textarea`, one submit button |
+| `mail-a` | 5: four `.em-input`, one submit button |
+| every other remaining page | 0 |
+
+Those are the two form-shaped pages in the build, and they are where this
+category lands. Expect `amb-a` and `mail-a` to cost more than their structural
+hit counts suggest, and every other page to cost nothing on this axis.

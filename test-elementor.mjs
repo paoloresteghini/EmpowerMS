@@ -2755,6 +2755,21 @@ test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', (
 test('every converted page directory is either gated by the register or explicitly excluded', () => {
   const dirs = convertedPageDirs();
   assert.ok(dirs.length > 0, 'convertedPageDirs() found no page.mjs under elementor/pages/; the derivation is broken, not the coverage');
+  /* Fix round 2 (N1): the exactly-one-list check above passes even if
+     PAGE_REGISTER is empty, as long as every directory is in
+     EXCLUDED_PAGES instead. That is a legitimate reading of "exactly one
+     list", but it is also exactly how the two instrument loops below
+     (`for (const page of PAGE_REGISTER)`) would silently stop generating
+     any tests at all: the suite goes green, with a LOWER test count, and
+     both instruments this task exists to build cease to exist. The old
+     standalone `'the page register is not empty'` test caught this and
+     was deleted as "superseded" in fix round 1; it was not superseded for
+     this shape, so the check is restored here, next to the derivation it
+     depends on rather than as a separate assertion that could drift from
+     it. */
+  assert.ok(PAGE_REGISTER.length > 0,
+    'PAGE_REGISTER is empty: every converted page is excluded and nothing is gated. '
+    + 'At least one page must be measured, or the two instruments below have nothing to run against');
   const registered = new Set(PAGE_REGISTER.map((p) => p.name));
   const excluded = new Set(EXCLUDED_PAGES.map((p) => p.name));
   for (const dir of dirs) {
@@ -2777,12 +2792,17 @@ test('every converted page directory is either gated by the register or explicit
   }
 });
 
+/* Fix round 2 (N3): Number.isFinite(...) > 0 let minBoxes: 0.5 through, which
+   would clear `shared.length > minBoxes` on the __unsettled__ bookkeeping
+   key alone (a 404 static file gives shared.length exactly 1, the marker
+   with nothing measured). A floor is a count of real elements, so it must
+   be an integer of at least 1. */
 test('every PAGE_REGISTER entry carries its own coverage floors', () => {
   for (const p of PAGE_REGISTER) {
-    assert.ok(Number.isFinite(p.minShared) && p.minShared > 0,
-      `PAGE_REGISTER entry "${p.name}" has no positive minShared (the census floor)`);
-    assert.ok(Number.isFinite(p.minBoxes) && p.minBoxes > 0,
-      `PAGE_REGISTER entry "${p.name}" has no positive minBoxes (the box-sweep floor)`);
+    assert.ok(Number.isInteger(p.minShared) && p.minShared >= 1,
+      `PAGE_REGISTER entry "${p.name}" has no integer minShared >= 1 (the census floor)`);
+    assert.ok(Number.isInteger(p.minBoxes) && p.minBoxes >= 1,
+      `PAGE_REGISTER entry "${p.name}" has no integer minBoxes >= 1 (the box-sweep floor)`);
   }
 });
 
@@ -2960,29 +2980,52 @@ test('the subtraction count is available even when every difference was deferred
    is the opt-in escape hatch: set it, and a missing variable fails instead
    of skipping, with the same message plus a note explaining why. Unset (the
    default, and every environment this task was built in), behaviour is
-   exactly as before. */
-function requirePageUrl(page, t) {
-  const url = process.env[page.envVar];
+   exactly as before.
+
+   Fix round 2 (N2): `env` is a parameter defaulting to `process.env`, not
+   read from `process.env` directly inside the function body. Fix round 1's
+   own unit test for this proved the opposite of what it claimed: it SET
+   process.env.FIDELITY_REQUIRE_ALL and then DELETED it in a finally, and
+   because node runs a file's top-level tests in registration order, that
+   test ran and cleaned up before either instrument test below ever called
+   requirePageUrl(), so the flag was already gone by the time it mattered.
+   Measured on that shipped tree: `FIDELITY_REQUIRE_ALL=1 node --test
+   test-elementor.mjs` produced skips, identical to an unset run; the flag
+   only worked when the proving test was filtered out with
+   --test-name-pattern, which a real CI invocation never does. A restore-
+   the-previous-value finally would have papered over that one instance but
+   left the same ordering dependency in place for the next test that reads
+   this variable; taking `env` as an argument removes the shared mutable
+   state, and with it the ordering dependency, entirely. */
+function requirePageUrl(page, t, env = process.env) {
+  const url = env[page.envVar];
   if (url) return url;
   const message = `${page.envVar} is not set. This test needs the deployed ${page.name} page: `
     + `${page.envVar}=${page.exampleUrl} node --test test-elementor.mjs`;
-  if (process.env.FIDELITY_REQUIRE_ALL) {
+  if (env.FIDELITY_REQUIRE_ALL) {
     assert.fail(`${message} (FIDELITY_REQUIRE_ALL is set, so a missing variable fails this test instead of skipping it)`);
   }
   t.skip(message);
   return null;
 }
 
-test('requirePageUrl fails instead of skipping when FIDELITY_REQUIRE_ALL is set (M4)', () => {
+test('requirePageUrl fails instead of skipping when FIDELITY_REQUIRE_ALL is set (M4, fixed N2)', () => {
   const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
-  delete process.env.NO_SUCH_FIDELITY_VAR_XYZ;
   const fakeContext = { skip: () => assert.fail('should have failed via FIDELITY_REQUIRE_ALL, not skipped') };
-  process.env.FIDELITY_REQUIRE_ALL = '1';
-  try {
-    assert.throws(() => requirePageUrl(page, fakeContext), /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
-  } finally {
-    delete process.env.FIDELITY_REQUIRE_ALL;
-  }
+  /* A local object, not process.env: this test cannot leave shared state
+     for a later test to trip over, which is exactly what fix round 1's
+     version of this test did. */
+  const fakeEnv = { FIDELITY_REQUIRE_ALL: '1' };
+  assert.throws(() => requirePageUrl(page, fakeContext, fakeEnv), /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
+});
+
+test('requirePageUrl still skips by default, with FIDELITY_REQUIRE_ALL unset, regardless of test order (N2)', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
+  let skipMessage = null;
+  const fakeContext = { skip: (msg) => { skipMessage = msg; } };
+  const url = requirePageUrl(page, fakeContext, {});
+  assert.equal(url, null, 'a missing variable with no FIDELITY_REQUIRE_ALL must skip, not throw');
+  assert.match(skipMessage, /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
 });
 
 /* The 32 hand-picked probes reported 31 of 32 matching on a page the census
@@ -3094,9 +3137,20 @@ for (const page of PAGE_REGISTER) {
         } = compareBoxes(live, stat, page.name);
         /* I2: catches a wrong staticFile (typo, or a renamed static build
            the register was not updated for) directly, rather than relying
-           on the census test's own floor to catch it by accident. */
-        assert.ok(shared.length > page.minBoxes,
-          `only ${shared.length} controls/images matched by key on both sides at ${width}px (need > ${page.minBoxes}); `
+           on the census test's own floor to catch it by accident.
+
+           Fix round 2 (N3): `shared` still carries __unsettled__ (by
+           design; it must stay in the DIFF compareBoxes() computes, so a
+           settle mismatch between live and static is still caught as a
+           real difference), but a bookkeeping marker is not a measured
+           element and must not count toward "how many elements did we
+           actually compare". Filtered out here, not inside compareBoxes(),
+           so the diff behaviour above is untouched and only the floor's
+           own arithmetic changes: on the homepage this drops the count
+           from 88 to 87, matching the register comment's own count. */
+        const measuredElements = shared.filter((k) => !isBookkeepingKey(k)).length;
+        assert.ok(measuredElements > page.minBoxes,
+          `only ${measuredElements} controls/images matched by key on both sides at ${width}px (need > ${page.minBoxes}); `
           + `check page.staticFile ("${page.staticFile}") actually exists and built`);
         /* Printed on green as well as on red, per the recipe: a silent
            subtraction is how a gate stops being a gate. */

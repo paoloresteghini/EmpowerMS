@@ -63,7 +63,7 @@ export function isBookkeepingKey(key) {
    source file, not a test expectation, and it must stop the whole suite
    from importing rather than fail one test among many.
 
-   Four checks, tightened after fix round 1's Minor findings, in an order
+   Five checks, tightened after fix round 1's Minor findings, in an order
    that gives the most specific message a bad entry can get:
    1. key must be a string at all (M3: a missing or non-string key used to
       throw a raw "Cannot read properties of undefined" from inside

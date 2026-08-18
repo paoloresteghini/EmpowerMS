@@ -62,8 +62,18 @@ photograph, or shaped like a wrapper?**
   at DIFFERENT sizes, or an image renders at exactly its intrinsic ratio where
   the design asked for a crop. Fix it. The repair is a named rule giving the
   widget wrapper the height it is failing to take, and the precedent is
-  `bridge.css:472-520` from Task 1.5, which repaired the same defect on the
-  homepage for `.c2-panel__bg` and `.em-join__wash`.
+  `bridge.css:403-419` from Task 1.5, which repaired the same defect on the
+  homepage for `.fp-hero__media` and `.fp-hero__aside`, both of which size
+  themselves with `aspect-ratio` and ask the image for `height:100%`. Pointer
+  corrected 2026-08-18 by Task 9's review: this line used to name
+  `bridge.css:472-520` and `.c2-panel__bg`/`.em-join__wash`, which are a
+  DIFFERENT defect wearing the same symptom. Those two wrappers are themselves
+  the positioned box (`position:absolute;inset:0`), so they already had a
+  definite height; their defect was `image()` moving `cssClass` off the `<img>`
+  onto the wrapper, and their repair targets the `<img>`. Following them for a
+  fixed-ratio container fixes nothing. The two repair techniques for THIS
+  category, and when each applies, are set out in
+  `docs/elementor/phase2b/2026-08-18-repricing-after-four-pages.md`.
 
 The tell is uniformity. Three photographs that the design crops to the same box,
 rendering at three different heights, is never a placeholder problem. Measured

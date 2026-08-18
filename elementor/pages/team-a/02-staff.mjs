@@ -13,7 +13,10 @@ import { container, text, html } from '../../factory.mjs';
       exact failure solutions-b hit (Task 7, fix round 1, I1); `_element_id`
       is the confirmed-working route on a container (measured live there:
       `<section class="... e-con e-parent" id="solutions">`). Verified
-      again here after deploy rather than assumed; see the task report.
+      again here after deploy rather than assumed, and verified once more
+      by Task 9's review, which read the id off the live section element.
+      Recorded in the Task 9 entries of
+      `.superpowers/sdd/2026-08-15-class-in-markup/progress.md`.
 
    2. `.ta-staff__head` AND `.ta-mark` ARE ONE DIV, not two nested ones.
       Source: `<div class="ta-staff__head ta-mark" data-reveal-group>`, a
@@ -24,8 +27,9 @@ import { container, text, html } from '../../factory.mjs';
    3. THE HEADINGS ARE text() WIDGETS CARRYING BARE <h2>/<h3>, never
       heading() widgets. No `heading()` import above.
 
-   4. `.ta-roster` (an <ol> of... an <ul> of ten <li>, each carrying only
-      <span>s, one <h3> and, for exactly one person, a real <a>) IS ONE
+   4. `.ta-roster` (a <ul> of ten <li>, each holding one .ta-person__link
+      wrapper of <span>s and one <h3>, and for exactly one person that
+      wrapper is a real <a> rather than a <div>) IS ONE
       html() WIDGET, the same choice this page's own brief makes explicit
       for `.ta-ledger` in 03-fellows.mjs and the established pattern
       capitol-a's triptych and episode list both use: nothing inside any

@@ -151,9 +151,37 @@ a widget wrapper stretches to its parent's WIDTH for free and never to its
 HEIGHT, and the `<img>`'s percentage height then resolves against an
 auto-height wrapper and falls back to the photograph's intrinsic ratio.
 
-Instances so far: `.c2-panel__bg` and `.em-join__wash` (homepage, Task 1.5),
-`.sb-station__media` and `.sb-stories__band` (`solutions-b`), `.ta-hero__media`
-(`team-a`). Repair each one NAMED: `.your-container > .elementor-widget-image
+Instances so far, corrected 2026-08-18 by Task 9's review, which found this
+list naming the wrong precedents while arriving at the right count:
+`.fp-hero__media` and `.fp-hero__aside` (homepage, `bridge.css:403-419`),
+`.sb-station__media` and `.sb-stories__band` (`solutions-b`,
+`bridge.css:1999-2000`), `.ta-hero__media` (`team-a`, `bridge.css:2164`). Five,
+and `team-a`'s is the fifth. Derive this count rather than copying it: `grep -n
+'> .elementor-widget-image' wp/empowerms-child/css/bridge.css`.
+
+`.c2-panel__bg` and `.em-join__wash` are NOT instances of this category, even
+though their symptom reads the same in the sweep. Their own comment at
+`bridge.css:481-486` says why: both wrappers ARE the positioned box
+(`position:absolute;inset:0`), so each already had a definite height and the
+percentage had something to resolve against. Their defect was
+CLASS-ON-WRAPPER, `image()` moving `cssClass` off the `<img>`, and their repair
+targets the `<img>`, not the wrapper. Following that precedent for a
+fixed-ratio container would not fix this defect at all.
+
+TWO repair techniques are on record for this category and the choice is not
+arbitrary:
+
+- `display:contents` on the wrapper, the homepage's technique
+  (`bridge.css:413-417`), which removes the wrapper from the box tree so the
+  build's own rules reach the `<img>` unchanged. Its argument, written there:
+  a restatement is a copy that goes stale the day somebody edits the
+  stylesheet. Unavailable when the wrapper is load-bearing, which is exactly
+  why `.c2-panel__bg` could not use it.
+- `height:100%` on the wrapper, the technique `solutions-b` and `team-a` use.
+  Not a value copy, so the staleness argument does not bite, and it leaves the
+  wrapper in the box tree.
+
+Repair each one NAMED: `.your-container > .elementor-widget-image
 {height:100%}`. Do not generalise it across containers; this file records four
 separate occasions where a rule broad enough to cover its siblings also beat
 something it should not have.

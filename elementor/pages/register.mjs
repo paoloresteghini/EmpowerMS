@@ -233,15 +233,29 @@ export const PAGE_REGISTER = [
      minShared: measured 2026-08-18 with census() from fidelity-browser.mjs
      run directly against dist/team-a.html alone (served locally the same
      way the tests do, no live side): 25 elements matching
-     h1,h2,h3,h4,h5,p,blockquote. 13 keeps roughly the same headroom the
-     other four entries keep (final 40/63 63%, what-we-do-a 10/17 59%,
-     solutions-b 14/24 58%, capitol-a 9/16 56%; 13/25 is 52%, a touch
-     below the others because this page's own census count, 25, is larger
-     relative to the fixed 6-element chrome share than any page before it,
-     so the same proportion would demand fewer real matches than the other
-     entries' floors do): at least 14 of 25 must match by text, comfortably
-     below 25 while still requiring the large majority of the static
-     page's own text content to reappear on the live side.
+     h1,h2,h3,h4,h5,p,blockquote. CORRECTED 2026-08-18 by the Task 9
+     review, which found the reasoning here false in its premise and
+     backwards in its inference while the number itself was sound: a raw
+     percentage of the census total is NOT comparable across pages,
+     because a fixed 6-element chrome share (the header's and footer's
+     own h3s and paragraphs) is counted into every page's total. Measured
+     across all five registered static builds, that share is 6 on every
+     one of them, final.html at 63 census elements included, so the claim
+     this comment used to make, that 25 is large relative to a fixed 6
+     "than any page before it", is simply wrong.
+
+     What is comparable is the fraction of the page's OWN content the
+     floor demands. Measured: final 35/57 61%, solutions-b 9/18 50%,
+     what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%. So 13
+     puts this page between what-we-do-a and capitol-a, which is the
+     argument for it. At the other entries' proportion the floor would be
+     14, demanding 9 of this page's own 19 rather than 8: the same
+     proportion demands MORE real matches on a larger page, not fewer.
+
+     `assert.ok(shared.length > page.minShared)` at test-elementor.mjs:3104
+     is strict, so 13 means at least 14 of 25 must match by text,
+     comfortably below 25 while still requiring the large majority of the
+     static page's own text content to reappear on the live side.
 
      minBoxes: measured the same way with controlBoxes() against
      dist/team-a.html alone, at both 1440 and 390: 64 elements
@@ -283,16 +297,25 @@ export const PAGE_REGISTER = [
      minShared: measured 2026-08-18 with census() from fidelity-browser.mjs
      run directly against dist/who-we-are-a.html alone (no live side, served
      locally the same way the tests do): 30 elements matching
-     h1,h2,h3,h4,h5,p,blockquote. 16 continues the slide the other entries
-     already show (final 40/63 63%, what-we-do-a 10/17 59%, solutions-b
-     14/24 58%, capitol-a 9/16 56%, team-a 13/25 52%; 16/30 is 53%): at
-     least 17 of 30 must match by text, comfortably below 30 while still
-     requiring the large majority of the static page's own text content to
-     reappear on the live side. The proportion sits a little under the
-     earlier entries' for the reason team-a's own note gives: the chrome's
-     share of the census is a FIXED 6 elements, so on a page with 30 the
-     same percentage would demand fewer real matches than it does on a page
-     with 17.
+     h1,h2,h3,h4,h5,p,blockquote, of which 6 are the shared header and
+     footer chrome and 24 are this page's own.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, not as a percentage of
+     the census total, following the correction the Task 9 review made to
+     team-a's entry above: a raw percentage of the total is not comparable
+     across pages, because the fixed 6-element chrome share is counted into
+     every page's total and is a different fraction of each one. An earlier
+     draft of this comment made exactly that uncomparable comparison
+     (16/30 against the other entries' totals) and is replaced here rather
+     than left to be re-derived.
+
+     `assert.ok(shared.length > page.minShared)` at test-elementor.mjs:3104
+     is strict, so 16 means at least 17 of 30 must match by text. Six of
+     those come from the chrome, so the floor demands 11 of this page's own
+     24. Measured against the same fraction on the other five entries
+     (final 35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a
+     8/19 42%, capitol-a 4/10 40%), 11/24 is 46%, which puts this page
+     between what-we-do-a and solutions-b rather than at either extreme.
 
      minBoxes: measured the same way with controlBoxes() against
      dist/who-we-are-a.html alone, at both 1440 and 390: 69 elements

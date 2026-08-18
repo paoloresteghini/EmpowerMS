@@ -2134,8 +2134,18 @@
  * original specificity. */
 
 /* ---------- team-a: the hero image widget wrapper does not stretch to fill
- *            a fixed-aspect-ratio flex container, a fourth instance of the
- *            same defect solutions-b's Task 7 already repairs twice ----------
+ *            a fixed-aspect-ratio flex container, the FIFTH instance of the
+ *            same defect in this file ----------------------------------------
+ * Do not carry this number forward by incrementing it. Derive it:
+ * `grep -n '> .elementor-widget-image' wp/empowerms-child/css/bridge.css`
+ * lists every selector needing this treatment. Today that is
+ * `.fp-hero__media` and `.fp-hero__aside` (:413-414, repaired with
+ * `display:contents`), `.sb-station__media` and `.sb-stories__band`
+ * (:1999-2000) and this one. A hand-maintained tally in this comment read
+ * "fourth" while the commit message said "fifth", which is what the Task 9
+ * review caught. `.c2-panel__bg` and `.em-join__wash` at :496 and :514 are
+ * NOT instances: their wrappers are the positioned box and already had a
+ * definite height, so they are class-on-wrapper, not this.
  * Task 9. Predicted ZERO bridge rules across all three priced categories
  * (child combinators, structural pseudo-classes, native controls); this is
  * a FOURTH category none of the three pricing greps can see, because it
@@ -2143,7 +2153,14 @@
  * inside a fixed-aspect-ratio container, not on anything in a stylesheet
  * selector. Box sweep found `img|children-running-parent.jpg` at 453x575px
  * live against 453x566px static at 1440 (width already correct, only
- * height wrong by 9px).
+ * height wrong by 9px) and at 342x434 against 342x214 at 390.
+ *
+ * The 390 reading is the one that makes the triage decidable, and it is
+ * quoted here because 9px read alone looks cosmetic and would have
+ * justified a deferral under the recipe's older, narrower test. At 390 the
+ * image renders at its own intrinsic ratio (434/342 = 1.27) where the
+ * design asks for a 16/10 crop, which is the documented signature of
+ * "shaped like a wrapper" rather than "shaped like a photograph".
  *
  * Measured directly rather than assumed, the same mechanism solutions-b's
  * own `.sb-station__media`/`.sb-stories__band` rule above already
@@ -2165,9 +2182,10 @@
   height:100%;
 }
 
-/* Checked for @media interference before writing: css/team-a.css:276
- * (`@media (max-width:1100px){.ta-hero__media{aspect-ratio:16/10}}`) and
- * :277 (`.ta-hero__media img{object-position:center 26%}`) both touch this
+/* Checked for @media interference before writing: css/team-a.css:273-277.
+ * The `@media (max-width:1100px){` opens at :273; inside it, :276 is
+ * `.ta-hero__media{aspect-ratio:16/10}` and :277 is
+ * `.ta-hero__media img{object-position:center 26%}`. Both touch this
  * section, but neither sets `height` on the wrapper or the img, so this
  * rule works unmodified at any width: the wrapper always fills whatever
  * height `.ta-hero__media` itself computes to, aspect-ratio value
@@ -2622,4 +2640,103 @@
   .wa-people__frames > .e-con:nth-child(1){
     margin-bottom:var(--space-6); /* 24px, css/who-we-are-a.css:261 */
   }
+}
+
+/* ---------- 7. team-a: a hero action row that Elementor turns into a column,
+ *               found by Task 10 on ANOTHER page and confirmed here ----------
+ * Not a who-we-are-a rule. Task 10's implementer found this while repairing
+ * the identical shape on its own page (`.wa-hero__actions`, block 3 above)
+ * and correctly declined to touch another page's class from inside its task.
+ * Measured by the controller before writing this rule, live against the
+ * static build served locally, both at 1440:
+ *
+ *     live    flex-direction:column   box 612.72x131.58
+ *     static  flex-direction:row      box 612.72x68.39
+ *
+ * So "Support Our Work" and the "Meet the staff" jump link have been STACKED
+ * on the live page since team-a shipped, where the design puts them side by
+ * side, and the page is 63px taller through the hero for it.
+ *
+ * Cause, identical to block 3's: css/team-a.css:103-104 is
+ * `.ta-hero__actions{display:flex;align-items:center;gap:...;flex-wrap:wrap}`,
+ * which declares the display and NOT the direction, because in the static
+ * build `row` is the initial value and needs no declaring. Converted, the
+ * element is an Elementor container carrying `e-con-full e-flex`, and
+ * `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` at 0,2,0 is fed
+ * `column` by `.e-con.e-flex`. Nothing in the build competes with it, so it
+ * wins uncontested rather than on source order.
+ *
+ * `.ta-hero__actions.e-con` is 0,2,0, tying with `.e-con-full.e-flex`, and
+ * this file loads after Elementor's own stylesheets, so it wins on order at
+ * equal specificity. Same shape as `.fp-hero__actions.e-con` at :623 and
+ * `.wa-hero__actions.e-con` at block 3, and named to this page's own class
+ * rather than written for `.e-con`, for the reason recorded at :163-196: a
+ * bare `.e-con{flex-direction:row}` was measured and rejected twice.
+ *
+ * WHY NEITHER INSTRUMENT CAUGHT THIS, which matters more than the rule.
+ * `controlBoxes()` sweeps a, button, input, select, textarea and img, so a
+ * container's own box is never compared, and it skips anchors inside
+ * `.elementor-widget-button` by design, which is exactly what both children
+ * here are. `census()` keys on element text and both strings are present and
+ * correct. So a hero whose two buttons are stacked instead of side by side
+ * passes both gates green, on a page that was measured, reviewed and
+ * committed. Recorded in the ledger as a coverage hole rather than a defect
+ * in this rule.
+ *
+ * Checked for @media interference: css/team-a.css's five media blocks open at
+ * :273, :281, :290, :302 and :310, and not one of them names
+ * `.ta-hero__actions`. `flex-wrap:wrap` at :104 handles the narrow case in
+ * the static build and does the same here once the direction is right, so one
+ * unconditional declaration is correct. Confirmed by re-measuring at 390. */
+.ta-hero__actions.e-con{
+  flex-direction:row;
+}
+
+/* ---------- 8. solutions-b: two link() wrappers stretched to full width by a
+ *               column parent, same finding, same round ---------------------
+ * Also found by Task 10 on another page and also left for the controller.
+ * Measured by the controller before writing this rule, live against static,
+ * both at 1440:
+ *
+ *     .sb-research__body > .em-btn   live  div, display:flex, 489.61px
+ *                                   static  a, display:inline-flex, 219.14px
+ *     .sb-stories__panel > .em-btn   live  div, display:flex, 540.75px
+ *                                   static  a, display:inline-flex, 352.72px
+ *
+ * Two full-width bars where the design draws pills, live since solutions-b
+ * shipped.
+ *
+ * Cause: `link()` puts its cssClass on the widget WRAPPER, so `.em-btn`'s
+ * `display:inline-flex` (components.css:4) lands on a `<div>` that is a flex
+ * item of an Elementor column container. A flex item's `display` is
+ * blockified, `inline-flex` computes to `flex`, and with `align-self` at its
+ * `stretch` default the item fills the container's cross axis: the full
+ * column width. The static build's `<a>` is an inline-level box in normal
+ * flow and is content-sized.
+ *
+ * `align-self:flex-start` rather than a width or a `display` change on the
+ * parent, for the reason block 5 above sets out at length for
+ * `.wa-people__copy`: exactly one property is wrong, both parents measure
+ * identically on both sides, and changing the parent's display would be a
+ * larger change than the defect. Each selector is 0,2,0 against Elementor's
+ * `.elementor-element{align-self:var(--align-self)}` at 0,1,0, so both win on
+ * specificity rather than on source order.
+ *
+ * Named to the two containers that carry the defect, NOT written as
+ * `.elementor .em-btn`, even though every `.em-btn` link() in a column parent
+ * has this shape. Five converted pages use `link()` and only these two are
+ * wrong; a rule broad enough to cover the others would also reach the ones
+ * inside `.fp-hero__actions` and `.ta-hero__actions`, which are ROW parents
+ * where `align-self` addresses the cross axis and would move them vertically.
+ * That is the fifth occasion in this file where a general rule would have
+ * beaten something it should not.
+ *
+ * Checked for @media interference: css/solutions-b.css's three media blocks
+ * open at :170, :175 and :190, and none names `.sb-research__body`,
+ * `.sb-stories__panel` or `.em-btn`. Both buttons are content-sized at every
+ * width in the static build, so one unconditional declaration each is
+ * correct. Confirmed by re-measuring at 390. */
+.sb-research__body > .em-btn,
+.sb-stories__panel > .em-btn{
+  align-self:flex-start;
 }

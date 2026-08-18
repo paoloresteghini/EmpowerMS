@@ -62,7 +62,7 @@ photograph, or shaped like a wrapper?**
   at DIFFERENT sizes, or an image renders at exactly its intrinsic ratio where
   the design asked for a crop. Fix it. The repair is a named rule giving the
   widget wrapper the height it is failing to take, and the precedent is
-  `bridge.css:403-419` from Task 1.5, which repaired the same defect on the
+  `bridge.css:403-419`, which repaired the same defect on the
   homepage for `.fp-hero__media` and `.fp-hero__aside`, both of which size
   themselves with `aspect-ratio` and ask the image for `height:100%`. Pointer
   corrected 2026-08-18 by Task 9's review: this line used to name

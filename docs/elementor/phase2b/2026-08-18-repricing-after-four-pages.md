@@ -43,14 +43,14 @@ look cheaper than the first two.
 
 | Page | Structural hits | Notes |
 | --- | --- | --- |
-| `amb-a` | 0 | but see the third category below: NOT a zero-cost page |
+| `amb-a` | 0 | PRE-PRICED 2026-08-18: 2 repairs, 3 blocks. One shared submit button, one mosaic image wrapper. Its ten native controls cost ONE repair, not ten |
 | `team-a` | 1 | |
-| `mail-a` | 1 | |
+| `mail-a` | 1 | PRE-PRICED 2026-08-18: 1 repair, 2 blocks, and it is the SAME submit-button repair as `amb-a`, so whichever converts second pays nothing for it. Its structural hit costs nothing if the list is one `html()` blob |
 | `capitol-a` | 2 | CONVERTED 2026-08-18: 4 REPAIRS, 5 rule blocks (3 structural, 1 native-control needing a base and a `:hover`) |
 | `team-bio` | 2 | back in the order, Paolo 2026-08-18 |
 | `epic-a` | 4 | |
 | `give-c` | 4 | |
-| `who-we-are-a` | 10 | the expensive one |
+| `who-we-are-a` | 10 | PRE-PRICED 2026-08-18: 4 repairs. NOT the expensive one on this axis: nine of the ten hits target containers, so grep 2 costs ONE repair. The other three are photographs in fixed-ratio containers, which this table cannot see |
 | `safety` / `work` / `education` | 2, shared | all three load `css/solution.css`; the structural cost is paid ONCE |
 
 ## Counting convention, stated because two documents disagreed
@@ -70,8 +70,13 @@ single authored markup string, and only one crossed a wrapper. On
 
 **So treat the hit count as an UPPER BOUND, roughly one rule per three to six
 hits.** On that basis the eleven remaining pages should cost in the region of
-ten bridge rules in total, with `who-we-are-a` carrying the largest share and
-`amb-a` likely costing nothing.
+ten bridge rules in total.
+
+The two sentences that used to follow this one, ranking `who-we-are-a` as the
+largest share and `amb-a` as likely zero, were BOTH WRONG, and in opposite
+directions. Pre-pricing on 2026-08-18 put `who-we-are-a` at four repairs of
+which only one is structural, and `amb-a` at two. A ranking built on grep 2
+alone ranks pages by one term of a four-term price.
 
 ## The cheapest lever, and it is a build decision rather than a repair
 
@@ -104,9 +109,26 @@ way.
 Neither grep sees it, and it corrects this document's own first draft, which
 called `amb-a` a likely-zero page on the strength of its zero structural hits.
 
-Elementor's kit styles every native `<button>`, `<input>`, `<select>` and
-`<textarea>` on the page, so any native control the build styles itself needs a
-named bridge rule. `bridge.css` already carries a group of these, and
+SCOPE CORRECTED 2026-08-18 by measurement, after this paragraph re-ranked
+`amb-a` on a premise that is false. The kit does not style every native control.
+Fetched whole, `wp-content/uploads/elementor/css/post-20547.css` is 2698 bytes
+and its only control rule is:
+
+    .elementor-kit-20547 button,
+    .elementor-kit-20547 input[type="button"],
+    .elementor-kit-20547 input[type="submit"],
+    .elementor-kit-20547 .elementor-button { ... }
+
+plus its `:hover,:focus` twin and two `@media` restatements of `font-size` and
+`padding`. There is NO rule for `input[type=text]`, `input[type=email]`,
+`input[type=checkbox]`, `textarea` or `select` anywhere in the file. Re-derive
+this rather than trusting it: fetch the kit and read it, since it is regenerated
+whenever Site Settings change.
+
+So the category is real but narrow: it is BUTTONS, plus anything carrying
+`.elementor-button`. Any native control the build styles itself needs a named
+bridge rule only where something actually competes with it. `bridge.css` already
+carries a group of these, and
 `capitol-a` added one more for a `<button type="reset">` in its filter form,
 the same shape as `podcast-a`'s `.pca-facets__clear`.
 
@@ -129,15 +151,35 @@ work, the disclosure included (`bridge.css:1538`). Only two pages carry page-spe
 by descendant selector at `css/amb-a.css:159-162`
 (`.aba-check input{...accent-color:var(--em-orange)...}` at 0,1,1, plus its
 `:focus-visible` at 0,2,1, since a pseudo-class counts as a class). Those are
-the specificities the kit's own input selectors outrank. They are, if
-anything, the highest-risk controls on that page, because the kit's field
-styling reaches unclassed inputs. Counting inside `<main>` also drops the shared
-header and footer chrome automatically, which is what the twelve-per-page figure
-was doing by hand.
+the specificities the kit's own input selectors WOULD outrank if the kit had
+any, and it has none. Counting inside `<main>` also drops the shared header and
+footer chrome automatically, which is what the twelve-per-page figure was doing
+by hand.
 
-Those are the two form-shaped pages in the build, and they are where this
-category lands. Expect `amb-a` and `mail-a` to cost more than their structural
-hit counts suggest, and every other page to cost nothing on this axis.
+An earlier version of this paragraph called those four checkboxes "if anything,
+the highest-risk controls on that page, because the kit's field styling reaches
+unclassed inputs." That is exactly backwards and it is what re-ranked `amb-a` as
+a top cost driver. Measured 2026-08-18 by injecting each control into a live
+converted page inside `div.elementor .e-con` with the page's own sheet applied,
+and comparing computed styles against the same markup in the static build at
+1440: `input.em-input`, `textarea.em-textarea` and the unclassed checkboxes show
+ZERO differences, because nothing competes with them. Only the submit button
+differs, on five properties.
+
+So NINE of these two pages' fifteen controls cost nothing, and the counting
+method the paragraph above introduced is what makes that checkable. What the
+count measures is exposure, not price: a control is only a cost where something
+outranks the build.
+
+Those are the two form-shaped pages in the build, and this category lands on
+their submit buttons and nowhere else. On bridge cost they are now among the
+CHEAPER remaining pages, not the dearer ones. Two things do make them expensive,
+and neither is a bridge rule: the build's first native `.em-btn--primary` is not
+restated in `bridge.css` at all (`:814-844` restates base, `--md`, `--lg` and
+`--inverse` only, deliberately, with the reason written at `:811-813`: those
+were the only ones a native button used at the time), and Elementor's container `html_tag` control offers no
+`form`, `fieldset` or `legend`, so how these two forms get built is an open
+decision rather than a conversion step. See `elementor/pages/final/06-joinus.mjs:12`.
 
 ## A FOURTH category, added after `team-a`: images in fixed-ratio containers
 

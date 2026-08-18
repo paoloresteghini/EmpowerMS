@@ -30,7 +30,23 @@ export async function syncTheme() {
   const excludes = FROM_ROOT.flatMap((dir) => ['--exclude', `/${dir}/`]);
   await run('rsync', ['-az', '--delete', ...excludes, '-e', ssh, 'wp/empowerms-child/', `${host}:${dest}/`]);
   for (const dir of FROM_ROOT) {
-    await run('rsync', ['-az', '--delete', '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`]);
+    /* The css/ pass alone protects bridge.css from its own --delete, and the
+       third pass below is NOT a substitute for it. bridge.css lives under
+       wp/empowerms-child/css/ and not under the repository's own css/, so
+       without this exclude the --delete here removes it from the live install
+       on EVERY sync and the third pass puts it back a moment later. Between
+       the two rsyncs every converted page on the install renders with no
+       bridge stylesheet at all. Found on the live install during Task 10, not
+       by reading this file: a direct md5sum run in that window answered "No
+       such file or directory", and two concurrent syncs widen it by
+       interleaving the passes.
+
+       Rehearsed against a scratch directory rather than assumed: rsync does
+       not delete a file an --exclude protects, unless --delete-excluded is
+       given, which this file must never pass. So pass three keeps bridge.css
+       CURRENT and this exclude keeps it PRESENT; both are needed. */
+    const protectBridge = dir === 'css' ? ['--exclude', '/bridge.css'] : [];
+    await run('rsync', ['-az', '--delete', ...protectBridge, '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`]);
   }
   /* bridge.css is excluded above (it lives under wp/empowerms-child/css/,
      inside the excluded /css/ path) and then overwritten wholesale above

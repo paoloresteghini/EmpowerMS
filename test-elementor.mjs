@@ -907,6 +907,47 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
   assert.match(bridgePass, /`\$\{dest\}\/css\/`|dest\}\/css\//, 'the wp/empowerms-child/css/ sync does not target dest/css/');
 });
 
+/* Task 10, found on the live install rather than by reading the code. The
+   pass above restores bridge.css, but the FROM_ROOT loop DELETES it first:
+   the repository's own css/ carries no bridge.css, so the loop's --delete
+   against dest/css/ removes it on every single sync, and pass three puts it
+   back a moment later. Between those two rsyncs the live install has NO
+   bridge stylesheet at all, and every converted page renders without it.
+   The window is short and real: an implementer's direct md5sum, run between
+   two concurrent syncs, answered "No such file or directory".
+
+   Rehearsed against a scratch directory before this test was written, the
+   same way the pass above was: `rsync -az --delete src/ dest/` removes a
+   dest-only bridge.css, and `rsync -az --delete --exclude '/bridge.css'
+   src/ dest/` leaves it in place with its contents untouched. rsync does
+   not delete files that an --exclude protects unless --delete-excluded is
+   given, which this file must never pass.
+
+   So the exclude is not redundant with pass three. Pass three keeps
+   bridge.css CURRENT; the exclude keeps it PRESENT. Dropping either one
+   reintroduces a window that no test in this repository can observe
+   directly, which is why this is a source-text assertion. */
+test('wp/sync.mjs protects bridge.css from the FROM_ROOT loop\'s own --delete', () => {
+  const src = fs.readFileSync('wp/sync.mjs', 'utf8');
+  const loopMatch = src.match(/for\s*\(\s*const\s+dir\s+of\s+FROM_ROOT\s*\)\s*\{[\s\S]*?\n\s*\}/);
+  assert.ok(loopMatch, 'the FROM_ROOT sync loop was not found in wp/sync.mjs');
+  const loop = loopMatch[0];
+
+  assert.match(loop, /bridge\.css/,
+    'the FROM_ROOT loop must protect bridge.css from its own --delete against dest/css/, or every sync removes the bridge stylesheet from the live install until the third pass restores it');
+  assert.match(loop, /'--exclude'/,
+    'the FROM_ROOT loop names bridge.css but passes no --exclude, so nothing actually protects it');
+  /* Comments stripped before this search, and the first draft of this test
+     proves why: the flag is NAMED in wp/sync.mjs's own comment, explaining
+     that it must never be passed, and a bare search over the source matched
+     that explanation and failed a file that is correct. The better a comment
+     explains a rule, the more likely a text search for the rule's own terms
+     lands inside it. */
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.doesNotMatch(code, /--delete-excluded/,
+    '--delete-excluded would delete the very file the exclude exists to protect');
+});
+
 /* --- fidelity.mjs ------------------------------------------------------- */
 
 test('checkCopy reports every approved string the page is missing', () => {

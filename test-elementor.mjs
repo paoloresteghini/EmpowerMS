@@ -28,9 +28,9 @@ import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThem
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
-import { PAGE_REGISTER } from './elementor/pages/register.mjs';
+import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
 import {
-  isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes,
+  isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
 } from './fidelity-deferred.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
@@ -2742,12 +2742,48 @@ test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', (
 /* --- fidelity-deferred.mjs / the deferred-image list, tested without a
    browser --------------------------------------------------------------- */
 
-/* The page register is the coverage list (see its own comment in
-   elementor/pages/register.mjs); this asserts it stays non-empty so a
-   refactor that empties it fails loudly here rather than making both
-   instrument loops below silently sweep zero pages. */
-test('the page register is not empty', () => {
-  assert.ok(PAGE_REGISTER.length > 0, 'PAGE_REGISTER must name at least one page (the homepage), or nothing is gated');
+/* Fix round 1 (Critical 1): the register's coverage is no longer decided by
+   what is hand-typed into PAGE_REGISTER. It is decided by
+   convertedPageDirs(), which reads elementor/pages/ directly, and this
+   test asserts every directory it finds is accounted for in exactly one of
+   PAGE_REGISTER (gated) or EXCLUDED_PAGES (excluded, with a reason). Delete
+   the 'final' entry and add 'what-we-do-a' without touching EXCLUDED_PAGES,
+   and 'final' still has a page.mjs on disk but is in neither list: this
+   test goes red naming it, which is exactly the silent-loss scenario the
+   brief's own precedent (a hand-written page list that stayed green while
+   four pages went unregistered) describes. */
+test('every converted page directory is either gated by the register or explicitly excluded', () => {
+  const dirs = convertedPageDirs();
+  assert.ok(dirs.length > 0, 'convertedPageDirs() found no page.mjs under elementor/pages/; the derivation is broken, not the coverage');
+  const registered = new Set(PAGE_REGISTER.map((p) => p.name));
+  const excluded = new Set(EXCLUDED_PAGES.map((p) => p.name));
+  for (const dir of dirs) {
+    const inRegister = registered.has(dir);
+    const inExcluded = excluded.has(dir);
+    assert.ok(inRegister || inExcluded,
+      `"${dir}" has a page.mjs under elementor/pages/ but is in neither PAGE_REGISTER nor EXCLUDED_PAGES `
+      + '(both in elementor/pages/register.mjs); a converted page must be gated or explicitly excluded, never neither');
+    assert.ok(!(inRegister && inExcluded),
+      `"${dir}" is in both PAGE_REGISTER and EXCLUDED_PAGES; a page cannot be gated and excluded at once`);
+  }
+  /* The reverse direction: a name in either list that names no real
+     directory is a typo or a stale entry left behind by a rename. */
+  for (const p of PAGE_REGISTER) {
+    assert.ok(dirs.includes(p.name), `PAGE_REGISTER names "${p.name}", which has no elementor/pages/${p.name}/page.mjs`);
+  }
+  for (const p of EXCLUDED_PAGES) {
+    assert.ok(dirs.includes(p.name), `EXCLUDED_PAGES names "${p.name}", which has no elementor/pages/${p.name}/page.mjs`);
+    assert.ok(p.reason && p.reason.trim() !== '', `EXCLUDED_PAGES entry for "${p.name}" carries no reason`);
+  }
+});
+
+test('every PAGE_REGISTER entry carries its own coverage floors', () => {
+  for (const p of PAGE_REGISTER) {
+    assert.ok(Number.isFinite(p.minShared) && p.minShared > 0,
+      `PAGE_REGISTER entry "${p.name}" has no positive minShared (the census floor)`);
+    assert.ok(Number.isFinite(p.minBoxes) && p.minBoxes > 0,
+      `PAGE_REGISTER entry "${p.name}" has no positive minBoxes (the box-sweep floor)`);
+  }
 });
 
 /* compareBoxes() is the box sweep's diff-and-defer logic, extracted out of
@@ -2755,46 +2791,71 @@ test('the page register is not empty', () => {
    against plain objects, in milliseconds, without Playwright. Everything
    here makes a test MORE PERMISSIVE (that is what a deferred list is), so
    each behaviour below is tested for the failure it exists to catch, not
-   just the pass it exists to produce. */
+   just the pass it exists to produce.
+
+   These use the real registered page name 'final', not a placeholder like
+   the old 'x', because fix round 1 (M2) made validateDeferredEntry() check
+   a deferred entry's `page` against PAGE_REGISTER: a synthetic page name
+   would now throw, for the same reason a typo'd one should. */
 
 test('compareBoxes subtracts a deferred key from the diff, and reports the count', () => {
   const live = { 'img|team.jpg': { w: 400, h: 300 } };
   const stat = { 'img|team.jpg': { w: 320, h: 240 } };
-  const deferred = [{ page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
-  const { diffKeys, subtracted, expired } = compareBoxes(live, stat, 'x', deferred);
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
   assert.deepEqual(diffKeys, [], 'a deferred key must not appear in the remaining diff');
   assert.equal(subtracted, 1, 'exactly one difference was excused and must be counted');
-  assert.deepEqual(expired, [], 'the entry still genuinely differs, so it is not expired');
 });
 
 test('compareBoxes does not subtract a key that is not on the deferred list, and it still fails', () => {
   const live = { 'img|team.jpg': { w: 400, h: 300 } };
   const stat = { 'img|team.jpg': { w: 320, h: 240 } };
-  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', []);
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', []);
   assert.deepEqual(diffKeys, ['img|team.jpg'], 'an undeferred difference must still be reported');
   assert.equal(subtracted, 0, 'nothing was excused, so nothing should be counted as subtracted');
 });
 
 /* This is the half the recipe calls out as most important: without it the
    list only ever grows, excusing whatever fixed the thing it was written
-   for, and eventually excusing defects nobody has looked at. */
-test('a deferred entry whose key no longer differs is reported as expired, by name', () => {
+   for, and eventually excusing defects nobody has looked at. Fix round 1
+   (I3) moved expiry out of compareBoxes() into expiredDeferredEntries(),
+   called once over the union of every width's raw differences (see the box
+   sweep below); this test exercises that function directly. */
+test('a deferred entry whose key no longer differs at all is reported as expired, by name', () => {
   const live = { 'img|team.jpg': { w: 320, h: 240 } };
   const stat = { 'img|team.jpg': { w: 320, h: 240 } };
-  const deferred = [{ page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
-  const { diffKeys, expired } = compareBoxes(live, stat, 'x', deferred);
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, rawDiffKeys } = compareBoxes(live, stat, 'final', deferred);
   assert.deepEqual(diffKeys, [], 'the two sides agree, so there is nothing left to report as a difference');
+  const expired = expiredDeferredEntries(new Set(rawDiffKeys), 'final', deferred);
   assert.deepEqual(expired, ['img|team.jpg'], 'the entry that no longer differs must be named so it can be removed');
+});
+
+/* I3's own failure mode: an entry that differs at one width and agrees at
+   the other must NOT be reported expired from either single width's
+   result. Only the union across every measured width decides expiry. */
+test('a deferred entry that differs at one width and agrees at another is not expired', () => {
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const at1440 = compareBoxes({ 'img|team.jpg': { w: 400, h: 300 } }, { 'img|team.jpg': { w: 320, h: 240 } }, 'final', deferred);
+  const at390 = compareBoxes({ 'img|team.jpg': { w: 320, h: 240 } }, { 'img|team.jpg': { w: 320, h: 240 } }, 'final', deferred);
+  assert.deepEqual(at1440.diffKeys, [], 'the difference at 1440 is deferred and must not fail the test');
+  assert.deepEqual(at390.diffKeys, [], 'the two sides agree at 390 already, nothing to fail');
+  const union = new Set([...at1440.rawDiffKeys, ...at390.rawDiffKeys]);
+  const expired = expiredDeferredEntries(union, 'final', deferred);
+  assert.deepEqual(expired, [], 'the entry is still needed at 1440, so it must not be reported expired');
 });
 
 /* An entry deferred for a DIFFERENT page must not silently excuse a
    same-named key on this one; page scoping is not exercised by the two
-   tests above, which both use a single page. */
+   tests above, which both use a single page. 'other-page' does not need to
+   be a real registered page here: compareBoxes() filters deferred entries
+   by `page === pageName` before validating them, so an entry for a page
+   other than the one being compared is never read, let alone validated. */
 test('a deferred entry does not cross pages: the same key deferred elsewhere still fails here', () => {
   const live = { 'img|team.jpg': { w: 400, h: 300 } };
   const stat = { 'img|team.jpg': { w: 320, h: 240 } };
   const deferred = [{ page: 'other-page', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
-  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', deferred);
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
   assert.deepEqual(diffKeys, ['img|team.jpg'], 'a deferral on another page must not excuse this one');
   assert.equal(subtracted, 0, 'nothing on this page was excused');
 });
@@ -2803,20 +2864,20 @@ test('a deferred entry does not cross pages: the same key deferred elsewhere sti
    heading is outside Paolo's instruction and needs asking about, so the
    mechanism refuses it rather than trusting whoever writes the entry. */
 test('a non-image key is refused when it is added to the deferred list', () => {
-  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }),
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }),
     /not an image key/, 'an anchor key must be refused, not silently accepted');
-  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'button|Submit', reason: 'no', date: '2026-08-17' }),
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'button|Submit', reason: 'no', date: '2026-08-17' }),
     /not an image key/, 'a button key must be refused, not silently accepted');
-  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'h2|Our mission', reason: 'no', date: '2026-08-17' }),
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'h2|Our mission', reason: 'no', date: '2026-08-17' }),
     /not an image key/, 'a heading key must be refused, not silently accepted');
 });
 
 /* The two bookkeeping keys are neither images nor deferrable, and get their
    own refusal message rather than falling through to the generic one. */
 test('the two bookkeeping keys are refused with their own message, not the generic one', () => {
-  assert.throws(() => validateDeferredEntry({ page: 'x', key: '__excluded_count__', reason: 'no', date: '2026-08-17' }),
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: '__excluded_count__', reason: 'no', date: '2026-08-17' }),
     /bookkeeping marker/, '__excluded_count__ must be refused as bookkeeping, not as "not an image"');
-  assert.throws(() => validateDeferredEntry({ page: 'x', key: '__unsettled__', reason: 'no', date: '2026-08-17' }),
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: '__unsettled__', reason: 'no', date: '2026-08-17' }),
     /bookkeeping marker/, '__unsettled__ must be refused as bookkeeping, not as "not an image"');
   assert.equal(isBookkeepingKey('__excluded_count__'), true);
   assert.equal(isBookkeepingKey('__unsettled__'), true);
@@ -2831,6 +2892,38 @@ test('isImageKey is decidable from the key alone, for the shapes controlBoxes() 
   assert.equal(isImageKey('h2|Our mission'), false);
 });
 
+/* Fix round 1 Minors, all closing the same gap: a bad entry was refused
+   only on the two axes the brief named (image key, bookkeeping key), and
+   was trusted on everything else. */
+test('a deferred entry for a page the register does not gate is refused (M2)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'no-such-page', key: 'img|team.jpg', reason: 'no', date: '2026-08-17' }),
+    /is not in PAGE_REGISTER/, 'a typo\'d or unregistered page name must be refused, not silently accepted and left inert');
+});
+
+test('a deferred entry with no reason or no date is refused (M1)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', date: '2026-08-17' }),
+    /has no reason/, 'a missing reason must be refused: the recipe requires one on every entry');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', reason: '   ', date: '2026-08-17' }),
+    /has no reason/, 'a blank reason must be refused the same as a missing one');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', reason: 'no' }),
+    /has no date/, 'a missing date must be refused: the recipe requires one on every entry');
+});
+
+test('a deferred entry with a missing or non-string key gets an informative message, not a raw TypeError (M3)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', reason: 'no', date: '2026-08-17' }),
+    /non-string key/, 'a missing key must be named as the problem, not surface as a TypeError from inside isImageKey');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 42, reason: 'no', date: '2026-08-17' }),
+    /non-string key/, 'a numeric key must be refused the same way');
+});
+
+test('compareBoxes refuses an invalid deferred entry even when the caller supplies the list directly (M5)', () => {
+  const live = { 'a|Contact us': { w: 10, h: 10 } };
+  const stat = { 'a|Contact us': { w: 20, h: 20 } };
+  const badList = [{ page: 'final', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }];
+  assert.throws(() => compareBoxes(live, stat, 'final', badList),
+    /not an image key/, 'a hand-built deferred list bypassing DEFERRED_IMAGES must get the same refusal, not a silent subtraction');
+});
+
 /* The subtraction count must be visible on a green run too, not only when
    there is a remaining failure to explain: a silent subtraction is how a
    gate stops being a gate. This proves the count is still computed and
@@ -2840,10 +2933,10 @@ test('the subtraction count is available even when every difference was deferred
   const live = { 'img|team.jpg': { w: 400, h: 300 }, 'img|hero.jpg': { w: 100, h: 100 } };
   const stat = { 'img|team.jpg': { w: 320, h: 240 }, 'img|hero.jpg': { w: 90, h: 90 } };
   const deferred = [
-    { page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
-    { page: 'x', key: 'img|hero.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+    { page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+    { page: 'final', key: 'img|hero.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
   ];
-  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', deferred);
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
   assert.deepEqual(diffKeys, [], 'both differences were deferred, so the test this feeds would pass');
   assert.equal(subtracted, 2, 'a passing result must not hide how many differences were excused to get there');
 });
@@ -2856,17 +2949,41 @@ test('the subtraction count is available even when every difference was deferred
    SPIKE_URL group above guards itself, with one difference: SPIKE_URL fails
    the run when unset, right for eight tests the whole run depends on. This
    register is meant to grow past what any one developer has credentials
-   for, so a page whose variable is unset is skipped, not failed: a
-   developer without empv2 access still gets a usable, all-green
+   for, so a page whose variable is unset is skipped, not failed, BY
+   DEFAULT: a developer without empv2 access still gets a usable, all-green
    `node --test test-elementor.mjs`, with a visible line naming what was
-   skipped and why, rather than a false failure to explain away every run. */
+   skipped and why, rather than a false failure to explain away every run.
+
+   Fix round 1 (M4): a skip is invisible to an automated run that only
+   checks for a nonzero fail count, so a misspelled variable name in a CI
+   config could retire the gate with nothing going red. FIDELITY_REQUIRE_ALL
+   is the opt-in escape hatch: set it, and a missing variable fails instead
+   of skipping, with the same message plus a note explaining why. Unset (the
+   default, and every environment this task was built in), behaviour is
+   exactly as before. */
 function requirePageUrl(page, t) {
   const url = process.env[page.envVar];
   if (url) return url;
-  t.skip(`${page.envVar} is not set. This test needs the deployed ${page.name} page: `
-    + `${page.envVar}=${page.exampleUrl} node --test test-elementor.mjs`);
+  const message = `${page.envVar} is not set. This test needs the deployed ${page.name} page: `
+    + `${page.envVar}=${page.exampleUrl} node --test test-elementor.mjs`;
+  if (process.env.FIDELITY_REQUIRE_ALL) {
+    assert.fail(`${message} (FIDELITY_REQUIRE_ALL is set, so a missing variable fails this test instead of skipping it)`);
+  }
+  t.skip(message);
   return null;
 }
+
+test('requirePageUrl fails instead of skipping when FIDELITY_REQUIRE_ALL is set (M4)', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
+  delete process.env.NO_SUCH_FIDELITY_VAR_XYZ;
+  const fakeContext = { skip: () => assert.fail('should have failed via FIDELITY_REQUIRE_ALL, not skipped') };
+  process.env.FIDELITY_REQUIRE_ALL = '1';
+  try {
+    assert.throws(() => requirePageUrl(page, fakeContext), /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
+  } finally {
+    delete process.env.FIDELITY_REQUIRE_ALL;
+  }
+});
 
 /* The 32 hand-picked probes reported 31 of 32 matching on a page the census
    found 40 differences on. A curated check set can only find the failures
@@ -2888,7 +3005,16 @@ for (const page of PAGE_REGISTER) {
       const live = await census(url);
       const stat = await census(`${server.url}/${page.staticFile}`);
       const shared = Object.keys(live).filter((k) => stat[k]);
-      assert.ok(shared.length > 40, `only ${shared.length} elements matched by text on both sides; the key is not lining up`);
+      /* page.minShared, not a shared constant: fix round 1 (I1) found this
+         floor was calibrated on the homepage's own census count (63) and
+         then applied, unchanged, to every registered page by the loop this
+         used to be hard-coded outside of. what-we-do-a's static build has
+         17 such elements, well under the old 40, so it could never have
+         passed however faithful its conversion was. See the comment on
+         minShared in elementor/pages/register.mjs for where each page's
+         number comes from. */
+      assert.ok(shared.length > page.minShared,
+        `only ${shared.length} elements matched by text on both sides (need > ${page.minShared}); the key is not lining up`);
       const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
         .map((k) => `${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
       assert.deepEqual(diffs, [], `${diffs.length} computed-style differences:\n${diffs.join('\n')}`);
@@ -2914,7 +3040,28 @@ for (const page of PAGE_REGISTER) {
    merely asserted, by the extraction: compareBoxes() runs the identical
    shared-key JSON.stringify comparison this file used to run inline, now
    unit-tested in isolation above against exactly this case (an empty
-   deferred list). */
+   deferred list).
+
+   Fix round 1 added two things this test used to be missing entirely:
+
+   I2: a coverage floor (`shared.length > page.minBoxes`), inside the width
+   loop, the same shape the census test already had. Before this, a wrong
+   `staticFile` (a typo, or a page renamed on disk without the register
+   being updated) made `controlBoxes()` read a bare 404, which measures
+   only the two bookkeeping keys; `shared` then reduced to the
+   `__unsettled__` marker alone, on both sides, and the sweep reported a
+   clean pass having compared one key out of dozens. The census's own floor
+   caught this by accident, since both instruments must pass; this instrument
+   did not catch it on its own, which is the gap I2 closed.
+
+   I3: expiry is no longer decided inside the width loop. A DEFERRED_IMAGES
+   entry has no width, so a per-width expiry check could not be satisfied by
+   an image that differs at 1440 and agrees at 390: subtracted at one width,
+   reported expired at the other, with no way to write the entry that
+   satisfies both. rawDiffKeys from every width is accumulated into
+   `unionRawDiffs` and expiredDeferredEntries() is called once, after the
+   loop, over that union: an entry is only ever reported expired when it is
+   not needed at ANY measured width. */
 for (const page of PAGE_REGISTER) {
   test(`every control and image on the converted ${page.name} page matches the static build box for box`, { concurrency: 1 }, async (t) => {
     const url = requirePageUrl(page, t);
@@ -2922,6 +3069,7 @@ for (const page of PAGE_REGISTER) {
     const { controlBoxes } = await import('./fidelity-browser.mjs');
     const server = await serveRepoRoot();
     try {
+      const unionRawDiffs = new Set();
       for (const width of [1440, 390]) {
         const live = await controlBoxes(url, { width });
         const stat = await controlBoxes(`${server.url}/${page.staticFile}`, { width });
@@ -2941,16 +3089,28 @@ for (const page of PAGE_REGISTER) {
           `controlBoxes excluded ${stat.__excluded_count__} element(s) on the static page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
         delete live.__excluded_count__;
         delete stat.__excluded_count__;
-        const { diffKeys, subtracted, expired } = compareBoxes(live, stat, page.name);
+        const {
+          shared, rawDiffKeys, diffKeys, subtracted,
+        } = compareBoxes(live, stat, page.name);
+        /* I2: catches a wrong staticFile (typo, or a renamed static build
+           the register was not updated for) directly, rather than relying
+           on the census test's own floor to catch it by accident. */
+        assert.ok(shared.length > page.minBoxes,
+          `only ${shared.length} controls/images matched by key on both sides at ${width}px (need > ${page.minBoxes}); `
+          + `check page.staticFile ("${page.staticFile}") actually exists and built`);
         /* Printed on green as well as on red, per the recipe: a silent
            subtraction is how a gate stops being a gate. */
         console.log(`[fidelity] ${page.name} @ ${width}px: subtracted ${subtracted} deferred image key(s) from the diff`);
-        assert.deepEqual(expired, [],
-          `${expired.length} deferred entr${expired.length === 1 ? 'y' : 'ies'} for "${page.name}" no longer differ `
-          + `and must be removed from DEFERRED_IMAGES: ${expired.join(', ')}`);
+        for (const k of rawDiffKeys) unionRawDiffs.add(k);
         const diffs = diffKeys.map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
         assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
       }
+      /* I3: evaluated once, over both widths' raw differences together, not
+         once per width; see the comment above this loop. */
+      const expired = expiredDeferredEntries(unionRawDiffs, page.name);
+      assert.deepEqual(expired, [],
+        `${expired.length} deferred entr${expired.length === 1 ? 'y' : 'ies'} for "${page.name}" no longer differ `
+        + `at EITHER width and must be removed from DEFERRED_IMAGES: ${expired.join(', ')}`);
     } finally {
       await server.close();
     }

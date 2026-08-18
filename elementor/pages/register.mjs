@@ -1,53 +1,119 @@
-/* The page register: the one place that says which converted pages the two
-   measuring instruments in fidelity-browser.mjs sweep, and what each is
-   compared against. Read by test-elementor.mjs to generate one instrument
-   test per page, and readable on its own by a human deciding what is
-   covered, since it is the only list that answers "which pages are actually
-   gated".
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-   A hand-written list is legitimate here because it names COVERAGE: every
-   page this repo has converted and intends to measure belongs in it. That
-   is the opposite of fidelity-deferred.mjs's DEFERRED_IMAGES, a hand-written
-   list too, but one that names an EXEMPTION from measurement on a page
-   already in this register. Confusing the two would let a page quietly stop
-   being measured under the guise of "deferring" it; keeping them in
-   separate files with opposite justifications is how that distinction stays
-   visible instead of becoming a judgement call at review time.
+/* The page register, corrected after review (fix round 1): this file's own
+   comment used to claim a hand-written list is legitimate here because it
+   names coverage. That is backwards, and it is backwards in exactly the
+   words the brief warned about: "A hand-written list is legitimate for
+   named exemptions... and illegitimate for coverage, which is what the
+   register is." A hand-typed PAGE_REGISTER, on its own, is precisely the
+   defect the brief cites as precedent: this repo already shipped a test
+   whose page list was hand-written and passed green while four pages added
+   afterward carried the exact violation it existed to catch. Moving the
+   list from a test body into this file changed where it is typed, not
+   whether it is derived, and by itself was not a fix.
 
-   This repo has already shipped one test whose page list was hand-written
-   at the file's own top and passed green while four pages added afterward
-   carried the exact violation it existed to catch. The fix there, and the
-   rule here, is the same: the set a sweep asserts over must come from one
-   place both the sweep and a human read, never from a list re-typed at the
-   call site.
+   So coverage is no longer decided by what is typed into PAGE_REGISTER.
+   It is decided by convertedPageDirs() below, which reads
+   elementor/pages/ itself: every directory carrying a page.mjs IS a
+   converted page, full stop, and nothing about that reads from a list a
+   person wrote. PAGE_REGISTER and EXCLUDED_PAGES are still hand-written,
+   because the brief is right that SOME hand-writing is legitimate here:
+   the live env var, the example URL, the static file and each page's
+   measured floors cannot be derived from anything, and a reason for
+   excluding a page is exactly the "named exemption" the brief calls
+   legitimate. What makes the hand-written parts safe now is that
+   test-elementor.mjs asserts every name convertedPageDirs() finds appears
+   in exactly one of these two lists (see "every converted page directory
+   is either gated by the register or explicitly excluded" in that file).
+   Forget to register a new page, or delete an entry without excluding it,
+   and that assertion goes red naming the orphaned directory. That is the
+   difference between this file and the test it replaces: the SET is
+   derived, and only the METADATA attached to each member of that set is
+   hand-written.
 
-   envVar names the environment variable that carries the page's live URL.
-   It is read from the environment, never committed, because it differs per
-   install (and, before a page is deployed, does not exist at all).
-   exampleUrl is not a live credential, only the shape requirePageUrl()'s
-   skip message shows a developer who has none.
+   fidelity-deferred.mjs's DEFERRED_IMAGES is a hand-written list too, and
+   is legitimate for the opposite reason: it names an EXEMPTION on a page
+   already in this derived coverage set (checked against PAGE_REGISTER's
+   own names, so a deferred entry cannot target a page this register
+   never gated), not a decision about what is measured at all. */
 
-   podcast-a is deliberately NOT in this register. Its box sweep carries
-   nine permanent differences that are not image findings: the live install
-   renders 66 real podcast episodes through a Loop Grid, dist/podcast-a.html
-   ships 9 fixed placeholder cards, and the two sides are therefore comparing
-   different CONTENT, not a placeholder photograph waiting on a real one.
-   Those nine keys are anchor keys (a|<episode title>), not image keys, so
-   DEFERRED_IMAGES cannot be used to hide them: the recipe restricts deferral
-   to image keys precisely so a content mismatch like this cannot be swept
-   under the same mechanism as a wrong crop. If podcast-a is ever to be
-   gated, it needs a key that identifies a card slot independently of which
-   episode landed in it, which nobody has designed yet. Leaving it out of
-   the register, rather than in it with nine keys forced into the deferred
-   list, keeps that gap visible instead of disguising it as nine ordinary
-   exemptions. */
+const PAGES_DIR = path.dirname(fileURLToPath(import.meta.url));
 
+/* Every directory directly under elementor/pages/ that carries its own
+   page.mjs. This, not PAGE_REGISTER, is the actual coverage set: it is
+   read from the filesystem at test time, so it cannot go stale the way a
+   list re-typed by hand can. */
+export function convertedPageDirs() {
+  return fs.readdirSync(PAGES_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => fs.existsSync(path.join(PAGES_DIR, name, 'page.mjs')));
+}
+
+/* Gated pages: for each, the live env var, the shape requirePageUrl()'s
+   skip message shows a developer who has none (exampleUrl, never a real
+   credential), the static file it is compared against, and two
+   per-page coverage floors, fixed after fix round 1's I1/I2 findings that
+   a single constant (40, calibrated on the homepage alone) either rejects
+   a smaller page's honest conversion or, on the box sweep, does not exist
+   at all and lets a wrong staticFile pass green.
+
+   minShared: the floor for the paragraph/heading census
+   (shared.length > minShared in the "every paragraph and heading..."
+   test). measured 2026-08-17 by running census() from fidelity-browser.mjs
+   directly against the static file alone (no live side, via the same
+   serveRepoRoot() the tests use): dist/final.html has 63 elements
+   matching h1,h2,h3,h4,h5,p,blockquote. 40 is unchanged from the constant
+   this test hard-coded before the register existed (kept rather than
+   raised, so the homepage's behaviour does not change), and is comfortably
+   below 63 while still requiring the large majority of the static page's
+   own text content to reappear, matched by text, on the live side.
+
+   minBoxes: the same floor for the control/image box sweep
+   (shared.length > minBoxes in the "every control and image..." test),
+   newly added: the box sweep had no floor at all before fix round 1 (I2).
+   Measured the same way, with controlBoxes() at both 1440 and 390 against
+   dist/final.html alone: 87 elements (a,button,input,select,textarea,img
+   with a usable identity) at both widths. 50 keeps roughly the same
+   headroom as minShared's 40/63 (about two thirds), while sitting nowhere
+   near what a wrong staticFile actually produces: controlBoxes() against a
+   404 measures 0 real elements (only the two bookkeeping keys), so
+   `shared` collapses to at most 1 (the __unsettled__ marker), far under
+   50. */
 export const PAGE_REGISTER = [
   {
     name: 'final',
     envVar: 'HOME_URL',
     exampleUrl: 'https://empv2.wpenginepowered.com/final/',
     staticFile: 'dist/final.html',
+    minShared: 40,
+    minBoxes: 50,
   },
   // Task 6b adds what-we-do-a here once it is converted and measured green.
+];
+
+/* Pages with a page.mjs that are deliberately NOT gated, each with the
+   reason recorded as data rather than only as prose, so
+   convertedPageDirs()'s coverage check can read it instead of trusting a
+   comment to stay in sync with which directories exist.
+
+   podcast-a: its box sweep carries nine permanent differences that are not
+   image findings. The live install renders 66 real podcast episodes
+   through a Loop Grid; dist/podcast-a.html ships 9 fixed placeholder
+   cards; the two sides are therefore comparing different CONTENT, not a
+   placeholder photograph waiting on a real one. Those nine keys are anchor
+   keys (a|<episode title>), not image keys, so DEFERRED_IMAGES cannot be
+   used to hide them: the recipe restricts deferral to image keys precisely
+   so a content mismatch like this cannot be swept under the same mechanism
+   as a wrong crop. If podcast-a is ever to be gated, it needs a key that
+   identifies a card slot independently of which episode landed in it,
+   which nobody has designed yet. */
+export const EXCLUDED_PAGES = [
+  {
+    name: 'podcast-a',
+    reason: 'box sweep finds 9 permanent anchor-key differences (66 real episodes vs 9 placeholder '
+      + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys',
+  },
 ];

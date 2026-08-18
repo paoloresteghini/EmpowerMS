@@ -4118,3 +4118,74 @@
 .elementor .epa-hero__aside:hover{
   text-decoration-color:currentColor;                                /* tokens/base.css:9 */
 }
+
+/* ---------- 27. mail-a: the eighth category's only other instance in the
+ *                build, found by sweeping for it -------------------------
+ * Block 26 named the shape on `epic-a` and said in as many words what was NOT
+ * claimed: that the reset is site-wide and every converted page is subject to
+ * it, and that the true count was unknown because the category is found only by
+ * hand. So it was swept for, read-only, across all nine converted pages: every
+ * anchor inside `<main>`, keyed by its text, comparing
+ * `text-decoration-line`, `text-decoration-color` and `text-decoration-style`
+ * live against static at 1440.
+ *
+ *     final 12 anchors, what-we-do-a 8, solutions-b 5, capitol-a 7, team-a 3,
+ *     who-we-are-a 3, mail-a 1, amb-a 1, epic-a 9
+ *
+ * 49 anchors, and exactly ONE differs: this one. `epic-a`'s nine are clean
+ * because block 26 already repairs the one that was not, which is the sweep
+ * going red on a known defect before being trusted anywhere else.
+ *
+ * `css/mail-a.css:132-136` is the same shape as `.epa-hero__aside`, down to the
+ * tell: it declares `text-underline-offset:4px` and never declares
+ * `text-decoration-line`, because the UA default for an anchor with an href is
+ * already `underline`. Elementor's `.elementor a{box-shadow:none;
+ * text-decoration:none}` at 0,1,1 beats `tokens/base.css:8`'s bare `a` at
+ * 0,0,1, and because Elementor's declaration is the SHORTHAND it resets the
+ * decoration colour too.
+ *
+ * Measured live against static at 1440, at rest and on hover, on a 6000px-tall
+ * viewport so that nothing scrolls (a hover probe that scrolls measures its own
+ * timing: the live install sets `scroll-behavior:smooth` and Chromium does not
+ * recompute the hovered element after a programmatic scroll until the mouse
+ * moves again):
+ *
+ *     rest   live  none      | rgb(186,73,32)
+ *            static underline | oklab(0.590169 0.135101 0.105784 / 0.4)
+ *     hover  live  none      | rgb(0,60,80)
+ *            static underline | rgb(0,60,80)
+ *
+ * After this rule, both states match static exactly, verified by the same
+ * probe before the rule was written rather than after it was deployed.
+ *
+ * This is the ONLY unrepaired instance in the build as of the sweep above. The
+ * sweep reads one width and the rendered page, so it says nothing about
+ * anchors that appear only under a media query, and nothing about pages not yet
+ * converted.
+ *
+ * THE REMAINING ORDER WAS THEN READ FOR THE SAME SHAPE, from the stylesheets
+ * rather than from a rendered page, and every one of it is immune:
+ *
+ *     give-c     .em-btn, .gvc-freq__opt (css/give-c.css:121),
+ *                .gvc-amount (:141)                     all declare none
+ *     team-bio   .tp-back (css/team-bio.css:34),
+ *                .tp-more__link (:133-135)              declare none, and
+ *                                                       underline on :hover
+ *     safety, work, education (css/solution.css)
+ *                .sol-feed__title (:313-315),
+ *                .sol-stub__title (:359-361)            declare none, and
+ *                                                       underline on :hover
+ *
+ * The hover halves matter as much as the rest halves and are safe for the same
+ * reason twice over: they declare the property, and at 0,2,0 they outrank
+ * Elementor's 0,1,1. So this category is expected to cost the remaining four
+ * units nothing, and that expectation is a reading of intent rather than a
+ * measurement: probe each page's anchors by hand anyway, because that is the
+ * only way this category has ever been found. */
+.elementor .mla-receive__back a{
+  text-decoration-line:underline;                                    /* the UA default */
+  text-decoration-color:color-mix(in oklab,var(--text-link) 40%,transparent); /* tokens/base.css:8 */
+}
+.elementor .mla-receive__back a:hover{
+  text-decoration-color:currentColor;                                /* tokens/base.css:9 */
+}

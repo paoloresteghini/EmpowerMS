@@ -93,6 +93,36 @@ add_action( 'elementor/theme/register_locations', function ( $manager ) {
 const EMPOWER_STYLES_PRIORITY = 60;
 
 /**
+ * The cache-busting version for one theme asset, derived from that file's own
+ * modification time.
+ *
+ * Every asset this theme enqueues is served by WP Engine with
+ * `cache-control: public, max-age=31536000`, so the query string on the URL is
+ * the only thing that can retire a visitor's cached copy. Versioning them all
+ * with the theme's `Version:` header, which this build has kept at 2.0.0
+ * through the entire conversion, made that query string a constant: a browser
+ * that fetched css/bridge.css once held it for a year and saw none of the
+ * repairs written into it afterwards.
+ *
+ * That cost a real morning. On 2026-08-17 the converted homepage's header
+ * looked wrong in Paolo's browser (a 15px wordmark, an over-wide nav, a
+ * borderless search control) and correct in a cold-cache browser at the same
+ * moment, because his copy of bridge.css predated the 2026-08-15 repair to its
+ * `.elementor button.em-header__*` block and nothing in the URL had changed to
+ * tell him so.
+ *
+ * $rel is relative to the stylesheet directory. The theme version is the
+ * fallback when the file cannot be stat'ed, deliberately, rather than an empty
+ * string: an empty version emits a bare URL with no query at all, which is
+ * MORE cacheable than the constant this replaces, not less.
+ */
+function empower_asset_ver( $rel ) {
+	$path = get_stylesheet_directory() . '/' . ltrim( $rel, '/' );
+	$mtime = file_exists( $path ) ? filemtime( $path ) : false;
+	return $mtime ? (string) $mtime : wp_get_theme()->get( 'Version' );
+}
+
+/**
  * Page stylesheets beyond the shared cascade and global header, keyed by page slug.
  *
  * Taken from the "Per page" table in README.md. Confirm each against the page's
@@ -121,16 +151,15 @@ function empower_page_styles() {
 
 add_action( 'wp_enqueue_scripts', function () {
 	$dir = get_stylesheet_directory_uri();
-	$ver = wp_get_theme()->get( 'Version' );
 	$prev = null;
 
 	foreach ( EMPOWER_TOKENS as $token ) {
 		$handle = 'empower-token-' . $token;
-		wp_enqueue_style( $handle, $dir . '/tokens/' . $token . '.css', $prev ? array( $prev ) : array(), $ver );
+		wp_enqueue_style( $handle, $dir . '/tokens/' . $token . '.css', $prev ? array( $prev ) : array(), empower_asset_ver( 'tokens/' . $token . '.css' ) );
 		$prev = $handle;
 	}
 
-	wp_enqueue_style( 'empower-components', $dir . '/components/components.css', array( $prev ), $ver );
+	wp_enqueue_style( 'empower-components', $dir . '/components/components.css', array( $prev ), empower_asset_ver( 'components/components.css' ) );
 
 	/*
 	 * site.css must win over UiCore's global stylesheet. Declaring
@@ -146,18 +175,18 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( wp_style_is( 'uicore_global', 'registered' ) ) {
 		$site_deps[] = 'uicore_global';
 	}
-	wp_enqueue_style( 'empower-site', $dir . '/css/site.css', $site_deps, $ver );
+	wp_enqueue_style( 'empower-site', $dir . '/css/site.css', $site_deps, empower_asset_ver( 'css/site.css' ) );
 
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close; both move from
 	   the per-slug map to this unconditional block. */
-	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), $ver );
+	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), empower_asset_ver( 'css/header-2.css' ) );
 
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
 	$prev = 'empower-header-2';
 	foreach ( empower_page_styles()[ $slug ] ?? array() as $sheet ) {
 		$handle = 'empower-page-' . $sheet;
-		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), $ver );
+		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), empower_asset_ver( 'css/' . $sheet . '.css' ) );
 		$prev = $handle;
 	}
 
@@ -168,7 +197,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	 * loop above left it at, empower-header-2 on a page with no per-page
 	 * sheets of its own.
 	 */
-	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), $ver );
+	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), empower_asset_ver( 'css/bridge.css' ) );
 }, EMPOWER_STYLES_PRIORITY );
 
 /**
@@ -236,17 +265,16 @@ function empower_module_script_handles() {
  */
 add_action( 'wp_enqueue_scripts', function () {
 	$dir = get_stylesheet_directory_uri();
-	$ver = wp_get_theme()->get( 'Version' );
-	wp_enqueue_script( 'empower-nav', $dir . '/js/nav.js', array(), $ver, array( 'strategy' => 'defer' ) );
-	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), $ver, array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-nav', $dir . '/js/nav.js', array(), empower_asset_ver( 'js/nav.js' ), array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), empower_asset_ver( 'js/reveal.js' ), array( 'strategy' => 'defer' ) );
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close. */
-	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), $ver, array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), empower_asset_ver( 'js/dropdown.js' ), array( 'strategy' => 'defer' ) );
 
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {
 		$handle = 'empower-script-' . $script;
-		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), $ver, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), empower_asset_ver( 'js/' . $script . '.js' ), array( 'strategy' => 'defer' ) );
 	}
 }, EMPOWER_SCRIPTS_PRIORITY );
 

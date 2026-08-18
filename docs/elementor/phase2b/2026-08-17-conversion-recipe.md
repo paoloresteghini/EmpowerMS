@@ -230,5 +230,24 @@ and by looking at the page, not by the sweeps. The census caught the
 `p:last-child` defect only because it changed colour and size, which is luck
 rather than coverage.
 
-**podcast-a's zero is not evidence the phase is cheap.** It scores zero on both
-greps, which is a property of that page's CSS, not of the conversion.
+**A correction to this section's own first draft, kept because it is
+instructive.** It closed by saying podcast-a "scores zero on both greps". That
+is false, and podcast-a is in fact the FIRST recorded instance of the grep 2
+defect. `css/podcast-a.css:129` is `.pca-about__copy p:last-child{margin-bottom:0}`,
+and converted, every paragraph is the only child of its own wrapper, so every
+one of them matched and took the zero: measured 0px live against 20px static on
+the middle paragraph, and repaired during that page's migration
+(`bridge.css:1209-1219`). So the defect has now been hit on two independent
+pages, which is the better argument for running grep 2 than the one the first
+draft made. What podcast-a scores zero on is grep 1, child combinators, and
+that alone is what made its migration look cheap.
+
+**Two repair shapes, and the choice is not arbitrary.** podcast-a's repair moved
+the logic up a level, `:not(:last-child)` on the WRAPPERS, because the rule's
+real subject was "the last of several siblings" and after conversion the widgets
+are the siblings that rule was written about; it keeps working if the section
+gains or loses a paragraph. solutions-b's repair restated the one declaration at
+raised specificity, because there the losing rule named a specific element
+(`.sb-hero__lede`) rather than a position. Prefer the first when the original
+selector expresses a relationship among siblings, and the second when a named
+element is simply losing a specificity contest it used to win.

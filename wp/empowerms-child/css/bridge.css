@@ -3340,3 +3340,153 @@
 .elementor button.em-btn--primary.em-btn--lg{
   font-size:19px;
 }
+
+/* ---------- 13. amb-a: the mosaic's four fixed-ratio cells ----------------
+ * Task 13. The only repair this page needs, predicted before conversion and
+ * measured after, and it is category 4 of the six the repricing document
+ * names: a photograph in a container with a fixed aspect-ratio.
+ *
+ * css/amb-a.css:85-88 is `.aba-mosaic__cell img{display:block;width:100%;
+ * height:100%;object-fit:cover;border-radius:var(--radius-card)}` and :89-92
+ * puts the ratio on the four CELLS (4/5, 1/1, 1/1, 4/5). Elementor's
+ * container is a column flex box, so `.elementor-widget-image` takes the
+ * parent's WIDTH for free and never its HEIGHT: stretch only ever covers the
+ * cross axis, and a widget wrapper's flex-grow is 0. The <img>'s percentage
+ * height then resolves against an auto-height box and falls back to the
+ * photograph's own intrinsic ratio.
+ *
+ * MEASURED BEFORE THE REPAIR, live against static served locally. Heights in
+ * px, in markup order, and the signature is what makes this a wrapper defect
+ * rather than four placeholder-photograph defects: the design crops these
+ * four to TWO shared boxes and they rendered at FOUR different heights, each
+ * one its own intrinsic ratio.
+ *
+ *                                 @1440              @390
+ *     worker-workshop-bw        205 vs 379        111 vs 206
+ *     young-man-portrait-bw     386 vs 303        210 vs 165
+ *     video-still-man-outdoors  174 vs 303         95 vs 165
+ *     classroom-students        386 vs 379        210 vs 206
+ *
+ * It is a structural finding rather than a deferrable image one under recipe
+ * section 1, and by the recipe's own third question rather than only its
+ * first: `.aba-who` measured 1082.61px live against 1012.09px static at 1440,
+ * and every painted box below it moved down by the same 70.52px, so the
+ * photographs were changing the layout of other content.
+ *
+ * ONE RULE FOR FOUR CELLS, because one class covers all four. The four
+ * modifiers carry only grid-column, aspect-ratio and (on --2) a margin-top;
+ * nothing about the height differs between them.
+ *
+ * `height:100%` on the wrapper rather than `display:contents`, following
+ * .sb-station__media/.sb-stories__band (solutions-b) and .ta-hero__media
+ * (team-a), the two most recent instances of this category. Either technique
+ * works here and neither restates a value: `.aba-mosaic__cell img` is a
+ * DESCENDANT selector, so it keeps matching through the wrapper, and the
+ * homepage's staleness argument for display:contents does not bite because
+ * there is nothing to keep in sync either way. Consistency decides it.
+ *
+ * Confirmed against the live markup rather than assumed: Elementor emits no
+ * `.elementor-widget-container` inside the image widget on this install, so
+ * the <img> is a direct child of `.elementor-widget-image` and this rule
+ * gives the percentage a definite box to resolve against with nothing in
+ * between. The child combinator is safe for the same reason every container
+ * here is content_width 'full': no div.e-con-inner is inserted.
+ *
+ * NAMED to this page's own cell class. Do NOT widen it to
+ * `.aba-hero__figure`, which needs nothing and would be harmed by it:
+ * css/amb-a.css:40-44 puts the aspect-ratio on that <img> with height:auto,
+ * so it sizes itself from its own width and never asks an ancestor for a
+ * height.
+ *
+ * Checked for @media interference: css/amb-a.css's three media blocks open at
+ * :166, :170 and :176, and none sets a height on a cell or an image at any
+ * width. :179's `.aba-mosaic__cell--2{margin-top:0}` changes only the offset.
+ * Confirmed by re-measuring at 390 after this rule. */
+.aba-mosaic__cell > .elementor-widget-image{
+  height:100%;
+}
+
+/* ---------- 14. amb-a: the ways band's own formatting context, and the cost
+ *                category the 561-899 band turned up ------------------------
+ * Task 13, and this rule was NOT in the page's price. It was found by the
+ * hand measurement at 720 the brief asked for, which is the first time
+ * anybody in this phase has measured a converted page at a width that is not
+ * 1440 or 390, and it is the clearest instance so far of a defect both
+ * registered widths are structurally unable to see.
+ *
+ * WHAT WAS MEASURED. layoutInvariants() live against static, six widths
+ * across the band, after the mosaic repair above had already taken 1440 and
+ * 390 to exactly zero:
+ *
+ *     570  main 3902.06 vs 3902.06   clean
+ *     620  main 3947.25 vs 3947.25   clean
+ *     680  main 4036.11 vs 4010.38   .aba-do 473.08 vs 447.34
+ *     720  main 4111.59 vs 4085.64   .aba-do 478.78 vs 452.83
+ *     800  main 4315.66 vs 4315.66   clean
+ *     880  main 4506.53 vs 4506.53   clean
+ *
+ * One root cause, amplified: every painted box below `.aba-do` moved down by
+ * the same constant, which is the signature the layout instrument's own
+ * comment describes.
+ *
+ * THE MECHANISM, measured element by element rather than reasoned about. At
+ * 720 the `<ul class="aba-ways">` measures 183.81px on BOTH sides, its grid
+ * resolves to the same `324px 324px` columns and the same
+ * `79.9062px 79.9062px` rows on both sides, and all four `<li>` boxes are
+ * identical. What differs is the `.elementor-widget-html` wrapper AROUND the
+ * list: 209.77px against a 183.81px child, with 25.96px of empty space below
+ * it. That 25.96 is exactly one line box of this element's own type
+ * (font-size 19.24px at 720, line-height 1.35).
+ *
+ * The wrapper is a flex item of `.aba-do .em-container`, which Elementor
+ * makes a COLUMN flex container, so the wrapper's height is its flex base
+ * size rather than the height of its laid-out content. Chromium resolves that
+ * from a hypothetical layout at a different available inline size, and
+ * `.aba-ways` is `grid-template-columns:repeat(auto-fit,minmax(230px,1fr))`,
+ * so its height is a step function of that width. Scanned directly by cloning
+ * the list into an off-screen probe and sweeping its width in 4px steps: the
+ * list is 209.77px tall from 560 to 608, 183.81px from 612 to 736, and
+ * 235.72px from 740 up. The wrapper is taking the 560-608 answer while the
+ * list itself is laid out at 672. Outside roughly 660-740 the hypothetical
+ * and the real width fall in the same step and nothing differs, which is why
+ * 1440, 390, 570, 620, 800 and 880 are all exactly zero.
+ *
+ * FOUR CANDIDATE REPAIRS WERE MEASURED ON THE LIVE PAGE AND THREE FAILED,
+ * recorded because each one looks correct:
+ *
+ *     flex-basis:content on the wrapper    wrapper still 209.77
+ *     height:fit-content on the wrapper    wrapper still 209.77
+ *     flex:0 0 auto on the wrapper         wrapper still 209.77
+ *     align-self:flex-start on the wrapper WORSE: it shrink-wraps the CROSS
+ *                                          axis, so the list itself narrows
+ *                                          into the 560-608 step and becomes
+ *                                          209.77 for real
+ *     display:contents on the wrapper      WORSE, same reason: the list
+ *                                          becomes the flex item and inherits
+ *                                          the defect
+ *     display:block on the container       wrapper 183.81, container 337.64,
+ *                                          exactly static
+ *
+ * So the repair is to give the container back the formatting context the
+ * static build gives it: `.aba-do .em-container` is a plain block there, and
+ * nothing on this page asks it to be flex. Same shape and same argument as
+ * the `.sb-research` rule in block 11 above, which restores a block
+ * formatting context to a converted container for the same kind of reason.
+ *
+ * Margin arithmetic checked rather than assumed, because display:block
+ * restores margin collapsing that flex layout suppresses: the h2 and the <ul>
+ * both carry `margin:0` (css/amb-a.css:96-102 and :107-111), and only
+ * `.aba-do__intro` has margins (:103-106, 20px top and clamp(32px,4.5vw,64px)
+ * bottom). Those collapse out through the intro's own widget wrapper and give
+ * 20px above and 32.4px below at 720, which is what the static build renders,
+ * and 37.66+20+63.78+32.4+183.81 = 337.65 is the static container height to
+ * the rounding of the measurement.
+ *
+ * NAMED to this page's own section. A rule on `.em-container.e-con` alone
+ * would reach every converted page in the build.
+ *
+ * Re-measured after this rule at 390, 570, 620, 680, 720, 800, 880 and 1440:
+ * zero differences on all three instruments at every one. */
+.aba-do .em-container.e-con{
+  display:block;
+}

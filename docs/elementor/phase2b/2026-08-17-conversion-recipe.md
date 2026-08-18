@@ -42,6 +42,39 @@ block's measured height differs, fix it. That is checkable from the same
 measurement that raised the finding, and it does not require anybody to reason
 about intent.
 
+**A THIRD QUESTION, added 2026-08-18 after the test above got a page wrong.**
+The two questions the test asks are "does this image move other content" and
+"does anything else differ". Both can answer no while the image is still wrong
+for a STRUCTURAL reason, and `solutions-b` shipped four deferrals that way
+before review caught them. Its containing blocks matched exactly on both sides,
+because their height came from `aspect-ratio`, so the test said defer. The real
+cause was that `.elementor-widget-image` did not stretch, so the build's own
+`height:100%` on the `<img>` resolved against an auto-height wrapper and every
+photograph fell back to its intrinsic size. No photograph would have fixed that;
+the entries could never have expired.
+
+So before deferring, ask the third question: **is this difference shaped like a
+photograph, or shaped like a wrapper?**
+
+- **Shaped like a photograph:** ONE image differs, and it differs in the way its
+  own aspect ratio differs from the one the design assumed. Defer it.
+- **Shaped like a wrapper:** a SET of images the design sizes identically render
+  at DIFFERENT sizes, or an image renders at exactly its intrinsic ratio where
+  the design asked for a crop. Fix it. The repair is a named rule giving the
+  widget wrapper the height it is failing to take, and the precedent is
+  `bridge.css:472-520` from Task 1.5, which repaired the same defect on the
+  homepage for `.c2-panel__bg` and `.em-join__wash`.
+
+The tell is uniformity. Three photographs that the design crops to the same box,
+rendering at three different heights, is never a placeholder problem. Measured
+on `solutions-b`: 348, 244 and 242 against a uniform 318, and after one grouped
+rule all four images matched their static counterparts to the pixel.
+
+**Why the sweep cannot answer this for you.** It compares each image's own box
+and never asks whether that image's WRAPPER is doing its job, so a wrapper
+failure and a placeholder-crop difference are indistinguishable in the
+difference list. "Only image keys differ" is NECESSARY but NOT SUFFICIENT.
+
 ## 2. Deferring has to be expressed in the test, or the gate stops working
 
 Tasks 3, 4 and 5 each open by requiring both instruments to pass, because a

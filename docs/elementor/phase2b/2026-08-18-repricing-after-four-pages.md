@@ -46,12 +46,20 @@ look cheaper than the first two.
 | `amb-a` | 0 | but see the third category below: NOT a zero-cost page |
 | `team-a` | 1 | |
 | `mail-a` | 1 | |
-| `capitol-a` | 2 | CONVERTED 2026-08-18, cost 4 rules (3 structural, 1 native-control) |
+| `capitol-a` | 2 | CONVERTED 2026-08-18: 4 REPAIRS, 5 rule blocks (3 structural, 1 native-control needing a base and a `:hover`) |
 | `team-bio` | 2 | back in the order, Paolo 2026-08-18 |
 | `epic-a` | 4 | |
 | `give-c` | 4 | |
 | `who-we-are-a` | 10 | the expensive one |
 | `safety` / `work` / `education` | 2, shared | all three load `css/solution.css`; the structural cost is paid ONCE |
+
+## Counting convention, stated because two documents disagreed
+
+A REPAIR is one defect closed. A RULE BLOCK is one selector-plus-declarations in
+`bridge.css`. They usually match and sometimes do not: a native-control repair
+typically needs a base block and a `:hover` block, and that is ONE repair in two
+blocks. `capitol-a` is 4 repairs in 5 blocks. Quote repairs when pricing effort
+and blocks when measuring how much CSS the bridge has grown; say which you mean.
 
 ## How to read those numbers, because hits are NOT rules
 
@@ -119,9 +127,9 @@ work, the disclosure included (`bridge.css:1538`). Only two pages carry page-spe
 `amb-a` carried six, and it was wrong because it counted controls that have a
 `class` attribute. `amb-a`'s four checkboxes carry none: the build styles them
 by descendant selector at `css/amb-a.css:159-162`
-(`.aba-check input{...accent-color:var(--em-orange)...}` plus its
-`:focus-visible`), both at 0,1,1, which is the specificity every build button
-rule sits at and which the kit's own input selectors outrank. They are, if
+(`.aba-check input{...accent-color:var(--em-orange)...}` at 0,1,1, plus its
+`:focus-visible` at 0,2,1, since a pseudo-class counts as a class). Those are
+the specificities the kit's own input selectors outrank. They are, if
 anything, the highest-risk controls on that page, because the kit's field
 styling reaches unclassed inputs. Counting inside `<main>` also drops the shared
 header and footer chrome automatically, which is what the twelve-per-page figure

@@ -6,6 +6,7 @@ import os from 'node:os';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
+import { fromRootArgs } from './wp/sync.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
@@ -907,45 +908,128 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
   assert.match(bridgePass, /`\$\{dest\}\/css\/`|dest\}\/css\//, 'the wp/empowerms-child/css/ sync does not target dest/css/');
 });
 
-/* Task 10, found on the live install rather than by reading the code. The
-   pass above restores bridge.css, but the FROM_ROOT loop DELETES it first:
-   the repository's own css/ carries no bridge.css, so the loop's --delete
-   against dest/css/ removes it on every single sync, and pass three puts it
-   back a moment later. Between those two rsyncs the live install has NO
-   bridge stylesheet at all, and every converted page renders without it.
-   The window is short and real: an implementer's direct md5sum, run between
-   two concurrent syncs, answered "No such file or directory".
+/* Task 10, found on the live install rather than by reading the code: a direct
+   md5sum run moments after a clean syncTheme() answered "No such file or
+   directory" for bridge.css. The FROM_ROOT loop rsyncs the repository's css/
+   with --delete, bridge.css does not live there, so it is deleted on every
+   sync and the third pass restores it. Between those two rsyncs every
+   converted page on the install renders with no bridge stylesheet.
 
-   Rehearsed against a scratch directory before this test was written, the
-   same way the pass above was: `rsync -az --delete src/ dest/` removes a
-   dest-only bridge.css, and `rsync -az --delete --exclude '/bridge.css'
-   src/ dest/` leaves it in place with its contents untouched. rsync does
-   not delete files that an --exclude protects unless --delete-excluded is
-   given, which this file must never pass.
+   THIS TEST RUNS THE REAL RSYNC, and its own first version is why. That
+   version asserted three things about the loop's SOURCE TEXT: that it
+   mentions bridge.css, that it passes some --exclude, and that
+   --delete-excluded appears nowhere. Review applied three edits to
+   wp/sync.mjs that each fully reopen the window, and all three stayed green:
+   binding the exclude to js/ instead of css/, deleting the exclude while
+   keeping the comment that names bridge.css, and excluding a file that does
+   not exist. A source-text assertion cannot tell an exclude that protects
+   bridge.css from an exclude that protects something else, which is two steps
+   removed from the property that matters.
 
-   So the exclude is not redundant with pass three. Pass three keeps
-   bridge.css CURRENT; the exclude keeps it PRESENT. Dropping either one
-   reintroduces a window that no test in this repository can observe
-   directly, which is why this is a source-text assertion. */
-test('wp/sync.mjs protects bridge.css from the FROM_ROOT loop\'s own --delete', () => {
-  const src = fs.readFileSync('wp/sync.mjs', 'utf8');
-  const loopMatch = src.match(/for\s*\(\s*const\s+dir\s+of\s+FROM_ROOT\s*\)\s*\{[\s\S]*?\n\s*\}/);
-  assert.ok(loopMatch, 'the FROM_ROOT sync loop was not found in wp/sync.mjs');
-  const loop = loopMatch[0];
+   The property that matters is observable without any install, and the fix's
+   author had already observed it by hand against a scratch directory before
+   writing the fix. So: build the real argument list from wp/sync.mjs's own
+   exported fromRootArgs(), swap the remote destination for a local one, put a
+   destination-only bridge.css in place, run the local rsync, and assert the
+   file survives with its contents. The css pass must protect it and every
+   other pass must not, since a blanket exclude would be a different defect. */
+test('the css pass of wp/sync.mjs leaves a destination-only bridge.css in place, run against a real rsync', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-rsync-'));
+  try {
+    for (const dir of ['css', 'js']) {
+      fs.mkdirSync(path.join(root, 'src', dir), { recursive: true });
+      fs.mkdirSync(path.join(root, 'dest', dir), { recursive: true });
+      fs.writeFileSync(path.join(root, 'src', dir, `site.${dir === 'css' ? 'css' : 'js'}`), 'from source\n');
+      fs.writeFileSync(path.join(root, 'dest', dir, 'bridge.css'), 'the bridge\n');
+    }
 
-  assert.match(loop, /bridge\.css/,
-    'the FROM_ROOT loop must protect bridge.css from its own --delete against dest/css/, or every sync removes the bridge stylesheet from the live install until the third pass restores it');
-  assert.match(loop, /'--exclude'/,
-    'the FROM_ROOT loop names bridge.css but passes no --exclude, so nothing actually protects it');
-  /* Comments stripped before this search, and the first draft of this test
-     proves why: the flag is NAMED in wp/sync.mjs's own comment, explaining
-     that it must never be passed, and a bare search over the source matched
-     that explanation and failed a file that is correct. The better a comment
-     explains a rule, the more likely a text search for the rule's own terms
-     lands inside it. */
-  const code = src.replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.doesNotMatch(code, /--delete-excluded/,
-    '--delete-excluded would delete the very file the exclude exists to protect');
+    /* fromRootArgs builds `${dir}/` and `${host}:${dest}/${dir}/`. Passing an
+       empty host and a local path turns the same argument list into a local
+       copy, so the arguments under test are the arguments that reach the
+       install, not a re-spelling of them. */
+    for (const dir of ['css', 'js']) {
+      const args = fromRootArgs(dir, 'ssh-unused', '', `${root}/dest`)
+        .map((a) => (a === `${dir}/` ? `${root}/src/${dir}/` : a))
+        .map((a) => (a === `:${root}/dest/${dir}/` ? `${root}/dest/${dir}/` : a))
+        .filter((a, i, all) => !(a === '-e' || all[i - 1] === '-e'));
+      execFileSync('rsync', args);
+    }
+
+    const cssBridge = path.join(root, 'dest', 'css', 'bridge.css');
+    assert.ok(fs.existsSync(cssBridge),
+      'the css pass deleted bridge.css from the destination: every theme sync then leaves the live install with no bridge stylesheet until the third pass restores it');
+    assert.equal(fs.readFileSync(cssBridge, 'utf8'), 'the bridge\n',
+      'bridge.css survived the css pass but its contents were replaced');
+    assert.ok(fs.existsSync(path.join(root, 'dest', 'css', 'site.css')),
+      'the css pass did not deliver the repository css/, so the exclude is too broad');
+    assert.ok(!fs.existsSync(path.join(root, 'dest', 'js', 'bridge.css')),
+      'a destination-only file survived the js pass, so the exclude is not scoped to css/ and every other directory has stopped being mirrored');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/* Task 10 review, Important finding 2. Three file:line citations in this
+   batch went stale, and every one was correct when it was written: a sibling
+   commit in the SAME batch inserted lines above the target and moved it. The
+   project's standing rule, that every cited line opens to what it claims, is
+   enforced at write time by a human, and nothing re-checks it afterwards.
+
+   This test checks the two invariants that are decidable without knowing what
+   each citation meant:
+
+   1. A citation of `test-elementor.mjs:N` must land on a line containing an
+      assertion. Every such citation in the tree exists to point at the
+      assertion that gives a register floor its meaning, and the observed
+      failure moved one onto the word "catches." in the middle of a comment.
+
+   2. A citation of `bridge.css:N` from inside bridge.css must land on CSS,
+      not on comment prose. The observed failure moved a citation for a rule
+      onto the explanation of a different rule, which reads as plausible and
+      is wrong.
+
+   Neither invariant catches a citation that moves onto a DIFFERENT assertion
+   or a DIFFERENT selector, and that limit is deliberate: this asserts what a
+   machine can decide. The rest still needs a reader. */
+test('every internal file:line citation still lands on the kind of line it claims', () => {
+  const files = [
+    'elementor/pages/register.mjs',
+    'wp/empowerms-child/css/bridge.css',
+    ...fs.readdirSync('elementor/pages', { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .flatMap((d) => fs.readdirSync(path.join('elementor/pages', d.name))
+        .filter((f) => f.endsWith('.mjs'))
+        .map((f) => path.join('elementor/pages', d.name, f))),
+  ];
+
+  const suiteLines = fs.readFileSync('test-elementor.mjs', 'utf8').split('\n');
+  const bridgeLines = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').split('\n');
+
+  let checked = 0;
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+
+    for (const m of src.matchAll(/test-elementor\.mjs:(\d+)/g)) {
+      const n = Number(m[1]);
+      const line = suiteLines[n - 1] ?? '';
+      checked += 1;
+      assert.match(line, /assert\./,
+        `${file} cites test-elementor.mjs:${n}, which is now "${line.trim().slice(0, 60)}" and carries no assertion`);
+    }
+
+    if (!file.endsWith('bridge.css')) continue;
+    for (const m of src.matchAll(/bridge\.css:(\d+)(?:-(\d+))?/g)) {
+      const n = Number(m[1]);
+      const line = bridgeLines[n - 1] ?? '';
+      checked += 1;
+      assert.doesNotMatch(line, /^\s*\*/,
+        `${file} cites bridge.css:${m[0].split(':')[1]}, whose first line is now comment prose rather than CSS: "${line.trim().slice(0, 60)}"`);
+    }
+  }
+
+  /* A sweep that silently checks nothing is the failure this project has
+     already shipped once, in a test whose page list was hand-written. */
+  assert.ok(checked >= 5, `only ${checked} citations were checked, so this test has stopped finding them`);
 });
 
 /* --- fidelity.mjs ------------------------------------------------------- */

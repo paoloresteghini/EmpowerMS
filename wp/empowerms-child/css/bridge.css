@@ -2284,7 +2284,7 @@
  * the <img>):
  *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:413-419
  *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:1999-2001
- *   `.ta-hero__media`                          team-a,      bridge.css:2164-2166
+ *   `.ta-hero__media`                          team-a,      bridge.css:2181-2183
  *   (line ranges read off the file today; the repricing document cites the
  *   first two as 403-419 and 1999-2000, which are the comment start and the
  *   selector list without their declaration.)
@@ -2722,12 +2722,21 @@
  * `.elementor-element{align-self:var(--align-self)}` at 0,1,0, so both win on
  * specificity rather than on source order.
  *
- * Named to the two containers that carry the defect, NOT written as
+ * Named to the containers that carry the defect, NOT written as
  * `.elementor .em-btn`, even though every `.em-btn` link() in a column parent
- * has this shape. Five converted pages use `link()` and only these two are
- * wrong; a rule broad enough to cover the others would also reach the ones
- * inside `.fp-hero__actions` and `.ta-hero__actions`, which are ROW parents
- * where `align-self` addresses the cross axis and would move them vertically.
+ * has this shape: a rule broad enough to cover them all would also reach the
+ * ones inside `.fp-hero__actions` and `.ta-hero__actions`, which are ROW
+ * parents where `align-self` addresses the cross axis and would move them
+ * vertically.
+ *
+ * The first version of this comment closed with "five converted pages use
+ * `link()` and only these two are wrong". That sentence was FALSE and was
+ * never measured; it was inferred from where Task 10's implementer happened
+ * to be working. Review swept all seven converted pages and found two more,
+ * repaired in blocks 9 and 10 below. The scope of this block was honest; the
+ * completeness claim was not, and a completeness claim is the thing that
+ * stops the next person looking. Do not restate one here without a sweep
+ * behind it.
  * That is the fifth occasion in this file where a general rule would have
  * beaten something it should not.
  *
@@ -2739,4 +2748,124 @@
 .sb-research__body > .em-btn,
 .sb-stories__panel > .em-btn{
   align-self:flex-start;
+}
+
+/* ---------- 9. podcast-a: the same two defects together, on one element ----
+ * Found by review's sweep after block 8's comment claimed no other page had
+ * them. Measured by the controller live against the static build served
+ * locally, both at 1440, before writing anything:
+ *
+ *     .pca-hero__actions        live  DIV, column, 567x150
+ *                               static  P,  row,    567x68
+ *     its two `.em-btn` children live  567x68 and 567x65
+ *                               static  286x68 and 187x68
+ *
+ * So podcast-a's hero has carried two full-width bars stacked vertically,
+ * where the design draws two pills side by side, since the page was
+ * converted, and the hero is about 82px taller than the static build for it.
+ * podcast-a is the FIRST page this phase converted, and neither instrument
+ * has reported this once in seven pages.
+ *
+ * Two defects on one element, so two declarations with different causes:
+ *
+ * `flex-direction`, because css/podcast-a.css:77 is
+ * `.pca-hero__actions{display:flex;flex-wrap:wrap;gap:var(--space-4);
+ * margin:0}`, which declares the display and not the direction, since `row`
+ * is the initial value and needs no declaring in the static build. Elementor
+ * then feeds `column` through `.e-con-full.e-flex{flex-direction:
+ * var(--flex-direction)}` at 0,2,0 and nothing competes with it. Same cause
+ * as blocks 3 and 7.
+ *
+ * ONE declaration, not two, and the second one was WRITTEN, DEPLOYED,
+ * MEASURED AND REMOVED, which is worth recording because the reasoning that
+ * produced it was plausible and wrong. The first version of this block added
+ * `.pca-hero__actions > .em-btn{align-self:flex-start}` as well, on the
+ * argument that block 8's stretch defect must apply here too. Measured after
+ * deploying both declarations:
+ *
+ *     live    286x68 and 187x65        static  286x68 and 187x68
+ *
+ * The second button came out 3px SHORT, and the align-self rule is what did
+ * it. In the static build `.pca-hero__actions` is a flex ROW at its default
+ * `align-items:stretch`, so the shorter button stretches vertically to the
+ * taller one's height: both are 68.39 despite one being 17px type and the
+ * other 19px. `align-self` addresses the CROSS axis, which in a row is the
+ * vertical one, so `flex-start` cancelled exactly the stretch the design
+ * depends on. Block 8's `align-self` is correct precisely because those two
+ * parents are COLUMNS, where the cross axis is horizontal.
+ *
+ * So the direction rule alone fixes both widths, because once the row is
+ * restored the wrapper is sized by its content along the main axis, exactly
+ * as the static anchor is. Same defect family, opposite repair, decided by
+ * the parent's axis. Re-measured after removing it: 286x68 and 187x68,
+ * matching static exactly on both.
+ *
+ * `.pca-hero__actions.e-con` is 0,2,0 and wins on source order over
+ * `.e-con-full.e-flex`.
+ *
+ * Checked for @media interference: css/podcast-a.css's four media blocks open
+ * at :104, :149, :291 and :297, and not one names `.pca-hero__actions` or
+ * `.em-btn`. `flex-wrap:wrap` at :77 handles the narrow case in the static
+ * build and does the same here once the direction is right. Confirmed by
+ * re-measuring at 390. */
+.pca-hero__actions.e-con{
+  flex-direction:row;
+}
+
+/* ---------- 10. capitol-a: a single CTA stretched to the full hero width ---
+ * Same sweep, same round. Measured live against static, both at 1440:
+ *
+ *     .cca-hero__action > .em-btn   live  DIV, display:flex,        1152px
+ *                                   static  A, display:inline-flex,  200px
+ *
+ * A 1152px bar where the design draws a 200px pill, live since capitol-a was
+ * converted this morning.
+ *
+ * Cause is block 8's, not block 7's, and the distinction matters because the
+ * obvious reading is wrong. `.cca-hero__action` is a `<p>` in source built as
+ * a container (elementor/pages/capitol-a/01-hero.mjs:19-28 argues that
+ * choice), and css/capitol-a.css:72 gives it only `margin:0`: it never
+ * declares `display:flex` at all, so this is NOT the missing-direction shape
+ * and no `flex-direction` rule belongs here. What is wrong is only that its
+ * one `link()` child's `.em-btn` wrapper is a flex item taking `stretch`.
+ * ONE declaration, and adding a direction rule as well would be writing a
+ * rule for a defect this page does not have.
+ *
+ * `.cca-hero__action > .em-btn` is 0,2,0 against Elementor's 0,1,0. Checked
+ * for @media interference: capitol-a's four media blocks open at :92, :131,
+ * :238 and :249, and none names `.cca-hero__action` or `.em-btn`. The button
+ * is content-sized at every width in the static build. Confirmed at 390. */
+.cca-hero__action > .em-btn{
+  align-self:flex-start;
+}
+
+/* ---------- 11. what-we-do-a: the same direction defect, LATENT ------------
+ * Recorded as a repair rather than left alone, and the reasoning is the point
+ * rather than the rule. Measured live against static at 1440:
+ *
+ *     .da-hero__actions   live  column, 575x68   static  row, 575x68
+ *
+ * The computed direction is wrong and the box is IDENTICAL, because the
+ * container holds exactly one child today: css/what-we-do-a.css:41 is
+ * `.da-hero__actions{display:flex;align-items:center;gap:var(--space-6);
+ * flex-wrap:wrap}` with no direction, the same shape as blocks 3, 7 and 9,
+ * and a single item stacks the same way it sits in a row.
+ *
+ * So this costs nothing today and is repaired anyway, for one reason: the
+ * moment anybody adds a second action to that hero, in Elementor or in the
+ * static build, the page silently lays it out wrongly and no instrument
+ * reports it. This phase has now found this exact shape on four pages and
+ * twice it was already live. A defect that is invisible AND latent is the
+ * worst of the two to leave, because the person who trips it will be editing
+ * content, not converting a page.
+ *
+ * This is not a licence for speculative rules. The difference is measured:
+ * the computed value differs from the static build today, on a live page. A
+ * rule for a difference nobody has measured would still be wrong.
+ *
+ * `.da-hero__actions.e-con` is 0,2,0, winning on source order. Checked for
+ * @media interference: what-we-do-a's four media blocks open at :130, :141,
+ * :146 and :150 and none names it. Confirmed at 390. */
+.da-hero__actions.e-con{
+  flex-direction:row;
 }

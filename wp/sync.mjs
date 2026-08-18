@@ -14,6 +14,22 @@ const THEME = 'wp-content/themes/empowerms-child';
    and the drift is invisible until a page renders wrong. */
 const FROM_ROOT = ['tokens', 'components', 'css', 'js', 'assets'];
 
+/* Exported for the test, and pure on purpose. The window this closes cannot
+   be observed from any unit test in this repository, because the failure is a
+   file being absent from a remote host for a few seconds. What CAN be observed
+   is the argument list, and the argument list is the whole behaviour: run these
+   arguments against a real local rsync and a destination-only bridge.css either
+   survives or it does not. A source-text assertion cannot tell the difference
+   between an exclude that protects bridge.css and an exclude that protects
+   something else, which is exactly the gap the first version of that test had.
+
+   `--delete-excluded` must never appear here: it would delete the very file the
+   exclude exists to protect. */
+export function fromRootArgs(dir, ssh, host, dest) {
+  const protectBridge = dir === 'css' ? ['--exclude', '/bridge.css'] : [];
+  return ['-az', '--delete', ...protectBridge, '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`];
+}
+
 export async function syncTheme() {
   const { host, key, root } = installConfig();
   const dest = `${root}/${THEME}`;
@@ -45,8 +61,7 @@ export async function syncTheme() {
        not delete a file an --exclude protects, unless --delete-excluded is
        given, which this file must never pass. So pass three keeps bridge.css
        CURRENT and this exclude keeps it PRESENT; both are needed. */
-    const protectBridge = dir === 'css' ? ['--exclude', '/bridge.css'] : [];
-    await run('rsync', ['-az', '--delete', ...protectBridge, '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`]);
+    await run('rsync', fromRootArgs(dir, ssh, host, dest));
   }
   /* bridge.css is excluded above (it lives under wp/empowerms-child/css/,
      inside the excluded /css/ path) and then overwritten wholesale above

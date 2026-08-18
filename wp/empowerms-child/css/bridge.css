@@ -1683,3 +1683,44 @@
 .elementor .em-footer__top .em-footer__social{
   margin-top:0;
 }
+
+/* ---------- what-we-do-a: a child combinator one level too shallow ----------
+ * Task 6b, the first page built class-in-markup from the start rather than
+ * migrated to it. census() found three paragraphs (the three door bodies)
+ * computing marginBottom 16px live against 0px static, with font-size,
+ * line-height, font-family and colour already agreeing on both sides.
+ *
+ * css/what-we-do-a.css:86 is `.da-door__body>p{margin:0;font-size:
+ * var(--fs-body);line-height:1.6;color:var(--text-body);text-wrap:pretty}`,
+ * a CHILD combinator. In dist/what-we-do-a.html the `<p>` really is a direct
+ * child of `.da-door__body`. 02-solutions.mjs (the door body's own module)
+ * builds this paragraph with no cssClass at all, matching the source exactly
+ * (it carries none there either), so this is not a class the markup omitted:
+ * the source itself styles this paragraph by position, not by class. What
+ * changed is the DOM depth. text() wraps the `<p>` in Elementor's own
+ * `.elementor-widget-text-editor` (this install's text-editor widgets emit
+ * no further `.elementor-widget-container` level, confirmed elsewhere in
+ * this file), so the real tree is `.da-door__body > .elementor-widget-
+ * text-editor > p`, one level deeper than the build's own selector reaches.
+ * Unopposed, the paragraph falls back to tokens/base.css's site-wide
+ * `p{margin:0 0 var(--space-4)}` (16px) for the one property that rule sets
+ * and the door rule does not reach: font-size/line-height/colour still
+ * measured right only because they happen to equal what the paragraph
+ * inherits from `body` regardless, which is why census reported a single
+ * property wrong rather than four.
+ *
+ * The door's own heading needed nothing: `.da-door h3{margin:0}`
+ * (what-we-do-a.css:77) is a DESCENDANT selector, so the same extra wrapper
+ * never stood in its way, which is why census found this on the three body
+ * paragraphs only, never the three headings beside them.
+ *
+ * `> p` rather than `:has(> p)`: the door's other text-editor widget wraps
+ * an `<h3>`, not a `<p>`, so a child combinator on `p` already excludes it
+ * with nothing further to scope. Restated as `margin:0` rather than only
+ * `margin-bottom`, matching what-we-do-a.css:86 exactly; no @media rule
+ * anywhere in that file touches `.da-door__body>p`, so nothing responsive
+ * is at risk of going silently unrestored. Measured after: all three door
+ * paragraphs compute marginBottom 0px live, matching static. */
+.da-door__body > .elementor-widget-text-editor > p{
+  margin:0;
+}

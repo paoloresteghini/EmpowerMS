@@ -137,7 +137,15 @@ function empower_asset_ver( $rel ) {
  */
 function empower_page_styles() {
 	return array(
-		'podcast-a' => array( 'motion', 'podcast-a' ),
+		'podcast-a'    => array( 'motion', 'podcast-a' ),
+		/* what-we-do-a. Read off dist/what-we-do-a.html's own <head>, which
+		   loads (after the shared tokens/components cascade and the
+		   unconditional header sheet) the site stylesheet, the header sheet,
+		   the motion sheet, then its own what-we-do-a sheet, in that order.
+		   The site and header sheets are already enqueued unconditionally
+		   above, so only the two page-specific sheets beyond that shared
+		   cascade belong here, the same shape podcast-a's own entry takes. */
+		'what-we-do-a' => array( 'motion', 'what-we-do-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole
@@ -145,7 +153,7 @@ function empower_page_styles() {
 		   consolidating these into one sheet as cleanup that has not been
 		   done, so the list stays exactly as the static page loads it until
 		   that happens. */
-		'final'     => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
+		'final'        => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
 	);
 }
 

@@ -93,7 +93,34 @@ export const PAGE_REGISTER = [
     minShared: 40,
     minBoxes: 50,
   },
-  // Task 6b adds what-we-do-a here once it is converted and measured green.
+  /* what-we-do-a: Task 6b, the first page built class-in-markup from the
+     start rather than migrated to it. Its own floors, not the homepage's
+     (the addendum's own instruction, after this register rejected the
+     homepage's constant outright for a page this much smaller).
+
+     minShared: measured 2026-08-17 with census() from fidelity-browser.mjs
+     run directly against dist/what-we-do-a.html alone (no live side, served
+     locally the same way the tests do): 17 elements matching
+     h1,h2,h3,h4,h5,p,blockquote. 10 keeps the same headroom the homepage's
+     40/63 floor keeps (roughly 63%: at least 11 of 17 must match by text),
+     comfortably below 17 while still requiring the large majority of the
+     static page's own text content to reappear on the live side.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/what-we-do-a.html alone, at both 1440 and 390: 72 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 40
+     keeps roughly the same proportion as the homepage's 50/87 (about 57%: at
+     least 41 of 72 must match), and sits nowhere near what a wrong
+     staticFile actually produces (a 404 measures 0 real elements). */
+  {
+    name: 'what-we-do-a',
+    envVar: 'WHAT_WE_DO_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/what-we-do-a/',
+    staticFile: 'dist/what-we-do-a.html',
+    minShared: 10,
+    minBoxes: 40,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

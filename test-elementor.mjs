@@ -24,6 +24,7 @@ import { section as finalInsights } from './elementor/pages/final/05-insights.mj
 import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
+import { POST_ID as whatWeDoAPostId, sections as whatWeDoASections } from './elementor/pages/what-we-do-a/page.mjs';
 import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
@@ -1659,6 +1660,23 @@ test('the podcast-a page composes hero, about, then library, in that order', () 
   );
   assert.equal(typeof podcastAPostId, 'number', 'podcast-a/page.mjs POST_ID is not a number');
   assert.ok(Number.isInteger(podcastAPostId), 'podcast-a/page.mjs POST_ID is not an integer');
+});
+
+/* --- elementor/pages/what-we-do-a/page.mjs -------------------------------- */
+
+/* Same contract, same reasoning as the podcast-a test above: deployPage()
+   overwrites _elementor_data wholesale, so this list being right is the only
+   thing standing between a dropped import and a page that renders, returns
+   200, and is missing a section. */
+test('the what-we-do-a page composes hero, solutions, then reports, in that order', () => {
+  const built = whatWeDoASections();
+  assert.deepEqual(
+    built.map(s => s.settings.css_classes),
+    ['da-hero', 'da-solutions', 'da-reports'],
+    'what-we-do-a/page.mjs does not compose da-hero, da-solutions, da-reports in that order',
+  );
+  assert.equal(typeof whatWeDoAPostId, 'number', 'what-we-do-a/page.mjs POST_ID is not a number');
+  assert.ok(Number.isInteger(whatWeDoAPostId), 'what-we-do-a/page.mjs POST_ID is not an integer');
 });
 
 /* --- elementor/theme-parts ------------------------------------------------ */

@@ -107,11 +107,67 @@ export function validateDeferredEntry(entry) {
   return entry;
 }
 
-/* Starts empty. Nothing is deferred yet: Task 6b produces the first real
-   entries once what-we-do-a is measured and triaged. Each entry: the page
-   name (matching a name in PAGE_REGISTER), the sweep's own element key, a
-   one-line reason, and the date it was deferred. */
+/* Task 6b's four entries, the first real ones this list carries. All four
+   are what-we-do-a's photographs, all placeholder per Paolo's instruction
+   (see this file's header comment), and all triaged the same way: measured
+   against the task-6-supplement.md rule before deferring, not deferred on
+   the strength of the diff list alone.
+
+   THE MEASUREMENT THAT DECIDED IT. The box sweep only reports the four
+   `img|...` keys themselves; it does not measure the box each photograph
+   sits inside, so the diff list alone cannot say whether a wrong image size
+   is also moving other content. Checked directly (getBoundingClientRect,
+   live against dist/what-we-do-a.html served locally, at 1440 and 390) for
+   every one of the four: `.da-hero__media` and each `.da-door__media`
+   (`.da-hero__media`/`.da-door__media{aspect-ratio:...;overflow:hidden}` in
+   css/what-we-do-a.css) is IDENTICAL live and static at both widths in every
+   case, because the CONTAINER's own height comes from `aspect-ratio` and
+   does not depend on its content. Only the `<img>` element's own box differs
+   (the classroom-students hero at 623.53/612.73px live/static at 1440,
+   435.02/213.75px at 390; the three door photographs at 315.72/243.78/241.55
+   live against a uniform 270.72 static at 1440), and each oversized image is
+   clipped by its container's own `overflow:hidden`, invisible to anything
+   below or beside it. `.da-door` and `.da-doors` (the whole card and the row
+   of three) DO differ by 16px, but that 16px is exactly the census margin
+   defect fixed above (three doors × the same paragraph), confirmed by
+   re-measuring after that fix landed: with the margin rule in place the
+   card and row heights match exactly and only the four image keys remain
+   different. So none of the four moves the layout of anything else; every
+   one is a DEFER under the recipe's own rule (the only keys that differ are
+   the image's own). */
 export const DEFERRED_IMAGES = [
+  {
+    page: 'what-we-do-a',
+    key: 'img|classroom-students.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); hero renders at its own intrinsic ratio '
+      + 'inside .da-hero__media (aspect-ratio:4/5, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'what-we-do-a',
+    key: 'img|child-classroom-tablet.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); door renders at its own intrinsic ratio '
+      + 'inside .da-door__media (aspect-ratio:4/3, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'what-we-do-a',
+    key: 'img|worker-workshop-bw.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); door renders at its own intrinsic ratio '
+      + 'inside .da-door__media (aspect-ratio:4/3, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'what-we-do-a',
+    key: 'img|grandparents-grandchild.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); door renders at its own intrinsic ratio '
+      + 'inside .da-door__media (aspect-ratio:4/3, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
 ];
 DEFERRED_IMAGES.forEach(validateDeferredEntry);
 

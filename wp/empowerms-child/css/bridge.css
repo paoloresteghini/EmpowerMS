@@ -1100,48 +1100,44 @@
  * the static build always relied on, with nothing left to restate. This
  * whole rule is gone; nothing across either converted page still needs it. */
 
-/* ---------- podcast-a: the same class-on-wrapper category, its own classes ---
+/* ---------- podcast-a: the same class-on-wrapper category, its own classes,
+ *            ALL EIGHT RULES DELETED 2026-08-17 by Task 5's class-in-markup
+ *            migration -------------------------------------------------------
  * Measured on the converted spike after the homepage repairs above, using the
  * same instrument. Identical mechanism, so the same two halves: the inner
- * paragraph stops supplying base.css's 16px, and the wrapper gets back the
- * margin Elementor zeroes at 0,3,0. Values read from css/podcast-a.css.
+ * paragraph stopped supplying base.css's 16px, and the wrapper got back the
+ * margin Elementor zeroed at 0,3,0. Values read from css/podcast-a.css.
  *
- * .pca-lede is scoped to .pca-about__copy rather than repaired globally,
- * because the class itself declares no margin at all (podcast-a.css:50) and
- * only podcast-a.css:131 gives it one, in that one context. A bare
- * `.pca-lede p{margin:0}` would zero a paragraph that is supposed to keep
- * base.css's 16px anywhere else the class is used. */
-.elementor .pca-eyebrow p,
-.elementor .pca-hero__lede p,
-.elementor .pca-about__copy .pca-lede p,
-.elementor .pca-about__where p{
-  margin:0;
-}
-.elementor .pca-eyebrow.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-5); /* 20px, podcast-a.css:45 */
-}
-.elementor .pca-hero__lede.elementor-widget.elementor-widget{
-  margin-block-end:clamp(var(--space-8), 4vw, var(--space-10)); /* 56px at 1440, podcast-a.css:73 */
-}
-.elementor .pca-about__copy .pca-lede.elementor-widget.elementor-widget{
-  margin-block-end:var(--space-6); /* 24px, podcast-a.css:131 */
-}
-
-/* .pca-about__where loses three inherited properties rather than a margin, and
- * they are repaired with `inherit` rather than by restating the values. The
- * class sets font-size, line-height and colour (podcast-a.css:142); it sits on
- * the wrapper, so the wrapper already computes all three correctly. The inner
- * <p> does not inherit them only because tokens/base.css claims each one on the
- * `p` element itself, and an element's own rule beats an inherited value.
- * `inherit` hands back exactly what the wrapper resolved, so this rule never
- * needs updating if podcast-a.css changes its mind about the values, which
- * restating them would. Measured before: 27.2px line-height and rgb(74,74,74)
- * against the static build's 22.95px and rgb(0,60,80). */
-.elementor .pca-about__where p{
-  font-size:inherit;
-  line-height:inherit;
-  color:inherit;
-}
+ * 01-hero.mjs and 02-about.mjs no longer build these four widgets (pca-eyebrow,
+ * pca-hero__lede, pca-lede, pca-about__where) with cssClass on the wrapper; the
+ * class now sits on the real <p> the markup carries, so podcast-a.css's own
+ * selectors (`.pca-eyebrow`, `.pca-hero__lede`, `.pca-about__copy .pca-lede`,
+ * `.pca-about__copy .pca-about__where`) reach the element they were written
+ * for directly, and every rule below, which existed only to work around the
+ * class sitting on the wrong element, has nothing left to repair:
+ *
+ *   - the four-selector `margin:0` group (the inner, unclassed <p> no longer
+ *     exists as a distinct element from the classed wrapper: there is only
+ *     one element now, and its own margin is correct on its own);
+ *   - the three `margin-block-end` wrapper restatements (the wrapper no
+ *     longer carries the class these selectors matched on, so each is dead:
+ *     confirmed by grep, none matches anything on the live page);
+ *   - `.pca-about__where p{font-size|line-height|color:inherit}` (the
+ *     properties it handed down from the wrapper are now the real element's
+ *     own, computed directly by podcast-a.css:142, needing no inheritance
+ *     at all).
+ *
+ * One migration side effect was found in this group and is fixed above, not
+ * here: `.pca-lede`'s wrapper picked up an unwanted 20px this deletion did
+ * not itself cause (see the `:has(.pca-lede)` rule preceding this section).
+ *
+ * Measured after this deletion, single combined cycle per ruling R16 (all
+ * eight rules removed together, one measurement, since both instruments key
+ * per element rather than on an aggregate that could mask two changes
+ * cancelling): census() reports shared 15, diffs 0; controlBoxes() reports
+ * the same 9 pre-existing box diffs at both viewports as before this task
+ * touched the page (live episode titles against the static build's 9
+ * placeholder demo cards, unrelated to this migration). */
 
 /* ---------- Two rules that are about POSITION IN A PARENT, not about a class
  * The last two differences on the two converted pages, and they are a distinct
@@ -1275,6 +1271,37 @@
 }
 .elementor .pca-about__copy > .elementor-widget-text-editor:not(:last-child){
   margin-block-end:var(--space-5);
+}
+
+/* ADDED 2026-08-17 by Task 5's class-in-markup migration, and this is the
+ * one difference the migration itself created rather than merely exposed.
+ * Before this task, .pca-lede's wrapper carried the class (via cssClass)
+ * and a now-deleted rule (`.pca-about__copy .pca-lede.elementor-widget.
+ * elementor-widget{margin-block-end:24px}`, 0,4,0) outranked the
+ * `:not(:last-child)` rule above (0,2,0) and won outright, so the wrapper
+ * alone carried the paragraph's 24px and the un-classed inner <p> was
+ * zeroed by the class-on-wrapper margin:0 group. Migrated, .pca-lede now
+ * sits on the real <p>, so podcast-a.css:131's own
+ * `.pca-about__copy .pca-lede{margin-bottom:24px}` reaches it directly and
+ * correctly, but nothing stops the rule above from ALSO landing its 20px
+ * on the wrapper any more (the wrapper's competing class is gone), and
+ * margins do not collapse between the two: measured 44px live against
+ * 24px static on this paragraph, exactly 24 (its own, now-correct margin)
+ * plus 20 (the wrapper's, now unwanted). Named to this one widget rather
+ * than narrowing the rule above (which the migration's own supplement
+ * ruling already confirmed correct and left untouched): the middle,
+ * unclassed paragraph in the same group still needs the 20px this rule
+ * supplies, only .pca-lede's wrapper needs it taken back. `:has(.pca-lede)`
+ * reaches into the widget's `.elementor-widget-container` to the real <p>;
+ * specificity 0,3,0 beats the 0,2,0 rule above regardless of source order.
+ * No `@supports not selector(:has(...))` fallback, same judgement
+ * homepage.css:450's own repair records nearby: without `:has()` this
+ * rule simply does not apply and the page returns to the 44px/24px
+ * defect this rule exists to close, not to a broken layout. Measured with
+ * the fix deployed: shared 15, diffs 0 (fidelity-browser.mjs's census()
+ * against the served snapshot and dist/podcast-a.html). */
+.elementor .pca-about__copy > .elementor-widget-text-editor:has(.pca-lede){
+  margin-block-end:0;
 }
 
 /* ---------- The action link is not a flex item either, same mechanism as

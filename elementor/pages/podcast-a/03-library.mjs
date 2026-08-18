@@ -302,10 +302,21 @@ export function section() {
         container(
           { cssClass: 'pca-library__head', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
-            heading({
-              text: 'Explore More Episodes',
-              tag: 'h2',
-              _element_id: 'library-title',
+            /* text() carrying a bare <h2>, not a heading() widget with
+               _element_id. Class-in-markup migration (2026-08-17): the id
+               moves off the widget's wrapper div and onto the <h2> itself,
+               the same move 01-hero.mjs's note 5 and 02-about.mjs's note 6
+               record for their own headings, so
+               aria-labelledby="library-title" on the outer container now
+               resolves to the heading element itself. The same move also
+               removes Elementor's own heading widget from this section, so
+               its frontend.min.css line-height:1 default needs no repair
+               here. The loop item's own heading (.pca-ep__title, note 6
+               above) is a NAMED EXEMPTION and stays a heading() widget: it
+               binds two dynamic tags (title and link), which a text()
+               widget's single editor field cannot do. */
+            text({
+              markup: '<h2 id="library-title">Explore More Episodes</h2>',
               _attributes: 'data-reveal|rise',
             }),
             text({

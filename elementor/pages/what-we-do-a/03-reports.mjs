@@ -18,7 +18,7 @@ import { container, text, html } from '../../factory.mjs';
    sit at a particular DOM depth. (The discriminator that actually predicts
    this, corrected after review round 1: a child combinator only breaks when
    its right-hand side is content another module builds as a WIDGET, never
-   when it is a CONTAINER, and this section's own `<ul>` is neither — it is
+   when it is a CONTAINER, and this section's own `<ul>` is neither: it is
    the html() widget's own markup, untouched by Elementor's wrapping at all.)
 
    No cssClass passed to html() here, matching `.tl-line`'s own choice: the

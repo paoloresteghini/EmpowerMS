@@ -1727,14 +1727,28 @@
  * `<p>` directly, with no further `.elementor-widget-container` level in
  * between. NOT TRUE OF EVERY WIDGET ON THIS INSTALL, so do not copy that
  * half onto a page this comment did not check: a Loop Item template inserts
- * exactly that extra level (`elementor/pages/podcast-a/03-library.mjs`,
- * note 9; the `:has(> p)`/`.elementor-widget-container` rule earlier in this
- * file is where that was found and repaired). `.da-door__body` contains no
- * loop item, so the two-class selector below is not at risk of the same
- * failure, but a future page whose text widget sits inside a Loop Item
- * template needs the `.elementor-widget-container` level added, not this
- * selector copied as is; copying it unchanged there would ship a selector
- * that matches nothing and fails silently.
+ * exactly that extra level. This is DOCUMENTED, not repaired, at
+ * `elementor/pages/podcast-a/03-library.mjs`, note 9, which says in its own
+ * words that its own instance of this is fixed by neither
+ * `css/podcast-a.css` nor anything in this file, and names an additive
+ * bridge rule as "the natural next step if required later", and one was
+ * never written for podcast-a. Corrected here after review round 2, which caught
+ * this comment originally claiming the opposite: it cited the homepage's
+ * `:has(> p)` rule (this file, Task 4's Join Us repair) and the homepage's
+ * `.em-stories__col .elementor-widget-container` rule further up this file
+ * as having "found and repaired" podcast-a's case. Neither one touches
+ * podcast-a; both are the HOMEPAGE's own Stories section, a different page
+ * and a different Loop Grid instance, and the `:has(> p)` rule's own comment
+ * cites podcast-a's note 9 only as a caution about an assumption that might
+ * not hold elsewhere, not as evidence of a fix. If a future page needs a
+ * precedent for the SHAPE of a `.elementor-widget-container`-aware repair,
+ * `.em-stories__col .elementor-widget-container{display:contents}` earlier
+ * in this file is one, and it is the homepage's, not podcast-a's.
+ * `.da-door__body` contains no loop item, so the two-class selector below is
+ * not at risk of the same failure, but a future page whose text widget sits
+ * inside a Loop Item template needs the `.elementor-widget-container` level
+ * added to ITS OWN selector, not this one copied as is; copying it unchanged
+ * there would ship a selector that matches nothing and fails silently.
  *
  * The door's own heading needed nothing: `.da-door h3{margin:0}`
  * (what-we-do-a.css:77) is a DESCENDANT selector, so the same extra wrapper

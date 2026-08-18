@@ -348,7 +348,21 @@ async function settleReveal(page) {
      naming one `.c2-panels` panel, should re-run rather than treat it as
      a page defect; a throw naming several elements across unrelated
      sections is a different, worse signal and should not be waved off
-     the same way. */
+     the same way.
+
+     UPDATE: the technique this paragraph rejects, el.scrollIntoView on a
+     container before working it, was re-adopted below anyway (see "Bring
+     the container into view VERTICALLY before walking it" further down in
+     this same evaluate) once its actual cost was understood: 27 of 38
+     revealed without it, because a container brought into view moves
+     everything below it off screen for good once the first vertical pass
+     has already run. It is safe there because the compensating second
+     vertical pass a few lines below re-scrolls past everything the walk's
+     own scrollIntoView calls displaced, restoring what this paragraph
+     found missing. Read this record as history, not as a standing
+     prohibition on the call itself: what was rejected and never brought
+     back is calling it AS A SUBSTITUTE for restoring the rest of the page
+     afterwards, not calling it at all. */
   await page.evaluate(async () => {
     /* STABLE_FRAMES, not one frame, and the distinction is the whole flake.
        The first version returned as soon as scrollLeft matched its previous
@@ -447,18 +461,43 @@ async function settleReveal(page) {
      into view, give it a frame, and check again, until the unrevealed set
      stops shrinking or a small round budget runs out.
 
-     THIS IS NOT the el.scrollIntoView() fix tried and MEASURED WORSE,
-     recorded above on the container walk. That one ran mid-walk, calling
-     scrollIntoView on every horizontally-scrolling container before its
-     own horizontal steps, while the vertical pass had not yet run and
-     other elements still depended on it; it dropped the result from 37 of
-     38 to 28 of 38 by disturbing an arrangement it never restored. This one
-     runs only after every earlier pass is finished, targets only elements
-     that are still unrevealed, and cannot strand anything else: nothing
-     later in this function depends on scroll position except the wait
-     below and the return to the top at the very end, and the thing each
-     call scrolls to is exactly the thing that still needs to be seen. */
+     el.scrollIntoView is the same call the container walk above uses, and
+     that is not a coincidence to paper over: what actually distinguishes
+     this pass from the one MEASURED WORSE up at the KNOWN GAP paragraph is
+     not the call, it is WHEN it runs and WHAT it is allowed to touch. The
+     rejected version scrolled the window on behalf of containers that were
+     not themselves the elements in trouble, at a point in the walk where
+     later phases still had work left to do, so it could carry an
+     unrelated element out of view before that element had ever had its own
+     chance to be seen; that is what cost it 37 of 38 down to 28 of 38. This
+     pass runs only once every earlier phase (images, the horizontal walk,
+     the final vertical pass) has already finished, and it scrolls only to
+     elements that have provably missed their chance, never to a container
+     on anyone else's behalf. Because .is-revealed is sticky and
+     js/reveal.js unobserves on first intersection (see the container
+     walk's own comment on that above), the unrevealed set this pass reads
+     can only shrink, never grow, so a scroll on behalf of one holdout can
+     never create a new one. That is a difference in kind, not in degree,
+     even though the call itself is identical.
+
+     One thing this pass CAN disturb, and does correct for below:
+     scrollIntoView moves every scrollable ancestor of the target, not only
+     the window, so a holdout that lives inside a `.c2-panels`-style rail
+     drags that rail's scrollLeft away from the position the container walk
+     above spent real effort settling it back to. Neither census() nor
+     controlBoxes() records x or y, so this cannot manufacture a box or
+     style difference in the two instruments this function was built for.
+     screenshots() is the caller that does care: it settles and then takes
+     a fullPage capture, and a rail parked on a different panel from run to
+     run would turn an axis that used to be deterministic into a visible,
+     flaky artifact in review screenshots. Restored the same way the walk
+     above restores it, snapshot before, settle back after. */
   await page.evaluate(async () => {
+    const containers = [...document.querySelectorAll('*')].filter((el) => {
+      const cs = getComputedStyle(el);
+      return (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth;
+    });
+    const savedScrollLeft = containers.map(el => el.scrollLeft);
     const MAX_ROUNDS = 5;
     let previousCount = Infinity;
     for (let round = 0; round < MAX_ROUNDS; round += 1) {
@@ -469,6 +508,27 @@ async function settleReveal(page) {
       for (const el of unrevealed) {
         el.scrollIntoView({ block: 'center', behavior: 'instant' });
         await new Promise(r => requestAnimationFrame(r));
+      }
+    }
+    /* Bounded the same way settleScrollLeft above is bounded: a budget, not
+       an unbounded poll, because scroll-snap's async re-settle is exactly
+       the mechanism that made an unbounded wait unsafe there too. Skipped
+       entirely for a container the loop above never touched, which is the
+       common case measured on this page (the recurring holdout is a plain
+       heading with no rail of its own). */
+    const STABLE_FRAMES = 3;
+    for (let i = 0; i < containers.length; i += 1) {
+      const el = containers[i];
+      if (el.scrollLeft === savedScrollLeft[i]) continue;
+      el.scrollTo({ left: savedScrollLeft[i], behavior: 'instant' });
+      const deadline = Date.now() + 500;
+      let prev = el.scrollLeft;
+      let stable = 0;
+      while (Date.now() < deadline && stable < STABLE_FRAMES) {
+        await new Promise(r => requestAnimationFrame(r));
+        const cur = el.scrollLeft;
+        stable = cur === prev ? stable + 1 : 0;
+        prev = cur;
       }
     }
   });

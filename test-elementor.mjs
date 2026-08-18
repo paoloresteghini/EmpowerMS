@@ -2819,7 +2819,23 @@ test('every control and image on the converted homepage matches the static build
    heading that only ever appears as a sliver at a step boundary), so a
    single passing run is not evidence of anything. Three consecutive
    "settled" results, after the repair, is the bar: by chance alone against
-   a ~1-in-3 pre-repair pass rate that would happen under 4% of the time. */
+   a ~1-in-3 pre-repair pass rate that would happen under 4% of the time.
+   Worth being honest about what three runs buys, though: against the
+   original defect (measured at 75% per run) it is a strong revert
+   detector, but its power against a brand NEW flake introduced later is
+   only 1 - (1 - p)^3, so a regression reintroducing even a 25% per-run
+   flake is caught in only about 58% of suite runs, and a 10% flake in
+   about 27%. If this test goes red only occasionally rather than every
+   time, that is not a sign it is oversensitive; treat any red as real.
+
+   Measures rather than assumes: a fresh checkout has dist/ gitignored, and
+   an unbuilt or unreachable dist/final.html would make every phase of
+   settleReveal succeed trivially over an empty page (zero images, zero
+   containers, zero [data-reveal] elements, every() over an empty array is
+   true), which is a green result that measured nothing. controlBoxes()
+   against a fully built page found 87 controls at 390px, so a floor of 40
+   (the same margin the census test above uses for the same reason) is
+   asserted on every run before its settle marker is trusted. */
 test('the static build alone settles at 390px, not just relative to the live page', { concurrency: 1 }, async () => {
   const { controlBoxes } = await import('./fidelity-browser.mjs');
   const server = await serveRepoRoot();
@@ -2828,6 +2844,10 @@ test('the static build alone settles at 390px, not just relative to the live pag
     const results = [];
     for (let i = 0; i < RUNS; i++) {
       const stat = await controlBoxes(`${server.url}/dist/final.html`, { width: 390 });
+      const measured = Object.keys(stat).filter((k) => !k.startsWith('__')).length;
+      assert.ok(measured > 40,
+        `controlBoxes measured only ${measured} controls on run ${i + 1} of dist/final.html at 390px; `
+        + 'the build is likely missing or unreachable (run node build.mjs), not settled');
       results.push(stat.__unsettled__);
     }
     assert.deepEqual(results, Array(RUNS).fill('settled'),

@@ -192,6 +192,17 @@ function empower_page_styles() {
 		   that shared cascade belong here: the same shape every entry above
 		   takes, for the same reason. */
 		'amb-a'        => array( 'motion', 'amb-a' ),
+		/* epic-a. Read off dist/epic-a.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own epic-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason. This page needs the motion sheet for
+		   more than the shared reveal layer: css/epic-a.css's own rail fill is
+		   a scroll-driven animation and the build's first converted
+		   view-timeline. */
+		'epic-a'       => array( 'motion', 'epic-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

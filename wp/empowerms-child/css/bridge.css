@@ -3597,3 +3597,524 @@
 .em-join__signup > .elementor-widget-html{
   width:100%;
 }
+
+/* ============================================================================
+ * Task 14: epic-a. Ten blocks, 17 to 26.
+ *
+ * FOUR were priced (17, 18, 19, and 20 with its 21). SIX were not, and the six
+ * are the interesting half: two are the wrapper-descender category this file
+ * has already paid three times, one is the seventh category found by measuring
+ * the middle band the way Task 13 recommended, and three are new shapes this
+ * page is the first to hit. Every "before" and "after" number below was
+ * measured against a snapshot.mjs capture of the live page served with this
+ * checkout's own CSS, and confirmed on the deployed install afterwards.
+ * ==========================================================================*/
+
+/* ---------- 17. epic-a: the lead paragraph's treatment lands on all three,
+ *                the FIFTH instance of the structural-pseudo-class category --
+ * css/epic-a.css:134-137 is `.epa-work__prose p{margin:0;max-width:62ch;
+ * font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body)}`
+ * and :139-142 is `.epa-work__prose p:first-child{font-size:var(--fs-lead);
+ * line-height:1.45;color:var(--text-strong);font-weight:var(--fw-semibold)}`,
+ * written for the first of three real siblings. Converted, each paragraph is
+ * the only child of its own text-editor widget, so every one of them satisfies
+ * `p:first-child` (0,2,1), beats :134 (0,2,0) and takes the lead treatment.
+ *
+ * Measured live against static at 1440, all three paragraphs, before this rule:
+ *
+ *     live    22px / 600 / 31.9px / rgb(0, 60, 80)     x3
+ *     static  22px / 600 / 31.9px / rgb(0, 60, 80)     paragraph 1
+ *             17px / 400 / 27.2px / rgb(74, 74, 74)    paragraphs 2 and 3
+ *
+ * The section is built claim-then-evidence and converted it read as three lead
+ * paragraphs with the structure gone. This is the LOUD failure mode recipe
+ * section 6 describes for `:first-child`, and it is the fifth page to pay it
+ * (podcast-a, solutions-b, capitol-a, who-we-are-a).
+ *
+ * SHAPE: who-we-are-a's (block 1 above), not podcast-a's. The definite values
+ * go back on the PARAGRAPH, where the build puts them, and the widget set is
+ * used only for the position test. podcast-a's `:not(...)`-on-the-wrappers
+ * shape is wrong here for the reason block 1 sets out at length: it is correct
+ * only while each widget contains exactly its own paragraph, and MailMunch
+ * injects inside widgets on this install.
+ *
+ * FOUR DECLARATIONS RESTATED, NOT THREE, and `font-weight` is the one that is
+ * easy to miss: :134 never declares a weight at all, because `p` inherits
+ * `normal` from `body` (tokens/base.css:3 sets no font-weight either), so
+ * restating the base without naming `var(--fw-regular)` explicitly leaves the
+ * semibold from :139 standing on paragraphs 2 and 3. census() would not have
+ * caught that: it compares fontSize, lineHeight and color and NOT weight.
+ *
+ * Specificity: the first rule is 0,3,1 against `.epa-work__prose p:first-child`
+ * at 0,2,1, so it wins unconditionally rather than on source order. The second
+ * is 0,4,1 and beats the first, restoring the lead treatment on the genuinely
+ * first paragraph.
+ *
+ * Checked for @media interference before writing: css/epic-a.css's three media
+ * blocks open at :318, :335 and :344, and not one of them names
+ * `.epa-work__prose` or any paragraph inside it.
+ *
+ * After: all three paragraphs match their static counterparts on all four
+ * properties at 1440 and at 390. */
+.elementor .epa-work__prose .elementor-widget-text-editor p{
+  font-size:var(--fs-body);      /* css/epic-a.css:136 */
+  line-height:var(--lh-body);    /* css/epic-a.css:136 */
+  color:var(--text-body);        /* css/epic-a.css:136 */
+  font-weight:var(--fw-regular); /* the UA/body default :139 overrides */
+}
+.elementor .epa-work__prose > .elementor-widget-text-editor:first-child p{
+  font-size:var(--fs-lead);          /* css/epic-a.css:140 */
+  line-height:1.45;                  /* css/epic-a.css:140 */
+  color:var(--text-strong);          /* css/epic-a.css:140 */
+  font-weight:var(--fw-semibold);    /* css/epic-a.css:141 */
+}
+
+/* ---------- 18. epic-a: three photographs sized through a class ON THE <img>,
+ *                the THIRD instance of that category --------------------------
+ * Same family as `.c2-panel__bg` and `.em-join__wash` earlier in this file.
+ * css/epic-a.css:246-251 is `.epa-area__photo{display:block;width:100%;
+ * height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:var(--radius-card);
+ * margin-bottom:var(--space-6)}` and the static build writes
+ * `<img class="epa-area__photo" ...>` (dist/epic-a.html:294, :303, :312).
+ * image() has no markup of its own, so its cssClass lands on the widget WRAPPER
+ * and the <img> gets none of it.
+ *
+ * Measured live against static at 1440 before this rule, all three panels:
+ *
+ *     img heights   live 311 / 203 / 238      static 266 / 266 / 266
+ *     borderRadius  live 0px x3               static 20px x3
+ *
+ * Three photographs the design crops to one identical box rendering at three
+ * different heights is the "shaped like a wrapper" signature recipe section 1
+ * names, not a placeholder-crop difference, so it is FIXED and not deferred.
+ *
+ * THE margin-bottom IS RESTATED, and the pricing note that predicted otherwise
+ * was wrong in a way worth recording. pricing-epic-a.md section 4 says
+ * `margin-bottom` "is the only declaration that still WORKS on the wrapper,
+ * since a wrapper margin separates the same two boxes", and warns that
+ * restating it would double it. Measured on the live wrapper: `margin-bottom`
+ * computes 0px, not 24px, because Elementor's own
+ * `.e-con .elementor-widget.elementor-widget{margin-block-end:0}` is 0,3,0 and
+ * beats `.epa-area__photo` at 0,1,0. So it does NOT survive, nothing is
+ * doubled, and the panel was 24px short of the static build until this line.
+ * It is restated on the WRAPPER rather than on the <img>, so the wrapper's own
+ * box still measures 266.39 exactly as the static <img> does; on the <img> it
+ * would be inside the wrapper (a flex item, which establishes an independent
+ * formatting context, so it cannot collapse out) and the class-keyed box would
+ * measure 290.39 against the static 266.39 with no instrument watching.
+ *
+ * Specificity of the margin half: 0,4,0, which beats Elementor's 0,3,0 on
+ * specificity rather than on source order.
+ *
+ * The other three images on this page need nothing and the reason is worth
+ * keeping straight: css/epic-a.css:129-132 and :49 put the ratio on the <img>
+ * through DESCENDANT selectors with `height:auto`, so they keep matching
+ * through Elementor's wrapper and never ask an ancestor for a height. Do not
+ * widen this rule to reach them.
+ *
+ * Checked for @media interference: no rule inside css/epic-a.css's three media
+ * blocks names `.epa-area__photo`.
+ *
+ * After: all three images measure 266x355 live and static at 1440, 257 at 390,
+ * borderRadius 20px on both sides, and `.epa-area` measures 527.23 against the
+ * static 527.23. */
+.epa-area__photo img{
+  display:block;                       /* css/epic-a.css:247 */
+  width:100%;                          /* css/epic-a.css:247 */
+  height:auto;                         /* css/epic-a.css:247 */
+  aspect-ratio:4/3;                    /* css/epic-a.css:248 */
+  object-fit:cover;                    /* css/epic-a.css:248 */
+  border-radius:var(--radius-card);    /* css/epic-a.css:249 */
+}
+.elementor .epa-area > .elementor-widget-image.epa-area__photo{
+  margin-block-end:var(--space-6);     /* css/epic-a.css:250, zeroed on the
+    wrapper by Elementor's own 0,3,0 rule and restored here */
+}
+
+/* ---------- 19. epic-a: the research CTA stretched to the full column,
+ *                Shape C's fifth site ------------------------------------
+ * `.epa-research__cta` is a `<p>` in source built as a container holding a
+ * link() (elementor/pages/epic-a/04-research.mjs note 5 argues that choice and
+ * records the two comparison keys it costs). css/epic-a.css:274 gives it only
+ * `margin:clamp(40px,5vw,64px) 0 0`: it never declares `display:flex` at all,
+ * so this is NOT the missing-direction shape and no `flex-direction` rule
+ * belongs here. What is wrong is only that its one link() child's `.em-btn`
+ * wrapper is a flex item taking the default `stretch`.
+ *
+ * Measured live against static, both at 1440, before this rule:
+ *
+ *     .epa-research__cta > .em-btn   live   DIV, display:flex,        1152px
+ *                                    static A,   display:inline-flex,  327.64px
+ *
+ * A 1152px bar where the design draws a 328px pill.
+ *
+ * CHECKED THE PARENT'S AXIS BEFORE CHOOSING THE VALUE, which is what the
+ * invisible-defects audit's defect 10 caught block 10 above getting wrong:
+ * `.epa-research__cta` computes `display:flex; flex-direction:column`, so its
+ * cross axis is HORIZONTAL and align-self is the property that positions the
+ * button across it. `flex-start` rather than block 10's `center`, and that too
+ * is measured rather than copied: no ancestor of this element declares
+ * `text-align` anywhere between it and <main> (css/epic-a.css contains no
+ * `text-align` rule at all), so the static build's inline-level anchor sits at
+ * the left edge of the measure and `flex-start` puts the wrapper in the same
+ * place. capitol-a's centred hero does not recur here.
+ *
+ * 0,2,0 against Elementor's `.elementor-element{align-self:var(--align-self)}`
+ * at 0,1,0, so it wins on specificity rather than on source order. Named to
+ * this page's own container for the reason block 8 records at length: a rule
+ * broad enough to cover every `.em-btn` link() in a column parent would also
+ * reach the ones in ROW parents, where align-self addresses the cross axis
+ * VERTICALLY and would move them.
+ *
+ * Checked for @media interference: no rule inside css/epic-a.css's three media
+ * blocks names `.epa-research__cta` or `.em-btn`. The button is content-sized
+ * at every width in the static build, so one unconditional declaration is
+ * correct. Confirmed by re-measuring at 390.
+ *
+ * After: 327.64px live against 327.64px static at 1440, and the button's x is
+ * unchanged at 144 on both sides. */
+.epa-research__cta > .em-btn{
+  align-self:flex-start;
+}
+
+/* ---------- 20. epic-a: a hero action row that Elementor turns into a column,
+ *                the FIFTH instance -----------------------------------------
+ * css/epic-a.css:73-77 is `.epa-hero__actions{display:flex;flex-wrap:wrap;
+ * align-items:center;gap:var(--space-6) var(--space-8);margin-top:...}`, which
+ * declares the display and NOT the direction, because in the static build
+ * `row` is the initial value and needs no declaring. Converted, the element is
+ * an Elementor container carrying `e-con-full e-flex`, and
+ * `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` at 0,2,0 is fed
+ * `column` by `.e-con.e-flex`.
+ *
+ * Measured live against static at 1440 before this rule:
+ *
+ *     .epa-hero__actions             live column           static row
+ *     .em-btn--primary               live x 357.05         static x 144
+ *     .epa-hero__aside               live x 390.7          static x 521.11
+ *     .epa-hero (painted)            live h 981.58         static h 930.39
+ *
+ * Note what the direction defect does to the horizontal positions, which is the
+ * half `controlBoxes()` cannot see: `align-items:center` is a CROSS-axis
+ * property, so the moment the container becomes a column it centres both
+ * actions horizontally instead of aligning them vertically, and the orange CTA
+ * moves 213px to the right of where the design puts it.
+ *
+ * `.epa-hero__actions.e-con` is 0,2,0, tying with `.e-con-full.e-flex`, and
+ * this file loads after Elementor's own stylesheets, so it wins on order at
+ * equal specificity. Same shape as blocks 3, 7, 9, 11 and `.fp-hero__actions`,
+ * and named to this page's own class rather than written for `.e-con`.
+ *
+ * `align-items` needs nothing and was checked rather than assumed: the build
+ * declares `center` at 0,1,0 and Elementor resolves its own through
+ * `.elementor-element:where(...)`, which `:where()` makes 0,1,0, so the build
+ * already wins on source order. Measured: the two actions are vertically
+ * centred on both sides after this rule.
+ *
+ * After: row on both sides, `.em-btn--primary` at x 144 and `.epa-hero__aside`
+ * at x 521.11, both exactly static. */
+.epa-hero__actions.e-con{
+  flex-direction:row;
+}
+
+/* ---------- 21. epic-a: the row rule above is breakpoint-blind, and this is
+ *                its counterpart, written in the SAME commit ----------------
+ * The second half of block 20 and not a separate finding. `css/epic-a.css:345`
+ * is `.epa-hero__actions{gap:var(--space-5);flex-direction:column;
+ * align-items:stretch}` inside `@media (max-width:420px)`, at 0,1,0, which
+ * cannot reach block 20's 0,2,0 rule. Without this the repair would pin the
+ * hero to a row at every width and cancel the design's own narrow-width
+ * column, which is a defect at 390, a width the register DOES sample. That is
+ * exactly the collision block A1 above documents for `.em-stories__mini`, and
+ * A1 asks whoever adds the eleventh row rule to re-run its cross-check.
+ *
+ * THE CROSS-CHECK, RE-RUN FOR THIS RULE rather than taken on trust from the
+ * brief: every class this file sets `flex-direction:row` on, tested against
+ * every `@media` rule declaring `flex-direction` anywhere in `css/` or
+ * `components/`. Two collisions, and no others:
+ *
+ *     css/epic-a.css:344    @media (max-width:420px)   .epa-hero__actions
+ *     css/homepage.css:534  @media (max-width:600px)   .em-stories__mini
+ *
+ * The second is the one block A1 already repairs. Every other row class in
+ * this file has no responsive direction rule in any stylesheet the build
+ * loads, so the other ten are correct today and none is correct BY
+ * CONSTRUCTION. Whoever adds the twelfth should re-run it again.
+ *
+ * `align-items:stretch` is NOT restated here and that was measured, not
+ * assumed: the build declares it at 0,1,0 inside the same media block and
+ * Elementor's own is 0,1,0 through `:where()`, so the build wins on source
+ * order at 390 the same way it does at 1440. Confirmed by measuring
+ * `.epa-hero__aside` at 390: 342px wide live and static, which only happens
+ * with stretch in force. */
+@media (max-width:420px){
+  .epa-hero__actions.e-con{
+    flex-direction:column; /* css/epic-a.css:345 */
+  }
+}
+
+/* ---------- 22. epic-a: two inline-level links that stop being flex items,
+ *                the FOURTH and FIFTH instances of the wrapper-descender
+ *                defect ---------------------------------------------------
+ * Identical in mechanism, measurement and repair to `.ta-hero__actions`'s own
+ * rule (block A4), `.wa-hero__actions`'s and `.em-join__way`'s before it. An
+ * anchor declared `display:inline-flex` is blockified by the flex spec while it
+ * is a direct child of a flex container; built with `html()` it stops being a
+ * flex item, the blockification never happens, and the wrapper's line box is
+ * taller than the anchor by the strut's descender.
+ *
+ * TWO SITES ON THIS PAGE, and they behave differently at the two register
+ * widths, which is why both are listed rather than one being taken as the
+ * pattern:
+ *
+ *   `.epa-hero__aside` (css/epic-a.css:78-79), inside `.epa-hero__actions`.
+ *   Measured at 1440 before: wrapper 27.19 around a 24px anchor. INVISIBLE
+ *   there, for the reason block A4 records: the two actions share one flex line
+ *   whose height comes from the 68px button. At 390 the build makes the parent
+ *   a column (:345) and the same 3.19px is real: `.epa-hero` measured 942.58
+ *   live against 939.41 static, which was the whole of the hero's height
+ *   difference at that width. The wrapper ALSO cost the anchor its width there,
+ *   270px live against 342px static, because `align-items:stretch` at :345
+ *   reaches flex items and the anchor had stopped being one.
+ *
+ *   `.epa-area__latest` (css/epic-a.css:262-268), inside `.epa-area`, which the
+ *   build declares `display:flex;flex-direction:column` (:236-237). Measured at
+ *   1440 before: wrapper 48.59 around a 47.59px anchor. VISIBLE at both widths
+ *   and on all three panels, because a column has no taller sibling on the same
+ *   flex line to absorb it.
+ *
+ * `display:contents` removes the wrapper from the box tree, so the anchor
+ * becomes the flex item the build wrote its rules for. Safe on both because
+ * neither wrapper is itself a positioned or painted box: they carry no
+ * background, no border and no position, and nothing in css/epic-a.css
+ * addresses either anchor through a child combinator.
+ *
+ * After: `.epa-hero__aside` 24px tall and 342px wide at 390, `.epa-area__latest`
+ * 47.59 with its wrapper gone, and `.epa-area` 527.23 against the static
+ * 527.23. */
+.epa-hero__actions > .elementor-widget-html,
+.epa-area > .elementor-widget-html{
+  display:contents;
+}
+
+/* ---------- 23. epic-a: an absolutely positioned rail re-parented by the
+ *                widget wrapper it was authored inside ---------------------
+ * NEW SHAPE, and the build's first conversion of a `view-timeline` is what
+ * exposed it. css/epic-a.css:162-167 is `.epa-method__rail{position:absolute;
+ * top:0;bottom:0;width:2px;left:var(--gutter)}` and :155 gives
+ * `.epa-method__inner` `position:relative`, so in the static build the rail's
+ * containing block is the section inner and the bar runs the full height of it.
+ *
+ * The rail is two nested empty `<span>`, so it is authored inside an `html()`
+ * widget. Elementor's own `.elementor-widget` computes `position:relative`, so
+ * the widget wrapper becomes the rail's containing block instead. That wrapper
+ * has a height of ZERO, because its only child is out of flow.
+ *
+ * Measured live against static at 1440 before this rule:
+ *
+ *     .epa-method__rail        live x 211.19  h 0        static x 144  h 532.28
+ *     .epa-method__rail-fill   live x 211.19             static x 144
+ *
+ * So the orange progress rail, which is the one scroll-driven move on this
+ * page and the reason the section is composed the way it is, was 67px to the
+ * right of where the design puts it and INVISIBLE. The 67.19 is exactly
+ * `.epa-method__inner`'s own `padding-left: calc(var(--gutter) + var(--epa-rail))`
+ * minus the gutter: the rail was resolving `left:var(--gutter)` against the
+ * wrapper's content edge rather than against the inner's padding box.
+ *
+ * `position:static` on the wrapper rather than `display:contents`, and the
+ * difference matters: `display:contents` would also apply to the OTHER html
+ * widget in this container, the `<ol class="epa-method__rows">` blob, and would
+ * make the list itself the flex item, which is the shape block 14's own
+ * candidate table measured as WORSE. `position:static` leaves the box tree
+ * alone and changes only what the absolute box resolves against. It reaches
+ * both html widgets in this container and is harmless on the rows blob:
+ * nothing inside it is absolutely positioned against the wrapper
+ * (`.epa-method__row::before` resolves against `.epa-method__row`, which
+ * declares its own `position:relative` at :184).
+ *
+ * `.epa-method__inner > .elementor-widget-html` is 0,2,0 against Elementor's
+ * `.elementor-widget` at 0,1,0.
+ *
+ * THE SCROLL-DRIVEN ANIMATION ITSELF NEEDED NOTHING, which was checked on the
+ * live page rather than argued: `view-timeline:--epa-method block` is named on
+ * `.epa-method__inner` and a timeline name is looked up on ANCESTORS, so
+ * `.epa-method__rail-fill` stays in scope through whatever Elementor inserts,
+ * and the animation is `scaleY` on a 2px bar rather than a dash offset, so it
+ * is not the shape that breaks under non-uniform scale.
+ *
+ * After: x 144 and h 532.28 on both sides at 1440. Below 720px the build hides
+ * the rail entirely (:338) and this rule is inert on both sides. */
+.epa-method__inner > .elementor-widget-html{
+  position:static;
+}
+
+/* ---------- 24. epic-a: the seventh category, third instance, and the first
+ *                found by a per-page middle-band sweep -------------------
+ * Same mechanism blocks 14 and 16 carry: a widget wrapper's block size is
+ * resolved as a flex base size from a hypothetical inline size, so content
+ * whose height is a STEP FUNCTION of its own width can leave the wrapper
+ * taller than what it contains. Found here by running `layoutInvariants()`
+ * live against static across this page's own middle band, which is now part of
+ * the per-page recipe on Task 13's recommendation.
+ *
+ * WHAT WAS MEASURED, after blocks 17 to 23 had already taken 1440 and 390 to
+ * exactly zero:
+ *
+ *     719   main 4135.64 / 4135.64   clean
+ *     730   main 4102.16 / 4037.16   .epa-hero__areas 131 / 66
+ *     740   main 4132.11 / 4067.11   .epa-hero__areas 131 / 66
+ *     760   main 4169.44 / 4104.44   .epa-hero__areas 131 / 66
+ *     770   main         equal        clean
+ *
+ * The band is 721 to 767 INCLUSIVE, pinned by bisection (767 wrong, 768 right),
+ * and 65px is exactly one row of the ruled area list: `min-height:64px` at :99
+ * plus its 1px bottom border.
+ *
+ * THE MECHANISM, measured element by element at 760 rather than reasoned about.
+ * The `<ul class="epa-hero__arealist">` measures 66px on BOTH sides and all
+ * three `<li>` are identical on both (x 24 / 261.33 / 498.67, each 237.33 wide
+ * and 65 tall). What differs is the `.elementor-widget-html` wrapper AROUND
+ * the list: 131px around a 66px child. `css/epic-a.css:96` is
+ * `.epa-hero__arealist li{flex:1 1 220px}`, so the list's height steps from one
+ * row to two as its width crosses 3 x 220 plus gaps, and the wrapper is taking
+ * the two-row answer while the list is laid out at the one-row width. Outside
+ * 721-767 the hypothetical and the real width fall in the same step and nothing
+ * differs, which is why 1440, 390 and every other sampled width are zero.
+ *
+ * SIX CANDIDATES MEASURED AT 760, and the result reproduces blocks 14 and 16
+ * exactly, which is the strongest evidence yet that this is one category and
+ * not three incidents:
+ *
+ *     display:block on the container         nav 66, EXACT
+ *     width:100% on the wrapper              nav 66, EXACT
+ *     flex-basis:content on the wrapper      nav still 131
+ *     height:fit-content on the wrapper      nav still 131
+ *     flex:0 0 auto on the wrapper           nav still 131
+ *     align-self:flex-start on the wrapper   WORSE: the list itself narrows
+ *                                            into the two-row step and becomes
+ *                                            131 for real
+ *     display:contents on the wrapper        WORSE, same reason
+ *
+ * THIS IS THE FIRST SITE WHERE BOTH WORKING REPAIRS WORK, so the discriminator
+ * block 16 states is what chooses between them rather than a measurement:
+ * "the parent-level repair block 14 uses is right where the static parent is a
+ * plain block and wrong where the build declares the flex column itself".
+ * `.epa-hero__areas` is a plain block in the static build (css/epic-a.css:90
+ * gives it only `width:100%` and a `margin-top`, and :35 a `grid-column`), so
+ * block 14's shape applies and this rule gives the container back the
+ * formatting context the static build gives it.
+ *
+ * Margin arithmetic checked rather than assumed, because display:block restores
+ * collapsing that flex layout suppresses: the wrapper carries no margin at all
+ * and the `<ul>` inside it carries `margin:0` (:93), so there is nothing to
+ * collapse and the nav's own `margin-top` is unaffected. `grid-column:1 / -1`
+ * is unaffected too: a grid item is blockified either way.
+ *
+ * NAMED to this page's own nav. Re-measured after this rule at 390, 440, 500,
+ * 560, 620, 660, 680, 700, 719, 730, 740, 760, 800, 860, 899 and 1440, plus a
+ * continuous sweep at 390-1000 step 7 and 1001-1440 step 13: zero differences
+ * at every width. The sweep was confirmed to go red with this rule removed
+ * before it was trusted to pass. */
+.epa-hero__areas.e-con{
+  display:block;
+}
+
+/* ---------- 25. epic-a: WordPress's srcset hands the live page a DIFFERENT
+ *                image, and its rounded dimensions are a different ratio ----
+ * NEW SHAPE, worth a rule for 0.0156px because the layout gate is an equality
+ * and because the mechanism is general to every logo-shaped image in the build.
+ *
+ * dist/epic-a.html:200-202 writes `<img src="../assets/epic-logo.png"
+ * width="1021" height="399">` with no srcset, and css/epic-a.css:49 is
+ * `.epa-hero__mark img{display:block;width:100%;height:auto}`: the height comes
+ * from whatever ratio the LOADED resource has. Converted, WordPress emits its
+ * own responsive attributes, `sizes="(max-width: 1021px) 100vw, 1021px"` plus a
+ * 300w/768w/1021w srcset, and at narrow viewports the browser picks
+ * `epic-logo-768x300.png`. 768/300 is 2.56; 1021/399 is 2.558897.
+ *
+ * Measured at 390, live against static, with the plate at its own
+ * `width:clamp(180px,44vw,260px)` and 20px of horizontal padding, so a 140px
+ * content box:
+ *
+ *     currentSrc   live epic-logo-768x300.png   static epic-logo.png
+ *     img height   live 54.6875                 static 54.703125
+ *     .epa-hero__mark  live 86.6875             static 86.703125
+ *     main         live 4591.47                 static 4591.48
+ *
+ * That last line is the only one that fails anything, and it fails the layout
+ * instrument's mainHeight assertion, which is an exact equality by design. At
+ * 1440 the plate is wide enough that the browser picks the original on both
+ * sides and the two agree to the pixel, which is why this is a middle-and-below
+ * defect rather than a general one: it is invisible at one of the two
+ * registered widths.
+ *
+ * The rule restates the ratio the static build's own `<img>` attributes assert,
+ * so `height:auto` resolves from the ratio rather than from whichever srcset
+ * candidate the browser fetched. Named to this page's own plate. Nothing else
+ * on the page is affected: the other four images all carry `aspect-ratio:4/3`
+ * with `object-fit:cover` already, from the build or from block 18, so their
+ * boxes never depend on the delivered file's own dimensions.
+ *
+ * Elementor has no control for `sizes` and no way to suppress srcset, and the
+ * `image_size` setting does not help: WordPress emits srcset for `full` too.
+ *
+ * After: main 4591.48 live against 4591.48 static at 390, and 3600.58 against
+ * 3600.58 at 1440. */
+.epa-hero__mark img{
+  aspect-ratio:1021/399; /* dist/epic-a.html:201, the file's own dimensions */
+}
+
+/* ---------- 26. epic-a: Elementor's own reset removes a UA default the build
+ *                relies on ------------------------------------------------
+ * NEW SHAPE, and the only reason it was found is that the brief made somebody
+ * hand-probe colour and interactive state on five anchors. NO INSTRUMENT IN
+ * THIS PROJECT COMPARES text-decoration: census() reads size, line-height,
+ * colour, margin, opacity and visibility; controlBoxes() reads boxes;
+ * layoutInvariants() reads position and paint. All three were green on this
+ * element.
+ *
+ * Elementor's frontend.min.css carries `.elementor a{box-shadow:none;
+ * text-decoration:none}` at 0,1,1. `tokens/base.css:8` is
+ * `a{color:var(--text-link);text-decoration-color:color-mix(in oklab,
+ * var(--text-link) 40%,transparent);text-underline-offset:.18em;...}` and never
+ * declares `text-decoration-line` at all, because the UA default for an anchor
+ * with an href is already `underline`. css/epic-a.css:78-84 gives
+ * `.epa-hero__aside` a `text-underline-offset:4px`, which is the design saying
+ * in as many words that this link is underlined.
+ *
+ * Measured live against static at 1440, at rest and on hover:
+ *
+ *     rest   live text-decoration-line none   static underline
+ *            live text-decoration-color rgb(240,154,117) (currentcolor)
+ *            static oklab(0.590169 0.135101 0.105784 / 0.4)
+ *     hover  live none                        static underline
+ *
+ * BOTH halves are lost, because Elementor's declaration is the SHORTHAND: it
+ * resets `text-decoration-color` to `currentcolor` as well, and at 0,1,1 it
+ * beats tokens/base.css's bare `a` at 0,0,1. So the repair restores both, and
+ * the hover half restores base.css:9's own `currentColor`.
+ *
+ * 0,2,0 beats 0,1,1 on the class count. `text-decoration-line` rather than the
+ * `text-decoration` shorthand, deliberately: the shorthand would reset the
+ * colour again on its way past.
+ *
+ * SCOPE, stated so nobody reads this as the whole finding. `.epa-hero__aside`
+ * is the only anchor on this page that relies on the UA underline; every other
+ * one (`.em-btn`, `.epa-hero__arealist a`, `.epa-area__latest`) declares
+ * `text-decoration:none` itself and is unaffected, measured on all four. What
+ * is NOT claimed is that this page is the only one: the reset is site-wide and
+ * every converted page in the build is subject to it. This rule is named to
+ * this page's own class per the standing constraint, and the general finding is
+ * recorded in this task's report as a cost category the phase has not priced.
+ *
+ * After: `text-decoration-line: underline` and
+ * `text-decoration-color: oklab(0.590169 0.135101 0.105784 / 0.4)` live,
+ * matching static exactly, at rest and on hover. */
+.elementor .epa-hero__aside{
+  text-decoration-line:underline;                                    /* the UA default */
+  text-decoration-color:color-mix(in oklab,var(--text-link) 40%,transparent); /* tokens/base.css:8 */
+}
+.elementor .epa-hero__aside:hover{
+  text-decoration-color:currentColor;                                /* tokens/base.css:9 */
+}

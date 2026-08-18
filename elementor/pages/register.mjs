@@ -492,6 +492,79 @@ export const PAGE_REGISTER = [
     minShared: 12,
     minBoxes: 43,
   },
+  /* epic-a: Task 14, the eighth page built class-in-markup from the start, and
+     the build's first converted scroll-driven animation. Its own floors,
+     measured 2026-08-18 against dist/epic-a.html alone (no live side, served
+     locally the same way the tests do), not copied from any other entry.
+
+     census() finds 31 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 25 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>, 3
+     <h2>, 6 <h3> and 15 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries. This is the largest own-content
+     census of any page in the register after the homepage.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 17 means at least 18 of 31 must match by text. Six come from the
+     chrome, so the floor demands 12 of this page's own 25. Measured against the
+     same fraction on the other eight entries (final 35/57 61%, solutions-b 9/18
+     50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%), 12/25 is 48%,
+     which puts this page mid-range rather than at either extreme.
+
+     30 OF THE 31 ARE ACHIEVABLE, NOT 31, and the one that is not is a build
+     decision recorded rather than a surprise. `.epa-research__cta` is a `<p>`
+     wrapping a CTA, which recipe section 7 converts to a container holding a
+     link(), so `p|View Research & Reports` exists on the static side and not on
+     the live one. 04-research.mjs note 5 argues that choice and records the
+     second key it costs. Measured: shared is 30 of 31 at both widths, and 30 is
+     comfortably above the 18 this floor demands.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/epic-a.html alone, at both 1440 and 390: 74 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 42 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 43 of 74
+     must match).
+
+     69 OF THE 74 ARE ACHIEVABLE, and the five that are not split three to two.
+     THREE are the shared chrome keys every converted page in this build loses
+     to the Elementor header theme part (`a|Skip to content`,
+     `a|Empower Mississippi `, `img|logo-reversed.png`); they are not this
+     page's doing and they are recorded here because no earlier entry names
+     them and the next person measuring a page will otherwise chase them. TWO
+     are this page's own link() widgets, `a|Dive Into the Resear` and
+     `a|View Research & Repo`, which controlBoxes() skips by design because they
+     sit inside `.elementor-widget-button`. Measured: shared is 69 of 74 at both
+     widths.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/epic-a.html outside its own <main>: 46 <a>, 12 <button>, 2 <img>,
+     60 of this page's 74 box-sweep elements, leaving 14 that belong to this
+     page's own content (9 anchors, being the hero CTA, the hero aside, the
+     three focus-area links, the three most-recent-report links and the closing
+     CTA, plus 5 images, being the EPIC lockup, the What We Do figure and the
+     three research panels). A live page that failed to load would still share
+     around 57 keys against minBoxes' 42 and the box sweep alone could pass
+     green. minShared is the real load-failure gate here too: a 404 shares the 6
+     chrome census elements, and 6 is under the 18 that minShared:17 demands, so
+     the suite goes red on the census, not the box sweep. */
+  {
+    name: 'epic-a',
+    envVar: 'EPIC_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/epic-a/',
+    staticFile: 'dist/epic-a.html',
+    minShared: 17,
+    minBoxes: 42,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

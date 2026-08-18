@@ -67,7 +67,7 @@ photograph shows.
 | 20585 | `young-man-portrait-bw.jpg` | **CONFLICT-WORDING** | A classroom seen from the back, students at their desks facing a teacher at the whiteboard |
 | 20597 | `video-still-man-outdoors.jpg` | **CONFLICT-WORDING** | A young man in a dark jacket standing in a field at golden hour, arms folded, smiling |
 | 20600 | `student-library.jpg` | **SETTLED** | none needed, empty alt is correct |
-| not imported | `epic-logo.png` | **SETTLED** | none needed, import with empty alt |
+| 20604 | `epic-logo.png` | **SETTLED** | none needed, imported 2026-08-18 with empty alt |
 | not imported | `family-outdoors-park.jpg` | **SETTLED** | A boy in a school polo shirt reading a book at a table in a library |
 
 20579 and 20583 share a proposed sentence because they are the same photograph.
@@ -136,7 +136,7 @@ yellow. **There is no tablet in the frame.**
 | `final` | MEANINGFUL, **LIVE NOW** | "A child working on a tablet in a classroom" |
 | `what-we-do-a` | DECORATIVE | `""`, `aria-hidden` |
 | `solutions-b` | MEANINGFUL, **LIVE NOW** | "A girl writing at a table in a brightly lit classroom" |
-| `epic-a` | MEANINGFUL, pending | "A girl writing at a desk in a brightly furnished classroom." |
+| `epic-a` | MEANINGFUL, **LIVE NOW** | "A girl writing at a desk in a brightly furnished classroom." |
 | `give-c` | MEANINGFUL, pending | "A girl writing at a desk in a brightly furnished classroom." |
 
 **Proposed:** "A child writing at a table in a brightly coloured classroom"
@@ -170,7 +170,7 @@ left is the back of the monitor, not machinery.
 | `what-we-do-a` | DECORATIVE | `""`, `aria-hidden` |
 | `solutions-b` | MEANINGFUL, **LIVE NOW** | "A young man working at a computer in an open-plan office" |
 | `work` | MEANINGFUL, pending | "A young man working at a computer in an open-plan office" |
-| `epic-a` | MEANINGFUL, pending | "A young man on a shop floor, head down over the machine he is working at." |
+| `epic-a` | MEANINGFUL, **LIVE NOW** | "A young man on a shop floor, head down over the machine he is working at." |
 | `amb-a` | MEANINGFUL, pending | "A young man on a shop floor, head down over the machine he is working at." |
 
 **Proposed:** "A young man standing with his head down, working at a desk in an
@@ -272,7 +272,7 @@ grandparents and grandchild where the photograph shows a young family.
 | `what-we-do-a` | DECORATIVE | `""`, `aria-hidden` |
 | `solutions-b` | MEANINGFUL, **LIVE NOW** | "Two adults and a child smiling together outdoors in a park" |
 | `safety` | MEANINGFUL, pending | "A mother, a father and their young son crouched together on the grass in a park, all three smiling" |
-| `epic-a` | MEANINGFUL, pending | "Two adults crouching on the grass in a park, a small child on the man's shoulders, all three smiling." |
+| `epic-a` | MEANINGFUL, **LIVE NOW** | "Two adults crouching on the grass in a park, a small child on the man's shoulders, all three smiling." |
 
 **Proposed:** "Two adults crouching on the grass in a park, a small child on the
 man's shoulders, all three smiling"
@@ -348,7 +348,7 @@ field of dried teasels with trees behind, warm low light.
 | --- | --- | --- |
 | `who-we-are-a` | MEANINGFUL, in flight | "A young man standing outdoors in a field, smiling" |
 | `solutions-b` | MEANINGFUL, **LIVE NOW** | "A young man standing outdoors in a field, smiling" |
-| `epic-a` | MEANINGFUL, pending | "A young man standing outdoors in a field at golden hour, arms folded, looking away from the camera." |
+| `epic-a` | MEANINGFUL, **LIVE NOW** | "A young man standing outdoors in a field at golden hour, arms folded, looking away from the camera." |
 | `amb-a` | MEANINGFUL, pending | "A young man standing outdoors in a field at golden hour, arms folded." |
 
 **Proposed:** "A young man in a dark jacket standing in a field at golden hour,
@@ -366,15 +366,25 @@ Both uses are on `who-we-are-a` and both are decorative (`alt=""` plus
 `aria-hidden="true"` in the static build). Empty alt is correct and there is
 nothing to decide.
 
-### `epic-logo.png`: SETTLED, needs importing
+### 20604 `epic-logo.png`: SETTLED, imported 2026-08-18
 
-**Not on the install.** Confirmed by searching the media endpoint. The file is at
-`assets/epic-logo.png`, not in `assets/photography/`.
+**Imported by Task 14**, the `epic-a` conversion, with
+`wp media import wp-content/themes/empowerms-child/assets/epic-logo.png
+--porcelain` from the synced theme. NO `--alt` flag, and the empty alt was read
+back afterwards to confirm it. The file is at `assets/epic-logo.png`, not in
+`assets/photography/`.
 
 Its only use is `epic-a`'s hero mark, which is decorative in the static build
-(`alt=""`, inside an `aria-hidden` ancestor), so it should be imported with
-empty alt. Nothing to decide, but it does need importing before `epic-a`
-converts.
+(`alt=""`, inside an `aria-hidden` ancestor), so empty alt is correct and there
+is nothing to decide.
+
+**A near miss worth recording**, because the next person searching for this file
+will hit it too. The install already carried attachment 20239, post name `epic`,
+title `EPIC`, file `2025/12/EPIC.png`. It is NOT this file: 1280x720 against
+1021x399, 163371 bytes against 147323, and a different md5. It is an existing
+empowerms.org asset, a padded social-card crop of the same mark, and using it
+would have shipped the hero a differently proportioned logo that no instrument
+in this project compares. Checked before importing, not after.
 
 ### `family-outdoors-park.jpg`: SETTLED, needs importing
 

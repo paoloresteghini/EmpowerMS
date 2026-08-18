@@ -975,7 +975,54 @@ export async function layoutInvariants(url, { width = 1440, height = 900 } = {})
         };
         const bg = cs.backgroundColor;
         const transparent = bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent';
-        if (!transparent || cs.backgroundImage !== 'none') {
+        /* GENERATES NO BOX AT ALL, which is not the same test as
+           `display:none` above and is why that test alone was not enough.
+           An element whose own display is none is skipped; an element INSIDE
+           a display:none ancestor has its own display computing to whatever
+           it declares, so it reaches this line, and getBoundingClientRect()
+           returns all zeros for it because it was never laid out.
+
+           For `axis` that is harmless: x reads 0 on both sides and compares
+           equal. For `painted` it is not, and the reason is that `top` is the
+           one field here that is not the element's own measurement. It is
+           `rect.top - main's rect.top`, and with rect.top pinned at 0 the
+           subtraction stops being page-relative and becomes a reading of
+           where <main> happens to sit in the VIEWPORT, which is residual
+           scroll position and sticky-header state and nothing about this
+           element at all.
+
+           Measured on epic-a, which is the first page in the build to carry
+           a painted element inside a display:none ancestor:
+           css/epic-a.css:338 hides `.epa-method__rail` at and below 720px,
+           its `.epa-method__rail-fill` child declares
+           `background:var(--em-orange)`, and at 390 this recorded top -165.8
+           live against -149.8 static, reproducibly, on three consecutive
+           runs. The 16px is css/site.css:82's
+           `[data-scrolled] .em-header__bar{min-height:68px}` against the
+           unscrolled 84px: settleReveal() ends with window.scrollTo(0, 0) and
+           js/reveal.js flips that attribute back on the next animation frame,
+           so the two sides are read on opposite sides of one rAF. Nothing
+           about the page differs; the rail is hidden on both sides and paints
+           nothing on either.
+
+           A box with no area cannot uncover or cover anything, which is the
+           entire purpose of the painted set (see the assertion's own comment
+           in test-elementor.mjs), so excluding it loses no coverage. It is
+           excluded from `painted` ONLY, not from `axis`, deliberately: the
+           narrower change keeps every existing page's keyed count identical,
+           which is what makes "nothing else moved" checkable rather than
+           asserted. Verified against the pre-change run of the whole suite:
+           keyed and painted counts are unchanged on all eight registered
+           pages at both widths.
+
+           NOT a width/height test. `.epa-method__rail-fill` at 1440 measures
+           2px wide and 0px tall, because `@keyframes epa-fill` starts it at
+           `scaleY(0)`, and it IS rendered and IS worth comparing there: its
+           top is a real position. getClientRects().length is the test for
+           "generates no boxes", and it returns 1 for that flattened box and 0
+           for the same element at 390. Both confirmed live on both sides. */
+        const rendered = el.getClientRects().length > 0;
+        if (rendered && (!transparent || cs.backgroundImage !== 'none')) {
           /* Top measured from main's own top, not from the viewport: the two
              builds have different header heights, and this instrument is
              about whether a painted box moved relative to the page's content,

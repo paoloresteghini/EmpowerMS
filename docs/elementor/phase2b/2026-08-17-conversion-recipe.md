@@ -256,3 +256,26 @@ raised specificity, because there the losing rule named a specific element
 (`.sb-hero__lede`) rather than a position. Prefer the first when the original
 selector expresses a relationship among siblings, and the second when a named
 element is simply losing a specificity contest it used to win.
+
+## 7. A coverage cost the census cannot report, added 2026-08-18
+
+The static build sometimes wraps a call to action in a paragraph, e.g.
+`<p class="cca-hero__action"><a class="em-btn ...">Listen Now</a></p>`. Converted,
+that paragraph becomes a CONTAINER holding a `link()`, which is correct and has
+precedent, because the `<p>` is a layout wrapper rather than prose.
+
+The cost, which nothing reports: the census keys on each element's own text, so
+`p|Listen Now` exists on the static side and no longer exists on the live side.
+It drops out of the shared set and STOPS BEING COMPARED. Measured on
+`capitol-a`: census shared is 15 of 16, and that is the missing key.
+
+No page has been harmed by it yet, and the CTA's own box is still covered by the
+box sweep through `link()`'s wrapper contract. But it narrows census coverage
+silently, once per converted CTA, and the per-page `minShared` floor is the only
+thing watching. Two things follow:
+
+- Record it in the module comment wherever it happens, as a coverage cost rather
+  than a neutral restructure.
+- Watch it on any page whose census count is already small. A page with a low
+  element count and several wrapped CTAs could drift under its floor for a
+  reason that has nothing to do with fidelity.

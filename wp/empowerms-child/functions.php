@@ -168,6 +168,14 @@ function empower_page_styles() {
 		   entry above, for the same reason: the site and header sheets are
 		   already enqueued unconditionally. */
 		'team-a'       => array( 'motion', 'team-a' ),
+		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
+		   10-22), which loads the shared tokens cascade, components.css, then
+		   the site stylesheet, the header sheet, the motion sheet, and its own
+		   who-we-are-a sheet last. The site and header sheets are already
+		   enqueued unconditionally above, so only the two page-specific sheets
+		   beyond that shared cascade belong here: the same shape every entry
+		   above takes, for the same reason. */
+		'who-we-are-a' => array( 'motion', 'who-we-are-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

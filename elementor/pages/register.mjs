@@ -276,6 +276,70 @@ export const PAGE_REGISTER = [
     minShared: 13,
     minBoxes: 35,
   },
+  /* who-we-are-a: Task 10, the fifth page built class-in-markup from the
+     start. Its own floors, measured the same way the other five entries'
+     were, not copied from any.
+
+     minShared: measured 2026-08-18 with census() from fidelity-browser.mjs
+     run directly against dist/who-we-are-a.html alone (no live side, served
+     locally the same way the tests do): 30 elements matching
+     h1,h2,h3,h4,h5,p,blockquote. 16 continues the slide the other entries
+     already show (final 40/63 63%, what-we-do-a 10/17 59%, solutions-b
+     14/24 58%, capitol-a 9/16 56%, team-a 13/25 52%; 16/30 is 53%): at
+     least 17 of 30 must match by text, comfortably below 30 while still
+     requiring the large majority of the static page's own text content to
+     reappear on the live side. The proportion sits a little under the
+     earlier entries' for the reason team-a's own note gives: the chrome's
+     share of the census is a FIXED 6 elements, so on a page with 30 the
+     same percentage would demand fewer real matches than it does on a page
+     with 17.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/who-we-are-a.html alone, at both 1440 and 390: 69 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0. 39 keeps the same proportion as the
+     other entries (roughly 56-57%: at least 40 of 69 must match), and is
+     the same pair solutions-b's entry uses for the same 69.
+
+     __unsettled__ IS "unsettled" AT 390 ON BOTH SIDES, and that is a
+     property of this page rather than a flake, so it is recorded here
+     rather than left for the next person to re-diagnose. Every other
+     registered page reports "settled" at both widths. Here
+     css/who-we-are-a.css:260 gives the third people frame `display:none`
+     below 640px, and that frame carries `data-reveal="clip"`: an element
+     with no rendered box can never intersect, so js/reveal.js's
+     IntersectionObserver never fires for it and it never gains
+     .is-revealed, which is what settleReveal() waits on. The hero's own
+     `--tall` figure is hidden at the same breakpoint (:258) and does NOT
+     cause this, because it sits inside the `[data-reveal-entrance]` scope
+     and js/reveal.js:51 reveals that set unconditionally on load. Both
+     sides render the same rule, so both report the same marker and the key
+     compares equal; the cost is that each 390 run spends settleReveal()'s
+     full 10s wait before returning.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every
+     other entry documents, re-measured for this page: not minBoxes.
+     Counted directly from dist/who-we-are-a.html outside its own <main>
+     (the header and footer markup, identical across every page in this
+     build): 46 <a>, 12 <button>, 2 <img>, 60 of this page's 69 box-sweep
+     elements, leaving only 9 that belong to this page's own content (6
+     photographs and 3 anchors: the hero CTA, the hero's "Read our story"
+     jump, and the people section's CTA). A live page that failed to load
+     would still share 60 keys against minBoxes' 39 and the box sweep alone
+     could pass green. minShared is the real load-failure gate here too:
+     only 6 of the 30 census elements live in the header and footer
+     (counted the same way, outside <main>: 2 <h3>, 4 <p>), a 404 shares 6,
+     and 6 is under the 17 that minShared:16 demands, so the suite goes red
+     on the census, not the box sweep. The margin is the widest of any page
+     so far, because this page carries 24 census elements of its own. */
+  {
+    name: 'who-we-are-a',
+    envVar: 'WHO_WE_ARE_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/who-we-are-a/',
+    staticFile: 'dist/who-we-are-a.html',
+    minShared: 16,
+    minBoxes: 39,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

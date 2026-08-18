@@ -2172,3 +2172,454 @@
  * rule works unmodified at any width: the wrapper always fills whatever
  * height `.ta-hero__media` itself computes to, aspect-ratio value
  * notwithstanding. */
+
+/* ============================================================================
+ * who-we-are-a (Task 10): EIGHT DEFECTS CLOSED IN TWELVE RULE BLOCKS, written
+ * as the six numbered groups below. Stating which convention, per R34: a
+ * DEFECT is one thing that was wrong, a RULE BLOCK is one
+ * selector-plus-declarations. The three photographs in group 2 are three
+ * defects sharing one rule block; group 6 is one defect (a tag Elementor
+ * cannot render) costing six.
+ *
+ * FOUR of the eight are the ones this page was priced on, and the brief's
+ * count for each of its four categories was right: zero child combinators,
+ * ONE structural pseudo-class repair (group 1), zero native controls inside
+ * <main>, THREE photographs in fixed-ratio containers (group 2).
+ *
+ * The other four came from mechanisms no stylesheet grep can see. Two of them
+ * (groups 3 and 5) were confirmed as UNREPAIRED, SHIPPED defects on earlier
+ * pages before being fixed here; one (group 4) is Elementor's widget wrapper
+ * breaking a flex blockification the static build relies on, and showed up
+ * only at 390; and one (group 6) is six rules addressed to an HTML tag
+ * Elementor cannot render at all. All four are invisible to both instruments,
+ * so the way they were found was by probing the converted page's own
+ * containers at BOTH widths, not by either sweep going red.
+ * ==========================================================================*/
+
+/* ---------- 1. who-we-are-a: .wa-story__copy's paragraph margins, a fourth
+ *               instance of the p:last-child category, repaired on the
+ *               PARAGRAPH rather than on the wrapper ---------------------
+ * css/who-we-are-a.css:170 is `.wa-story__copy p{margin:0 0 var(--space-6)}`
+ * and :172 is `.wa-story__copy p:last-child{margin-bottom:0}`. Converted,
+ * every paragraph is the only child of its own text-editor widget, so every
+ * one of them satisfies `p:last-child` (0,2,1), beats :170 (0,2,0), and takes
+ * the zero. census() against dist/who-we-are-a.html before this rule: two
+ * paragraphs at marginBottom 0px live against 24px static, "Empower
+ * Mississippi began with a simple" and "In 2013, a small group of
+ * Mississippians".
+ *
+ * TWO, NOT THREE, AND THE MISSING ONE IS THE WHOLE REASON THIS RULE IS SHAPED
+ * DIFFERENTLY FROM podcast-a's. `.wa-story__copy` holds four paragraphs; the
+ * third, `.wa-story__turn` ("That vision became Empower Mississippi."),
+ * measured CORRECT at 24px. It is correct by accident: MailMunch injects
+ * `<div class='mailmunch-forms-in-post-middle' style='display: none
+ * !important;'></div>` INSIDE that one widget, immediately after the
+ * paragraph, so the paragraph is not its wrapper's `:last-child` and
+ * `p:last-child` never matched it. Read directly out of the live markup, not
+ * inferred. This is the third recorded time MailMunch has masked a defect on
+ * this install, and the standing instruction is not to ship a page that
+ * depends on it.
+ *
+ * podcast-a's repair (bridge.css:1297) moves the "last of several siblings"
+ * logic up to the WRAPPERS with `:not(:last-child)`, on the argument that
+ * after conversion the widgets are the siblings the build's rule was written
+ * about. That argument holds only while each widget contains exactly its own
+ * paragraph, which a third-party script has just falsified here: with the
+ * MailMunch div present, the third paragraph keeps its own 24px AND its
+ * wrapper would take another 24px, for 48px against the static build's 24px.
+ * A repair that is correct only while MailMunch is absent, and wrong while it
+ * is present, is not a repair.
+ *
+ * So the definite value goes back on the PARAGRAPH, where the build puts it,
+ * and the wrapper set is used only for the position test, which MailMunch
+ * does not disturb (it injects inside a widget, never as a sibling widget;
+ * confirmed against the live DOM). Correct with the div and without it.
+ *
+ * Specificity: the first rule is 0,3,1 against `.wa-story__copy p:last-child`
+ * at 0,2,1, so it wins unconditionally rather than on source order. The
+ * second is 0,4,1 and beats the first, restoring the zero the build's own
+ * rule asks for on the genuinely last paragraph. The <h2> in the same block
+ * is untouched by both, because both name `p`, which is what keeps
+ * css/who-we-are-a.css:168's own `margin:0 0 var(--space-5)` on the heading
+ * intact; a bare `:not(:last-child)` on the wrappers would have added 24px on
+ * top of it.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/who-we-are-a.css's four media blocks (:239, :249, :255, :266) touches
+ * `.wa-story__copy` or any paragraph inside it, so this restatement brings
+ * nothing responsive out of sync with itself. */
+.elementor .wa-story__copy .elementor-widget-text-editor p{
+  margin-block-end:var(--space-6); /* 24px, css/who-we-are-a.css:170 */
+}
+.elementor .wa-story__copy > .elementor-widget-text-editor:last-child p{
+  margin-block-end:0; /* css/who-we-are-a.css:172, applied to the last WIDGET
+    rather than to whatever happens to be the last node inside one */
+}
+
+/* ---------- 2. who-we-are-a: three fixed-ratio containers whose image widget
+ *               wrapper does not stretch, the SIXTH, SEVENTH and EIGHTH
+ *               instances of this category --------------------------------
+ * The five already on record, and they are the precedents to read rather than
+ * `.c2-panel__bg`/`.em-join__wash`, which are a DIFFERENT defect wearing the
+ * same symptom (those two wrappers ARE the positioned box, so they already had
+ * a definite height; their defect was class-on-wrapper and their repair targets
+ * the <img>):
+ *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:413-419
+ *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:1999-2001
+ *   `.ta-hero__media`                          team-a,      bridge.css:2164-2166
+ *   (line ranges read off the file today; the repricing document cites the
+ *   first two as 403-419 and 1999-2000, which are the comment start and the
+ *   selector list without their declaration.)
+ *
+ * Same mechanism those rules document in full: an Elementor container is
+ * column flex, so the `.elementor-widget-image` wrapper stretches to the
+ * container's WIDTH for free on the cross axis and never to its HEIGHT on the
+ * main axis, because `.elementor-element` gives it `flex-grow:var(--flex-grow)`
+ * with `--flex-grow:initial`. The build's own `img{height:100%}` then resolves
+ * against the wrapper's auto height, which is the photograph's intrinsic one.
+ *
+ * Measured with controlBoxes() before this rule, at 1440. Every one of the six
+ * photographs came back at exactly its intrinsic ratio where the design asks
+ * for a crop, with the WIDTH already correct in every case, which is the
+ * signature of a cross-axis stretch that worked and a main-axis one that did
+ * not:
+ *   grandparents-grandchild  538x360 live / 538x359 static  (3/2,  :86)
+ *   student-library          203x258 live / 203x275 static  (3/4,  :90)
+ *   video-still-man-outdoors 499x286 live / 499x375 static  (4/3,  :140)
+ *   young-man-portrait-bw    183x232 live / 183x244 static  (3/4,  :206)
+ *   girl-writing-bw          183x232 live / 183x244 static  (3/4,  :206)
+ *   student-library #2       183x232 live / 183x244 static  (3/4,  :206)
+ * TRIAGED AS WRAPPER-SHAPED, NOT PHOTOGRAPH-SHAPED, per the recipe's third
+ * question: none of these is one image differing by its own aspect ratio.
+ * Each is an image rendering at its intrinsic ratio where the design asks for
+ * a crop, and the three people frames are additionally a SET the design sizes
+ * identically. So all six are fixed rather than deferred, and nothing goes
+ * into DEFERRED_IMAGES.
+ *
+ * The containers themselves were already correct on both sides before this
+ * rule, which is what proves the defect is the wrapper and not the box:
+ * `.wa-hero__media` 538.1x358.7, `.wa-hero__media--tall` 215x286.7 and
+ * `.wa-story__photo` 499.3x374.5 all measured identical live and static at
+ * 1440. `.wa-people__frames`'s three containers did not, but for the separate
+ * reason repair 6 below exists; their aspect-ratio is restored there, and this
+ * rule then has a definite height to resolve against.
+ *
+ * ONE rule over three selectors rather than three rules, matching the
+ * `.sb-station__media`/`.sb-stories__band` precedent above: the declaration is
+ * identical for all three and nothing about their different ratio sources
+ * (3/2, 3/4 and 4/3 outside a media query, 16/9 inside one) changes what the
+ * WRAPPER needs. `.wa-hero__media` covers both hero figures, including the
+ * `--tall` one, because both carry that class.
+ *
+ * WHY `height:100%` AND NOT `display:contents`, evaluated per selector and
+ * decided by measurement rather than by which precedent was reached for first.
+ * Two techniques are on record for this category: `display:contents` on the
+ * wrapper (the homepage's, bridge.css:413-419) and `height:100%` on the
+ * wrapper (solutions-b's and team-a's). BOTH WERE DEPLOYED AND MEASURED HERE.
+ * Swapping this one declaration for `display:contents` gives census shared 30
+ * diffs 0 and box sweep shared 64 diffs 0 at 1440 AND at 390, identical to
+ * this rule. So the instruments cannot choose, and the choice is on the merits:
+ *
+ *   1. The reason `display:contents` EXISTS does not apply on this page. On the
+ *      homepage it was load-bearing because three of its five blocks write
+ *      CHILD selectors (`.em-stories__lead-card > img` and the like), so the
+ *      wrapper stopped those rules matching at all and only removing it from
+ *      the box tree handed them back. Every image selector in
+ *      css/who-we-are-a.css is a DESCENDANT selector (:85, :87, :92, :141,
+ *      :209), so not one of them ever stopped matching. Nothing here needs the
+ *      selector half of that repair; only the percentage-height chain is
+ *      broken, which is the half `height:100%` closes.
+ *   2. `display:contents` changes what the <img> IS. It re-parents the image
+ *      into the FIGURE's own formatting context, and an Elementor container is
+ *      a flex column, so the <img> becomes a flex ITEM, which it never is in
+ *      the static build (there it is a block-level child of a block-level
+ *      <figure>). `height:100%` leaves the wrapper as the flex item and the
+ *      <img> as a block in a block, which is the static build's own tree.
+ *      Harmless today, measured; but "wrapping an element changes what it IS,
+ *      not only where it sits" is a standing finding in this project's own
+ *      recipe, and un-wrapping does the same thing in reverse. Spending that
+ *      for no measured gain is not worth it.
+ *   3. The staleness argument, which is the written case FOR
+ *      `display:contents`, does not bite: `height:100%` is not a copy of any
+ *      value in css/who-we-are-a.css, so there is nothing here to drift out of
+ *      sync when somebody edits that file.
+ *
+ * `position:absolute` ON `.wa-hero__media--tall` (css/who-we-are-a.css:89) DOES
+ * NOT RULE `display:contents` OUT HERE, and the difference from `.c2-panel__bg`
+ * is worth stating because the condition looks identical and is not.
+ * `.c2-panel__bg` predates class-in-markup: its class had been moved onto the
+ * WRAPPER by image(), so the wrapper itself was the `position:absolute;inset:0`
+ * box and removing it from the box tree would have destroyed the positioning.
+ * Here the class travels in the markup, so the positioned box is the CONTAINER
+ * `.wa-hero__media--tall` and the `.elementor-widget-image` wrapper inside it
+ * has no positioning role at all. Checked rather than assumed: with
+ * `display:contents` deployed on it, the tall figure still measured 203x275,
+ * identical to static. It is available; it is simply not chosen, for reasons
+ * 1 and 2.
+ *
+ * ONE MORE THING CHECKED, because four of this page's six image widgets carry
+ * `aria-hidden="true"` on the WRAPPER as the only thing suppressing a
+ * decorative photograph, and `display:contents` has a history of dropping
+ * elements out of the accessibility tree. Tested directly with
+ * `Accessibility.getFullAXTree` over CDP, both ways: with `height:100%` and
+ * with `display:contents`, the tree is the same, exactly the two MEANINGFUL
+ * photographs exposed with their real alt text and the four decorative ones
+ * suppressed, five nodes ignored for aria-hidden in both. So this is NOT the
+ * reason for the choice, and it is recorded so nobody re-derives the fear:
+ * `display:contents` does not break aria-hidden on this install's Chromium.
+ *
+ * Checked for @media interference before writing: css/who-we-are-a.css:243
+ * (`.wa-hero__media--tall{width:clamp(120px,20vw,180px)}`), :245
+ * (`.wa-story__photo{aspect-ratio:16/9}`) and :258
+ * (`.wa-hero__media--tall{display:none}`) all touch these containers, and none
+ * sets `height` on the wrapper or on the img. So the wrapper fills whatever
+ * height its container computes to at any width, and a container that is
+ * display:none takes its wrapper with it. Confirmed by re-measuring at 390 as
+ * well as at 1440. */
+.wa-hero__media > .elementor-widget-image,
+.wa-story__photo > .elementor-widget-image,
+.wa-people__frames > .e-con > .elementor-widget-image{
+  height:100%;
+}
+
+/* ---------- 3. who-we-are-a: a flex container that asks for a ROW and never
+ *               says so, a category no grep on this project had priced ----
+ * css/who-we-are-a.css:67 is `.wa-hero__actions{display:flex;align-items:
+ * center;gap:clamp(...);flex-wrap:wrap}`. It never declares `flex-direction`,
+ * because in the static build it does not have to: the flex spec's own
+ * initial value is `row`. Converted, Elementor's `.e-con-full.e-flex{
+ * flex-direction:var(--flex-direction)}` (frontend.min.css, 0,2,0) is fed
+ * `column` by `.e-con.e-flex{--flex-direction:column}`, and nothing in the
+ * build competes with it at all. The CTA stacks ABOVE the jump link instead of
+ * sitting beside it.
+ *
+ * Measured on the converted page before this rule: `.wa-hero__actions`
+ * computes flex-direction column live against row static, and its box is
+ * 527.5x131.6 live against 527.5x68.4 static at 1440, which is the whole hero
+ * pushed 63px down the page.
+ *
+ * NEITHER INSTRUMENT CAN SEE THIS, which is why it is worth stating the
+ * mechanism rather than only the fix. controlBoxes() skips any anchor inside
+ * `.elementor-widget-button` by design, so the CTA is not measured; and
+ * `.wa-jump` is `display:inline-flex` (:72), so it shrink-wraps to the same
+ * box whichever direction its parent runs in. census() reads no anchors at
+ * all. The same defect is live and unrepaired on team-a today
+ * (`.ta-hero__actions`, identical shape, css/team-a.css:103): measured
+ * flex-direction column against the static build's row on 2026-08-18. Left
+ * for the controller rather than fixed here, because a rule named to another
+ * page's class does not belong in this page's task.
+ *
+ * `.wa-hero__actions.e-con` is 0,2,0, tying with `.e-con-full.e-flex` and
+ * winning on source order, which is what functions.php's enqueue guarantees:
+ * bridge.css is the last stylesheet on the page. Same shape and same argument
+ * as `.fp-hero__actions.e-con` earlier in this file.
+ *
+ * `align-items:center` and `gap` need NO rule and were checked rather than
+ * assumed: Elementor resolves both through `.elementor-element:where(
+ * .e-con-full,.elementor-widget)`, and `:where()` contributes nothing to
+ * specificity, so that rule is 0,1,0 and the build's own 0,1,0 declarations
+ * beat it on source order. Confirmed live: alignItems computes `center` and
+ * gap `36px` at 1440 and `20px` at 390, identical on both sides, before and
+ * after this rule. `flex-wrap` likewise: the build declares `wrap` at :68, so
+ * Elementor's `--flex-wrap-mobile` never gets to decide it.
+ *
+ * Checked for @media interference: no rule in any of css/who-we-are-a.css's
+ * media blocks touches `.wa-hero__actions`, so one unconditional declaration
+ * is correct at every width. */
+.wa-hero__actions.e-con{
+  flex-direction:row;
+}
+
+/* ---------- 4. who-we-are-a: the jump link is not a flex item either, the
+ *               same mechanism as `.em-join__way`'s html widget above ----
+ * Found only after repair 3 landed, by re-measuring at 390 rather than
+ * declaring the hero fixed at 1440. With the row restored, `.wa-hero__actions`
+ * still measured 342x115.6 live against 342x112.4 static at 390, and that
+ * 3.2px was the whole page's remaining vertical drift: every rect below the
+ * hero sat 3.1px low.
+ *
+ * `.wa-jump` is `display:inline-flex` (css/who-we-are-a.css:72). In the static
+ * build it is a DIRECT child of `.wa-hero__actions`, a flex container, so the
+ * flex spec blockifies it: an inline-flex flex ITEM computes to flex, and its
+ * box is exactly its own 24px. Converted, `html()` wraps the anchor in its own
+ * `.elementor-widget-html` div, so the anchor is no longer a flex item, the
+ * blockification never happens, and it keeps the inline-level half of
+ * inline-flex. An inline-level box sits on a text baseline, and the wrapper's
+ * line box is taller than the anchor by the descender space that leaves.
+ * Measured directly: the anchor is 130.9x24 on BOTH sides at both widths, and
+ * its wrapper is 130.9x27.2. The anchor is not the wrong size; the wrapper
+ * around it is.
+ *
+ * Invisible at 1440 and visible at 390, which is worth recording as the
+ * general shape rather than as a quirk of this page: at 1440 the two actions
+ * share one flex line whose height is set by the taller 68.4px button, so a
+ * 3.2px item does not change it; at 390 they wrap onto separate lines and the
+ * 3.2px lands in the section's height directly. A repair checked at one width
+ * only would have shipped this.
+ *
+ * Invisible to both instruments for the same reason repair 5 below is:
+ * controlBoxes() measures the ANCHOR (`a|Read our story`), which is identical
+ * on both sides, and never the <div> that is actually wrong.
+ *
+ * `display:contents` removes the wrapper from the box tree, so the anchor
+ * becomes `.wa-hero__actions`'s real, direct flex child again and the
+ * blockification the static build relies on happens the way it always did.
+ * Same rule and same argument as `.em-join__way > .elementor-widget-html`
+ * earlier in this file, scoped no wider, and safe here for one extra reason
+ * that rule had to check separately: this widget carries no `_attributes` and
+ * no cssClass of its own (elementor/pages/who-we-are-a/01-hero.mjs note 6),
+ * so there is nothing on the wrapper for `display:contents` to take out of
+ * play. `data-reveal="rise"` sits on `.wa-hero__actions` itself, not on this
+ * widget.
+ *
+ * Checked for @media interference: no rule in any of css/who-we-are-a.css's
+ * media blocks touches `.wa-jump` except :267's
+ * `@media (prefers-reduced-motion:reduce){.wa-jump:hover svg{transform:none}}`,
+ * which sets a property this rule does not restate, so it keeps working at its
+ * own specificity. */
+.wa-hero__actions > .elementor-widget-html{
+  display:contents;
+}
+
+
+/* ---------- 5. who-we-are-a: a button that stops shrink-wrapping the moment
+ *               its wrapper becomes a flex item, a second category no grep
+ *               had priced ---------------------------------------------
+ * `link()` puts the caller's class on the widget's own WRAPPER and renders the
+ * anchor inside it (elementor/factory.mjs, WIDGET_CSS_CLASS_KEY), so
+ * `.em-btn`'s `display:inline-flex` (components/components.css:4) lands on a
+ * <div>. In the static build the `<a class="em-btn em-btn--outline
+ * em-btn--md">` at the end of `.wa-people__copy` is an inline-level child of a
+ * BLOCK container and shrink-wraps to its label. Converted, `.wa-people__copy`
+ * is an Elementor container and therefore a flex column, the wrapper is a flex
+ * ITEM, `align-items` resolves to `normal` (stretch), and an inline-flex flex
+ * item is blockified and stretched across the whole column.
+ *
+ * Measured before this rule at 1440: the `.em-btn` computes `display:flex` and
+ * 486x54 live against `inline-flex` and 260.7x54 static, and at 390 it is
+ * 342x54 against 260.7x54. A full-width outline bar where the design draws a
+ * pill.
+ *
+ * INVISIBLE TO BOTH INSTRUMENTS, for two independent reasons that stack:
+ * controlBoxes() skips anchors inside `.elementor-widget-button`, and the
+ * element that is actually the wrong size is the WRAPPER, a <div>, which is
+ * not in its a,button,input,select,textarea,img selector list at all.
+ * census() reads no anchors. Found by probing `.wa-people__copy`'s children
+ * directly. The same defect is live and unrepaired on solutions-b today:
+ * `.sb-research__body > .em-btn` measured 489.61px live against 219.14px
+ * static, and `.sb-stories__panel > .em-btn` 540.75px against 352.72px, both
+ * on 2026-08-18. Left for the controller, for the same reason repair 3 leaves
+ * team-a's.
+ *
+ * `align-self`, NOT `display:block` ON THE PARENT, and that choice is made by
+ * measurement rather than by preference. The homepage's own repair for the
+ * block-static/flex-live container family (`.fp-hero__copy.e-con` and four
+ * others above) sets `display:block`, on the argument that those containers'
+ * children "were never flex items and every margin, width and text-flow rule
+ * written for them assumes normal flow". Here exactly one property is wrong:
+ * `.wa-people__copy` itself measures 486x332 live and 486x332 static, and its
+ * other two children (the heading and the list) are exact, because each
+ * carries its spacing as its own margin inside its own wrapper and a flex item
+ * establishes an independent formatting context that contains it. Changing the
+ * parent's `display` would be a larger change than the defect. Eight
+ * containers on this page are block static and flex live; this is the only one
+ * where that difference costs anything, and the rule says so by naming only
+ * it.
+ *
+ * `.wa-people__copy > .em-btn` is 0,2,0 against Elementor's
+ * `.elementor-element{align-self:var(--align-self)}` at 0,1,0, so it wins on
+ * specificity rather than on source order.
+ *
+ * Checked for @media interference: no rule in any of css/who-we-are-a.css's
+ * media blocks touches `.wa-people__copy` or `.em-btn`, and the button's own
+ * width is content-derived at every width, so one unconditional declaration is
+ * correct. Confirmed by re-measuring at 390. */
+.wa-people__copy > .em-btn{
+  align-self:flex-start;
+}
+
+/* ---------- 6. who-we-are-a: six rules addressed to a tag Elementor cannot
+ *               render, the largest single cost on this page ------------
+ * dist/who-we-are-a.html gives the three people frames `<figure
+ * data-reveal="clip">` with NO CLASS AT ALL, and css/who-we-are-a.css
+ * addresses them BY TAG: :205-206 `.wa-people__frames figure`, :207 and :208
+ * the `:nth-child(1|3)` margins, :210 `:nth-child(2) img`, and inside
+ * `@media (max-width:640px)` :260 and :261 again.
+ *
+ * Elementor cannot render a <figure> container. `Utils::validate_html_tag`
+ * (wp-content/plugins/elementor/includes/utils.php:786) falls back to 'div'
+ * for any tag outside ALLOWED_HTML_WRAPPER_TAGS (:28), and that list is a,
+ * article, aside, button, form, div, footer, h1 to h6, header, main, nav, p,
+ * section, span. No figure. Read off the install on 2026-08-18 rather than
+ * assumed. So `html_tag: 'figure'` deploys cleanly, renders a <div>, and takes
+ * all six of those rules with it.
+ *
+ * The three alternatives were considered and rejected in
+ * elementor/pages/who-we-are-a/04-people.mjs note 4: an html() widget per
+ * figure restores the tag but moves it inside a widget wrapper, which makes
+ * `:nth-child(n)` for n above 1 go INERT rather than over-match, the silent
+ * half of the defect; one html() blob for the whole group would be
+ * structurally perfect and is forbidden, because it would put three
+ * photographs into raw markup where Empower cannot change them through the
+ * media library; and an invented class does not help, because the build's
+ * stylesheet does not name it.
+ *
+ * Measured before these rules, at 1440, reading the three containers directly:
+ *   live   flex 183x232 @y2035 mb=0px | 183x232 @y2035 mb=0px | 183x232 @y2036 mb=0px
+ *   static block 183x244 @y1994 mb=40px | 183x244 @y2034 mb=0px | 183x244 @y2018 mb=16px
+ * and their images' object-position, live `50% 50%` on all three against
+ * static's `50% 50% | 50% 24% | 50% 50%`. The stagger that "stops a row of
+ * headshots reading as a stock grid" (:201-202) was gone entirely: three
+ * frames, one baseline, no crop.
+ * At 390 the third frame stayed on the page: live 163px wide and visible on a
+ * second grid row, static `display:none`. That one IS caught by the box sweep
+ * (`img|student-library.jpg#2`, live 163x207 against static 0x0), which is
+ * luck rather than coverage: the same rules' margins and object-position are
+ * not, and neither instrument reads a border radius or an overflow.
+ *
+ * Restated 1:1 against `.wa-people__frames > .e-con`, which names this page's
+ * own class and reaches nothing else on the install. Both media-query blocks
+ * are restated inside the SAME `@media (max-width:640px)` as the declarations
+ * they carry: a restatement that does not bring its media query along silently
+ * disables the responsive half, which this file has paid for once already.
+ *
+ * `margin:0` is kept from :205 even though an Elementor container has no UA
+ * margin to reset, because it is also what the two `:nth-child` overrides
+ * below are overriding: without a base at this specificity, the third frame's
+ * 16px would be the only margin in the group and the first frame's 40px would
+ * sit at a different specificity from the 24px that replaces it at 640px.
+ *
+ * Specificity, checked against Elementor's own var-driven declarations rather
+ * than assumed: the base is 0,2,0 against `.e-con{border-radius:var(
+ * --border-radius);overflow:var(--overflow);margin-block-end:var(
+ * --margin-block-end)}` at 0,1,0, and the four `:nth-child` rules are 0,2,1 or
+ * 0,3,1, so each beats both Elementor's rule and this block's own base.
+ * `aspect-ratio` and `box-shadow` are uncontested. `.wa-people__frames img`
+ * (:209) is a descendant selector and never stopped matching, so
+ * `object-fit:cover`, `width:100%` and `height:100%` on the <img> need
+ * nothing; only :210's own object-position, which names the figure, is
+ * restated here. */
+.wa-people__frames > .e-con{
+  margin:0;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:var(--shadow-md);
+  aspect-ratio:3/4;
+}
+.wa-people__frames > .e-con:nth-child(1){
+  margin-bottom:var(--space-8); /* 40px, css/who-we-are-a.css:207 */
+}
+.wa-people__frames > .e-con:nth-child(3){
+  margin-bottom:var(--space-4); /* 16px, css/who-we-are-a.css:208 */
+}
+.wa-people__frames > .e-con:nth-child(2) img{
+  object-position:center 24%; /* css/who-we-are-a.css:210 */
+}
+@media (max-width:640px){
+  .wa-people__frames > .e-con:nth-child(3){
+    display:none; /* css/who-we-are-a.css:260 */
+  }
+  .wa-people__frames > .e-con:nth-child(1){
+    margin-bottom:var(--space-6); /* 24px, css/who-we-are-a.css:261 */
+  }
+}

@@ -46,7 +46,7 @@ look cheaper than the first two.
 | `amb-a` | 0 | but see the third category below: NOT a zero-cost page |
 | `team-a` | 1 | |
 | `mail-a` | 1 | |
-| `capitol-a` | 2 | in progress at time of writing |
+| `capitol-a` | 2 | CONVERTED 2026-08-18, cost 4 rules (3 structural, 1 native-control) |
 | `team-bio` | 2 | back in the order, Paolo 2026-08-18 |
 | `epic-a` | 4 | |
 | `give-c` | 4 | |

@@ -116,3 +116,57 @@ not about unpicking repairs that already measure correct.
   keeps its `cssClass` on the wrapper and keeps its bridge repair.
 - If every property agrees and the page still looks wrong, the defect is in the
   tree, not the values.
+
+## 6. Pricing a page before you build it, added 2026-08-18 after pages 3 and 4
+
+Two pages built the new way, `what-we-do-a` and `solutions-b`, cost ONE bridge
+rule each. That is the number to plan with, and it is low because the class now
+travels in the markup. What remains is not about classes at all.
+
+**Moving classes into the markup fixes WHICH element carries the class. It does
+not fix WHERE that element sits.** Elementor wraps every widget in its own
+`.elementor-widget-*` div, so a build selector that depends on an element's
+POSITION still breaks. The discriminator, which is decidable from the section
+module before anything is deployed:
+
+> A position-dependent selector needs a bridge rule when its target is content
+> the module builds as a **widget**, because the wrapper stands between the
+> selector and the element and makes that element an only child. It needs none
+> when the target is built as a **container**, because a container IS the
+> element and nothing is inserted above it.
+
+**Two greps, and neither alone is sufficient.** Run both over the page's own
+stylesheet plus any shared sheet it loads, and classify every hit:
+
+1. **Child combinators**, `>`. Found on `what-we-do-a`:
+   `.da-door__body>p{margin:0}` matched a `text()` widget, so the real tree was
+   `.da-door__body > .elementor-widget-text-editor > p` and the paragraph fell
+   back to `tokens/base.css`'s 16px. One rule. The same page's
+   `.da-doors>:nth-child(2)` matched a `container()` and needed nothing, which
+   is why counting combinators overestimates: four combinator lines, one rule.
+
+2. **Structural pseudo-classes**, `:last-child`, `:first-child`, `:only-child`,
+   `:nth-child`. Found on `solutions-b`, which scored ZERO on grep 1 and still
+   cost a rule. `.sb-hero__copy p:last-child` (0,2,1) beat
+   `.sb-hero__copy .sb-hero__lede` (0,2,0), because each paragraph is the last
+   child of its OWN wrapper, so `p:last-child` matches every paragraph rather
+   than the last of two real siblings. The hero lede rendered as the muted body
+   paragraph, 17px and 76 percent opacity against 24px and white.
+
+The same page proves the container half of the rule in the same file:
+`.sb-station:nth-child(2)`, used four times to drive an alternating layout,
+targets containers and needed nothing. Confirmed structurally as well as by
+measurement: a depth-tracking parse of the live DOM found exactly three direct
+`.sb-station` children of `.sb-stations`, with nothing of Elementor's between
+them.
+
+**A warning about the class of defect this produces.** Both instruments missed
+the `nth-child` risk entirely, and would have missed it if it had gone wrong:
+a station laid out on the wrong side has every computed property correct and
+every box the right size. Structural defects are checked by reading the tree
+and by looking at the page, not by the sweeps. The census caught the
+`p:last-child` defect only because it changed colour and size, which is luck
+rather than coverage.
+
+**podcast-a's zero is not evidence the phase is cheap.** It scores zero on both
+greps, which is a property of that page's CSS, not of the conversion.

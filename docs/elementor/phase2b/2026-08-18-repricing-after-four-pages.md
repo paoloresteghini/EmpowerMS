@@ -138,3 +138,41 @@ was doing by hand.
 Those are the two form-shaped pages in the build, and they are where this
 category lands. Expect `amb-a` and `mail-a` to cost more than their structural
 hit counts suggest, and every other page to cost nothing on this axis.
+
+## A FOURTH category, added after `team-a`: images in fixed-ratio containers
+
+No stylesheet grep can see this one either, and it has now cost a rule on two of
+the five pages built the new way.
+
+Where the build puts a photograph in a container with a fixed `aspect-ratio` (or
+a fixed height) and sizes the `<img>` with `height:100%;object-fit:cover`, the
+converted page needs one named rule. Elementor's containers are COLUMN flex, so
+a widget wrapper stretches to its parent's WIDTH for free and never to its
+HEIGHT, and the `<img>`'s percentage height then resolves against an
+auto-height wrapper and falls back to the photograph's intrinsic ratio.
+
+Instances so far: `.c2-panel__bg` and `.em-join__wash` (homepage, Task 1.5),
+`.sb-station__media` and `.sb-stories__band` (`solutions-b`), `.ta-hero__media`
+(`team-a`). Repair each one NAMED: `.your-container > .elementor-widget-image
+{height:100%}`. Do not generalise it across containers; this file records four
+separate occasions where a rule broad enough to cover its siblings also beat
+something it should not have.
+
+**The check, which takes one grep of the page's own stylesheet:** does any
+selector combine `aspect-ratio` or a fixed `height` on a container with
+`height:100%` on an `<img>` inside it? If yes, expect one rule per such
+container.
+
+## So a page's price is four things, not two
+
+1. Structural pseudo-classes (grep 2), classified widget-or-container.
+2. Photographs in fixed-ratio containers (the check just above).
+3. Native controls inside `<main>` (only `amb-a` at 10 and `mail-a` at 5).
+4. Child combinators (grep 1), which are exhausted: zero on every remaining page.
+
+**Both of the controller's per-page misses came from categories 2 and 3**, never
+from the greps, which have not yet been wrong about a structural hit. The greps
+are sound for what they cover and cannot price a page on their own, because two
+of the four categories are invisible to a stylesheet search by construction: one
+depends on Elementor's kit meeting an authored control at render time, the other
+on flex defaults meeting an image widget.

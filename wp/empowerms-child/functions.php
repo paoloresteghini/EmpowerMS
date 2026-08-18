@@ -153,6 +153,14 @@ function empower_page_styles() {
 		   what-we-do-a's entry above, for the same reason: the site and
 		   header sheets are already enqueued unconditionally. */
 		'solutions-b'  => array( 'motion', 'solutions-b' ),
+		/* capitol-a. Read off dist/capitol-a.html's own <head>, which loads
+		   (after the shared tokens/components cascade and the unconditional
+		   header sheet) the site stylesheet, the header sheet, the motion
+		   sheet, then its own capitol-a sheet, in that order. Same shape as
+		   what-we-do-a's and solutions-b's own entries above, for the same
+		   reason: the site and header sheets are already enqueued
+		   unconditionally. */
+		'capitol-a'    => array( 'motion', 'capitol-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

@@ -177,6 +177,52 @@ export const PAGE_REGISTER = [
     minShared: 14,
     minBoxes: 39,
   },
+  /* capitol-a: Task 8, the third page built class-in-markup from the start.
+     Its own floors, measured the same way the other two entries' were, not
+     copied from either.
+
+     minShared: measured 2026-08-18 with census() from fidelity-browser.mjs
+     run directly against dist/capitol-a.html alone (served locally the
+     same way the tests do, no live side): 16 elements matching
+     h1,h2,h3,h4,h5,p,blockquote. 9 keeps roughly the same headroom the
+     other two entries keep (final's 40/63 is 63%, what-we-do-a's 10/17 is
+     59%, solutions-b's 14/24 is 58%; 9/16 is 56%): at least 10 of 16 must
+     match by text, comfortably below 16 while still requiring the large
+     majority of the static page's own text content to reappear on the
+     live side.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/capitol-a.html alone, at both 1440 and 390: 70 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 39
+     keeps the same proportion as the other two entries (roughly 56-57%: at
+     least 40 of 70 must match).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry the other
+     two entries document, re-measured for this page: not minBoxes. Counted
+     directly from dist/capitol-a.html outside its own <main> (the header
+     and footer markup, identical across every page in this build): 46
+     <a>, 12 <button>, 2 <img>, roughly 60 of this page's 70 box-sweep
+     elements, leaving only about 10 that belong to this page's own content
+     (this page carries no photographs at all, so every one of those 10 is
+     a control: the CTA link, the filter's two checkboxes/labels and clear
+     button, and the six episode-row title links plus their play-icon
+     spans do not themselves carry a usable a/button/input identity beyond
+     the anchor). A live page that failed to load would still share close
+     to 60 keys against minBoxes' 39 and the box sweep alone could pass
+     green. minShared is the real load-failure gate here too: only 6 of the
+     16 census elements live in the header and footer (counted the same
+     way, outside <main>: 2 <h3>, 4 <p>), a 404 shares 6, and 6 is under
+     the 10 that minShared:9 demands, so the suite goes red on the census,
+     not the box sweep. */
+  {
+    name: 'capitol-a',
+    envVar: 'CAPITOL_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/capitol-a/',
+    staticFile: 'dist/capitol-a.html',
+    minShared: 9,
+    minBoxes: 39,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

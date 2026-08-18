@@ -2000,3 +2000,135 @@
 .sb-stories__band > .elementor-widget-image{
   height:100%;
 }
+
+/* ---------- capitol-a: the about-copy p:last-child defect, a third instance
+ *            of the same category podcast-a and solutions-b both hit ----------
+ * Task 8. census() found two paragraphs computing marginBottom 0px live
+ * against 20px static: "Capitol Chat is Empower Mississippi's weekly..."
+ * (the first paragraph) and "Get the context you need..." (the third).
+ * css/capitol-a.css:113-115 is `.cca-about__copy p{margin:0 0 var(
+ * --space-5)}` with `p:last-child{margin-bottom:0}`. Converted, every one
+ * of the four paragraphs in `.cca-about__copy` is the only child of its own
+ * text() widget wrapper, so `:last-child` is true of all four regardless of
+ * position, the same mechanism `.pca-about__copy p:last-child` (podcast-a,
+ * bridge.css above) and `.sb-hero__copy p:last-child` (solutions-b,
+ * bridge.css above) both are.
+ *
+ * SHAPE CHOSEN: `:not(:last-child)` on the WRAPPERS, matching podcast-a's
+ * repair rather than solutions-b's, decided on the evidence the brief asked
+ * for: the original selector (`.cca-about__copy p:last-child`) expresses a
+ * relationship among SIBLINGS ("every paragraph but the last one gets this
+ * margin"), not a rule naming one specific element the way `.sb-hero__copy
+ * .sb-hero__lede` did. Moving that same sibling logic up one level, to
+ * where the widgets are now the direct children `.cca-about__copy` actually
+ * has, reproduces exactly the set the original rule leaves at 20px (three
+ * of four widgets, whichever is not last), and keeps working if the section
+ * gains or loses a paragraph, which a selector written against today's
+ * four positions would not. */
+.elementor .cca-about__copy > .elementor-widget-text-editor:not(:last-child){
+  margin-block-end:var(--space-5);
+}
+
+/* `.cca-about__claim` IS THE SAME SHAPE AS PODCAST-A'S `.pca-lede`, and
+ * needs the same two-part protection, for the same reason: it is a NAMED
+ * paragraph carrying its own more specific margin-bottom
+ * (`.cca-about__copy .cca-about__claim{margin-bottom:var(--space-6)}`,
+ * 24px, css/capitol-a.css:119) that sits in the MIDDLE of the group
+ * (second of four), not at either end.
+ *
+ * MEASURED BEFORE WRITING THIS, not assumed: `.cca-about__claim`'s own <p>
+ * currently computes marginBottom 24px live, matching static, and census()
+ * did not flag it. That is NOT because the specificity math favours it
+ * (`.cca-about__copy p:last-child` at 0,2,1 outranks `.cca-about__copy
+ * .cca-about__claim` at 0,2,0 exactly the way it did for `.sb-hero__lede`);
+ * it is because a third-party marketing plugin (MailMunch) injects a
+ * hidden `<div class="mailmunch-forms-in-post-middle" style="display:none
+ * !important">` immediately after this specific paragraph, inside the same
+ * widget wrapper, confirmed live by reading the wrapper's own children.
+ * That extra sibling is what actually holds `:last-child` off the real
+ * `<p>` today, the identical accidental rescue podcast-a's own `.pca-lede`
+ * had before ITS fix closed the dependency. This is a fragility, not a
+ * pass: deactivating MailMunch, or configuring it not to inject on this
+ * post type, would silently drop this paragraph's margin to 0 with no code
+ * change anywhere in this repository, and the general `:not(:last-child)`
+ * rule above makes it WORSE rather than neutral, because it also lands its
+ * own 20px on this paragraph's WRAPPER (the wrapper is not last among the
+ * four, MailMunch or not), which would stack with the real element's own
+ * 24px into 44px the moment MailMunch stops rescuing it, exactly podcast-a's
+ * own measured 44px-from-24-plus-20 defect before its fix. Closed the same
+ * two-part way, with no dependency on MailMunch either running or not.
+ *
+ * SPECIFICITY, spelled out rather than left to source order, the same
+ * caution podcast-a's own equivalent rule records: the general
+ * `:not(:last-child)` rule above is `.elementor`(0,1,0) + `.cca-about__copy`
+ * (0,1,0) + `.elementor-widget-text-editor`(0,1,0) + `:not(:last-child)`
+ * (0,1,0) = 0,4,0. A bare `:has(.cca-about__claim)` version of this rule
+ * would ALSO be 0,4,0 (`:has()` takes the specificity of its own most
+ * specific argument, a class, 0,1,0) and the two would TIE, winning only by
+ * sitting later in this file. `.elementor-widget` is added to the compound
+ * below to make this rule 0,5,0 on its own terms, matching podcast-a's own
+ * fix exactly, so it beats the rule above regardless of source order. */
+.elementor .cca-about__copy > .elementor-widget-text-editor.elementor-widget:has(.cca-about__claim){
+  margin-block-end:0;
+}
+.elementor .cca-about__copy .cca-about__claim{
+  margin-block-end:var(--space-6);
+}
+
+/* Checked for @media interference before writing: no @media rule in
+ * css/capitol-a.css touches `.cca-about__copy`, `.cca-about__claim` or
+ * `.cca-about__where` at all (the file's only `.cca-about__grid` media
+ * query, at max-width:900px, changes the grid's own column count and never
+ * reaches inside `.cca-about__copy`), so nothing responsive is at risk of
+ * going silently unrestored by either restatement above. */
+
+/* ---------- capitol-a: Elementor's KIT styles this page's own native
+ *            <button>, the same category as podcast-a's clear button ----------
+ * Task 8. The box sweep found `button|Clear filters` at 163x49px live
+ * against 123x40px static, with padding 17px 40px against 0px 20px,
+ * border-radius 6px against 999px, border-width 0px against 1px, font-weight
+ * 500 against 700. This is the same defect this file already repairs for
+ * `.pca-facets__clear` above (`.elementor-kit-20547 button` at 0,1,1, from
+ * Elementor's own Site Settings kit, outranking every build button rule at
+ * 0,1,0). `.cca-filter__clear` is a real, authored `<button type="reset">`
+ * inside the FILTER_FORM html() widget (03-library.mjs), not an Elementor
+ * button widget, so it matches the kit's bare `button` selector the same
+ * way every other native button on this install does, `type` attribute
+ * notwithstanding.
+ *
+ * NAMED, not general, for the same reason the block above this one gives:
+ * a general `.elementor button{...}` restatement at matching specificity
+ * would tie the kit and win on source order, but every button in this
+ * build is styled by the build, and `revert` (the only way to avoid
+ * clobbering the kit's OTHER, undocumented properties this file has not
+ * measured) would discard components.css's own declarations along with
+ * the kit's.
+ *
+ * Restated from css/capitol-a.css:181-187, the same properties
+ * `.pca-facets__clear`'s own repair restates, because this button is the
+ * same design-system shape (an outline pill, real background of its own
+ * rather than none, so restated rather than reverted): */
+.elementor button.cca-filter__clear{
+  padding:0 var(--space-5);
+  min-height:40px;
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-pill);
+  font-family:var(--font-display);
+  font-weight:var(--fw-bold);
+  font-size:var(--fs-small);
+  letter-spacing:normal;
+  line-height:normal;
+  color:var(--text-strong);
+  background-color:transparent;
+}
+.elementor button.cca-filter__clear:hover{
+  background-color:var(--surface-subtle);
+}
+
+/* Checked for @media interference before writing: css/capitol-a.css:239-240
+ * (`@media (max-width:860px){.cca-filter__clear{justify-self:stretch}}`)
+ * and :250 (`@media (prefers-reduced-motion:reduce){...,.cca-filter__clear,
+ * ...{transition:none}}`) both touch `.cca-filter__clear`, but neither sets
+ * a property either rule above restates (`justify-self` and `transition`
+ * are untouched here), so both responsive rules keep working at their own
+ * original specificity. */

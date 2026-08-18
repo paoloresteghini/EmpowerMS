@@ -28,6 +28,10 @@ import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThem
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
+import { PAGE_REGISTER } from './elementor/pages/register.mjs';
+import {
+  isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes,
+} from './fidelity-deferred.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
    directly (served locally, not fetched from the live install), so it needs
@@ -2735,76 +2739,223 @@ test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', (
     'bridge.css must carry a :focus-within rule for .em-skip that moves it into view');
 });
 
+/* --- fidelity-deferred.mjs / the deferred-image list, tested without a
+   browser --------------------------------------------------------------- */
+
+/* The page register is the coverage list (see its own comment in
+   elementor/pages/register.mjs); this asserts it stays non-empty so a
+   refactor that empties it fails loudly here rather than making both
+   instrument loops below silently sweep zero pages. */
+test('the page register is not empty', () => {
+  assert.ok(PAGE_REGISTER.length > 0, 'PAGE_REGISTER must name at least one page (the homepage), or nothing is gated');
+});
+
+/* compareBoxes() is the box sweep's diff-and-defer logic, extracted out of
+   the browser test below so its five load-bearing behaviours can be proven
+   against plain objects, in milliseconds, without Playwright. Everything
+   here makes a test MORE PERMISSIVE (that is what a deferred list is), so
+   each behaviour below is tested for the failure it exists to catch, not
+   just the pass it exists to produce. */
+
+test('compareBoxes subtracts a deferred key from the diff, and reports the count', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, subtracted, expired } = compareBoxes(live, stat, 'x', deferred);
+  assert.deepEqual(diffKeys, [], 'a deferred key must not appear in the remaining diff');
+  assert.equal(subtracted, 1, 'exactly one difference was excused and must be counted');
+  assert.deepEqual(expired, [], 'the entry still genuinely differs, so it is not expired');
+});
+
+test('compareBoxes does not subtract a key that is not on the deferred list, and it still fails', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', []);
+  assert.deepEqual(diffKeys, ['img|team.jpg'], 'an undeferred difference must still be reported');
+  assert.equal(subtracted, 0, 'nothing was excused, so nothing should be counted as subtracted');
+});
+
+/* This is the half the recipe calls out as most important: without it the
+   list only ever grows, excusing whatever fixed the thing it was written
+   for, and eventually excusing defects nobody has looked at. */
+test('a deferred entry whose key no longer differs is reported as expired, by name', () => {
+  const live = { 'img|team.jpg': { w: 320, h: 240 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, expired } = compareBoxes(live, stat, 'x', deferred);
+  assert.deepEqual(diffKeys, [], 'the two sides agree, so there is nothing left to report as a difference');
+  assert.deepEqual(expired, ['img|team.jpg'], 'the entry that no longer differs must be named so it can be removed');
+});
+
+/* An entry deferred for a DIFFERENT page must not silently excuse a
+   same-named key on this one; page scoping is not exercised by the two
+   tests above, which both use a single page. */
+test('a deferred entry does not cross pages: the same key deferred elsewhere still fails here', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'other-page', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', deferred);
+  assert.deepEqual(diffKeys, ['img|team.jpg'], 'a deferral on another page must not excuse this one');
+  assert.equal(subtracted, 0, 'nothing on this page was excused');
+});
+
+/* Nothing may be deferred except an image key: a deferred control, link or
+   heading is outside Paolo's instruction and needs asking about, so the
+   mechanism refuses it rather than trusting whoever writes the entry. */
+test('a non-image key is refused when it is added to the deferred list', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'an anchor key must be refused, not silently accepted');
+  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'button|Submit', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'a button key must be refused, not silently accepted');
+  assert.throws(() => validateDeferredEntry({ page: 'x', key: 'h2|Our mission', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'a heading key must be refused, not silently accepted');
+});
+
+/* The two bookkeeping keys are neither images nor deferrable, and get their
+   own refusal message rather than falling through to the generic one. */
+test('the two bookkeeping keys are refused with their own message, not the generic one', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'x', key: '__excluded_count__', reason: 'no', date: '2026-08-17' }),
+    /bookkeeping marker/, '__excluded_count__ must be refused as bookkeeping, not as "not an image"');
+  assert.throws(() => validateDeferredEntry({ page: 'x', key: '__unsettled__', reason: 'no', date: '2026-08-17' }),
+    /bookkeeping marker/, '__unsettled__ must be refused as bookkeeping, not as "not an image"');
+  assert.equal(isBookkeepingKey('__excluded_count__'), true);
+  assert.equal(isBookkeepingKey('__unsettled__'), true);
+  assert.equal(isImageKey('__excluded_count__'), false);
+});
+
+test('isImageKey is decidable from the key alone, for the shapes controlBoxes() actually emits', () => {
+  assert.equal(isImageKey('img|team.jpg'), true);
+  assert.equal(isImageKey('img|team.jpg#2'), true, 'a deduped image key keeps the img| prefix');
+  assert.equal(isImageKey('a|Contact us'), false);
+  assert.equal(isImageKey('button|Submit'), false);
+  assert.equal(isImageKey('h2|Our mission'), false);
+});
+
+/* The subtraction count must be visible on a green run too, not only when
+   there is a remaining failure to explain: a silent subtraction is how a
+   gate stops being a gate. This proves the count is still computed and
+   correct when diffKeys ends up empty, i.e. when the test that reads it
+   would otherwise pass without anyone noticing anything was excused. */
+test('the subtraction count is available even when every difference was deferred (a green run)', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 }, 'img|hero.jpg': { w: 100, h: 100 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 }, 'img|hero.jpg': { w: 90, h: 90 } };
+  const deferred = [
+    { page: 'x', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+    { page: 'x', key: 'img|hero.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+  ];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'x', deferred);
+  assert.deepEqual(diffKeys, [], 'both differences were deferred, so the test this feeds would pass');
+  assert.equal(subtracted, 2, 'a passing result must not hide how many differences were excused to get there');
+});
+
 /* --- fidelity-browser.mjs / the homepage's two measuring instruments ----- */
 
 /* The homepage's ~40 defects were found by two throwaway session scripts,
    not by anything in this suite. They are load-bearing for thirteen more
    page conversions and must stop being throwaway. Guarded the same way the
-   SPIKE_URL group above guards itself: a checkout with no HOME_URL must
-   fail on a message naming the variable, not on a bare Playwright error. */
-const requireHomeUrl = () => process.env.HOME_URL
-  ?? assert.fail('HOME_URL is not set. These two tests need the deployed homepage: HOME_URL=https://empv2.wpenginepowered.com/final/ node --test test-elementor.mjs');
+   SPIKE_URL group above guards itself, with one difference: SPIKE_URL fails
+   the run when unset, right for eight tests the whole run depends on. This
+   register is meant to grow past what any one developer has credentials
+   for, so a page whose variable is unset is skipped, not failed: a
+   developer without empv2 access still gets a usable, all-green
+   `node --test test-elementor.mjs`, with a visible line naming what was
+   skipped and why, rather than a false failure to explain away every run. */
+function requirePageUrl(page, t) {
+  const url = process.env[page.envVar];
+  if (url) return url;
+  t.skip(`${page.envVar} is not set. This test needs the deployed ${page.name} page: `
+    + `${page.envVar}=${page.exampleUrl} node --test test-elementor.mjs`);
+  return null;
+}
 
 /* The 32 hand-picked probes reported 31 of 32 matching on a page the census
    found 40 differences on. A curated check set can only find the failures
    somebody already imagined; this enumerates both sides and compares on a key
-   the conversion cannot move, which is the element's own text. */
-test('every paragraph and heading on the converted homepage matches the static build', { concurrency: 1 }, async () => {
-  const { census } = await import('./fidelity-browser.mjs');
-  const url = requireHomeUrl();
-  const server = await serveRepoRoot();
-  try {
-    const live = await census(url);
-    const stat = await census(`${server.url}/dist/final.html`);
-    const shared = Object.keys(live).filter((k) => stat[k]);
-    assert.ok(shared.length > 40, `only ${shared.length} elements matched by text on both sides; the key is not lining up`);
-    const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
-      .map((k) => `${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
-    assert.deepEqual(diffs, [], `${diffs.length} computed-style differences:\n${diffs.join('\n')}`);
-  } finally {
-    await server.close();
-  }
-});
+   the conversion cannot move, which is the element's own text.
+
+   Looped over PAGE_REGISTER rather than hard-coding the homepage: the two
+   instrument tests used to name dist/final.html and HOME_URL inside their
+   own bodies, so covering a second page meant editing a test per page. The
+   loop reads its set from the register instead, the same source of truth a
+   human reads to see what is covered. */
+for (const page of PAGE_REGISTER) {
+  test(`every paragraph and heading on the converted ${page.name} page matches the static build`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { census } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      const live = await census(url);
+      const stat = await census(`${server.url}/${page.staticFile}`);
+      const shared = Object.keys(live).filter((k) => stat[k]);
+      assert.ok(shared.length > 40, `only ${shared.length} elements matched by text on both sides; the key is not lining up`);
+      const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
+        .map((k) => `${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+      assert.deepEqual(diffs, [], `${diffs.length} computed-style differences:\n${diffs.join('\n')}`);
+    } finally {
+      await server.close();
+    }
+  });
+}
 
 /* The census compares values. This compares boxes, and the two find disjoint
    defects: a Loop Grid wrapper cost 222px of card height with every property on
    both sides agreeing, and a kit padding pushed the nav 258px wide while no
    colour moved. Anchors inside Elementor's button widget are skipped: link()
    renders the pill on the WRAPPER and the anchor fills it, which is by design
-   and measured correct against the static build's own anchor. */
-test('every control and image on the converted homepage matches the static build box for box', { concurrency: 1 }, async () => {
-  const { controlBoxes } = await import('./fidelity-browser.mjs');
-  const url = requireHomeUrl();
-  const server = await serveRepoRoot();
-  try {
-    for (const width of [1440, 390]) {
-      const live = await controlBoxes(url, { width });
-      const stat = await controlBoxes(`${server.url}/dist/final.html`, { width });
-      /* Asserted before the diff, not folded into it: __excluded_count__ is
-         a scalar, not a box, and `stat[k]` below is falsy for a static
-         count of 0, so a live-side regression would silently drop out of
-         `shared` and never reach the diff check at all. Asserted as
-         exactly 0, not as "the two sides agree": two sides that both
-         silently excluded the same element would agree and still be a
-         coverage gap. If either count is ever nonzero, the cause is an
-         element whose tag controlBoxes()'s key cascade has no identity
-         rule for; the remedy is to extend that cascade, not to raise this
-         expected number. */
-      assert.equal(live.__excluded_count__, 0,
-        `controlBoxes excluded ${live.__excluded_count__} element(s) on the live page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
-      assert.equal(stat.__excluded_count__, 0,
-        `controlBoxes excluded ${stat.__excluded_count__} element(s) on the static page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
-      delete live.__excluded_count__;
-      delete stat.__excluded_count__;
-      const shared = Object.keys(live).filter((k) => stat[k]);
-      const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
-        .map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
-      assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
+   and measured correct against the static build's own anchor.
+
+   Looped over PAGE_REGISTER for the same reason as the census test above.
+   The homepage carries nothing in DEFERRED_IMAGES, so compareBoxes() with
+   an empty deferred list for 'final' reduces to exactly the diffKeys
+   computation this test ran inline before this task: same shared/diff
+   logic, same messages, same assertion. That equivalence is what "the
+   homepage's behaviour must not change" means here, and it is proven, not
+   merely asserted, by the extraction: compareBoxes() runs the identical
+   shared-key JSON.stringify comparison this file used to run inline, now
+   unit-tested in isolation above against exactly this case (an empty
+   deferred list). */
+for (const page of PAGE_REGISTER) {
+  test(`every control and image on the converted ${page.name} page matches the static build box for box`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { controlBoxes } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      for (const width of [1440, 390]) {
+        const live = await controlBoxes(url, { width });
+        const stat = await controlBoxes(`${server.url}/${page.staticFile}`, { width });
+        /* Asserted before the diff, not folded into it: __excluded_count__ is
+           a scalar, not a box, and `stat[k]` below is falsy for a static
+           count of 0, so a live-side regression would silently drop out of
+           `shared` and never reach the diff check at all. Asserted as
+           exactly 0, not as "the two sides agree": two sides that both
+           silently excluded the same element would agree and still be a
+           coverage gap. If either count is ever nonzero, the cause is an
+           element whose tag controlBoxes()'s key cascade has no identity
+           rule for; the remedy is to extend that cascade, not to raise this
+           expected number. */
+        assert.equal(live.__excluded_count__, 0,
+          `controlBoxes excluded ${live.__excluded_count__} element(s) on the live page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+        assert.equal(stat.__excluded_count__, 0,
+          `controlBoxes excluded ${stat.__excluded_count__} element(s) on the static page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+        delete live.__excluded_count__;
+        delete stat.__excluded_count__;
+        const { diffKeys, subtracted, expired } = compareBoxes(live, stat, page.name);
+        /* Printed on green as well as on red, per the recipe: a silent
+           subtraction is how a gate stops being a gate. */
+        console.log(`[fidelity] ${page.name} @ ${width}px: subtracted ${subtracted} deferred image key(s) from the diff`);
+        assert.deepEqual(expired, [],
+          `${expired.length} deferred entr${expired.length === 1 ? 'y' : 'ies'} for "${page.name}" no longer differ `
+          + `and must be removed from DEFERRED_IMAGES: ${expired.join(', ')}`);
+        const diffs = diffKeys.map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+        assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
+      }
+    } finally {
+      await server.close();
     }
-  } finally {
-    await server.close();
-  }
-});
+  });
+}
 
 /* The box sweep above compares live against static at 390 and passes today
    because both sides settle. This test isolates one side: does the STATIC

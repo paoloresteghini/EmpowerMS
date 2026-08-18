@@ -72,16 +72,18 @@ export function convertedPageDirs() {
    own text content to reappear, matched by text, on the live side.
 
    minBoxes: the same floor for the control/image box sweep
-   (shared.length > minBoxes in the "every control and image..." test),
-   newly added: the box sweep had no floor at all before fix round 1 (I2).
+   (measuredElements > minBoxes in the "every control and image..." test,
+   where measuredElements is `shared` with the __unsettled__ bookkeeping key
+   filtered out; fix round 2 (N3) moved the comparison off `shared.length`
+   itself, which double-counted that marker as a measured element), newly
+   added in fix round 1: the box sweep had no floor at all before that (I2).
    Measured the same way, with controlBoxes() at both 1440 and 390 against
    dist/final.html alone: 87 elements (a,button,input,select,textarea,img
    with a usable identity) at both widths. 50 keeps roughly the same
    headroom as minShared's 40/63 (about two thirds), while sitting nowhere
    near what a wrong staticFile actually produces: controlBoxes() against a
    404 measures 0 real elements (only the two bookkeeping keys), so
-   `shared` collapses to at most 1 (the __unsettled__ marker), far under
-   50. */
+   `measuredElements` collapses to 0, far under 50. */
 export const PAGE_REGISTER = [
   {
     name: 'final',

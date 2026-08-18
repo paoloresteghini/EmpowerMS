@@ -3019,13 +3019,40 @@ test('requirePageUrl fails instead of skipping when FIDELITY_REQUIRE_ALL is set 
   assert.throws(() => requirePageUrl(page, fakeContext, fakeEnv), /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
 });
 
-test('requirePageUrl still skips by default, with FIDELITY_REQUIRE_ALL unset, regardless of test order (N2)', () => {
+/* Fix round 2 (N2)'s own name for this test, "regardless of test order",
+   overstated what it proves: this test passes an explicit `{}`, so it says
+   nothing about ordering at all. Order-independence is a property of the
+   FIRST test no longer mutating process.env, not something a test that
+   never touches process.env can demonstrate. Renamed. */
+test('requirePageUrl skips by default when FIDELITY_REQUIRE_ALL is absent from the given env', () => {
   const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
   let skipMessage = null;
   const fakeContext = { skip: (msg) => { skipMessage = msg; } };
   const url = requirePageUrl(page, fakeContext, {});
   assert.equal(url, null, 'a missing variable with no FIDELITY_REQUIRE_ALL must skip, not throw');
   assert.match(skipMessage, /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
+});
+
+/* Fix round 2 (N5): both tests above pass their own `env` object, so
+   neither one touches the one piece of wiring N2 was actually about: the
+   default parameter binding to the real process.env. Round 1 proved the
+   flag while deleting it from shared state; round 2 proved it against a
+   substitute environment; both left the default itself unobserved. Change
+   `env = process.env` to `env = {}` and every test in this file still
+   passes, while both instrument tests below skip forever regardless of
+   what HOME_URL or FIDELITY_REQUIRE_ALL are actually set to, with the
+   suite green: the entire gate retires on a one-token typo nothing
+   catches.
+   PATH is relied on rather than a fabricated variable because it is set in
+   every environment this suite runs in (a local shell, CI, this task's own
+   offline environment), so the two-argument call can be checked against
+   the real process.env directly instead of against a fixture. */
+test('requirePageUrl reads process.env when no env argument is passed', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'PATH', exampleUrl: 'https://example.test/' };
+  const fakeContext = { skip: () => assert.fail('PATH is always set, so the two-argument call must not skip') };
+  assert.equal(requirePageUrl(page, fakeContext), process.env.PATH,
+    'the default env parameter must be process.env; if it is not, both instrument loops read '
+    + 'an empty object and skip forever with the suite green');
 });
 
 /* The 32 hand-picked probes reported 31 of 32 matching on a page the census

@@ -2132,3 +2132,43 @@
  * a property either rule above restates (`justify-self` and `transition`
  * are untouched here), so both responsive rules keep working at their own
  * original specificity. */
+
+/* ---------- team-a: the hero image widget wrapper does not stretch to fill
+ *            a fixed-aspect-ratio flex container, a fourth instance of the
+ *            same defect solutions-b's Task 7 already repairs twice ----------
+ * Task 9. Predicted ZERO bridge rules across all three priced categories
+ * (child combinators, structural pseudo-classes, native controls); this is
+ * a FOURTH category none of the three pricing greps can see, because it
+ * depends on Elementor's own flex defaults meeting a real image() widget
+ * inside a fixed-aspect-ratio container, not on anything in a stylesheet
+ * selector. Box sweep found `img|children-running-parent.jpg` at 453x575px
+ * live against 453x566px static at 1440 (width already correct, only
+ * height wrong by 9px).
+ *
+ * Measured directly rather than assumed, the same mechanism solutions-b's
+ * own `.sb-station__media`/`.sb-stories__band` rule above already
+ * documents in full: `.ta-hero__media` is `e-con-full e-flex e-con`
+ * (Elementor's own flex container classes), its OWN box is correct
+ * (453x566, matching static, since `aspect-ratio:4/5` sizes it directly),
+ * but the `.elementor-widget-image` wrapper Elementor inserts inside it
+ * measures 453x575, its own auto height at the image's intrinsic aspect
+ * ratio, because Elementor containers are column flex by default (main
+ * axis vertical) and a widget wrapper's default `flex-grow:0` never grows
+ * it to fill that axis; stretch only ever covers the CROSS axis (width),
+ * which is why the width already matched. `.ta-hero__media img{height:
+ * 100%}` (css/team-a.css:118) then resolves the `<img>`'s own height
+ * against that wrong wrapper height, not the container's true one, which
+ * is why the img matches the wrapper's 575 rather than the container's
+ * 566. Same repair shape as solutions-b's own rule: give the wrapper the
+ * height it fails to take. */
+.ta-hero__media > .elementor-widget-image{
+  height:100%;
+}
+
+/* Checked for @media interference before writing: css/team-a.css:276
+ * (`@media (max-width:1100px){.ta-hero__media{aspect-ratio:16/10}}`) and
+ * :277 (`.ta-hero__media img{object-position:center 26%}`) both touch this
+ * section, but neither sets `height` on the wrapper or the img, so this
+ * rule works unmodified at any width: the wrapper always fills whatever
+ * height `.ta-hero__media` itself computes to, aspect-ratio value
+ * notwithstanding. */

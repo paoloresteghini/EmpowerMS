@@ -226,6 +226,56 @@ export const PAGE_REGISTER = [
     minShared: 9,
     minBoxes: 39,
   },
+  /* team-a: Task 9, the fourth page built class-in-markup from the start.
+     Its own floors, measured the same way the other four entries' were,
+     not copied from any.
+
+     minShared: measured 2026-08-18 with census() from fidelity-browser.mjs
+     run directly against dist/team-a.html alone (served locally the same
+     way the tests do, no live side): 25 elements matching
+     h1,h2,h3,h4,h5,p,blockquote. 13 keeps roughly the same headroom the
+     other four entries keep (final 40/63 63%, what-we-do-a 10/17 59%,
+     solutions-b 14/24 58%, capitol-a 9/16 56%; 13/25 is 52%, a touch
+     below the others because this page's own census count, 25, is larger
+     relative to the fixed 6-element chrome share than any page before it,
+     so the same proportion would demand fewer real matches than the other
+     entries' floors do): at least 14 of 25 must match by text, comfortably
+     below 25 while still requiring the large majority of the static
+     page's own text content to reappear on the live side.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/team-a.html alone, at both 1440 and 390: 64 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run.
+     35 keeps the same proportion as the other four entries (roughly
+     56-57%: at least 36 of 64 must match).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every
+     other entry documents, re-measured for this page: not minBoxes.
+     Counted directly from dist/team-a.html outside its own <main> (the
+     header and footer markup, identical across every page in this
+     build): 46 <a>, 12 <button>, 2 <img>, 60 of this page's 64
+     box-sweep elements, leaving only 4 that belong to this page's own
+     content (the hero photograph, the "Support Our Work" CTA, the "Meet
+     the staff" jump link, and Grant Callen's own `<a href="team-bio.html">`
+     in the staff roster; the roster, ledger and roll are each one html()
+     widget carrying only plain <span>s beyond that one link, per
+     02-staff.mjs/03-fellows.mjs/04-board.mjs's own notes, so none of
+     their other names or titles add a box-sweep key). A live page that
+     failed to load would still share close to 60 keys against minBoxes'
+     35 and the box sweep alone could pass green. minShared is the real
+     load-failure gate here too: only 6 of the 25 census elements live in
+     the header and footer (counted the same way, outside <main>: 2 <h3>,
+     4 <p>), a 404 shares 6, and 6 is under the 14 that minShared:13
+     demands, so the suite goes red on the census, not the box sweep. */
+  {
+    name: 'team-a',
+    envVar: 'TEAM_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/team-a/',
+    staticFile: 'dist/team-a.html',
+    minShared: 13,
+    minBoxes: 35,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

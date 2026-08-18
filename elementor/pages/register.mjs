@@ -369,6 +369,67 @@ export const PAGE_REGISTER = [
     minShared: 16,
     minBoxes: 39,
   },
+  /* mail-a: Task 12, the sixth page built class-in-markup from the start,
+     and the build's first form page. Its own floors, measured 2026-08-18
+     against dist/mail-a.html alone (no live side, served locally the same
+     way the tests do), not copied from any other entry.
+
+     THE TIGHTEST PAGE IN THE BUILD ON CENSUS HEADROOM, which is why the
+     floor is reasoned rather than scaled: census() finds 19 elements
+     matching h1,h2,h3,h4,h5,p,blockquote, and only 13 of them are this
+     page's own. Counted directly from the file: inside <main> 1 <h1>, 2
+     <h2> and 10 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the
+     correction the Task 9 review made to team-a's entry: a raw percentage
+     of the census total is not comparable across pages, because the fixed
+     6-element chrome share is a different fraction of each page's total,
+     and on this page it is nearly a third of it.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs
+     (cited by its text rather than by a line number, the convention
+     who-we-are-a's entry established after three unrelated edits moved that
+     line in one day) is strict, so 11 means at least 12 of 19 must match by
+     text. Six come from the chrome, so the floor demands 6 of this page's
+     own 13. Measured against the same fraction on the other six entries
+     (final 35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a
+     8/19 42%, capitol-a 4/10 40%, who-we-are-a 11/24 46%), 6/13 is 46%,
+     which puts this page level with who-we-are-a and mid-range overall.
+
+     ALL 19 ARE ACHIEVABLE, and that is a build decision rather than a
+     given. Recipe section 7 predicted this page would lose the census key
+     `p|Back to the sign-up form` to a container-plus-link(); 03-receive.mjs
+     note 2 records why that element is an html() widget carrying its real
+     <p> and <a> instead, and the effect here is that no census key and no
+     box-sweep key is lost on this page at all.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/mail-a.html alone, at both 1440 and 390: 68 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 38
+     keeps the same proportion as the other entries (roughly 56-57%: at
+     least 39 of 68 must match).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every
+     other entry documents, re-measured for this page: not minBoxes.
+     Counted directly from dist/mail-a.html outside its own <main>: 46 <a>,
+     12 <button>, 2 <img>, 60 of this page's 68 box-sweep elements, leaving
+     8 that belong to this page's own content (4 <input>, the submit
+     <button>, 2 photographs and the "Back to the sign-up form" anchor). A
+     live page that failed to load would still share 60 keys against
+     minBoxes' 38 and the box sweep alone could pass green. minShared is the
+     real load-failure gate here too: a 404 shares the 6 chrome census
+     elements, and 6 is under the 12 that minShared:11 demands, so the suite
+     goes red on the census, not the box sweep. */
+  {
+    name: 'mail-a',
+    envVar: 'MAIL_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/mail-a/',
+    staticFile: 'dist/mail-a.html',
+    minShared: 11,
+    minBoxes: 38,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

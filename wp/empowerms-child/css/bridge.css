@@ -3276,3 +3276,67 @@
 .sb-research .em-container.e-con{
   display:block; /* the static build's own formatting context */
 }
+
+/* ---------- 12. mail-a: the build's FIRST native .em-btn--primary, and the
+ *                accessibility override an earlier bridge rule was beating ---
+ * Task 12. The only repair this page needs, predicted before conversion and
+ * measured after. Three declarations in three blocks, ONE repair under R34.
+ *
+ * The box sweep found only the size half, because it does not compare colour.
+ * Measured directly, live against static served locally, both at 1440:
+ *
+ *     base   live bg rgb(0,196,154)   static bg rgb(230,90,40)
+ *     hover  live bg rgb(83,45,245)   static bg rgb(206,78,34)
+ *     size   live 17px / 58.00px tall  static 19px / 61.00px tall
+ *
+ * So the submit button rendered UiCore's green with a purple hover where the
+ * design draws Empower orange, on a live page, and no instrument in this
+ * project reports colour on a control. It was found by measuring the one
+ * difference the box sweep DID report and then asking what else that element
+ * could be wrong about.
+ *
+ * WHY IT LOSES. components.css:11 `.em-btn--primary{background:var(--em-orange)}`
+ * is 0,1,0 and the kit's `.elementor-kit-20547 button` is 0,1,1
+ * (post-20547.css, 2698 bytes, fetched and read rather than assumed: its only
+ * control rule covers button, input[type=button], input[type=submit] and
+ * .elementor-button, and nothing else). bridge.css:814-844 restates .em-btn
+ * base, --md, --lg and --inverse for native buttons, and says at :811-813 that
+ * those were the only modifiers a native button used at the time. That was
+ * true then. This page is the first native use of --primary, so nothing in
+ * this file was contesting the kit for it.
+ *
+ * THE SIZE HALF IS PAOLO'S DECISION, taken 2026-08-18: restore 19px. It is a
+ * THREE-way contest and the third party is ours. css/site.css:66
+ * `.em-btn--primary.em-btn--lg{font-size:19px}` (0,2,0) is one of the
+ * reversible WCAG overrides and beats the kit's 15px; bridge.css:836-839's
+ * `.elementor button.em-btn--lg{font-size:var(--fs-body)}` (0,2,1) then beats
+ * BOTH and rendered 17px. So an accessibility decision was being undone by
+ * this project's own bridge rather than by Elementor, which is why it needed
+ * deciding rather than fixing. 19px restored at 0,3,1.
+ *
+ * The letter-spacing difference (1.02px live against 1.14px static) is not
+ * repaired here and needs nothing: --ls-caps is an em value, so it follows the
+ * font-size, and it was re-measured at 1.14px after this rule.
+ *
+ * `--block`'s `width:100%` (0,1,0) needed nothing, because the kit declares no
+ * width at all: measured 403px on both sides before this rule. Recorded because
+ * it is the modifier that most looks like it should need restating.
+ *
+ * Values restated rather than referenced where the build has no token: 19px is
+ * css/site.css:66's own literal. The colours use the build's own custom
+ * properties, so they cannot go stale.
+ *
+ * Checked for @media interference: css/mail-a.css's three media blocks open at
+ * :150 (prefers-reduced-motion), :165 and :173, and none names .em-btn or any
+ * of its modifiers. Confirmed by re-measuring at 390. */
+.elementor button.em-btn--primary{
+  background-color:var(--em-orange);
+  color:var(--white);
+}
+.elementor button.em-btn--primary:hover{
+  background-color:var(--orange-600);
+  color:var(--white);
+}
+.elementor button.em-btn--primary.em-btn--lg{
+  font-size:19px;
+}

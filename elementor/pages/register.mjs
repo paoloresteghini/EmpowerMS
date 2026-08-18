@@ -205,10 +205,13 @@ export const PAGE_REGISTER = [
      <a>, 12 <button>, 2 <img>, roughly 60 of this page's 70 box-sweep
      elements, leaving only about 10 that belong to this page's own content
      (this page carries no photographs at all, so every one of those 10 is
-     a control: the CTA link, the filter's two checkboxes/labels and clear
-     button, and the six episode-row title links plus their play-icon
-     spans do not themselves carry a usable a/button/input identity beyond
-     the anchor). A live page that failed to load would still share close
+     a control: the CTA link, the filter's two checkboxes and clear button,
+     and the six episode-row title links; the play-icon spans and the tag
+     labels are not counted separately, not because they lack a usable
+     identity but because controlBoxes()'s own selector list is
+     a,button,input,select,textarea,img and neither <span> nor <label> is
+     in it, so they are never considered at all). A live page that failed
+     to load would still share close
      to 60 keys against minBoxes' 39 and the box sweep alone could pass
      green. minShared is the real load-failure gate here too: only 6 of the
      16 census elements live in the header and footer (counted the same

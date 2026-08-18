@@ -23,10 +23,25 @@ import { container, text, link, html } from '../../factory.mjs';
       div) rather than embedding the `<a>` in a text() widget's markup, so
       the CTA stays a real, retargetable link() through Elementor's own
       panel, the same choice every other page's primary CTA in this build
-      makes. Semantically cheap: css/capitol-a.css's own
+      makes (precedent: podcast-a/01-hero.mjs:91-97, the identical `<p>`-
+      wrapping-a-CTA shape). Semantically cheap: css/capitol-a.css's own
       `.cca-hero__action{margin:0}` is a bare class selector, not `p.cca-
       hero__action`, so nothing depends on the wrapping element being a
       `<p>` specifically.
+
+      THE COST THIS CARRIES, review round 1: converting the `<p>` to a
+      container means `p|Listen Now` exists on the static side and not on
+      the live side (a link() widget's wrapper is a div, and its own anchor
+      is skipped by controlBoxes() by design), so that key drops out of
+      census()'s own `shared` set entirely rather than being compared and
+      passing. Measured: this page's own census shared is 15 of 16, one
+      short of the full census() count, and the missing key is exactly this
+      one. No consequence here, since the floor (minShared: 9) has ample
+      headroom below 15, but the same trade recurs on every page whose
+      static build wraps a CTA in a `<p>` or other heading/paragraph tag,
+      and it silently narrows census coverage each time: a page with a
+      small census count to begin with should watch for this before
+      assuming a clean pass means nothing was lost.
 
    4. THE HEADING IS A text() WIDGET CARRYING A BARE <h1>, never a heading()
       widget. No `heading()` import above; the factory guard and the

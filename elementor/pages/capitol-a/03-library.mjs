@@ -18,7 +18,7 @@ import { container, text, html } from '../../factory.mjs';
       so it goes on this one widget's own `_attributes`.
 
    3. THE FILTER FORM (`.cca-filter`) IS AN html() WIDGET, verbatim. This is
-      exception 2 of the design spec's three named HTML-widget exceptions
+      exception 2 of the design spec's four named exceptions
       (docs/superpowers/specs/2026-08-12-elementor-conversion-design.md,
       "Native-first, and the four exceptions"): "The filter controls on
       podcast-a/03-library AND capitol-a/03-library. Real radios and

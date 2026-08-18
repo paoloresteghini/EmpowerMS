@@ -246,3 +246,57 @@ are sound for what they cover and cannot price a page on their own, because two
 of the four categories are invisible to a stylesheet search by construction: one
 depends on Elementor's kit meeting an authored control at render time, the other
 on flex defaults meeting an image widget.
+
+## THE WHOLE REMAINING ORDER, priced page by page 2026-08-18
+
+Every remaining page has now been priced against all four categories before
+being built, rather than estimated from grep 2. The working is in
+`.superpowers/sdd/2026-08-15-class-in-markup/pricing-mail-a-and-amb-a.md` and
+`pricing-remaining-five.md`.
+
+| Unit | Repairs | Blocks | What it is |
+| --- | --- | --- | --- |
+| `who-we-are-a` | 4 | 2 to 4 | 1 structural, 3 photographs in fixed-ratio containers. IN FLIGHT |
+| `mail-a` | 1 | 2 | the shared submit button |
+| `amb-a` | 2 | 3 | the shared submit button, plus the mosaic image wrapper |
+| `epic-a` | 2 | 2 | |
+| `give-c` | 2 | 1 | |
+| `team-bio` | 2 | 2 | not a chooser pick; in the order on Paolo's say-so |
+| `safety` + `work` + `education` | 2 | 2 | paid ONCE in `css/solution.css`; the other two pages cost ZERO |
+| **remaining order excluding `who-we-are-a`** | **10** | **10** | 9 blocks if one grouped rule closes the four selectors wanting an identical declaration |
+
+**Three sharings decide the order**, and none is visible in a per-page count:
+
+1. `css/solution.css`'s two repairs cover all three solution pages, so convert
+   them consecutively: one page's bridge work and two fills.
+2. One `--space-5` block closes four repairs across `give-c` and the solution
+   pages, so converting `give-c` adjacent to them saves a block.
+3. The submit-button repair is shared by `mail-a` and `amb-a`, so whichever
+   converts second pays nothing for it.
+
+### Two rulings that set these numbers, both Paolo's, 2026-08-18
+
+**Forms: blob now, decide later.** Elementor's container `html_tag` control
+offers no `form`, `fieldset` or `legend` (settled at
+`elementor/pages/final/06-joinus.mjs:12`), so neither form page can be a
+container tree. Both forms are built as one `html()` widget each, which keeps
+every class, `<label for>`, `autocomplete` and `required` intact, and both
+continue to submit nowhere. Where submissions go becomes separate work with
+Empower, alongside the donate page's Gravity Forms plus Stripe setup. Accepted
+cost, stated so nobody re-opens it as a defect: the two form pages ship twice.
+
+**Prose blocks: keep paragraph widgets and pay the repairs.** Six of the eight
+repairs in the last batch are one mechanism, a structural pseudo-class over a
+block of prose, and every one of them would disappear if the copy block were
+built as a single widget, taking that batch from 8 repairs to 2. The ruling is
+to keep one `text()` widget per paragraph and pay the six, because editability
+is the whole argument for class-in-markup `text()` widgets and prose is the
+content Empower is most likely to edit, because all four previous instances of
+this shape took the repair and switching now would leave the build with two
+conventions for one shape, and because four of the six group into a single
+block, which makes consistency cheaper than the count suggests.
+
+The `html()`-blob lever is NOT withdrawn by this ruling. It stays available, and
+has now paid three times, where nothing inside the block needs to be a widget
+and the block is not prose Empower will edit: `team-a`'s ledger, `mail-a`'s
+list and `epic-a`'s method rows.

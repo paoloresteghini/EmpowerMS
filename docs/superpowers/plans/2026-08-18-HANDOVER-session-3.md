@@ -13,7 +13,7 @@ this same session and still accurate for tasks 5 to 6b.
 | `node --test test.mjs` | 228 pass, 0 fail, unchanged all session |
 | `node --test test-elementor.mjs` | 159 pass, 0 fail, 0 skipped, all page URLs set plus `FIDELITY_REQUIRE_ALL=1` |
 | Pages converted | 5 live and green: `final`, `podcast-a`, `what-we-do-a`, `solutions-b`, `capitol-a` |
-| `team-a` | Built, deployed and measuring at the moment this was written. Its `bridge.css` was still untouched, consistent with a predicted cost of zero |
+| `team-a` | Built, deployed, repaired and VERIFIED LIVE, but UNCOMMITTED at session end. Needs a suite run, a commit staged by file name, and a review. Its one rule is `.ta-hero__media > .elementor-widget-image{height:100%}` and the photograph now measures 453x566 at 1440 and 342x214 at 390, matching static exactly |
 
 ## What each page cost
 
@@ -22,7 +22,7 @@ this same session and still accurate for tasks 5 to 6b.
 | `what-we-do-a` | 1 | 4 photographs deferred |
 | `solutions-b` | 2 | 0 deferrals; four "deferrals" turned out to be structural |
 | `capitol-a` | 4 (5 rule blocks) | 3 structural, 1 native control |
-| `team-a` | predicted 0 | unconfirmed at time of writing |
+| `team-a` | 1 | predicted 0; the miss was the image category, not a grep |
 
 ## The method, which is the session's real output
 
@@ -44,11 +44,14 @@ Container targets cost nothing, because a container IS the element. Anything
 authored inside a single `html()` or `text()` string costs nothing, because no
 wrapper falls inside it. Only a wrapper between reference point and target costs.
 
-**Three cost categories, and hits are an upper bound, not a count of rules.**
+**FOUR cost categories, and hits are an upper bound, not a count of rules.**
 Child combinators are DONE: zero across every remaining page. Structural
 pseudo-classes are the main axis. Native controls are the third and are
 invisible to both greps, because they depend on Elementor's kit meeting a real
-authored control at render time; they land only on `amb-a` (10) and `mail-a` (5).
+authored control at render time; they land only on `amb-a` (10) and `mail-a` (5). The fourth is photographs in
+fixed-`aspect-ratio` containers, which cost one named rule each and are equally
+invisible to a grep: five instances so far. Both of my per-page misses came from
+those two categories, never from the greps.
 
 **The cheapest lever is a build decision.** A structural pseudo-class over a
 list costs nothing if the whole list is ONE `html()` widget. Only available when
@@ -72,8 +75,9 @@ cost zero as predicted.
 2. **Alt text, one content decision in three parts.** `child-classroom-tablet`
    is used meaningfully by two pages that want different words, and alt is an
    attachment-level property with no per-use control: unresolvable in code.
-   `children-running-parent` has no alt and may or may not need one depending on
-   how `team-a` uses it. Two attachments gained alt mid-session, leaving two
+   `children-running-parent` has NO alt and `team-a` uses it MEANINGFULLY, with
+   real alt in the static build and no `aria-hidden`, so this is an
+   accessibility gap on a live page rather than a tidiness question. Two attachments gained alt mid-session, leaving two
    `media.mjs` files with a stale reading.
 3. **A blocked write.** An implementer's session denied a `wp post meta update`
    setting that alt text. It declined to route it through me and I declined to

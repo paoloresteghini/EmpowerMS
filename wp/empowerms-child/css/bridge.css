@@ -1097,8 +1097,33 @@
  * widget any longer and none of them meets Elementor's own competing
  * selector. Every heading this rule named now falls back to tokens/base.css's
  * `h1,h2,h3,h4,h5{line-height:var(--lh-heading)}` unopposed, which is what
- * the static build always relied on, with nothing left to restate. This
- * whole rule is gone; nothing across either converted page still needs it. */
+ * the static build always relied on, with nothing left to restate.
+ *
+ * ONE NAMED SELECTOR ADDED BACK, 2026-08-17, Task 5's fix round 1 (ruling
+ * R20): `.pca-ep__title`, the podcast-a loop item's title/link
+ * (03-library.mjs note 6), is the R10 exception to this whole migration,
+ * the one widget across the entire converted build that a dynamic tag
+ * keeps as an Elementor heading() widget, class on the wrapper, rendered
+ * once per post (66 times on the deployed page). It never appeared in the
+ * list above because it predates being measured, not because it was
+ * exempt from the defect: `.pca-ep__title` is a `<span>`/`<a>` pairing, not
+ * an h1-h5 element, so tokens/base.css's element selector never reached it
+ * either way, and podcast-a.css:283's own `.pca-ep__title{line-height:1.24}`
+ * at 0,1,0 sits on the WRAPPER (the class never moved off it, per R10), so
+ * Elementor's `.elementor-widget-heading .elementor-heading-title{line-
+ * height:1}` at 0,2,0 reaches the real `<a class="elementor-heading-title">`
+ * unopposed. Measured live: `.pca-ep__title a` line-height 17px against
+ * podcast-a.css's own 21.08px (1.24 × the 17px font-size) static. Repaired
+ * below, named to this one class, at a specificity that reaches the inner
+ * element rather than the wrapper the class sits on: `.elementor`(0,1,0) +
+ * `.pca-ep__title`(0,1,0) + `.elementor-heading-title`(0,1,0) = 0,3,0,
+ * beating Elementor's 0,2,0 regardless of source order. This is the one
+ * heading-widget line-height repair that survives this migration rather
+ * than being deleted with the rest of this rule, because it is the one
+ * heading widget this migration cannot remove. */
+.elementor .pca-ep__title .elementor-heading-title{
+  line-height:1.24;
+}
 
 /* ---------- podcast-a: the same class-on-wrapper category, its own classes,
  *            ALL EIGHT RULES DELETED 2026-08-17 by Task 5's class-in-markup
@@ -1273,35 +1298,103 @@
   margin-block-end:var(--space-5);
 }
 
-/* ADDED 2026-08-17 by Task 5's class-in-markup migration, and this is the
- * one difference the migration itself created rather than merely exposed.
+/* ADDED 2026-08-17 by Task 5's class-in-markup migration, TWO RULES below,
+ * and this is the one difference the migration itself created rather than
+ * merely exposed. Fix round 1, 2026-08-17: the first version of this
+ * comment and its single rule had a specificity error and an undisclosed
+ * third-party dependency, both caught in review; both are closed here.
+ *
  * Before this task, .pca-lede's wrapper carried the class (via cssClass)
  * and a now-deleted rule (`.pca-about__copy .pca-lede.elementor-widget.
- * elementor-widget{margin-block-end:24px}`, 0,4,0) outranked the
- * `:not(:last-child)` rule above (0,2,0) and won outright, so the wrapper
+ * elementor-widget{margin-block-end:24px}`, 0,5,0) outranked the
+ * `:not(:last-child)` rule above (0,4,0) and won outright, so the wrapper
  * alone carried the paragraph's 24px and the un-classed inner <p> was
- * zeroed by the class-on-wrapper margin:0 group. Migrated, .pca-lede now
- * sits on the real <p>, so podcast-a.css:131's own
- * `.pca-about__copy .pca-lede{margin-bottom:24px}` reaches it directly and
- * correctly, but nothing stops the rule above from ALSO landing its 20px
- * on the wrapper any more (the wrapper's competing class is gone), and
- * margins do not collapse between the two: measured 44px live against
- * 24px static on this paragraph, exactly 24 (its own, now-correct margin)
- * plus 20 (the wrapper's, now unwanted). Named to this one widget rather
- * than narrowing the rule above (which the migration's own supplement
- * ruling already confirmed correct and left untouched): the middle,
- * unclassed paragraph in the same group still needs the 20px this rule
- * supplies, only .pca-lede's wrapper needs it taken back. `:has(.pca-lede)`
- * reaches into the widget's `.elementor-widget-container` to the real <p>;
- * specificity 0,3,0 beats the 0,2,0 rule above regardless of source order.
- * No `@supports not selector(:has(...))` fallback, same judgement
- * homepage.css:450's own repair records nearby: without `:has()` this
- * rule simply does not apply and the page returns to the 44px/24px
- * defect this rule exists to close, not to a broken layout. Measured with
- * the fix deployed: shared 15, diffs 0 (fidelity-browser.mjs's census()
- * against the served snapshot and dist/podcast-a.html). */
-.elementor .pca-about__copy > .elementor-widget-text-editor:has(.pca-lede){
+ * zeroed by the class-on-wrapper margin:0 group. Migrated, .pca-lede sits
+ * on the real <p>, so podcast-a.css:131's own `.pca-about__copy
+ * .pca-lede{margin-bottom:24px}` can reach it directly, but two separate
+ * problems follow from the wrapper's competing class being gone, one per
+ * rule below.
+ *
+ * FIRST, the wrapper's own margin. Nothing stops the `:not(:last-child)`
+ * rule above from ALSO landing its 20px on the wrapper, and margins do not
+ * collapse between the two: measured 44px live against 24px static on this
+ * paragraph before either rule below existed, exactly 24 (the paragraph's
+ * own margin) plus 20 (the wrapper's, unwanted). Named to this one widget
+ * rather than narrowing the rule above (which the migration's own
+ * supplement ruling already confirmed correct and left untouched): the
+ * middle, unclassed paragraph in the same group still needs the 20px that
+ * rule supplies, only .pca-lede's wrapper needs it taken back. `:has(.pca-
+ * lede)` reaches the real <p>, which is a DIRECT CHILD of
+ * `.elementor-widget-text-editor` on this install (confirmed in the
+ * deployed markup; there is no `.elementor-widget-container` level here,
+ * the same structure the `:has(> p)` rule above already relies on. An
+ * earlier version of this comment wrongly said the opposite).
+ *
+ * Specificity is load-bearing here, so it is spelled out rather than
+ * asserted, because a future tidy-up that groups the three
+ * `.elementor-widget-text-editor` rules in this file together must not
+ * silently change which one wins: `.elementor`(0,1,0) +
+ * `.pca-about__copy`(0,1,0) + `.elementor-widget-text-editor`(0,1,0) +
+ * `:not(:last-child)`(0,1,0) = 0,4,0 for the rule above. `:has()` and
+ * `:not()` both take the specificity of their most specific argument, and
+ * `.pca-lede` is a class (0,1,0) exactly like `:last-child` is a
+ * pseudo-class (0,1,0), so a bare `:has(.pca-lede)` version of this rule
+ * would ALSO be 0,4,0 and the two would TIE, winning only by sitting later
+ * in the file, which an earlier version of this comment wrongly claimed
+ * could not happen. `.elementor-widget` is added to the compound below to
+ * make this rule 0,5,0 on its own terms, so it beats the rule above
+ * regardless of source order, not merely because it currently comes after
+ * it in this file.
+ *
+ * SECOND, found only by fetching the deployed markup rather than reading
+ * the CSS: the paragraph's own 24px above depends on `.pca-about__copy
+ * p:last-child{margin-bottom:0}` (podcast-a.css:129, 0,2,1) NOT matching
+ * `.pca-lede`, and under Elementor every authored paragraph is the only
+ * real child of its own widget wrapper, so `.pca-lede` genuinely IS
+ * `:last-child` and `p:last-child` OUTRANKS `.pca-about__copy
+ * .pca-lede{margin-bottom:24px}` (0,2,0) on its own. The paragraph escapes
+ * today only because a third-party marketing plugin (MailMunch) injects a
+ * hidden `<div class="mailmunch-forms-in-post-middle"
+ * style="display:none !important">` immediately after it, inside the same
+ * widget, which is what actually holds `:last-child` off the real content.
+ * That dependency did not exist before this task (the 24px lived on the
+ * wrapper, which carries no `:last-child` complication of its own), so it
+ * is a fragility this migration introduced: deactivating MailMunch, or
+ * configuring it not to inject on this post type, would silently drop the
+ * paragraph's margin to 0 with no code change anywhere in this repository.
+ * Closed by restating the class's own declaration at a specificity that
+ * beats `p:last-child` unconditionally, with no dependency on sibling
+ * markup: `.elementor`(0,1,0) + `.pca-about__copy`(0,1,0) +
+ * `.pca-lede`(0,1,0) = 0,3,0, and 0,3,0 beats 0,2,1 regardless of what, if
+ * anything, follows the paragraph in the DOM. Checked directly against
+ * css/podcast-a.css, independently of the review that raised this finding:
+ * neither `.pca-about__copy .pca-lede` (line 131) nor `.pca-about__copy
+ * p:last-child` (line 129) sits inside a `@media` block, so nothing needs
+ * to be carried alongside this restatement.
+ *
+ * With both rules in place, the `@supports not selector(:has(...))`
+ * question below has one answer regardless of MailMunch: without `:has()`
+ * support the wrapper-zeroing rule does not apply, but the paragraph's own
+ * 24px is now unconditional, so the page lands on 24 (paragraph) + 20
+ * (wrapper) = 44px, exactly the documented fallback below, not on 20px
+ * alone the way it would have before this fix round. No `@supports not
+ * selector(:has(...))` fallback for the wrapper rule, same judgement
+ * homepage.css:450's own repair records nearby: without `:has()` this rule
+ * simply does not apply and the page returns to that documented 44px/24px
+ * defect, not to a broken layout.
+ *
+ * Measured live against https://empv2.wpenginepowered.com/podcast-a/ with
+ * both fixes deployed: `.pca-lede`'s own marginBottom 24px, its wrapper's
+ * marginBottom 0px. census() against dist/podcast-a.html: shared 15,
+ * diffs 0. */
+.elementor .pca-about__copy > .elementor-widget-text-editor.elementor-widget:has(.pca-lede){
   margin-block-end:0;
+}
+.elementor .pca-about__copy .pca-lede{
+  margin-block-end:var(--space-6); /* 24px, podcast-a.css:131, restated at
+    0,3,0 to beat .pca-about__copy p:last-child (0,2,1) unconditionally
+    rather than depending on MailMunch's injected div to keep .pca-lede off
+    :last-child */
 }
 
 /* ---------- The action link is not a flex item either, same mechanism as

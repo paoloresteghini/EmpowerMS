@@ -309,12 +309,30 @@ export function section() {
                record for their own headings, so
                aria-labelledby="library-title" on the outer container now
                resolves to the heading element itself. The same move also
-               removes Elementor's own heading widget from this section, so
+               removes Elementor's own heading widget FOR THIS ONE <h2>, so
                its frontend.min.css line-height:1 default needs no repair
-               here. The loop item's own heading (.pca-ep__title, note 6
-               above) is a NAMED EXEMPTION and stays a heading() widget: it
-               binds two dynamic tags (title and link), which a text()
-               widget's single editor field cannot do. */
+               on the section head.
+
+               Fix round 1, 2026-08-17: an earlier version of this comment
+               claimed the whole section carries no heading widget any
+               more. That is false and was caught in review: the Loop Grid
+               below renders the loop item's own heading (.pca-ep__title,
+               note 6 above), a NAMED EXEMPTION that stays a heading()
+               widget because it binds two dynamic tags (title and link),
+               which a text() widget's single editor field cannot do, ONCE
+               PER POST. Confirmed live:
+               document.querySelectorAll('.pca-library .elementor-widget-
+               heading').length is 66 on the deployed page, and it is the
+               only heading widget left anywhere in the converted build.
+               Elementor's frontend.min.css line-height:1 default DOES
+               reach it (measured 17px live against podcast-a.css:283's
+               21.08px static), and is repaired in bridge.css, named to
+               `.pca-ep__title` specifically, in the class-on-wrapper
+               repair block: this is the R10 case, a dynamic-tag widget
+               keeps its cssClass on the wrapper and keeps its bridge
+               repair, so it is the one heading-widget repair that
+               survives this migration rather than being deleted with the
+               rest of that block. */
             text({
               markup: '<h2 id="library-title">Explore More Episodes</h2>',
               _attributes: 'data-reveal|rise',

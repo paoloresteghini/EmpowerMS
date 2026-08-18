@@ -1,5 +1,18 @@
 # Handover, session 3: tasks 5 through 9
 
+> **SUPERSEDED for STATE, still current for METHOD.** Written at the end of
+> session 3 (tasks 5 to 9). A document audit on 2026-08-18 checked its 83 claims and found 31
+> stale and 8 wrong, nearly all of them descriptions of state that later work
+> changed within hours: pages listed as unconverted are converted, suite counts
+> have moved, and the four-category pricing model it describes now has six.
+> The push-state item below was WRONG rather than stale and has been corrected
+> in place, because acting on it could have caused harm.
+>
+> Read it for the method, the mechanics and the rulings, which hold. Do not
+> read any number in it as current. The current state lives in the newest
+> handover in this directory and in
+> `.superpowers/sdd/2026-08-15-class-in-markup/progress.md`.
+
 Covers the overnight session of 2026-08-17 into 2026-08-18. The previous
 handover is `2026-08-18-HANDOVER-class-in-markup.md`, written partway through
 this same session and still accurate for tasks 5 to 6b.
@@ -70,8 +83,14 @@ cost zero as predicted.
 
 ## What needs Paolo
 
-1. **Nothing is pushed.** The push was blocked by this session's permission
-   classifier and was not routed around.
+1. **The branch IS pushed, but only through `8f64ff6`** (tasks 1 to 4.5), and
+   this document said "nothing is pushed" until 2026-08-18, which was wrong in
+   the dangerous direction: a reader told no remote copy exists may act as
+   though none does. `origin/elementor-phase-2b-class-in-markup` exists and has
+   been out of date since task 4.5. Local `master` is also 11 commits ahead of
+   `origin/master`. Pushing the rest was blocked by a permission classifier and
+   was not routed around. Check what consumes the pushed branch before assuming
+   the gap is harmless: this repository is public.
 2. **Alt text, one content decision in three parts.** `child-classroom-tablet`
    is used meaningfully by two pages that want different words, and alt is an
    attachment-level property with no per-use control: unresolvable in code.

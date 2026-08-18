@@ -1,5 +1,18 @@
 # Continuation prompt, paste into a new context window
 
+> **SUPERSEDED for STATE, still current for METHOD.** Written at the end of
+> the session that began 2026-08-18 morning. A document audit on 2026-08-18 checked its 83 claims and found 31
+> stale and 8 wrong, nearly all of them descriptions of state that later work
+> changed within hours: pages listed as unconverted are converted, suite counts
+> have moved, and the four-category pricing model it describes now has six.
+> The push-state item below was WRONG rather than stale and has been corrected
+> in place, because acting on it could have caused harm.
+>
+> Read it for the method, the mechanics and the rulings, which hold. Do not
+> read any number in it as current. The current state lives in the newest
+> handover in this directory and in
+> `.superpowers/sdd/2026-08-15-class-in-markup/progress.md`.
+
 Continue the EmpowerMS Elementor conversion. Repo `/Users/paolo/Code/EmpowerMS`,
 branch `elementor-phase-2b-class-in-markup`, head `2aec97d`, 51 commits ahead of
 master, NOT PUSHED. `master` untouched and unpushed.
@@ -113,8 +126,12 @@ nothing inside needs to be a widget. Predicted and delivered zero twice, on
 
 ## OPEN FOR PAOLO, not blockers
 
-1. **Nothing is pushed.** The previous session's push was blocked by its
-   permission classifier and was not routed around.
+1. **The branch IS pushed, through `8f64ff6` only.** This line used to read
+   "nothing is pushed", which was wrong: `origin/elementor-phase-2b-class-in-markup`
+   exists and has been stale since task 4.5, and local `master` is 11 commits
+   ahead of `origin/master`. The rest was blocked by a permission classifier and
+   was not routed around. The repository is public, so check what consumes the
+   pushed branch before assuming the gap is harmless.
 2. **Alt text, one content decision in three parts.** `child-classroom-tablet`
    is used meaningfully by two pages wanting different words, and alt is an
    attachment-level property: unresolvable in code. `children-running-parent`

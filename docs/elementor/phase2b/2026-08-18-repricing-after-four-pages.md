@@ -68,8 +68,12 @@ six structural hits produced ONE rule: five targeted containers or sat inside a
 single authored markup string, and only one crossed a wrapper. On
 `what-we-do-a`, four child combinators produced one rule for the same reason.
 
-**So treat the hit count as an UPPER BOUND, roughly one rule per three to six
-hits.** On that basis the eleven remaining pages should cost in the region of
+**So treat the hit count as an upper bound on ONE of the categories, and a weak
+one.** Corrected 2026-08-18: the figure below was "roughly one rule per three to
+six hits", derived from two pages, and `who-we-are-a` then produced ten hits and
+one structural repair, which is one per ten. The deeper problem is that the
+ratio predicts the wrong quantity: it predicts structural rules, which were one
+of that page's eight defects. On that basis the eleven remaining pages should cost in the region of
 ten bridge rules in total.
 
 The two sentences that used to follow this one, ranking `who-we-are-a` as the
@@ -198,8 +202,14 @@ list naming the wrong precedents while arriving at the right count:
 `.fp-hero__media` and `.fp-hero__aside` (homepage, `bridge.css:403-419`),
 `.sb-station__media` and `.sb-stories__band` (`solutions-b`,
 `bridge.css:1999-2000`), `.ta-hero__media` (`team-a`, `bridge.css:2164`). Five,
-and `team-a`'s is the fifth. Derive this count rather than copying it: `grep -n
-'> .elementor-widget-image' wp/empowerms-child/css/bridge.css`.
+and `team-a`'s is the fifth. Derive this count rather than copying it, and read the grep rather than counting
+its lines: `grep -n '> .elementor-widget-image'
+wp/empowerms-child/css/bridge.css` returns TWELVE lines for EIGHT instances.
+Three of the selectors in the `:413-417` block (`.em-stories__lead-card`,
+`.em-stories__mini`, `.em-insights__row`) are in that block for a child-combinator
+defect rather than this one, per its own comment, and one hit is the comment line
+quoting this command. Corrected 2026-08-18, after the derivation that replaced a
+hand-maintained tally turned out not to produce the number either.
 
 `.c2-panel__bg` and `.em-join__wash` are NOT instances of this category, even
 though their symptom reads the same in the sweep. Their own comment at
@@ -240,12 +250,18 @@ container.
 3. Native controls inside `<main>` (only `amb-a` at 10 and `mail-a` at 5).
 4. Child combinators (grep 1), which are exhausted: zero on every remaining page.
 
-**Both of the controller's per-page misses came from categories 2 and 3**, never
-from the greps, which have not yet been wrong about a structural hit. The greps
-are sound for what they cover and cannot price a page on their own, because two
-of the four categories are invisible to a stylesheet search by construction: one
-depends on Elementor's kit meeting an authored control at render time, the other
-on flex defaults meeting an image widget.
+**Every per-page miss so far has come from a category the model did not yet
+have**, corrected 2026-08-18 after this sentence twice described a closed
+account of where misses come from. `capitol-a` missed on native controls and
+`team-a` on image wrappers, and both were then added as categories 3 and 2.
+`who-we-are-a` was then priced at four defects and cost EIGHT, and the four it
+missed came from two further categories nobody had yet named: a tag Elementor
+cannot render, and `display:flex` with no `flex-direction`. The greps have never
+been wrong about a structural hit; they have also never been the thing that made
+an estimate wrong.
+
+So the working assumption is that the next page has a SEVENTH category, and the
+pricing pass is better spent looking for one than refining the six.
 
 ## THE WHOLE REMAINING ORDER, priced page by page 2026-08-18
 

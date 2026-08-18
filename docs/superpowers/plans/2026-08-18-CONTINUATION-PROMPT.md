@@ -1,8 +1,13 @@
 # Continuation prompt, paste into a new context window
 
 > **SUPERSEDED for STATE, still current for METHOD.** Written at the end of
-> the session that began 2026-08-18 morning. A document audit on 2026-08-18 checked its 83 claims and found 31
-> stale and 8 wrong, nearly all of them descriptions of state that later work
+> the session that began 2026-08-18 morning. A document audit on 2026-08-18 found EIGHT of its claims
+> wrong (enumerated W1 to W8 in
+> `.superpowers/sdd/2026-08-15-class-in-markup/document-audit.md`) and about
+> thirty stale. That audit's summary says 31 stale of 83 claims; its enumerated
+> entries number thirty and skip S3, and its HOLD claims are not enumerated at
+> all, so treat the totals as approximate and the enumerated entries as the
+> record. Nearly all the stale ones are descriptions of state that later work
 > changed within hours: pages listed as unconverted are converted, suite counts
 > have moved, and the four-category pricing model it describes now has six.
 > The push-state item below was WRONG rather than stale and has been corrected

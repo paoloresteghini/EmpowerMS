@@ -129,11 +129,40 @@ not fix WHERE that element sits.** Elementor wraps every widget in its own
 POSITION still breaks. The discriminator, which is decidable from the section
 module before anything is deployed:
 
-> A position-dependent selector needs a bridge rule when its target is content
-> the module builds as a **widget**, because the wrapper stands between the
-> selector and the element and makes that element an only child. It needs none
-> when the target is built as a **container**, because a container IS the
-> element and nothing is inserted above it.
+> A position-dependent selector needs a bridge rule when the widget wrapper
+> falls **between the selector's reference point and its target**.
+
+That single sentence covers all three cases, and the first draft of this rule
+(committed 2026-08-18, corrected the same day after review) got one of them
+wrong by saying "needs a rule whenever its target is built as a widget":
+
+- **Container target: no rule.** A container IS the element; nothing is
+  inserted above it.
+- **Target inside ONE authored markup string: no rule.** Breakage happens at
+  WIDGET BOUNDARIES. Anything authored inside a single `html()` or `text()`
+  string reaches the page unaltered, so a structural pseudo-class whose subject
+  AND parent both sit inside that one string is completely faithful. The
+  header proves it: `css/site.css:104-106` and `:119`, and
+  `css/header-2.css:89`, are five structural pseudo-classes targeting content
+  built as widgets, and every one needs nothing, because
+  `elementor/theme-parts/header.mjs` delivers those subtrees as three `html()`
+  blobs. The first draft of this rule predicted five bridge rules there where
+  zero are needed.
+- **Wrapper between reference point and target: one rule.** This is the real
+  failure, and it is what `.da-door__body>p` and `.sb-hero__copy p:last-child`
+  both are.
+
+**The two failure modes are not symmetrical, and the difference changes the
+repair, not just the count.** Once an element is the only child of its own
+wrapper:
+
+- `:last-child`, `:first-child` and `:only-child` become ALWAYS TRUE. That
+  over-matches, so the wrong rule wins. It is LOUD (a visible style change) and
+  it is repaired by restating the intended declaration at raised specificity.
+- `:nth-child(n)` for n above 1 becomes NEVER TRUE. That under-matches, so the
+  rule goes inert and nothing wins that should. It is SILENT, and restating at
+  raised specificity does not help: the declaration has to be put on the element
+  that should have had it.
 
 **Two greps, and neither alone is sufficient.** Run both over the page's own
 stylesheet plus any shared sheet it loads, and classify every hit:

@@ -11,11 +11,15 @@ import { container, text, html } from '../../factory.mjs';
    tree in its place would announce nothing to a screen reader where the
    source announces "list, 4 items"; the four report years are exactly the
    kind of enumerable, orderless-but-still-a-list content <ul> exists to mark
-   up. Checked before choosing: css/what-we-do-a.css's only child-combinator
-   rules anywhere near this section are `.da-doors>:nth-child(2|3)`, which
-   belongs to the other section on this page, so wrapping the list in a
-   widget cannot break a selector expecting it to sit at a particular DOM
-   depth.
+   up. Checked before choosing: css/what-we-do-a.css has THREE child-combinator
+   rules in total (`.da-doors>:nth-child(2|3)` and `.da-door__body>p`), and
+   all three belong to the other section on this page, none to `.da-reports`,
+   so wrapping the list in a widget cannot break a selector expecting it to
+   sit at a particular DOM depth. (The discriminator that actually predicts
+   this, corrected after review round 1: a child combinator only breaks when
+   its right-hand side is content another module builds as a WIDGET, never
+   when it is a CONTAINER, and this section's own `<ul>` is neither — it is
+   the html() widget's own markup, untouched by Elementor's wrapping at all.)
 
    No cssClass passed to html() here, matching `.tl-line`'s own choice: the
    class and the data-reveal attribute both live on the real `<ul>` tag

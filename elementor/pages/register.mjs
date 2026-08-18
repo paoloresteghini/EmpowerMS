@@ -101,10 +101,12 @@ export const PAGE_REGISTER = [
      minShared: measured 2026-08-17 with census() from fidelity-browser.mjs
      run directly against dist/what-we-do-a.html alone (no live side, served
      locally the same way the tests do): 17 elements matching
-     h1,h2,h3,h4,h5,p,blockquote. 10 keeps the same headroom the homepage's
-     40/63 floor keeps (roughly 63%: at least 11 of 17 must match by text),
-     comfortably below 17 while still requiring the large majority of the
-     static page's own text content to reappear on the live side.
+     h1,h2,h3,h4,h5,p,blockquote. 10 keeps roughly the same headroom the
+     homepage's 40/63 floor keeps (that pair is about 63%; 10/17 is about
+     59%, corrected after review round 1, which flagged the two numbers as
+     transposed here): at least 11 of 17 must match by text, comfortably
+     below 17 while still requiring the large majority of the static page's
+     own text content to reappear on the live side.
 
      minBoxes: measured the same way with controlBoxes() against
      dist/what-we-do-a.html alone, at both 1440 and 390: 72 elements
@@ -112,7 +114,20 @@ export const PAGE_REGISTER = [
      widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 40
      keeps roughly the same proportion as the homepage's 50/87 (about 57%: at
      least 41 of 72 must match), and sits nowhere near what a wrong
-     staticFile actually produces (a 404 measures 0 real elements). */
+     staticFile actually produces (a 404 measures 0 real elements).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, added review round 1: not
+     minBoxes. Roughly 60 of this page's 72 box-sweep elements live in the
+     site-wide header and footer (Elementor theme parts), which render on a
+     WordPress 404 too, so a live page that failed to load would still share
+     around 60 keys against minBoxes' 40 and the box sweep alone could pass
+     green. minShared is the real load-failure gate here: only 6 of the 17
+     census elements live in the header and footer, a 404 shares 6, and 6 is
+     under the 11 that minShared:10 demands, so the suite goes red on the
+     census, not the box sweep. This asymmetry is not specific to this page
+     (the homepage's entry shares it); worth keeping in mind when setting
+     minShared for a future page whose own census count is small relative to
+     the shared chrome's 6. */
   {
     name: 'what-we-do-a',
     envVar: 'WHAT_WE_DO_A_URL',

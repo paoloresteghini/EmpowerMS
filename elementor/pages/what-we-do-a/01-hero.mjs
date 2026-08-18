@@ -51,7 +51,21 @@ import { photo } from './media.mjs';
       is the approved copy in dist/what-we-do-a.html, not something written
       here. This repo's own rule against em dashes governs what this build
       writes, not what already-approved copy says (the same distinction
-      final/02-solutions.mjs records for its own sourced copy). */
+      final/02-solutions.mjs records for its own sourced copy).
+
+   7. THIS HERO PHOTOGRAPH ALSO LOSES fetchpriority="high", THE SAME KNOWN
+      COST final/01-hero.mjs note 3 names and does not yet fix. Source
+      (`dist/what-we-do-a.html:181`) carries `fetchpriority="high"` on this
+      exact photograph; the image widget has no control for it and Custom
+      Attributes land on the wrapper, not the <img>, so there is no route to
+      it through settings. It is the largest element in this page's own
+      first viewport and therefore also its likely LCP element, added here
+      unmeasured rather than left silent, per review round 1: the fallback,
+      if the number turns out bad, is the same `wp_get_attachment_image_
+      attributes` filter final/01-hero.mjs note 3 describes, keyed to this
+      attachment id (20587), not written here for the same reason it is not
+      written there yet, that writing it before measuring would be
+      guessing. */
 
 const KICKER = 'What we do';
 const HEADLINE = 'You want to build a great life. <em>We’re here to help.</em>';

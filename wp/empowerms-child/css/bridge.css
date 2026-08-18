@@ -1698,16 +1698,43 @@
  * (it carries none there either), so this is not a class the markup omitted:
  * the source itself styles this paragraph by position, not by class. What
  * changed is the DOM depth. text() wraps the `<p>` in Elementor's own
- * `.elementor-widget-text-editor` (this install's text-editor widgets emit
- * no further `.elementor-widget-container` level, confirmed elsewhere in
- * this file), so the real tree is `.da-door__body > .elementor-widget-
- * text-editor > p`, one level deeper than the build's own selector reaches.
- * Unopposed, the paragraph falls back to tokens/base.css's site-wide
- * `p{margin:0 0 var(--space-4)}` (16px) for the one property that rule sets
- * and the door rule does not reach: font-size/line-height/colour still
- * measured right only because they happen to equal what the paragraph
- * inherits from `body` regardless, which is why census reported a single
- * property wrong rather than four.
+ * `.elementor-widget-text-editor`, one level deeper than the build's own
+ * selector reaches, so the real tree is `.da-door__body >
+ * .elementor-widget-text-editor > p`. Unopposed, the paragraph falls back to
+ * tokens/base.css's site-wide `p{margin:0 0 var(--space-4)}` (16px) for the
+ * one property that rule sets and the door rule does not reach: font-size/
+ * line-height/colour still measured right only because they happen to equal
+ * what the paragraph inherits from `body` regardless, which is why census
+ * reported a single property wrong rather than four.
+ *
+ * THE DISCRIMINATOR, corrected after review round 1 to be decidable from the
+ * module source before deploying, not just after measuring: a child
+ * combinator needs a bridge rule when its right-hand side is content the
+ * module builds as a WIDGET, because Elementor wraps every widget in a
+ * `.elementor-widget-*` div the combinator was never written to see through.
+ * It needs none when the right-hand side is built as a CONTAINER, because a
+ * container IS the element and nothing is inserted above it. `.da-door__body
+ * > p` matches a text() widget, so it broke, here. `.da-doors >
+ * :nth-child(2|3)` (what-we-do-a.css:60-61, the diagonal step) matches a
+ * container() (each `.da-door` is one), so it did not, and needed no rule:
+ * confirmed live, the door articles are real direct children of `.da-doors`
+ * with nothing Elementor inserts between them. Measurement is still the
+ * check, not the method: this rule predicts which combinators break from the
+ * module source, and the live page is what confirms the prediction, the same
+ * discipline every other rule in this file follows.
+ *
+ * `.elementor-widget-text-editor`'s own child, confirmed here, is the real
+ * `<p>` directly, with no further `.elementor-widget-container` level in
+ * between. NOT TRUE OF EVERY WIDGET ON THIS INSTALL, so do not copy that
+ * half onto a page this comment did not check: a Loop Item template inserts
+ * exactly that extra level (`elementor/pages/podcast-a/03-library.mjs`,
+ * note 9; the `:has(> p)`/`.elementor-widget-container` rule earlier in this
+ * file is where that was found and repaired). `.da-door__body` contains no
+ * loop item, so the two-class selector below is not at risk of the same
+ * failure, but a future page whose text widget sits inside a Loop Item
+ * template needs the `.elementor-widget-container` level added, not this
+ * selector copied as is; copying it unchanged there would ship a selector
+ * that matches nothing and fails silently.
  *
  * The door's own heading needed nothing: `.da-door h3{margin:0}`
  * (what-we-do-a.css:77) is a DESCENDANT selector, so the same extra wrapper

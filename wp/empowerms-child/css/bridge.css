@@ -1936,9 +1936,15 @@
  * width automatically), never the height. The main axis size instead comes
  * from `flex-grow`/`flex-basis`, and `.elementor-element` sets
  * `flex-grow:var(--flex-grow)` with `--flex-grow:initial` (spec initial
- * value 0, reinforced by Elementor's own `--container-widget-flex-grow:0`
- * on `.e-con`), so the wrapper never grows along the main axis and sizes to
+ * value 0), so the wrapper never grows along the main axis and sizes to
  * its own content instead, which is the image's own intrinsic height.
+ * (Review round 3, N-unnumbered: an earlier version of this sentence also
+ * cited `--container-widget-flex-grow:0` on `.e-con` as reinforcing this,
+ * which does not survive opening the file: that custom property is defined
+ * exactly once in `.snapshots/solutions-b/elementor/frontend.min.css`, on
+ * `.e-con`, and consumed nowhere in that stylesheet or in
+ * `.snapshots/solutions-b/page.html`. Dead CSS in this snapshot, reinforcing
+ * nothing; deleted rather than left as an uncheckable flourish.)
  * Confirmed live before writing this rule: `.elementor-widget-image`
  * measures 348.109px for the child-classroom-tablet station, identical to
  * the `<img>` inside it, while `.sb-station__media` itself stays 320px.

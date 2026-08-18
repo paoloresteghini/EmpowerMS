@@ -30,8 +30,16 @@ export function fromRootArgs(dir, ssh, host, dest) {
   return ['-az', '--delete', ...protectBridge, '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`];
 }
 
-export async function syncTheme() {
-  const { host, key, root } = installConfig();
+/* `run` and `config` are injectable for ONE reason, stated so nobody removes
+   them as unused indirection: without them a test can only reach
+   fromRootArgs(), and review demonstrated an edit that keeps such a test
+   green while fully reopening the window it exists to close (leave the
+   exported helper untouched, inline the arguments at the call site below,
+   and drop the exclude). Injecting the runner lets a test capture the
+   arguments THIS function actually issues, which is the thing that reaches
+   the install. Neither parameter is used in production. */
+export async function syncTheme({ run: runner = run, config } = {}) {
+  const { host, key, root } = config ?? installConfig();
   const dest = `${root}/${THEME}`;
   const ssh = `ssh -i ${key} -o BatchMode=yes`;
   /* wp/empowerms-child/ holds the theme's own PHP files plus
@@ -44,7 +52,7 @@ export async function syncTheme() {
      a failure between the two steps leaves the live site with no CSS or JS
      and nothing to report it. */
   const excludes = FROM_ROOT.flatMap((dir) => ['--exclude', `/${dir}/`]);
-  await run('rsync', ['-az', '--delete', ...excludes, '-e', ssh, 'wp/empowerms-child/', `${host}:${dest}/`]);
+  await runner('rsync', ['-az', '--delete', ...excludes, '-e', ssh, 'wp/empowerms-child/', `${host}:${dest}/`]);
   for (const dir of FROM_ROOT) {
     /* The css/ pass alone protects bridge.css from its own --delete, and the
        third pass below is NOT a substitute for it. bridge.css lives under
@@ -61,7 +69,7 @@ export async function syncTheme() {
        not delete a file an --exclude protects, unless --delete-excluded is
        given, which this file must never pass. So pass three keeps bridge.css
        CURRENT and this exclude keeps it PRESENT; both are needed. */
-    await run('rsync', fromRootArgs(dir, ssh, host, dest));
+    await runner('rsync', fromRootArgs(dir, ssh, host, dest));
   }
   /* bridge.css is excluded above (it lives under wp/empowerms-child/css/,
      inside the excluded /css/ path) and then overwritten wholesale above
@@ -74,6 +82,6 @@ export async function syncTheme() {
      --delete here: this source only ever contains bridge.css, and deleting
      dest/css/ against it would erase everything the previous pass just put
      there. */
-  await run('rsync', ['-az', '-e', ssh, 'wp/empowerms-child/css/', `${host}:${dest}/css/`]);
+  await runner('rsync', ['-az', '-e', ssh, 'wp/empowerms-child/css/', `${host}:${dest}/css/`]);
   return dest;
 }

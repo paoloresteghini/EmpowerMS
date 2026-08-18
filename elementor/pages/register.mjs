@@ -252,7 +252,10 @@ export const PAGE_REGISTER = [
      14, demanding 9 of this page's own 19 rather than 8: the same
      proportion demands MORE real matches on a larger page, not fewer.
 
-     `assert.ok(shared.length > page.minShared)` at test-elementor.mjs:3229
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs
+     (cited by its text rather than by a line number: this is the third time
+     today an unrelated edit to that file moved the line and invalidated the
+     citation, and an anchor that the file's own content carries cannot drift)
      is strict, so 13 means at least 14 of 25 must match by text,
      comfortably below 25 while still requiring the large majority of the
      static page's own text content to reappear on the live side.
@@ -309,7 +312,10 @@ export const PAGE_REGISTER = [
      (16/30 against the other entries' totals) and is replaced here rather
      than left to be re-derived.
 
-     `assert.ok(shared.length > page.minShared)` at test-elementor.mjs:3229
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs
+     (cited by its text rather than by a line number: this is the third time
+     today an unrelated edit to that file moved the line and invalidated the
+     citation, and an anchor that the file's own content carries cannot drift)
      is strict, so 16 means at least 17 of 30 must match by text. Six of
      those come from the chrome, so the floor demands 11 of this page's own
      24. Measured against the same fraction on the other five entries

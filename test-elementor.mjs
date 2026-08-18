@@ -6,7 +6,7 @@ import os from 'node:os';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
-import { fromRootArgs } from './wp/sync.mjs';
+import { fromRootArgs, syncTheme } from './wp/sync.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
@@ -33,6 +33,7 @@ import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
 import {
   isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
+  validateContentExemption, explainLayoutHeights, CONTENT_HEIGHT_EXEMPTIONS, MEASURED_WIDTHS,
 } from './fidelity-deferred.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
@@ -897,7 +898,14 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
   assert.ok(loopMatch, 'the FROM_ROOT sync loop was not found in wp/sync.mjs');
   const loopEnd = loopMatch.index + loopMatch[0].length;
 
-  const bridgePassMatch = src.match(/await run\(\s*'rsync'\s*,\s*\[[^\]]*'wp\/empowerms-child\/css\/'[^\]]*\]\s*\)/);
+  /* `run|runner`: syncTheme's runner became injectable so that the test below
+     can capture the arguments the function actually issues, and the call sites
+     changed from `run(` to `runner(`. This pattern named only `run(` and went
+     red on a correct file, which is the same shape of breakage as a stale line
+     citation: an assertion pinned to an incidental detail of how the code is
+     spelled. Matching either keeps this test about the PASS rather than about
+     the identifier. */
+  const bridgePassMatch = src.match(/await (?:run|runner)\(\s*'rsync'\s*,\s*\[[^\]]*'wp\/empowerms-child\/css\/'[^\]]*\]\s*\)/);
   assert.ok(bridgePassMatch, 'no rsync call syncing wp/empowerms-child/css/ was found in wp/sync.mjs');
   assert.ok(bridgePassMatch.index > loopEnd,
     'the wp/empowerms-child/css/ sync must run after the FROM_ROOT loop, or the loop\'s own --delete against dest/css/ removes bridge.css straight back out');
@@ -933,7 +941,7 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
    destination-only bridge.css in place, run the local rsync, and assert the
    file survives with its contents. The css pass must protect it and every
    other pass must not, since a blanket exclude would be a different defect. */
-test('the css pass of wp/sync.mjs leaves a destination-only bridge.css in place, run against a real rsync', () => {
+test('the css pass wp/sync.mjs actually issues leaves a destination-only bridge.css in place, run against a real rsync', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-rsync-'));
   try {
     for (const dir of ['css', 'js']) {
@@ -943,14 +951,30 @@ test('the css pass of wp/sync.mjs leaves a destination-only bridge.css in place,
       fs.writeFileSync(path.join(root, 'dest', dir, 'bridge.css'), 'the bridge\n');
     }
 
-    /* fromRootArgs builds `${dir}/` and `${host}:${dest}/${dir}/`. Passing an
-       empty host and a local path turns the same argument list into a local
-       copy, so the arguments under test are the arguments that reach the
-       install, not a re-spelling of them. */
+    /* The arguments come from syncTheme() ITSELF, not from fromRootArgs(),
+       and that is the whole point of this shape. Review found an edit that
+       keeps a fromRootArgs-only test green while reopening the window:
+       leave the helper alone, inline the arguments at the call site, drop
+       the exclude. Capturing what syncTheme issues closes that, because the
+       call site is what reaches the install.
+
+       syncTheme's runner is injected, so nothing is executed here and no
+       network is touched; the captured argv is then rewritten to local paths
+       and run through a real rsync. Passing an empty host makes
+       `${host}:${dest}/` a plain path. */
+    const issued = [];
+    await syncTheme({
+      run: (cmd, args) => { issued.push([cmd, args]); return Promise.resolve({ stdout: '', stderr: '' }); },
+      config: { host: '', key: 'key-unused', root: `${root}/dest-root` },
+    });
+
+    const dest = `${root}/dest-root/wp-content/themes/empowerms-child`;
     for (const dir of ['css', 'js']) {
-      const args = fromRootArgs(dir, 'ssh-unused', '', `${root}/dest`)
+      const pass = issued.find(([, args]) => args.includes(`${dir}/`) && args.includes('--delete'));
+      assert.ok(pass, `syncTheme issued no --delete pass for ${dir}/, so this test is no longer watching the code that runs`);
+      const args = pass[1]
         .map((a) => (a === `${dir}/` ? `${root}/src/${dir}/` : a))
-        .map((a) => (a === `:${root}/dest/${dir}/` ? `${root}/dest/${dir}/` : a))
+        .map((a) => (a === `:${dest}/${dir}/` ? `${root}/dest/${dir}/` : a))
         .filter((a, i, all) => !(a === '-e' || all[i - 1] === '-e'));
       execFileSync('rsync', args);
     }
@@ -3104,6 +3128,130 @@ test('the subtraction count is available even when every difference was deferred
   assert.equal(subtracted, 2, 'a passing result must not hide how many differences were excused to get there');
 });
 
+/* --- fidelity-deferred.mjs / CONTENT_HEIGHT_EXEMPTIONS ------------------- *
+
+   Tested the same way and for the same reason DEFERRED_IMAGES is: this is
+   the one mechanism in the suite that lets a MEASURED difference not be a
+   failure, so its behaviour has to be provable without a browser, a live
+   install or a particular page's real geometry.
+
+   The fixtures below are the shape layoutInvariants() returns for `painted`
+   (a map of key -> { top, h }, top measured from <main>'s own top), and
+   they are built to the same arithmetic `final` at 390 really produces: an
+   ancestor that contains the exempted element, the exempted element itself,
+   and a box below it that the difference pushes down. `page: 'final'` on
+   every entry because validateContentExemption() requires a registered
+   page; nothing about these tests is specific to the homepage. */
+
+test('a content-height exemption explains its own box, its container and everything below it, and nothing else', () => {
+  const stat = {
+    section: { top: 0, h: 500 }, card: { top: 100, h: 200 }, below: { top: 400, h: 50 },
+  };
+  const live = {
+    section: { top: 0, h: 470 }, card: { top: 100, h: 170 }, below: { top: 370, h: 50 },
+  };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.diffs, [], 'all three boxes are explained exactly by the card being 30px shorter');
+  assert.deepEqual(out.roots.map((r) => [r.key, r.dH]), [['card', -30]],
+    'the difference is MEASURED from the two maps, never read from the entry');
+  assert.equal(out.mainExpected, 970, "main is compared against the static height plus what the exemption explains");
+});
+
+test('a content-height exemption does not excuse a box that moved by more than it explains', () => {
+  const stat = {
+    section: { top: 0, h: 500 }, card: { top: 100, h: 200 }, below: { top: 400, h: 50 },
+  };
+  /* `below` has moved 40px where the card only explains 30, and its own
+     height is 4px out. Both must survive the exemption. */
+  const live = {
+    section: { top: 0, h: 470 }, card: { top: 100, h: 170 }, below: { top: 360, h: 54 },
+  };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.equal(out.diffs.length, 1, 'exactly the one box whose difference is not explained is reported');
+  assert.match(out.diffs[0], /^below:/, 'and it is named');
+  assert.match(out.diffs[0], /residual dTop -10 dH 4/,
+    'the message must show what is left AFTER the exemption, not the raw difference, or it reads as a 40px defect');
+});
+
+test('a content-height exemption whose difference has disappeared is reported expired, not silently applied', () => {
+  const stat = { card: { top: 100, h: 200 } };
+  const live = { card: { top: 100, h: 200 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.expired, ['card'],
+    'an exemption that has outlived the difference it excused must fail, the same half that keeps DEFERRED_IMAGES honest');
+  assert.deepEqual(out.roots, [], 'and it must not count as a root, or it would subtract zero and look applied');
+});
+
+test('a content-height exemption naming an element that is no longer painted on both sides is reported, not ignored', () => {
+  const stat = { other: { top: 0, h: 10 } };
+  const live = { other: { top: 0, h: 10 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.unmeasured, ['card'],
+    'an entry that has stopped naming a real element is a defect in the list, not an inert line');
+});
+
+test('a content-height exemption is scoped to its own width and its own page', () => {
+  const stat = { card: { top: 100, h: 200 } };
+  const live = { card: { top: 100, h: 170 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const wrongWidth = explainLayoutHeights(live, stat, 1000, 'final', 1440, list);
+  assert.equal(wrongWidth.roots.length, 0, 'the 390 entry must not reach the 1440 measurement');
+  assert.equal(wrongWidth.diffs.length, 1, 'so the difference is still reported at 1440');
+  const wrongPage = explainLayoutHeights(live, stat, 1000, 'team-a', 390, list);
+  assert.equal(wrongPage.roots.length, 0, "and final's entry must not reach team-a");
+  assert.equal(wrongPage.diffs.length, 1, 'so the difference is still reported there too');
+});
+
+test('a box that only partially overlaps an exempted element is refused rather than guessed at', () => {
+  /* The shape solutions-b really produces: a panel whose negative margin
+     makes it overhang the box above it. If such a box ever sat across an
+     exempted element there is no derivable expected difference, and a
+     guess is how a gate stops being a gate. */
+  const stat = { overhang: { top: 50, h: 200 }, card: { top: 100, h: 200 } };
+  const live = { overhang: { top: 50, h: 200 }, card: { top: 100, h: 170 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.equal(out.ambiguous.length, 1, 'the undecidable case is reported');
+  assert.match(out.ambiguous[0], /^overhang .*partially overlaps the exempted card/);
+});
+
+test('explainLayoutHeights refuses an invalid exemption even when the caller supplies the list directly', () => {
+  const stat = { card: { top: 0, h: 10 } };
+  const live = { card: { top: 0, h: 20 } };
+  assert.throws(() => explainLayoutHeights(live, stat, 100, 'final', 390,
+    [{ page: 'final', width: 390, key: 'card', date: '2026-08-18' }]),
+  /has no reason/, 'a hand-built list must get the same refusal the module list gets at import');
+  assert.throws(() => explainLayoutHeights(live, stat, 100, 'final', 390,
+    [{ page: 'nope', width: 390, key: 'card', reason: 'r', date: '2026-08-18' }]),
+  /not in PAGE_REGISTER/, 'a typo in the page name must fail rather than sit inert forever');
+  assert.throws(() => validateContentExemption({
+    page: 'final', width: 900, key: 'card', reason: 'r', date: '2026-08-18',
+  }), /not one of the measured widths/, 'a width nothing measures could never be applied');
+  assert.throws(() => validateContentExemption({
+    page: 'final', width: 390, key: '__unsettled__', reason: 'r', date: '2026-08-18',
+  }), /bookkeeping marker/, 'a bookkeeping key names no element');
+});
+
+/* The list this build actually ships, checked as data rather than as
+   behaviour: every entry validates, and every entry names a width the
+   suite really measures. The forEach at the bottom of fidelity-deferred.mjs
+   already throws at import for the first of those; this proves it stays
+   true after an edit, and names MEASURED_WIDTHS as the reason the width
+   field is closed rather than free. */
+test('every CONTENT_HEIGHT_EXEMPTIONS entry this build ships is valid and reachable', () => {
+  assert.ok(CONTENT_HEIGHT_EXEMPTIONS.length > 0,
+    'an empty list would make every test above vacuous against the real data');
+  for (const entry of CONTENT_HEIGHT_EXEMPTIONS) {
+    assert.doesNotThrow(() => validateContentExemption(entry), `${entry.page} ${entry.key} must validate`);
+    assert.ok(MEASURED_WIDTHS.includes(entry.width),
+      `${entry.key} names width ${entry.width}, which the layout test never measures`);
+  }
+});
+
 /* --- fidelity-browser.mjs / the homepage's two measuring instruments ----- */
 
 /* The homepage's ~40 defects were found by two throwaway session scripts,
@@ -3335,6 +3483,210 @@ for (const page of PAGE_REGISTER) {
       assert.deepEqual(expired, [],
         `${expired.length} deferred entr${expired.length === 1 ? 'y' : 'ies'} for "${page.name}" no longer differ `
         + `at EITHER width and must be removed from DEFERRED_IMAGES: ${expired.join(', ')}`);
+    } finally {
+      await server.close();
+    }
+  });
+}
+
+/* THE THIRD INSTRUMENT, added 2026-08-18.
+
+   An audit of all seven converted pages
+   (.superpowers/sdd/2026-08-15-class-in-markup/audit-invisible-defects.md)
+   found 10 defects on 5 pages that neither instrument above reports, and
+   counted the blind spot: on a typical converted page, 71 to 86 percent of
+   everything rendered inside <main> is reached by neither census() nor
+   controlBoxes(). Every one of the 10 lives on a container, or on the one
+   widget class controlBoxes() excludes by design.
+
+   WHY A THIRD TEST RATHER THAN A WIDER controlBoxes(). Measured, not assumed:
+   a container sweep over the same seven pages inherits 188 tag changes, 120
+   flex-wrap differences and a set of container height differences that are box
+   shifts with nothing inside them moving. One of the 188 is a real defect. The
+   cost of that false-positive volume is not wasted investigations, it is that a
+   noisy shared gate gets its tolerances widened until it stops being a gate,
+   and this project has already shipped one test that failed green. So the
+   element set and the property set are both named, and layoutInvariants() in
+   fidelity-browser.mjs documents exactly what is in each and what is
+   deliberately left out.
+
+   WHAT THIS CAUGHT BEFORE ANY REPAIR, which is the only evidence that it tests
+   what it claims. A check that is green before the repair is not a check:
+
+     mainHeight      final -32.00 @1440 and -108.62 @390, capitol-a +20.00
+                     @1440 and -16.85 @390, team-a +3.19 @390. Exactly 0.00 on
+                     what-we-do-a, solutions-b and who-we-are-a at both widths.
+     axis, direction final `.em-stories__mini` and `#2`, row live against
+                     column static at 390. Two findings in twelve page-width
+                     measurements, both real.
+     axis, x         capitol-a `.em-btn.em-btn--lg.em-btn--primary`, live x 144
+                     against static 619.94 at 1440 and 24 against 94.94 at 390.
+                     One finding, real, and structurally invisible to
+                     controlBoxes(), which skips anchors inside
+                     .elementor-widget-button and never reads x at all.
+     painted         solutions-b `.sb-research`, top 2121.45 live against
+                     2035.06 static with height 287.88 against 374.27. One
+                     finding, real, and the only instrument that can see it:
+                     that page's main height is identical on both sides, so the
+                     box shift is invisible to mainHeight, and the section is a
+                     container, so it is invisible to both older instruments.
+
+   ON THE PAINTED ASSERTION'S VOLUME, because it looks like noise and is not.
+   Before repair it reported 14 differences on final, 17 on capitol-a and 20 on
+   team-a at 390. Every one traces to a confirmed defect: a root cause that
+   moves one box moves every painted box below it, so the count is
+   AMPLIFICATION of a true positive, not a false-positive rate. The tell is the
+   signature: a downstream shift has an identical height and a top offset by the
+   same constant as everything else below the root. They clear together when the
+   root clears, and the assertion prints all of them so the constant is
+   readable.
+
+   The coverage assertion is an EQUALITY, not a floor, and that is measured
+   rather than aspirational: after PLATFORM_CLASS was corrected, the keyed sets
+   match exactly on all six registered pages at both widths, 0 live-only and 0
+   static-only. A static-only key means the conversion lost an element that
+   carries a build class; a live-only key means it invented one. Both are worth
+   a red. It also detects a dead page for free: a 404 has no <main> and no keys
+   at all, so every static key becomes static-only.
+
+   podcast-a needs no exclusion here and gets one for free: it is in
+   EXCLUDED_PAGES rather than PAGE_REGISTER, because its live loop grid renders
+   66 real episodes against 9 static placeholders. That is the one page whose
+   main height differs by content rather than by defect, and this loop never
+   reaches it. */
+for (const page of PAGE_REGISTER) {
+  test(`the converted ${page.name} page holds its layout invariants against the static build`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { layoutInvariants } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      for (const width of [1440, 390]) {
+        const live = await layoutInvariants(url, { width });
+        const stat = await layoutInvariants(`${server.url}/${page.staticFile}`, { width });
+
+        /* Asserted first, and against the STATIC side, because everything
+           below is vacuously true over an empty key set. dist/ is gitignored,
+           so an unbuilt static file is a live possibility on a fresh
+           checkout, and a 404 measures null. */
+        assert.ok(typeof stat.__main_height__ === 'number' && stat.__main_height__ > 0,
+          `${page.staticFile} reported no <main> at ${width}px; the build is likely missing or unreachable (run node build.mjs)`);
+        assert.ok(typeof live.__main_height__ === 'number' && live.__main_height__ > 0,
+          `the live ${page.name} page reported no <main> at ${width}px`);
+
+        const liveOnly = Object.keys(live.axis).filter((k) => !stat.axis[k]);
+        const statOnly = Object.keys(stat.axis).filter((k) => !live.axis[k]);
+        assert.deepEqual(statOnly, [],
+          `${statOnly.length} element(s) carrying a build class exist on the static ${page.name} page at ${width}px and not on the live one: ${statOnly.join(', ')}`);
+        assert.deepEqual(liveOnly, [],
+          `${liveOnly.length} element(s) carrying a build class exist on the live ${page.name} page at ${width}px and not on the static one: ${liveOnly.join(', ')}`);
+
+        const shared = Object.keys(live.axis).filter((k) => stat.axis[k]);
+        console.log(`[layout] ${page.name} @ ${width}px: ${shared.length} keyed element(s) compared, `
+          + `${Object.keys(live.painted).length} of them painted`);
+
+        /* CONTENT_HEIGHT_EXEMPTIONS, resolved once per page-width and used by
+           both the mainHeight assertion and the painted one, because a
+           content difference moves both and explaining it in one place and
+           not the other would just move the failure. explainLayoutHeights()
+           reads no pixel value from the list: it measures each exempted
+           element's own height difference here and propagates that. See
+           fidelity-deferred.mjs for what an entry does and does not buy.
+
+           PRINTED ON GREEN AS WELL AS ON RED, the same reason the comparison
+           size above is: an exemption nobody sees is an exemption nobody
+           re-examines, and this is the one place in the suite where a
+           measured difference is allowed not to be a defect. */
+        const explained = explainLayoutHeights(live.painted, stat.painted, stat.__main_height__, page.name, width);
+        for (const root of explained.roots) {
+          console.log(`[layout] ${page.name} @ ${width}px: content-height exemption applied to ${root.key}, `
+            + `measured ${root.dH > 0 ? '+' : ''}${root.dH}px`);
+        }
+
+        /* Three ways the list itself can be wrong, all failures rather than
+           information: an entry that names something no longer compared, an
+           entry whose difference has gone (the half that keeps DEFERRED_IMAGES
+           honest, and this list needs it for the same reason), and a box whose
+           expected difference is not derivable because it only partially
+           overlaps an exempted element. */
+        assert.deepEqual(explained.unmeasured, [],
+          `${explained.unmeasured.length} content-height exemption(s) on ${page.name} at ${width}px name an element `
+          + `that is not painted on both sides any more: ${explained.unmeasured.join(', ')}. `
+          + 'Delete the entry or fix the key (fidelity-deferred.mjs, CONTENT_HEIGHT_EXEMPTIONS).');
+        assert.deepEqual(explained.expired, [],
+          `${explained.expired.length} content-height exemption(s) on ${page.name} at ${width}px no longer excuse `
+          + `anything: ${explained.expired.join(', ')} now measure the same height live and static. `
+          + 'Delete the entry (fidelity-deferred.mjs, CONTENT_HEIGHT_EXEMPTIONS); an exemption that has outlived '
+          + 'the difference it excused will eventually excuse a defect nobody has looked at.');
+        assert.deepEqual(explained.ambiguous, [],
+          `${explained.ambiguous.length} painted box(es) on ${page.name} at ${width}px partially overlap an exempted `
+          + `element, so no expected difference can be derived:\n${explained.ambiguous.join('\n')}`);
+
+        /* 1. mainHeight. One number, exact where nothing is exempted: every
+           non-zero value measured during Task 11's before-pass traced to a
+           named defect, so a tolerance here would only ever hide one.
+
+           Where an exemption DOES apply, the comparison is against the static
+           height plus the exempted elements' own measured differences, which
+           is still an equality and not a tolerance: the 0.05 is the
+           accumulated 2dp rounding of the six measurements the sum is built
+           from (max 0.03), an order of magnitude under the 0.5px slack the
+           painted and x assertions already carry and two orders under the
+           3.19px smallest real finding this phase has produced. */
+        if (explained.roots.length === 0) {
+          assert.equal(live.__main_height__, stat.__main_height__,
+            `main is ${live.__main_height__}px live against ${stat.__main_height__}px static at ${width}px `
+            + `(${live.__main_height__ > stat.__main_height__ ? '+' : ''}${Math.round((live.__main_height__ - stat.__main_height__) * 100) / 100}px)`);
+        } else {
+          assert.ok(Math.abs(live.__main_height__ - explained.mainExpected) <= 0.05,
+            `main is ${live.__main_height__}px live against ${stat.__main_height__}px static at ${width}px, and the `
+            + `${explained.roots.length} content-height exemption(s) explain only ${explained.exemptedTotal}px of that, `
+            + `so main should measure ${explained.mainExpected}px`);
+        }
+
+        /* 2a. axis, flex-direction, GATED. flex-direction computes on every
+           element whatever its display, so an ungated comparison reports a
+           display:grid container whose inert flex-direction differs. Both
+           sides must compute flex or inline-flex for the property to mean
+           anything, which is what layoutInvariants() records as a null dir. */
+        const dirDiffs = shared
+          .filter((k) => live.axis[k].dir && stat.axis[k].dir && live.axis[k].dir !== stat.axis[k].dir)
+          .map((k) => `${k}: live ${live.axis[k].dir} static ${stat.axis[k].dir}`);
+        assert.deepEqual(dirDiffs, [],
+          `${dirDiffs.length} flex container(s) run on the wrong axis at ${width}px:\n${dirDiffs.join('\n')}`);
+
+        /* 2b. axis, absolute viewport x. This is the half controlBoxes()
+           structurally cannot have: three of the audit's defects moved an
+           element horizontally without changing its box at all, and all three
+           sit on link() wrappers, which controlBoxes() skips. Half a pixel of
+           slack absorbs subpixel layout, and nothing else: the smallest real
+           finding this has produced is 70.94px. */
+        const xDiffs = shared
+          .filter((k) => Math.abs(live.axis[k].x - stat.axis[k].x) > 0.5)
+          .map((k) => `${k}: live x ${live.axis[k].x} static x ${stat.axis[k].x}`);
+        assert.deepEqual(xDiffs, [],
+          `${xDiffs.length} element(s) sit at a different horizontal position at ${width}px:\n${xDiffs.join('\n')}`);
+
+        /* 3. paintedBox. Border-box top (measured from main's own top, so the
+           two builds' different header heights cancel) and height, for every
+           keyed element that computes a non-transparent background-color or a
+           background-image. This is the discriminator that makes the
+           lost-margin-collapsing family priceable: three of the four box
+           shifts the audit found are free and one uncovers a navy band, and
+           only paint tells them apart.
+
+           Computed by explainLayoutHeights() rather than inline, so the
+           content exemption is subtracted from the box it belongs to and from
+           nothing else: a box CONTAINING an exempted element has that
+           element's measured difference taken off its own height, a box
+           BELOW one has it taken off its own top, and every other box is
+           compared exactly as before. With the exemption in place each
+           downstream box is still asserted to have moved by precisely what
+           the content explains, which is a stronger statement than dropping
+           the keys would make. */
+        assert.deepEqual(explained.diffs, [],
+          `${explained.diffs.length} painted box(es) moved or resized at ${width}px:\n${explained.diffs.join('\n')}`);
+      }
     } finally {
       await server.close();
     }

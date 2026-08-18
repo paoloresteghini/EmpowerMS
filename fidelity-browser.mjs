@@ -840,3 +840,157 @@ export async function screenshots(url, dir) {
     await browser.close();
   }
 }
+
+/* The THIRD instrument, added 2026-08-18 after an audit of all seven converted
+ * pages found 10 defects on 5 pages that neither census() nor controlBoxes()
+ * reports, and counted the blind spot at 71 to 86 percent of everything
+ * rendered inside <main> on a typical page
+ * (.superpowers/sdd/2026-08-15-class-in-markup/audit-invisible-defects.md).
+ *
+ * WHY THIS IS A SEPARATE INSTRUMENT RATHER THAN A WIDER controlBoxes().
+ * Every one of those 10 defects lives on a CONTAINER, or on the one widget
+ * class controlBoxes() deliberately excludes. Widening controlBoxes() to reach
+ * them was measured and rejected: on the same seven pages a container sweep
+ * inherits 188 tag changes (a class travelling to a widget wrapper, which is
+ * always a div, while the real element keeps its tag one level down), 120
+ * flex-wrap differences that are Elementor container defaults with no visual
+ * consequence, and a set of container height differences that are box shifts
+ * with nothing inside them moving. One of the 188 is a real defect and one of
+ * the 120 is. controlBoxes()'s own comment states the reason from the other
+ * side: a box sweep cannot tell "this element is the wrong size" from "this
+ * element is no longer the element the rule applies to", and containers are
+ * exactly where the conversion legitimately moves classes. A noisy shared gate
+ * gets its tolerances widened until it stops being a gate, and this project has
+ * already shipped one test that failed green.
+ *
+ * So: a NAMED property set over a NAMED element set, and nothing else. Three
+ * measurements, in increasing cost, each with its own assertion in
+ * test-elementor.mjs so a failure names which invariant broke:
+ *
+ *   mainHeight  one number per page per width, <main>'s own border-box height.
+ *   axis        flex-direction on keyed elements, GATED on both sides
+ *               computing flex or inline-flex, plus the absolute viewport x of
+ *               every keyed element.
+ *   painted     border-box top and height of every keyed element that computes
+ *               a non-transparent background-color or a background-image.
+ *
+ * DELIBERATELY OUT: tag comparison, flex-wrap, and any general width/height
+ * sweep over containers. All three were measured across the seven pages and all
+ * three are dominated by differences with no visual consequence.
+ *
+ * THE KEY, and this is the part that took three attempts in the audit to get
+ * right. Elements are keyed by the build's own class tokens plus an ordinal,
+ * never by position in the tree: Elementor inserts wrapper elements, so
+ * offset-within-parent and child index are both incomparable across the two
+ * builds, and only viewport-absolute x is. ELEMENTOR_CLASS drops every class
+ * the platform adds (`elementor-*`, `e-con*`, `e-flex`, `e-grid`, `e-parent`,
+ * `swiper*`) so a live element and its static counterpart reduce to the same
+ * token set; STATE_CLASS drops `is-revealed` and its family, because a class
+ * that appears only once the page has settled desynchronises the ordinals and
+ * manufactures differences (six false findings on solutions-b came from exactly
+ * that before it was fixed). An element with no build class of its own is not
+ * keyed at all: it is invisible to this instrument rather than bucketed, for
+ * the same reason controlBoxes() excludes rather than buckets. */
+/* Derived by enumerating every class rendered inside <main> on a live page and
+ * subtracting the build's own, not guessed. On solutions-b that live-only set is
+ * exactly: e-con, e-con-full, e-flex, e-lazyloaded, e-parent, elementor,
+ * elementor-20596, elementor-button*, elementor-element, elementor-size-sm,
+ * elementor-widget*, is-revealed, mailmunch-forms-*, attachment-large,
+ * size-large. Every one is matched below.
+ *
+ * `^e-` rather than a list of Elementor's container classes, and the difference
+ * is not cosmetic: the first version of this regex named e-con, e-flex, e-grid,
+ * e-parent and e-child individually and MISSED `e-lazyloaded`, which Elementor
+ * adds to most elements once they have loaded. That one token appears on the
+ * live side only, so it entered the key and desynchronised it from the static
+ * side wholesale: shared keys collapsed to 83 of 149 on final, 14 of 47 on
+ * solutions-b and 7 of 34 on what-we-do-a, and both `.sb-research` (defect 4)
+ * and `.em-stories__mini` (defect 1) dropped out of the comparison entirely
+ * while the instrument reported zero differences. A gate that silently stops
+ * comparing is the exact failure this project has shipped before, so the
+ * exclusion is now by PREFIX and the prefix is safe: no class in css/,
+ * components/ or tokens/ begins with `e-` (checked with
+ * `grep -ohE '\.e-[a-z]' css/*.css components/*.css tokens/*.css`, which
+ * returns nothing), and `em-` does not match `^e-` because the second character
+ * must be a hyphen.
+ *
+ * attachment-* and size-* are WordPress's own image-size classes, present on
+ * every live <img> and on no static one; excluding them makes an <img> reduce
+ * to the same token set on both sides, which is none, so it is simply not keyed
+ * here. controlBoxes() is the instrument that measures images. */
+const PLATFORM_CLASS = /^(e-|elementor|swiper|animated|mailmunch|attachment-|size-|wp-|post|type-|status-|format-|hentry$|category-|tag-)/;
+const STATE_CLASS = /^(is-|has-|js-)/;
+
+export async function layoutInvariants(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(url, { waitUntil: 'load' });
+    /* Recorded rather than thrown, the same choice controlBoxes() makes and
+       for the same reason: every property below is a box or a computed
+       display, and none of them changes between a revealed and an unrevealed
+       element except through `data-reveal="clip"`'s own transform, which the
+       settle pass exists to remove. Throwing would buy nothing and cost a
+       flake on the one page whose third people frame is display:none at 390
+       and therefore can never intersect. */
+    const unsettled = await settleReveal(page).then(() => null, (e) => e.message);
+    const out = await page.evaluate(({ platformSrc, stateSrc }) => {
+      const PLATFORM = new RegExp(platformSrc);
+      const STATE = new RegExp(stateSrc);
+      const main = document.querySelector('main');
+      const res = {
+        __main_height__: main ? Math.round(main.getBoundingClientRect().height * 100) / 100 : null,
+        axis: {},
+        painted: {},
+      };
+      if (!main) return res;
+
+      const seen = {};
+      for (const el of main.querySelectorAll('*')) {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none') continue;
+        const tokens = [...el.classList]
+          .filter((c) => !PLATFORM.test(c) && !STATE.test(c))
+          .sort();
+        if (tokens.length === 0) continue;
+        const base = tokens.join('.');
+        seen[base] = (seen[base] || 0) + 1;
+        const key = seen[base] > 1 ? `${base}#${seen[base]}` : base;
+        const r = el.getBoundingClientRect();
+        const isFlex = cs.display === 'flex' || cs.display === 'inline-flex';
+        /* x is recorded for EVERY keyed element, not only for flex items, and
+           that is the half of this instrument controlBoxes() structurally
+           cannot have. Three of the audit's defects moved an element
+           horizontally without changing its box at all, and all three sit on
+           link() wrappers, which controlBoxes() skips by design
+           (`el.closest('.elementor-widget-button')`). Rounded to 2dp because
+           a subpixel layout legitimately produces values like 619.945. */
+        res.axis[key] = {
+          x: Math.round(r.x * 100) / 100,
+          /* Gated: flex-direction computes on every element whatever its
+             display, so an unconditional comparison reports a `display:grid`
+             container whose inert flex-direction differs as a defect. Null
+             on either side means the comparison is skipped. */
+          dir: isFlex ? cs.flexDirection : null,
+        };
+        const bg = cs.backgroundColor;
+        const transparent = bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent';
+        if (!transparent || cs.backgroundImage !== 'none') {
+          /* Top measured from main's own top, not from the viewport: the two
+             builds have different header heights, and this instrument is
+             about whether a painted box moved relative to the page's content,
+             not about where the page starts. */
+          res.painted[key] = {
+            top: Math.round((r.top - main.getBoundingClientRect().top) * 100) / 100,
+            h: Math.round(r.height * 100) / 100,
+          };
+        }
+      }
+      return res;
+    }, { platformSrc: PLATFORM_CLASS.source, stateSrc: STATE_CLASS.source });
+    out.__unsettled__ = unsettled ? 'unsettled' : 'settled';
+    return out;
+  } finally {
+    await browser.close();
+  }
+}

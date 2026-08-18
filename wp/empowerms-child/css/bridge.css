@@ -2836,7 +2836,23 @@
  * :238 and :249, and none names `.cca-hero__action` or `.em-btn`. The button
  * is content-sized at every width in the static build. Confirmed at 390. */
 .cca-hero__action > .em-btn{
-  align-self:flex-start;
+  /* CORRECTED 2026-08-18 from `flex-start` by the invisible-defects audit,
+     defect 10. `flex-start` restored the button's WIDTH and dropped its
+     horizontal POSITION, which the same mechanism also controls, and the box
+     sweep passed it green because the box was right. In the static build the
+     button is an inline-flex anchor inside a <p> and css/capitol-a.css:61's
+     `.cca-hero__copy{text-align:center}` centres it; converted, the button is
+     the link() wrapper, a flex item, so text-align no longer reaches it and
+     align-self decides. Measured before: live x 144 against static 619.94 at
+     1440 (a 475.94px displacement on the one centred hero in the build) and 24
+     against 94.94 at 390. Measured after: 619.94 and 94.94, exact, with the
+     height unchanged at 68.39 both.
+     CHECKED THE PARENT'S AXIS BEFORE CHANGING THE VALUE, because the same
+     declaration on a ROW parent cancels a stretch the design depends on and
+     cost a deploy this round: `.cca-hero__action` computes
+     `display:flex; flex-direction:column`, so its cross axis is HORIZONTAL and
+     align-self is the property that positions the button across it. */
+  align-self:center;
 }
 
 /* ---------- 11. what-we-do-a: the same direction defect, LATENT ------------
@@ -2868,4 +2884,395 @@
  * :146 and :150 and none names it. Confirmed at 390. */
 .da-hero__actions.e-con{
   flex-direction:row;
+}
+
+/* ============================================================================
+ * Task 11: five rules from the invisible-defects audit
+ * (.superpowers/sdd/2026-08-15-class-in-markup/audit-invisible-defects.md).
+ *
+ * Every one was settled against a snapshot.mjs capture and measured
+ * individually before being written here, and every "after" number below is
+ * from that measurement, not from intention. The audit's other four rules are
+ * NOT here: their root causes are measured and recorded in this task's report,
+ * and writing an unverified repair is the failure this batch exists to correct.
+ * ==========================================================================*/
+
+/* ---------- A1. final: the row repair above is breakpoint-blind, and this is
+ *                the collision it was always going to produce ---------------
+ * `.fp-hero__actions.e-con, .c2-panels.e-con, .em-stories__mini.e-con
+ * {flex-direction:row}` earlier in this file has no media-query counterpart, so
+ * it wins at EVERY width. `css/homepage.css:535`, inside
+ * `@media (max-width:600px)`, is `.em-stories__mini{flex-direction:column;
+ * align-items:flex-start}` at 0,1,0 and cannot reach a 0,2,0 rule.
+ *
+ * Measured at 390 before: live `flex-direction: row` against static `column`.
+ * After: `column`, matching. `align-items` needs nothing and was checked rather
+ * than assumed: the build declares `flex-start` at 0,1,0 and Elementor resolves
+ * its own through `.elementor-element:where(...)`, which `:where()` makes
+ * 0,1,0, so the build already wins on source order.
+ *
+ * THE PATTERN, not just this instance, because the audit is right that this
+ * will recur: every `.your-class.e-con{flex-direction:row}` rule in this file
+ * is breakpoint-blind by construction and there are ten of them. A cross-check
+ * of every `@media` rule setting `flex-direction` in `css/` and `components/`
+ * against those ten classes returns exactly one collision today, this one.
+ * `.c2-panels` already has its own counterpart inside `@media (max-width:860px)`
+ * above; `.fp-hero__actions` has no responsive direction rule in any stylesheet
+ * `final` loads. So the other nine are correct today and none is correct BY
+ * CONSTRUCTION. Whoever adds the eleventh should re-run that cross-check. */
+@media (max-width:600px){
+  .em-stories__mini.e-con{
+    flex-direction:column; /* css/homepage.css:535 */
+  }
+}
+
+/* ---------- A2. capitol-a and podcast-a: a margin that collapsed away in the
+ *                static build is paid in full once every paragraph is a flex
+ *                item ------------------------------------------------------
+ * The largest family the audit found, and the two instances that share a
+ * declaration. `css/capitol-a.css:113` is `.cca-about__copy p{margin:0 0
+ * var(--space-5)}` (20px) and `:124` gives `.cca-about__where` a 48px top
+ * margin; `css/podcast-a.css:127` and `:142` are the same pair on the same
+ * shape.
+ *
+ * Static: the paragraph before `__where` is a block sibling of it in a block
+ * parent, so its 20px bottom margin COLLAPSES into the 48px top margin and the
+ * gap is max(20, 48) = 48. Converted, each is inside its own widget wrapper and
+ * the wrappers are flex items of an Elementor container, where adjacent-sibling
+ * margins do not collapse, so the page pays 20 + 48 = 68.
+ *
+ * Read off the live DOM rather than inferred, at 1440:
+ *   static  p 54.38 +20 | p.claim 105.28 +24 | p 54.38 +20 | p.where 55.94 mt48
+ *           = 54.38 + 20 + 105.28 + 24 + 54.38 + 48 + 55.94 = 361.98
+ *   live    widget 54.38 mb20 | widget 129.28 mb0 | widget 54.38 mb20 |
+ *           widget 103.94 mb0   = 381.98
+ * The two 24px and 48px margins are contained INSIDE their own wrappers, which
+ * is why they do not show as wrapper margins; only the 20px on the
+ * second-to-last wrapper is surplus.
+ *
+ * THE REPAIR TAKES THE SURPLUS OFF `__where`'s TOP MARGIN, NOT OFF THE
+ * PARAGRAPH'S BOTTOM ONE, and the first version of this rule did the opposite
+ * and was caught by the census before it shipped. Zeroing the preceding
+ * widget's `margin-block-end` made the GEOMETRY exactly right
+ * (`.cca-about__copy` 381.97 to 361.97, `main` 2391.56 to 2371.56, both exactly
+ * static) and made a PROPERTY wrong: census() reads each element's own
+ * `marginBottom`, the static paragraph declares 20px, and the repair left the
+ * live one at 0. The census went red on capitol-a naming that paragraph. The
+ * static build's 20px is real and merely collapsed away; a repair that deletes
+ * it is fixing the total by falsifying a term.
+ *
+ * So the paragraph keeps its 20px and `__where`'s top margin gives 20px back.
+ * Static pays max(20, N); live pays 20 + N, so live's N must become N - 20.
+ * The clamp is restated verbatim rather than resolved to a pixel value, which
+ * is what carries the responsive half: `clamp(32px, 3.4vw, 48px)` resolves to
+ * 48 at 1440 (48 - 20 = 28, total 48) and to 32 at 390 (32 - 20 = 12, total
+ * 32), matching the static gap at both widths without a media query of its own.
+ * Read from css/capitol-a.css:125 and css/podcast-a.css:143, which declare the
+ * identical clamp.
+ *
+ * census() reads `marginBottom` and never `marginTop`, so this repair is
+ * invisible to it by construction, which is the point: it changes the term the
+ * static build does not declare on that element and leaves the term it does.
+ *
+ * Measured after, at 1440: `.cca-about__copy` 361.97 and `.pca-about__copy`
+ * 291.06, both exactly static, with both paragraphs' own marginBottom still
+ * 20px. */
+.elementor .cca-about__copy .cca-about__where,
+.elementor .pca-about__copy .pca-about__where{
+  margin-block-start:calc(clamp(var(--space-7),3.4vw,var(--space-9)) - var(--space-5));
+}
+
+/* ---------- A3. podcast-a: the episode tag rail runs down the card ---------
+ * `css/podcast-a.css:276` is `.pca-ep__tags{display:flex;flex-wrap:wrap;
+ * gap:var(--space-2)}` and declares no direction, because the flex spec's own
+ * initial value is already `row`. The class is on an Elementor container inside
+ * the loop item template, so `.e-con-full.e-flex{flex-direction:
+ * var(--flex-direction)}` at 0,2,0 feeds it `column` uncontested. Same
+ * mechanism as every other axis repair in this file.
+ *
+ * Measured before at 1440: live `column`, after: `row`, matching static.
+ *
+ * THE OTHER HALF IS NOT CSS AND IS NOT FIXED HERE. The element measures 0px
+ * tall on both sides of this repair because the loop item template renders no
+ * tags at all, where the static build renders two per card
+ * (`<span>Quality Education</span><span>Lawmaker</span>`). So the wrong axis
+ * costs nothing visible today and would stack the tags vertically the moment
+ * the template is corrected. Repairing the axis now is what stops that being a
+ * second defect later; the template change is recorded in this task's report as
+ * outstanding. */
+.pca-ep__tags.e-con{
+  flex-direction:row;
+}
+
+/* ---------- A4. team-a: the jump link is not a flex item, the third instance
+ *                of the wrapper-descender defect ---------------------------
+ * Identical in mechanism, measurement and repair to `.wa-hero__actions`'s own
+ * rule earlier in this file and to `.em-join__way`'s before it. `.ta-jump` is
+ * `display:inline-flex` (css/team-a.css:108); in the static build it is a
+ * direct child of `.ta-hero__actions`, a flex container, so the flex spec
+ * blockifies it and its box is exactly 24px. Converted, `html()` wraps it, the
+ * anchor stops being a flex item, the blockification never happens, and the
+ * wrapper's line box is taller by the strut's descender.
+ *
+ * Measured at 390 before: `.ta-hero__actions` 342x115.58 against static
+ * 342x112.39, and team-a's `main` 4880.27 against 4877.08, which the audit
+ * notes is the whole of that page's height difference. After: 112.39 and
+ * 4877.08, both exactly static.
+ *
+ * Invisible at 1440 for the reason the `.wa-hero__actions` rule records: the
+ * two actions share one flex line whose height comes from the taller button, so
+ * a 3.19px item does not change it. Three pages have now paid this; it is worth
+ * treating as a standing consequence of building an inline-level link with
+ * html() inside a flex container, not as three coincidences. */
+.ta-hero__actions > .elementor-widget-html{
+  display:contents;
+}
+
+/* ============================================================================
+ * Task 11b: the audit's remaining four rules
+ * (.superpowers/sdd/2026-08-15-class-in-markup/audit-invisible-defects.md,
+ * defects 2, 3, 6 and 4; left unwritten by Task 11 with their root causes
+ * measured, and closed here).
+ *
+ * B1..B4 below continue Task 11's A1..A4. The letter is the batch, the number
+ * is the order the rule was settled in, and each comment names the AUDIT's own
+ * defect number as well, because those are the numbers the audit and both task
+ * reports use and a third numbering scheme would be one too many.
+ *
+ * Every one was settled against a snapshot.mjs capture of its own page and
+ * measured at BOTH 1440 and 390 before being written, and every "after" number
+ * is from that measurement. Two of the four are NOT the repair the previous
+ * round expected: B3's mechanism is neither the audit's nor Task 11's reading
+ * (see its comment), and B4 needed root-causing from scratch.
+ * ==========================================================================*/
+
+/* ---------- B1. final, audit defect 2: .em-article__meta's bottom margin is
+ *                zeroed by Elementor because the class rides a widget wrapper
+ * `css/homepage.css:308` is `.em-insights__row .em-article__meta{margin:0 0
+ * var(--space-4);gap:var(--space-4)}` at 0,2,0. The class is passed as an
+ * html() widget's cssClass (elementor/pages/final/05-insights.mjs, the
+ * `cssClass: 'em-article__meta'` entry), so the element carrying it is the
+ * WIDGET WRAPPER, `div.elementor-element ... em-article__meta elementor-widget
+ * elementor-widget-html`, and Elementor's own
+ * `.e-con .elementor-widget.elementor-widget{margin-block-end:0}`
+ * (frontend.min.css) at 0,3,0 outranks it. The `gap` half of the same
+ * declaration is unopposed and does reach the element: measured 16px live,
+ * which is what makes this a margin defect rather than a whole-rule failure.
+ *
+ * Read off both DOMs rather than inferred, at 1440. The row is a two-column
+ * grid; the column that differs is the text one:
+ *   static  p.em-article__meta 27.59 +16 | h3 50 +12 | p 48 +16 | a 24 (+3.19
+ *           line box) = 196.78
+ *   live    wrapper 27.59 mb0 | wrapper 62 (50+12) | wrapper 64 (48+16) |
+ *           wrapper 27.19 = 180.78
+ * Every other margin in that column is INSIDE its own widget wrapper and so is
+ * paid in full; only the meta's, which sits ON a wrapper, is zeroed. 16px per
+ * row, three rows, 48px, which is the whole of this defect.
+ *
+ * MEASURED, NOT ASSUMED, at three specificities, because "needs 0,4,0" was
+ * inherited as an instruction and this file has shipped one rule that was
+ * inert: 0,2,0 leaves marginBottom at 0px and the rows at 213.78/245.78/212.78;
+ * 0,3,0 and 0,4,0 both give 16px and 229.78/261.78/228.78, exactly static.
+ * 0,3,0 works only because bridge.css is the LAST of this page's 39
+ * stylesheets, so it beats Elementor's equal 0,3,0 on source order alone.
+ * Written at 0,4,0 anyway, by doubling the class the way Elementor's own rule
+ * doubles it: this project has already been bitten by a competitor that
+ * enqueues after the theme (uicore-framework's runtime CSS, several blocks
+ * above), and a repair that depends on load order is one plugin away from
+ * going silently inert.
+ *
+ * THE HAZARD THAT COMES WITH 0,4,0, and the cross-check that clears it today:
+ * a rule specific enough to outrank Elementor also outranks the build's own
+ * per-page rules, so a responsive counterpart added to css/ later would not
+ * reach this element. Checked: `.em-article__meta` is declared in exactly two
+ * places in the whole build, `components/components.css:159` (no margin) and
+ * `css/homepage.css:308`, and neither sits inside an @media block; the two
+ * @media rules that name `.em-insights__row` (`css/homepage.css:536-537`) set
+ * grid-template-columns and an image width, not a margin. Whoever adds a
+ * responsive margin to this class must restate it here too.
+ *
+ * Only margin-block-end is restated. The other three sides of the shorthand
+ * are already 0 live, and census() reads marginBottom on p/h elements only,
+ * which this wrapper is not, so this repair changes nothing either older
+ * instrument compares.
+ *
+ * After, at 1440: rows 229.78/261.78/228.78 and `main` 5463.22 to 5511.22,
+ * each exactly static. */
+.em-insights__row .em-article__meta.elementor-widget.elementor-widget{
+  margin-block-end:var(--space-4); /* css/homepage.css:308 */
+}
+
+/* ---------- B2. final, audit defect 3: .em-stories__head is 16px taller
+ *                because two margins that collapse statically are both paid
+ * Same family as A2 above, and the second instance of it in this batch: a
+ * margin the static build never pays because it collapses into its neighbour's
+ * is paid in full once each element sits in its own widget wrapper inside a
+ * flex container, where adjacent-sibling margins do not collapse.
+ *
+ * `css/homepage.css:254` gives `.em-stories__head h2` `margin:0 0
+ * var(--space-4)` (16px bottom) and `tokens/base.css:16` gives `.em-rule`
+ * `margin:var(--space-4) 0 var(--space-6)` (16px top, 24px bottom).
+ *
+ * Read off both DOMs at 1440, and the arithmetic is exact:
+ *   static  p.em-eyebrow 20.8 +12 | h2 38.88 mb16 | span.em-rule mt16 h6 mb24 |
+ *           p.em-lead 95.67.  The h2's 16 and the rule's 16 COLLAPSE to one
+ *           16px gap: h2 bottom 3298.32, rule top 3314.31.  Total 213.34.
+ *   live    wrapper 32.8 (20.8+12) | wrapper 54.88 (38.88+16) |
+ *           .em-rule container mt16 h6 mb24 | wrapper 95.67.  The h2's 16px is
+ *           now INSIDE its own wrapper, so it is a real 16px of wrapper height,
+ *           and the rule's own 16px top margin is added to it.  Total 229.34.
+ *
+ * SO THE SURPLUS IS TAKEN OFF `.em-rule`'s TOP MARGIN, NOT OFF THE h2's BOTTOM
+ * ONE, for exactly the reason A2 records and paid a deploy to learn: census()
+ * reads each element's own `marginBottom`, the static h2 declares 16px, and
+ * zeroing the live h2's would fix the total by falsifying a term the census
+ * compares. `.em-rule` is a container here, census() never reaches it, and
+ * census() reads no marginTop at all, so this repair is invisible to it by
+ * construction. Static pays max(16, N) and live pays 16 + N; both margins are
+ * a flat var(--space-4) at every width, with no @media counterpart in
+ * css/homepage.css or tokens/base.css, so N is 0 rather than a clamp
+ * restatement of the kind A2 needed.
+ *
+ * `.em-stories__head .em-rule.e-con` is 0,3,0. Both competitors are 0,1,0
+ * (`tokens/base.css:16`'s `.em-rule`, and Elementor's
+ * `.e-con{margin-block-start:var(--margin-block-start)}`), and 0,2,0 was
+ * measured winning on its own; the `.e-con` is carried anyway, matching every
+ * other container rule in this file, so the rule stays correct if a third
+ * competitor at 0,2,0 ever appears.
+ *
+ * Measured after: `.em-stories__head` 229.34 to 213.34 at 1440 and 416.55 to
+ * 400.55 at 390, both exactly static, and `.em-section.em-stories`'s painted
+ * box loses its +16 height difference at both widths. */
+.em-stories__head .em-rule.e-con{
+  margin-block-start:0; /* collapses into css/homepage.css:254's h2 margin statically */
+}
+
+/* ---------- B3. capitol-a, audit defect 6: the triptych overflows its own
+ *                widget wrapper at 390, and neither earlier reading of why
+ *                was right -----------------------------------------------
+ * THE AUDIT SAID lost margin collapsing (`.cca-triptych`'s 48px top margin
+ * failing to collapse out of its container). Task 11 re-root-caused that and
+ * showed the margin IS realised: the `ul` sits exactly 48px below its
+ * wrapper's top. It then attributed the shortfall to `aspect-ratio` not
+ * contributing to a flex item's hypothetical main size and, finding only an
+ * explicit `min-height` that worked, left the rule unwritten rather than ship
+ * a copied pixel value. That judgement was right and the diagnosis was half
+ * right. Measured here, at 390:
+ *
+ *     .cca-hero        live 696.53   static 733.38
+ *     em-container #2  live 203.53   static 192.38  (and a 48px collapsed gap)
+ *     .elementor-widget-html   live 203.53, scrollHeight 240
+ *     ul.cca-triptych  live 192.38 at mt 48   static 192.38 at mt 48
+ *
+ * So the `ul` and the plate are both the right size on both sides. What is
+ * wrong is only the WRAPPER: it is used at 203.53 while its content needs
+ * 48 + 192.38 = 240.38, and the `ul` overflows it by exactly 36.85.
+ *
+ * WHERE 203.53 COMES FROM, which is the part that identifies the repair.
+ * 203.53 - 48 = 155.53, so the `ul` was measured as 155.53 when the wrapper
+ * was sized. `.cca-plate` is `aspect-ratio:16/9` below 720px
+ * (css/capitol-a.css:94-95) and its caption span's max-content width is
+ * 240.52, so the plate's max-content INLINE size is 240.52 + 32 padding + 4
+ * border = 276.52, and 276.52 x 9/16 = 155.54. That is the number, to within
+ * the rounding. The wrapper is a flex item of a COLUMN container, so its flex
+ * base size is its max-content size in the block axis, and an aspect-ratio
+ * element's intrinsic block size resolves against its intrinsic INLINE size,
+ * not against the 342px it actually renders at. Confirmed independently:
+ * `display:contents` on the wrapper takes the `ul` itself to exactly 155.53.
+ *
+ * SO THE REPAIR IS THE FLEX ITEM, NOT THE HEIGHT. Nothing that adjusts the
+ * item helps, because the item is not being shrunk, it is being MEASURED
+ * wrongly: `flex-shrink:0`, `flex:none`, `min-height:fit-content` and
+ * `min-height:max-content` were each measured on the wrapper, the container,
+ * and both at once, and all nine combinations leave 203.53 unchanged to the
+ * hundredth. What removes the intrinsic-sizing step entirely is making the
+ * `.em-container` a BLOCK, which is what it is in the static build: the
+ * wrapper stops being a flex item, becomes an ordinary in-flow block, and its
+ * height is its content's real laid-out height.
+ *
+ * That is this file's established repair for this shape, not a new one. The
+ * homepage block above records it in as many words: of the containers whose
+ * flex-direction differs, "five are display:flex live and display:BLOCK in the
+ * static build. These are the ones that actually break, and the fix is
+ * display, not direction." It also derives the height instead of stating it,
+ * which is what Task 11 asked for and could not find.
+ *
+ * BOTH of `.cca-hero`'s `.em-container` children are named, not just the
+ * triptych's. They are display:block on the static side alike, the copy one
+ * measures identically before and after at both widths (373 at 390, 381.72 at
+ * 1440), and naming only the second would mean `:last-child` or `:nth-child`,
+ * which is the position-dependent shape this phase has already paid for once.
+ *
+ * `.cca-hero .em-container.e-con` is 0,3,0 against Elementor's own
+ * `.e-con{display:flex}` and `.e-con-full.e-flex`, both 0,2,0, and it is
+ * scoped to this page's own section class so no other page's `.em-container`
+ * is touched. Checked at BOTH widths, because the defect only exists at one:
+ *   390    .cca-hero 696.53 -> 733.38, `main` 2644.81 -> 2681.66, both exactly
+ *          static, and the twelve downstream painted boxes clear with it.
+ *   1440   .cca-hero 868.83 and `main` 2371.56, UNCHANGED and already exactly
+ *          static; the wrapper drops from 311.11 to 247.11, which is the `ul`'s
+ *          own height, and the em-container stays 311.11 because the 64px
+ *          margin that was inside the wrapper is now the container's. */
+.cca-hero .em-container.e-con{
+  display:block; /* the static build's own formatting context */
+}
+
+/* ---------- B4. solutions-b, audit defect 4: the research section's white
+ *                box starts 86px too low and uncovers the navy above it ---
+ * The only one of the audit's four container box shifts that PAINTS, which is
+ * the whole reason it is a defect while `.wa-why`'s and `.ta-fellows`'s
+ * identical-looking 72px shifts are not: those two compute
+ * `background-color: rgba(0,0,0,0)`, this one computes white.
+ *
+ * ROOT-CAUSED HERE RATHER THAN TAKEN FROM THE AUDIT, which gives the symptom.
+ * `css/solutions-b.css:137` is `.sb-research__panel{margin-top:calc(-1 *
+ * clamp(var(--space-10),6vw,var(--space-13)))}`, the panel climbing over the
+ * navy `.sb-track` above it, and `:134-135` give the section itself
+ * `background:var(--surface-page)`. Between the panel and the section sits a
+ * plain `.em-container`. Read off both DOMs at 1440, tops relative to <main>:
+ *
+ *     static  section 2035.06/374.27  em-container 2035.06/302.27  panel 2035.06/302.27
+ *     live    section 2121.45/287.88  em-container 2121.45/215.88  panel 2035.06/302.27
+ *
+ * Statically all three boxes have the SAME top: the panel's -86.4px margin
+ * collapses out through `.em-container` (block, no padding, no border) and
+ * again out through the section, so it becomes the section's own margin, the
+ * section's box starts 86.39px higher, and its white paints behind the
+ * overhang. Converted, both ancestors are Elementor flex containers, a flex
+ * item's margin cannot collapse out of its container, so the panel alone
+ * moves up and the section's box starts 86.39px lower and 86.39px shorter.
+ * The panel is in exactly the same place on both sides; only the white box
+ * behind it is not, and what shows through in the two gutters is the navy
+ * section above.
+ *
+ * SAME REPAIR AS B3, and for the same reason: restore the static build's own
+ * formatting context rather than restate its arithmetic. Both boxes are
+ * `display:block` statically, and once they are block again the margin
+ * collapses out for exactly the reason it does in the static build. The
+ * alternative was measured and rejected: relocating the margin
+ * (`.sb-research{margin-block-start:calc(-1 * clamp(...))}` plus
+ * `.sb-research__panel{margin-block-start:0}`) produces identical numbers at
+ * both widths, but it zeroes a margin the static build really does declare on
+ * that element and duplicates a clamp that would then have to be kept in step
+ * with css/solutions-b.css by hand. Two rules where one would do, and one of
+ * them a copy.
+ *
+ * `.sb-research.e-con` and `.sb-research .em-container.e-con` are 0,2,0 and
+ * 0,3,0 against Elementor's `.e-con{display:flex}` and `.e-con-full.e-flex`,
+ * both 0,2,0, and bridge.css is this page's last stylesheet. Scoped to the
+ * section's own class, so no other `.em-container` on this or any other page
+ * is touched.
+ *
+ * Measured after, at 1440: section 2035.06/374.27, em-container
+ * 2035.06/302.27, panel unmoved at 2035.06/302.27, `.sb-stories` unmoved at
+ * 2409.33, `main` unchanged at 3240.02, every number exactly static. At 390
+ * the clamp resolves to 56px instead of 86.4 and the same rule closes it:
+ * section 2681.39/513.88 to 2625.39/569.88, again exactly static. Confirmed
+ * as PAINT and not only as geometry, since that is what the defect is: the
+ * first painted background in the left gutter 20px into the overhang reads
+ * rgb(0,41,53) navy before and rgb(255,255,255) white after, at x=20, 100 and
+ * 124, matching the static build at all three. */
+.sb-research.e-con,
+.sb-research .em-container.e-con{
+  display:block; /* the static build's own formatting context */
 }

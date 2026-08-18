@@ -179,3 +179,42 @@ live measurement trustworthy, and an md5 over `ssh` proves only that the file
 reached the disk. **A measurement taken straight after a deploy can report the
 PREVIOUS stylesheet's behaviour, which reads exactly like a repair that does not
 work.** Measure with a cache-busting query string, or wait out the edge.
+
+## Recommendation 2, done: the flex-wrap hits are now evaluated, not open
+
+R45's 120 flex-wrap differences were counted over every element. Only an element
+built as a CONTAINER can take Elementor's default, so the list was rebuilt from
+that intersection: every rule in a converted page's own stylesheets declaring
+`display:flex` with no `flex-wrap`, matched against the classes actually passed
+to `container()` in that page's modules.
+
+**Eleven candidates on four pages**, not 120: seven on `final`, one on
+`podcast-a`, two on `what-we-do-a`, one on `who-we-are-a`, and none on
+`solutions-b`, `capitol-a`, `team-a`, `mail-a` or `amb-a`.
+
+They were then screened locally, with no live install involved: the static build
+served locally, `flex-wrap:wrap` injected on each candidate, and geometry
+compared with the probe on and off at 54 widths from 380 to 1440.
+
+    .em-stories__mini        bites from 620    ALREADY REPAIRED, block 15
+    .em-newsletter           bites from 620    ALREADY REPAIRED, block 16
+    .c2-panels               bites 380 to 860  unverified
+    .em-stories__lead-body   bites 980 to 1440 unverified
+    .c2-panel, .em-insights__rows, .em-join__way, .pca-ep, .da-door,
+    .da-door__body, .wa-entity                 inert at all 54 widths
+
+The two already-repaired defects reproducing is the screening going red on known
+defects before being trusted on anything else.
+
+**The screening over-predicts, and the two unverified hits are false positives.**
+Live, each child of those containers is a widget wrapper and one image wrapper is
+`display:contents`, so the flex items are not the ones the static markup has.
+Both were then measured live against static at 1440, 1200, 1000, 980, 900, 860,
+780, 700, 600, 500, 420 and 390, comparing height, width, `flex-direction` and
+`display` on every instance: **geometry matches at all twelve widths on both.**
+
+So the flex-wrap category is closed on the converted corpus: eleven candidates,
+two real and both repaired, nine inert. The method is worth more than the result,
+and it is two steps rather than one: intersect the stylesheet against the actual
+container set, screen locally by injecting the property, then verify the survivors
+live, because the screening cannot see the widget tree.

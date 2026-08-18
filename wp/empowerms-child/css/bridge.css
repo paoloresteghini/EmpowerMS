@@ -1765,3 +1765,74 @@
 .da-door__body > .elementor-widget-text-editor > p{
   margin:0;
 }
+
+/* ---------- solutions-b: :last-child is fooled by a widget's own private
+ * wrapper, a different defect from a child combinator that is one level
+ * too shallow ----------
+ * Task 7. census() found `.sb-hero__lede` (the hero's first paragraph)
+ * computing fontSize 17px, color rgba(255,255,255,.76) and marginBottom 0px
+ * live, against 24px, rgb(255,255,255) and 32px static: it was rendering as
+ * the page's SECOND, muted paragraph instead of its own emphasised style.
+ *
+ * css/solutions-b.css:58-64 has two rules for these two paragraphs:
+ *   .sb-hero__copy .sb-hero__lede{...font-size:clamp(1.125rem,...,1.5rem);
+ *     color:var(--white);margin:0 0 var(--space-7)...}
+ *   .sb-hero__copy p:last-child{margin:0;font-size:var(--fs-body);
+ *     color:var(--text-inverse-muted)...}
+ * Neither is a child combinator, so this page's own prediction (zero
+ * combinators in css/solutions-b.css) was correct as far as it went and
+ * still missed this: `:last-child` is a STRUCTURAL pseudo-class, not a
+ * combinator, and it is broken by the same wrapper insertion for a
+ * different reason. In dist/solutions-b.html `.sb-hero__copy` has two real
+ * `<p>` children, and `:last-child` matches only the second (the muted
+ * one), because it asks "is this element the last child of ITS PARENT",
+ * and the parent there is `.sb-hero__copy` itself. 01-hero.mjs builds both
+ * paragraphs as separate text() widgets; Elementor wraps each one in its
+ * own `.elementor-widget-text-editor > .elementor-widget-container`, and
+ * within THAT wrapper the real `<p>` is the ONLY child, so `:last-child` is
+ * true of it too, on every text widget on this install, regardless of
+ * where that widget actually sits among its real siblings. The two
+ * paragraphs are no longer siblings sharing one parent for the purpose of
+ * this selector; each is an only child of its own private box. So
+ * `.sb-hero__copy p:last-child` now matches BOTH paragraphs, not one, and
+ * at specificity 0,2,1 (one class, one pseudo-class, one element) it
+ * outranks `.sb-hero__copy .sb-hero__lede`'s 0,2,0 (two classes) even
+ * where the two rules disagree, which is exactly the lede.
+ *
+ * THE DISCRIMINATOR FOR THIS CATEGORY, distinct from the child-combinator
+ * one already documented above (what-we-do-a's `.da-door__body>p` note):
+ * a structural pseudo-class keyed to sibling position
+ * (:last-child/:first-child/:only-child/:nth-child on an ELEMENT, not on a
+ * container) needs a bridge rule whenever the elements it distinguishes are
+ * built as separate WIDGETS, because each widget's own wrapper makes it an
+ * only child regardless of true position. It needs none when what the
+ * pseudo-class targets is a CONTAINER: `.sb-station:nth-child(2)`
+ * (02-track.mjs) is unaffected, because content_width:'full' containers
+ * insert no wrapper of their own and each `.sb-station` remains a real,
+ * directly-positioned sibling of the others under `.sb-stations`, confirmed
+ * live (both `.sb-station:nth-child(2)` rules render correctly, the second
+ * station's copy/media columns swap as designed). Checked before writing
+ * this rule: css/solutions-b.css has exactly one structural pseudo-class
+ * keyed to a widget, this one; every other instance (`:nth-child(2)`,
+ * five times, all `.sb-station`) is the container case above and needed
+ * nothing.
+ *
+ * Restated at raised specificity via the doubled class rather than a
+ * `:not()` exclusion on the `:last-child` rule, matching this file's own
+ * established pattern for winning a specificity fight outright rather than
+ * negating the other side's selector. No @media rule anywhere in
+ * css/solutions-b.css touches `.sb-hero__lede` or `.sb-hero__copy`, so
+ * nothing responsive is at risk of going silently unrestored by this
+ * restatement. Measured after: the lede computes fontSize 24px, color
+ * rgb(255,255,255), marginBottom 32px live, matching static, at both
+ * widths (the specificity fix does not depend on viewport). */
+.sb-hero__copy .sb-hero__lede.sb-hero__lede{
+  margin:0 0 var(--space-7);
+  font-family:var(--font-display);
+  font-weight:var(--fw-semibold);
+  font-size:clamp(1.125rem,1rem + .7vw,1.5rem);
+  line-height:1.45;
+  letter-spacing:var(--ls-heading);
+  color:var(--white);
+  max-width:46ch;
+}

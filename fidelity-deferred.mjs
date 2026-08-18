@@ -168,6 +168,58 @@ export const DEFERRED_IMAGES = [
       + 'static at 1440 and 390, so only the clipped image itself differs',
     date: '2026-08-18',
   },
+  /* Task 7's four entries, solutions-b's own photographs, triaged the same
+     way against the same rule. THE MEASUREMENT THAT DECIDED IT:
+     getBoundingClientRect() on the containing box of each photograph
+     (`.sb-station__media` for the three stations, `.sb-stories__band` for
+     the fourth), live against dist/solutions-b.html served locally, at
+     1440 and 390, after a full settleReveal-equivalent pass (scroll to
+     bottom, wait for every rendered image to load, wait for every
+     [data-reveal] element to reach is-revealed). Every containing box is
+     IDENTICAL live and static at both widths: `.sb-station__media` measures
+     400x320 (1440) / 308x246.39 (390) on both sides for all three stations,
+     and `.sb-stories__band` measures 1440x374.4 (1440) / 390x220 (390) on
+     both sides, because both boxes size from CSS (aspect-ratio and a fixed
+     clamp() height respectively) and never from their content. Only the
+     `<img>` element's own box differs (child-classroom-tablet 348/318px,
+     worker-workshop-bw 269/318px, grandparents-grandchild 266/318px,
+     video-still-man-outdoors 824/374px, live/static at 1440), and each
+     oversized or undersized image is clipped by its container's own
+     overflow:hidden, invisible to anything below or beside it. So none of
+     the four moves the layout of anything else; every one is a DEFER under
+     the recipe's own rule (the only keys that differ are the image's own). */
+  {
+    page: 'solutions-b',
+    key: 'img|child-classroom-tablet.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
+      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'solutions-b',
+    key: 'img|worker-workshop-bw.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
+      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'solutions-b',
+    key: 'img|grandparents-grandchild.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); station renders at its own intrinsic ratio '
+      + 'inside .sb-station__media (aspect-ratio:5/4, overflow:hidden), which measures identically live and '
+      + 'static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
+  {
+    page: 'solutions-b',
+    key: 'img|video-still-man-outdoors.jpg',
+    reason: 'placeholder photograph (Paolo, will be replaced); stories band renders at its own intrinsic '
+      + 'ratio inside .sb-stories__band (height:clamp(220px,26vw,400px), overflow:hidden), which measures '
+      + 'identically live and static at 1440 and 390, so only the clipped image itself differs',
+    date: '2026-08-18',
+  },
 ];
 DEFERRED_IMAGES.forEach(validateDeferredEntry);
 

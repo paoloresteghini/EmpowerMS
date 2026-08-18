@@ -67,7 +67,12 @@ photograph, or shaped like a wrapper?**
 
 The tell is uniformity. Three photographs that the design crops to the same box,
 rendering at three different heights, is never a placeholder problem. Measured
-on `solutions-b`: 348, 244 and 242 against a uniform 318, and after one grouped
+on `solutions-b`: 348, 269 and 266 against a uniform 318 (corrected 2026-08-18,
+review round 2, N5: an earlier draft of this line gave 244 and 242 for the
+second and third figures, disagreeing with the box sweep's own recorded
+output in `fidelity-deferred.mjs` and `bridge.css`; those two are the
+authoritative measurement, taken directly from the automated
+`controlBoxes()` harness rather than transcribed by hand). After one grouped
 rule all four images matched their static counterparts to the pixel.
 
 **Why the sweep cannot answer this for you.** It compares each image's own box

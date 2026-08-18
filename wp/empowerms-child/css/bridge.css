@@ -1791,8 +1791,9 @@
  * own `.elementor-widget-text-editor` (this install's optimized DOM output
  * puts the real `<p>` directly inside that div, with no further
  * `.elementor-widget-container` level between them, the same shape the
- * `.da-door__body > .elementor-widget-text-editor > p` rule 64 lines above
- * this one already establishes and measures correct against; an earlier
+ * `.da-door__body > .elementor-widget-text-editor > p` rule above (the
+ * what-we-do-a repair earlier in this file) already establishes and
+ * measures correct against; an earlier
  * version of this comment named that extra level here too and was wrong,
  * caught in review round 1) and within it the real `<p>` is the ONLY
  * child, so `:last-child` is true of it too, on every text widget on this
@@ -1909,16 +1910,47 @@
  * falls back to the image's intrinsic size, exactly the "reported its own
  * intrinsic aspect ratio" signature the Task 1.5 comment above names.
  *
- * WHY THE WRAPPER DOES NOT ALREADY STRETCH, checked rather than assumed:
- * both containers are `e-flex` (Elementor's own flex container class), and
- * plain CSS flexbox defaults `align-items` to `stretch`, which would have
- * closed this gap for free if it applied. It does not: Elementor's own
- * frontend.min.css sets a different default on `.e-con` that this file does
- * not own or repair (out of scope here, matching this file's own rule of
- * fixing only what a page's own conversion breaks), confirmed live before
- * writing this rule: `.elementor-widget-image` measures 348.109px for the
- * child-classroom-tablet station, identical to the `<img>` inside it, while
- * `.sb-station__media` itself stays 320px, so no stretch is happening.
+ * WHY THE WRAPPER DOES NOT ALREADY STRETCH, checked against Elementor's own
+ * stylesheet rather than assumed, and CORRECTED in review round 2: the
+ * first version of this comment said plain flexbox's `align-items:stretch`
+ * default would have closed this gap for free and blamed a different
+ * Elementor default for blocking it. That is backwards, checked against
+ * the offline snapshot this task itself captured
+ * (`.snapshots/solutions-b/elementor/frontend.min.css`, still in the repo):
+ * `.elementor-element{--align-items:initial;...}` and
+ * `.elementor-element:where(.e-con-full,.elementor-widget){align-items:
+ * var(--align-items);...}` together put `align-items:initial` on
+ * `.sb-station__media` itself (it carries class `elementor-element`, and
+ * nothing more specific overrides `--align-items` anywhere in that
+ * stylesheet), and `initial` for `align-items` computes to `normal`, which
+ * behaves as `stretch` for a flex item's CROSS axis. Stretch is genuinely
+ * in effect here, not blocked.
+ *
+ * What actually stops the wrapper growing is the AXIS, not the alignment.
+ * `.e-con.e-flex{--flex-direction:column;...}` (`.sb-station__media`
+ * carries both classes, confirmed against `.snapshots/solutions-b/
+ * page.html`), so this container's MAIN axis is vertical (height) and its
+ * CROSS axis is horizontal (width). `align-items`/stretch governs only the
+ * cross axis, so it explains the WIDTH already matching for free (the
+ * `.elementor-widget-image` wrapper stretches to `.sb-station__media`'s
+ * width automatically), never the height. The main axis size instead comes
+ * from `flex-grow`/`flex-basis`, and `.elementor-element` sets
+ * `flex-grow:var(--flex-grow)` with `--flex-grow:initial` (spec initial
+ * value 0, reinforced by Elementor's own `--container-widget-flex-grow:0`
+ * on `.e-con`), so the wrapper never grows along the main axis and sizes to
+ * its own content instead, which is the image's own intrinsic height.
+ * Confirmed live before writing this rule: `.elementor-widget-image`
+ * measures 348.109px for the child-classroom-tablet station, identical to
+ * the `<img>` inside it, while `.sb-station__media` itself stays 320px.
+ *
+ * THE ONE-LINE VERSION, worth generalising because a future page will hit
+ * this in a ROW-direction container and NOT need this rule: Elementor
+ * containers are column flex by default, so a widget wrapper stretches to
+ * its parent's WIDTH for free and never to its HEIGHT. Every fixed-height
+ * (or aspect-ratio) container with a percentage-height child is a candidate
+ * for this rule; a fixed-WIDTH container with a percentage-width child in a
+ * row-direction container would not need one, because stretch would
+ * already be doing that job on the cross axis.
  *
  * THE REPAIR TARGETS THE WRAPPER, not the `<img>`, unlike the Task 1.5 rule
  * above. That rule restated properties on the `<img>` itself because in
@@ -1929,16 +1961,25 @@
  * its own parent, the real fixed-height container) is what lets the
  * existing, unmodified `.sb-station__media img{height:100%}` rule resolve
  * against something correct, with nothing about that rule needing to
- * change. `width` needs no rule: percentage widths resolve against the
- * containing block's WIDTH, and a block-level `.elementor-widget-image`
- * already fills its parent's width by default (block boxes are 100% width
- * of their containing block unless told otherwise), confirmed live: the
- * wrapper's width already matched `.sb-station__media`'s own 400px before
- * this rule, only height was wrong.
+ * change. `width` needs no rule, for the reason above: the wrapper already
+ * stretches to its parent's width on the cross axis, confirmed live before
+ * writing this rule (the wrapper's width already matched `.sb-station__media`'s
+ * own 400px), so only height needed a name.
  *
- * Checked for @media interference before writing: no `@media` rule in
- * css/solutions-b.css touches `.sb-station__media` or `.sb-stories__band`,
- * so nothing responsive is at risk of going silently unrestored.
+ * Checked for @media interference before writing, corrected in review round
+ * 2 after the first version claimed no @media rule touches either selector
+ * and did not survive opening the file (the same defect class as the I4
+ * fixed above: a stated check a reader will trust, that a grep would have
+ * caught). There IS one: css/solutions-b.css:185-186, inside
+ * `@media (max-width:780px)`, is `.sb-station__media,.sb-station:
+ * nth-child(2) .sb-station__media{grid-column:2;grid-row:2}`. It changes
+ * only the box's PLACEMENT in the parent grid at that width; `aspect-ratio:
+ * 5/4` (the property this rule's own repair depends on) is declared once,
+ * outside any media query, and nothing in the 780px block touches it. So
+ * the wrapper's `height:100%` still resolves against a definite height at
+ * 390, confirmed by this task's own 390 measurement matching static
+ * exactly, and this restatement brings nothing responsive out of sync with
+ * it. `.sb-stories__band` genuinely has no @media rule at any width.
  *
  * ONE rule, not two: the station and the band need the identical
  * declaration (nothing about the band's own `object-position` modifiers or

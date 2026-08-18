@@ -3490,3 +3490,110 @@
 .aba-do .em-container.e-con{
   display:block;
 }
+
+/* ---------- 15. final: Elementor's flex-wrap container default, inert at both
+ *                registered widths and a live defect between them ------------
+ * Measured 2026-08-18 by a read-only pass over ten widths on the two pages the
+ * session 4 handover named as unmeasured middle steps. `team-a` came back clean
+ * at all ten. `final` is clean from 1180 down to 780 and wrong from about 700
+ * to 600. Full working, including the control run that showed the comparison
+ * going red before it was trusted to pass:
+ * docs/elementor/phase2b/2026-08-18-middle-step-measurement.md
+ *
+ * css/homepage.css:277-278 is `.em-stories__mini{display:flex;align-items:
+ * center;gap:var(--space-5);...}` and declares no `flex-wrap`, so the static
+ * build takes the initial value, `nowrap`. Elementor's container declares
+ * `wrap`. Measured on the card itself, live against static served locally:
+ *
+ *     780   static nowrap 128px      live wrap 128px
+ *     700   static nowrap 128px      live wrap 166px
+ *     660   static nowrap 128px      live wrap 166px
+ *     640   static nowrap 128px      live wrap 183px
+ *
+ * The property differs at EVERY width, including 1440 and 390. It is inert
+ * above about 700 only because the 80px photograph and the text still fit on
+ * one line. Below it they do not, the text block wraps underneath, the card
+ * grows by 38 to 55px, `.em-stories__attr--sm` moves from x 148 to x 48, and
+ * every painted box below `.em-stories` shifts down by 76 to 135px. Below 600
+ * the build's own `@media (max-width:600px)` makes the card a column (block A1
+ * above) and the two shapes converge again.
+ *
+ * WHY NO INSTRUMENT REPORTS IT. controlBoxes() never compares a container's own
+ * box; census() keys on text and no text changes; layoutInvariants() compares
+ * flex-direction and deliberately NOT flex-wrap, on R45's evidence of 120
+ * flex-wrap differences against 0 real defects. That evidence was gathered at
+ * 1440 and 390 only, and wrap is by definition conditional on whether the line
+ * fits, so sampling widths can establish that a flex-wrap difference is inert
+ * AT THOSE WIDTHS and nothing more. R45's decision not to widen the shared gate
+ * still stands; what does not stand is reading those 120 hits as evaluated.
+ *
+ * NAMED to the one class measured. The other 119 hits are unevaluated, not
+ * repaired, and a general `.e-con{flex-wrap:nowrap}` would be exactly the kind
+ * of blind general rule this file has five recorded defects from.
+ *
+ * Unconditional rather than inside a media query, because the static build
+ * declares no `flex-wrap` at any width: `nowrap` is what it renders at all of
+ * them, including below 600 where the card is a column and the declaration is
+ * inert on both sides.
+ *
+ * Re-measured after this rule at 1440, 780, 700, 660, 640 and 390: the cards
+ * match on every property at every one, and `.em-stories__attr--sm` is back at
+ * x 148. WHAT THIS RULE DOES NOT CLOSE, stated because the page is not clean
+ * after it: a SECOND defect in the same band, 60px on `.em-join__slab`, was
+ * masked by this one in the totals and is repaired by block 16 below. */
+.em-stories__mini.e-con{
+  flex-wrap:nowrap;
+}
+
+/* ---------- 16. final: the seventh category on a second page, and a repair
+ *                shape Task 13 did not reach -------------------------------
+ * Same mechanism Task 13 found on `amb-a` and named as the phase's seventh
+ * cost category: a widget wrapper's block size is resolved as a flex base size
+ * from a hypothetical inline size, so content whose height is a STEP FUNCTION
+ * of its own width can leave the wrapper taller than what it contains. Block 14
+ * carries that finding in full.
+ *
+ * Found here at 660 while measuring the result of block 15, and it had been
+ * present all along: it is the residue left over once the mini cards stopped
+ * moving. Measured live against static served locally, at 660:
+ *
+ *     .em-newsletter__form              58px live, 58px static, identical
+ *     its .elementor-widget-html wrapper 118px live
+ *     .em-join__signup                  154.8 live against 94.8 static
+ *     .em-join__slab                    450.8 live against 390.8 static
+ *
+ * 118 is 58 + 12 + 48, which is the form laid out as TWO rows: the input, the
+ * gap, and the button under it. `css/homepage.css`'s `.em-newsletter__form` is
+ * `display:flex;flex-wrap:wrap`, declared by the build on both sides, so the
+ * form's height is a step function of its width, and at 660 the real width
+ * fits one row while the hypothetical width does not. The form itself is
+ * correct on the page; only the box around it is wrong.
+ *
+ * THE REPAIR IS A WRAPPER RULE, WHICH IS THE NEW PART. Task 13 measured
+ * `flex-basis:content`, `height:fit-content`, `flex:0 0 auto`,
+ * `align-self:flex-start` and `display:contents` on the wrapper, found the
+ * first three inert and the last two worse, and repaired at the parent with
+ * `display:block`. All five candidates were re-measured here and behave the
+ * same way. A sixth was not tried there and is the one that works:
+ *
+ *     wrapper width:100%     signup 94.8, slab 390.8, note at y 74, EXACT
+ *     wrapper height:fit-content / flex:0 0 auto / align-self+min-height:0
+ *                            118, unchanged
+ *     wrapper display:contents  the form becomes the flex item and takes 118
+ *     parent display:block   signup 78.8 against static 94.8: WRONG, because
+ *                            `.em-newsletter` is a flex column BY THE BUILD'S
+ *                            OWN DECLARATION and its 16px gap goes with the
+ *                            formatting context
+ *
+ * So the parent-level repair block 14 uses is right where the static parent is
+ * a plain block and wrong where the build declares the flex column itself. The
+ * wrapper is stretched to the parent's width either way; making that width
+ * EXPLICIT is what makes the hypothetical inline size equal the used one, so
+ * the step function resolves at the same step on both sides.
+ *
+ * NAMED to this section's own wrapper. Verified at 1440, 900, 780, 700, 660,
+ * 640, 560 and 390: `.em-join__signup`, `.em-join__slab` and the note's offset
+ * all match the static build at every one. */
+.em-join__signup > .elementor-widget-html{
+  width:100%;
+}

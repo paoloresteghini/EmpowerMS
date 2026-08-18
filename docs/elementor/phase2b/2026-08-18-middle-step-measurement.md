@@ -125,3 +125,57 @@ anything else is fine.
    clean at ten widths, so this is cheap insurance rather than a new gate: one
    read-only run per page, recorded in the page's report, with no register change
    and no new tolerance to widen.
+
+## Amendment, same day: both repairs written, and a second defect underneath
+
+Recommendation 1 above is done, and doing it found a second defect that this
+document's own measurement had been reporting all along without anybody reading
+it as separate.
+
+**`bridge.css` block 15, `.em-stories__mini.e-con{flex-wrap:nowrap}`.** Deployed
+and measured: the mini cards match on every property at 700, 660 and 640, and
+`.em-stories__attr--sm` is back at x 148.
+
+**`bridge.css` block 16, `.em-join__signup > .elementor-widget-html{width:100%}`.**
+With the cards no longer moving, a 60px residue on `.em-join__slab` was left at
+700, 660 and 640, and it is visible in this document's own tables above: the
+`em-join-wrap` and `em-join__slab` rows differ by 60 in the height column at
+every one of those widths, where the rows below them differ only in `top`. It is
+not the flex-wrap mechanism. It is the OTHER one found the same day, on `amb-a`,
+and recorded as the phase's seventh cost category in `task-13-report.md` section
+4: a widget wrapper's block size resolved as a flex base size from a
+hypothetical inline size, around content whose height is a step function of its
+own width.
+
+At 660: `.em-newsletter__form` is 58px on both sides, its `.elementor-widget-html`
+wrapper is 118px live, and 118 is 58 + 12 + 48, the form laid out as two rows.
+The form is correct on the page; only the box around it is wrong.
+
+**The repair is a new one.** Task 13 measured five candidates on `amb-a` and
+repaired at the parent with `display:block`; all five behave the same way here
+and the parent repair is WRONG here, because `.em-newsletter` is a flex column by
+the build's own declaration and its 16px gap goes with the formatting context
+(measured: 78.8 against static's 94.8). `width:100%` on the wrapper is exact at
+eight widths. So the category now has two repair shapes and a discriminator:
+repair at the parent where the static parent is a plain block, at the wrapper
+where the build declares the flex column itself.
+
+**After both, measured live against static at 1440, 900, 780, 700, 660 and 640:
+zero differences on all three instruments at every one.** 560 and 390 still carry
+the known content residue, which is real post copy against static placeholders
+and is the registered exemption at 390.
+
+### An operational trap this exposed, worth more than either repair
+
+The first measurement after deploying block 16 reported the defect UNCHANGED at
+all three widths. The rule was on the server, verified by md5 over a direct
+`ssh`, and both caches had been flushed. What was stale was the HTML at WP
+Engine's edge: it carried `bridge.css?ver=1787082557` while the file's mtime was
+`1787083262`, and that older versioned URL served the older file. Fetching the
+same page with a unique query string returned the current `?ver=` immediately.
+
+So `wp cache flush` and `wp elementor flush_css` are not sufficient to make a
+live measurement trustworthy, and an md5 over `ssh` proves only that the file
+reached the disk. **A measurement taken straight after a deploy can report the
+PREVIOUS stylesheet's behaviour, which reads exactly like a repair that does not
+work.** Measure with a cache-busting query string, or wait out the edge.

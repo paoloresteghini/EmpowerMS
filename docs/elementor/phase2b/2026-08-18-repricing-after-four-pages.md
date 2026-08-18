@@ -103,15 +103,29 @@ named bridge rule. `bridge.css` already carries a group of these, and
 the same shape as `podcast-a`'s `.pca-facets__clear`.
 
 Counted across the remaining pages. Most carry exactly TWELVE native controls
-and all twelve are header chrome (`.em-header__link`, `.em-header__toggle`,
-`.em-header__search`, `.em-mobilenav__trigger`), already bridged site-wide by
-the theme-part work. Only two pages carry page-specific ones:
+and all twelve are header chrome (four `.em-header__link`, one
+`.em-header__disclosure`, one `.em-header__toggle`, one `.em-header__search`,
+five `.em-mobilenav__trigger`), already bridged site-wide by the theme-part
+work, the disclosure included (`bridge.css:1538`). Only two pages carry page-specific ones:
 
 | Page | Page-specific native controls |
 | --- | --- |
-| `amb-a` | 6: four `.em-input`, one `.em-textarea`, one submit button |
+| `amb-a` | **10**: four `.em-input`, FOUR unclassed checkboxes, one `.em-textarea`, one submit button |
 | `mail-a` | 5: four `.em-input`, one submit button |
+| `capitol-a` | 3: two checkboxes and the `<button type="reset">` that surfaced this category (converted, 1 rule) |
 | every other remaining page | 0 |
+
+**Count them INSIDE `<main>`, not by class.** This table's first version said
+`amb-a` carried six, and it was wrong because it counted controls that have a
+`class` attribute. `amb-a`'s four checkboxes carry none: the build styles them
+by descendant selector at `css/amb-a.css:159-162`
+(`.aba-check input{...accent-color:var(--em-orange)...}` plus its
+`:focus-visible`), both at 0,1,1, which is the specificity every build button
+rule sits at and which the kit's own input selectors outrank. They are, if
+anything, the highest-risk controls on that page, because the kit's field
+styling reaches unclassed inputs. Counting inside `<main>` also drops the shared
+header and footer chrome automatically, which is what the twelve-per-page figure
+was doing by hand.
 
 Those are the two form-shaped pages in the build, and they are where this
 category lands. Expect `amb-a` and `mail-a` to cost more than their structural

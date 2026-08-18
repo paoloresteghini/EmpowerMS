@@ -426,6 +426,52 @@ async function settleReveal(page) {
     window.scrollTo(0, document.body.scrollHeight);
     await new Promise(r => requestAnimationFrame(r));
   });
+  /* THE LAST HOLDOUT: one element that missed its own step. The vertical
+     pass just above steps by window.innerHeight and awaits exactly ONE
+     requestAnimationFrame per step, which gives js/reveal.js's
+     IntersectionObserver a single rendering opportunity to notice each
+     position. An element that only ever appears as a sliver at a step
+     boundary, rather than comfortably inside one step's frame, can miss
+     that one chance. Intermittent because it is a race against the
+     observer's own callback timing, not a fixed geometry: measured at
+     390px running controlBoxes() against dist/final.html alone, nothing
+     else in the process, three times: settled, unsettled, unsettled. The
+     holdout was a single <h2>, sitting at rect y=-6008 (roughly 6000px
+     ABOVE the viewport once the pass above lands at the bottom), in a
+     section with no rail and no horizontal scrolling, which rules out
+     `.c2-panels` as the cause here.
+
+     A settle routine must be able to CAUSE the condition it waits for, the
+     same principle the rest of this function is built on. So: find every
+     [data-reveal] element still missing .is-revealed, scroll each directly
+     into view, give it a frame, and check again, until the unrevealed set
+     stops shrinking or a small round budget runs out.
+
+     THIS IS NOT the el.scrollIntoView() fix tried and MEASURED WORSE,
+     recorded above on the container walk. That one ran mid-walk, calling
+     scrollIntoView on every horizontally-scrolling container before its
+     own horizontal steps, while the vertical pass had not yet run and
+     other elements still depended on it; it dropped the result from 37 of
+     38 to 28 of 38 by disturbing an arrangement it never restored. This one
+     runs only after every earlier pass is finished, targets only elements
+     that are still unrevealed, and cannot strand anything else: nothing
+     later in this function depends on scroll position except the wait
+     below and the return to the top at the very end, and the thing each
+     call scrolls to is exactly the thing that still needs to be seen. */
+  await page.evaluate(async () => {
+    const MAX_ROUNDS = 5;
+    let previousCount = Infinity;
+    for (let round = 0; round < MAX_ROUNDS; round += 1) {
+      const unrevealed = [...document.body.querySelectorAll('[data-reveal]')]
+        .filter(el => !el.classList.contains('is-revealed'));
+      if (unrevealed.length === 0 || unrevealed.length >= previousCount) break;
+      previousCount = unrevealed.length;
+      for (const el of unrevealed) {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+        await new Promise(r => requestAnimationFrame(r));
+      }
+    }
+  });
   /* Query from body, not document, matching js/reveal.js:16 exactly. js/reveal.js:11
      sets data-reveal="on" on <html> itself as the gate for the whole page; the
      collection that ever receives .is-revealed is body-scoped, precisely to exclude

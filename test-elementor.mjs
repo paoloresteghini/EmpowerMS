@@ -658,6 +658,56 @@ test('the styles enqueue guards against UiCore loading after site.css', () => {
     'styles enqueue priority is not late enough to run after UiCore enqueues uicore_global at 50');
 });
 
+/* Every stylesheet and script this theme enqueues is served with
+   `cache-control: public, max-age=31536000` (measured against the live
+   install, 2026-08-17), so the query string on the URL is the ONLY thing
+   that can retire a visitor's cached copy. Versioning every asset with the
+   theme's own `Version:` header made that query string a constant: the
+   header has read 2.0.0 through every stylesheet edit of the conversion, so
+   a browser that fetched css/bridge.css once keeps it for a year and sees
+   none of the repairs written into it afterwards.
+
+   That is not a hypothetical. It is what Paolo's browser was showing on
+   2026-08-17: a header with a 15px-wide wordmark, a 899px nav and a
+   borderless search control, which is precisely the pre-2026-08-15 state of
+   bridge.css's `.elementor button.em-header__*` block. The same page
+   measured correct in a cold-cache browser at the same moment (logo
+   111.63x52, nav 640.67, search 38x38 with a 1px border).
+
+   The contract asserted here is that the version travels with the FILE, not
+   with the theme: every enqueue passes empower_asset_ver( <path relative to
+   the stylesheet directory> ), and that helper derives the version from the
+   file's own mtime. Asserted against every enqueue call in the file rather
+   than a hand-listed subset, so an asset added later cannot quietly opt out
+   the way css/megamenu.css once did. */
+test('every enqueued asset is versioned by its own file, not by the theme version', () => {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+
+  const helper = fn.match(/function\s+empower_asset_ver\s*\([\s\S]*?\n}/);
+  assert.ok(helper, 'functions.php has no empower_asset_ver() helper');
+  assert.match(helper[0], /filemtime\s*\(/,
+    'empower_asset_ver() does not read the file mtime, so the version cannot change when the file does');
+  /* A missing file must not emit an empty version: that produces a bare
+     .../bridge.css with no query string at all, which is MORE cacheable
+     than the constant it replaced, not less. */
+  assert.match(helper[0], /wp_get_theme\(\)\s*->\s*get\(\s*'Version'\s*\)/,
+    'empower_asset_ver() has no theme-version fallback for a file it cannot stat');
+
+  /* Every enqueue call, style and script alike. The version argument is the
+     fourth, and each call in this file spans one line. */
+  const calls = [...fn.matchAll(/wp_enqueue_(?:style|script)\((.*)$/gm)].map(m => m[1]);
+  assert.ok(calls.length >= 8, `expected the enqueue calls to still be here, found ${calls.length}`);
+  for (const call of calls) {
+    assert.match(call, /empower_asset_ver\(/,
+      `an enqueue call does not version by file: ${call.trim()}`);
+  }
+
+  /* And the constant it replaced is gone from both enqueue callbacks, so
+     nothing can pass it by a different name. */
+  assert.doesNotMatch(fn, /\$ver\s*=\s*wp_get_theme\(\)\s*->\s*get\(\s*'Version'\s*\)/,
+    'an enqueue callback still hoists the theme version into $ver');
+});
+
 /* Generalised from a motion-only version whose guard, `fn.includes('motion')`,
    was always true (EMPOWER_TOKENS contains the string 'motion' for
    tokens/motion.css, a different file from css/motion.css) and so only ever
@@ -2751,6 +2801,37 @@ test('every control and image on the converted homepage matches the static build
         .map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
       assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
     }
+  } finally {
+    await server.close();
+  }
+});
+
+/* The box sweep above compares live against static at 390 and passes today
+   because both sides settle. This test isolates one side: does the STATIC
+   build alone reach __unsettled__: "settled" at 390, with nothing else in
+   the picture. No HOME_URL, no live install, deliberate: this must keep
+   working once the conversion is finished and the install is gone.
+
+   Run three times, not once. controlBoxes(staticUrl, { width: 390 }) alone
+   in a process was measured reporting "unsettled" roughly two runs in
+   three before the settleReveal repair (a single-frame vertical pass
+   giving js/reveal.js's IntersectionObserver exactly one chance to catch a
+   heading that only ever appears as a sliver at a step boundary), so a
+   single passing run is not evidence of anything. Three consecutive
+   "settled" results, after the repair, is the bar: by chance alone against
+   a ~1-in-3 pre-repair pass rate that would happen under 4% of the time. */
+test('the static build alone settles at 390px, not just relative to the live page', { concurrency: 1 }, async () => {
+  const { controlBoxes } = await import('./fidelity-browser.mjs');
+  const server = await serveRepoRoot();
+  try {
+    const RUNS = 3;
+    const results = [];
+    for (let i = 0; i < RUNS; i++) {
+      const stat = await controlBoxes(`${server.url}/dist/final.html`, { width: 390 });
+      results.push(stat.__unsettled__);
+    }
+    assert.deepEqual(results, Array(RUNS).fill('settled'),
+      `dist/final.html at 390px did not settle on every run: ${results.join(', ')}`);
   } finally {
     await server.close();
   }

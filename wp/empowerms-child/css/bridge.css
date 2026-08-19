@@ -4313,11 +4313,56 @@
  * either block is :255, `.gvc-hero__say,.gvc-hero__under{grid-column:1}`, which
  * declares no margin and reaches no paragraph.
  *
- * After: all five paragraphs match their static counterparts at 1440 and 390. */
+ * After: all five paragraphs match their static counterparts at 1440 and 390.
+ * ---------------------------------------------------------------------------
+ * EXTENDED AGAIN 2026-08-19 by Task 20 (`landing`), which is why this block now
+ * names three pages and five blocks. `css/landing.css:94` is
+ * `.lnd-ask__copy p{margin:0 0 var(--space-5);max-width:56ch;
+ * font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text-body)}`
+ * and `:96` is `.lnd-ask__copy p:last-child{margin-bottom:0}`, read off those
+ * two source lines rather than assumed from give-c's or solution's. THE SAME
+ * `var(--space-5)`, which is why it joins here instead of starting a block.
+ *
+ * TWO TIERS, NOT THREE, and that is a real difference rather than an
+ * inconsistency. `safety`'s two blocks each carry a NAMED lede rule at 0,2,0
+ * that `p:last-child` also beats, which is what the middle tier exists for;
+ * `css/landing.css` gives this block no named paragraph rule at all, so
+ * `.lnd-ask__copy` appears in the first and third selector groups and not in
+ * the second.
+ *
+ * census() live against dist/landing.html before this rule, at 1440 and at 390,
+ * identical at both:
+ *
+ *     p|The Education Scholarship Account gives   marginBottom 0px / 20px
+ *
+ * ONE, NOT TWO, and the second paragraph is the one that runs the other way:
+ * `.lnd-ask__copy` holds exactly two paragraphs and the second is genuinely the
+ * last of its block on both sides, so the static build zeroes it and the
+ * converted page should too. MailMunch did NOT inject into either widget on
+ * this page, which is why this block behaves as give-c's comment above
+ * predicts it should when the div is absent rather than as give-c itself
+ * measured.
+ *
+ * What that one paragraph cost, measured with layoutInvariants() at 390 before
+ * this rule: `main` 4347.84 live against 4367.84 static, and every painted box
+ * below `.lnd-ask` moved up by exactly 20px (`.lnd-point` 1413.91 against
+ * 1433.91, and eleven more at the same constant). At 1440 the difference is
+ * absorbed by the points column, which is taller than the copy column there, so
+ * `main` measured identical and the census was the only instrument that saw it.
+ * That asymmetry is the argument for keeping the census: a grid row sized by
+ * its other child hides a real margin defect from every geometric instrument.
+ *
+ * Checked for @media interference before extending: css/landing.css's five
+ * media blocks open at :76, :105, :133, :194 and :235, and not one of them
+ * names `.lnd-ask__copy` or declares a margin on any `p` inside it.
+ *
+ * After: both paragraphs match their static counterparts at 1440 and 390, and
+ * `main` matches at 390. */
 .elementor .gvc-hero__under .elementor-widget-text-editor p,
 .elementor .gvc-matters__say .elementor-widget-text-editor p,
 .elementor .sol-problem__copy .elementor-widget-text-editor p,
-.elementor .sol-grid__intro .elementor-widget-text-editor p{
+.elementor .sol-grid__intro .elementor-widget-text-editor p,
+.elementor .lnd-ask__copy .elementor-widget-text-editor p{
   margin-block-end:var(--space-5); /* 20px, css/give-c.css:73 and :185,
     css/solution.css:133 and :210 */
 }
@@ -4329,10 +4374,11 @@
 .elementor .gvc-hero__under > .elementor-widget-text-editor:last-child p,
 .elementor .gvc-matters__say > .elementor-widget-text-editor:last-child p,
 .elementor .sol-problem__copy > .elementor-widget-text-editor:last-child p,
-.elementor .sol-grid__intro > .elementor-widget-text-editor:last-child p{
+.elementor .sol-grid__intro > .elementor-widget-text-editor:last-child p,
+.elementor .lnd-ask__copy > .elementor-widget-text-editor:last-child p{
   margin-block-end:0; /* css/give-c.css:77 and :188, css/solution.css:135 and
-    :212, applied to the last WIDGET rather than to whatever happens to be the
-    last node inside one */
+    :212, css/landing.css:96, applied to the last WIDGET rather than to whatever
+    happens to be the last node inside one */
 }
 
 /* ---------- 29. give-c: a margin that collapsed away in the static build is
@@ -5356,4 +5402,496 @@
   .elementor .elementor-widget-button.em-btn--inverse-outline > a:focus-visible{
     box-shadow:var(--shadow-focus-inverse); /* components/components.css:23 */
   }
+}
+
+/* ============================================================================
+ * Task 20: landing, the campaign TEMPLATE and the sixteenth page. FIVE blocks,
+ * 42 to 46, plus an extension to block 28 above.
+ *
+ * THE PAGE WAS PRICED AT FOUR REPAIRS AND COST SIX, and the two the price
+ * missed are the interesting half. 42 and 43 are the two the brief predicted
+ * and both are old categories on new classes. 44 is the wrapper-descender
+ * family, predicted NOT to arise here and arising anyway, for a reason worth
+ * writing down. 45 is a NEW COST CATEGORY, the thirteenth, and it is the first
+ * one in this file caused by an Elementor reset targeting a TAG rather than an
+ * anchor. 46 is the eighth category on two anchors nobody had looked at.
+ *
+ * A repair the price DID carry and that costs nothing: `.lnd-quote__by` is a
+ * `display:flex` with no `flex-direction`, which is block 42's exact shape, and
+ * it is held at zero because 04-voice.mjs builds the whole <figure> as one
+ * html() blob, so the figcaption is a real element rather than an Elementor
+ * container. Measured, not assumed: the counterfactual is in the task report.
+ *
+ * EVERY BLOCK BELOW IS NAMED TO ONE OF THIS PAGE'S OWN SIX SECTIONS, which
+ * matters more here than on any other page in the phase. This page is a
+ * TEMPLATE meant to be duplicated and cut down, and a rule that spanned two of
+ * its blocks would make deleting one break the other. Deleting a block takes
+ * its rules out of play and leaves the other five untouched.
+ *
+ * Every "before" and "after" number below was measured live against the static
+ * build served locally, at both registered widths and across this page's own
+ * middle band.
+ * ==========================================================================*/
+
+/* ---------- 42. landing: a hero action row that Elementor turns into a
+ *                column, the TENTH instance ------------------------------
+ * `css/landing.css:65-66` is `.lnd-hero__actions{display:flex;flex-wrap:wrap;
+ * align-items:center;gap:var(--space-4) var(--space-7);margin:0}`, which
+ * declares the display and NOT the direction, because in the static build
+ * `row` is the initial value and needs no declaring. Converted, the element is
+ * an Elementor container carrying `e-con-full e-flex`, and
+ * `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` at 0,2,0 is fed
+ * `column` by `.e-con.e-flex`. Identical in mechanism to blocks 3, 7, 9, 11,
+ * 20, 32 and `.fp-hero__actions` before it.
+ *
+ * Measured live against static at 1440 before this rule:
+ *
+ *     .lnd-hero__actions             live column           static row
+ *     em-btn.em-btn--lg.em-btn--primary  live x 272.03     static x 144
+ *     .lnd-hero__aside               live x 348.2          static x 540.94
+ *     em-btn (painted)               live top 460.3        static top 481.89
+ *
+ * and at 390:
+ *
+ *     .lnd-hero__aside               live x 88.7           static x 24
+ *
+ * The 390 reading is the one worth keeping, because it is what block 20's
+ * comment describes from the other side: `align-items:center` is a CROSS-axis
+ * property, so the moment the container becomes a column it centres both
+ * actions horizontally instead of aligning them vertically. At 390 the static
+ * build wraps the aside onto its own flex line at the container's left edge
+ * (x 24) and the converted page centres it (x 88.7). Nothing about the boxes
+ * changes, which is why `controlBoxes()` reported none of this and
+ * `layoutInvariants()`'s x axis reported all of it.
+ *
+ * `.lnd-hero__actions.e-con` is 0,2,0, tying with `.e-con-full.e-flex`, and
+ * this file loads after Elementor's own stylesheets, so it wins on order at
+ * equal specificity. Named to this page's own class rather than written for
+ * `.e-con`.
+ *
+ * NO @media COMPANION, and that is a measurement rather than an omission.
+ * Block 21 exists because `css/epic-a.css:345` puts `.epa-hero__actions` back
+ * to a column at 420px, and it asks whoever adds the next row rule to re-run
+ * its cross-check. RE-RUN 2026-08-19, over every class this file sets
+ * `flex-direction:row` on, against every `@media` rule declaring
+ * `flex-direction` anywhere in `css/`, `components/` or `tokens/`. THREE
+ * collisions, and all three already carry their companion:
+ *
+ *     css/epic-a.css:344     @media (max-width:420px)  .epa-hero__actions
+ *     css/homepage.css:534   @media (max-width:600px)  .em-stories__mini
+ *     css/team-bio.css:147   @media (max-width:520px)  .tp-more__slab
+ *
+ * `.lnd-hero__actions` is not among them: `css/landing.css`'s five media blocks
+ * open at :76, :105, :133, :194 and :235, and not one of them names it, so the
+ * unconditional row is correct at every width. `align-items` needs nothing and
+ * was checked rather than assumed: the build declares `center` at 0,1,0 and
+ * Elementor resolves its own through `.elementor-element:where(...)`, which
+ * `:where()` makes 0,1,0, so the build already wins on source order.
+ *
+ * After: row on both sides, the button at x 144 and `.lnd-hero__aside` at
+ * x 540.94 at 1440, and the aside at x 24 at 390, all exactly static. */
+.lnd-hero__actions.e-con{
+  flex-direction:row;
+}
+
+/* ---------- 43. landing: a photograph whose class the image widget moves off
+ *                the <img> and onto the wrapper, the SECOND cost category ---
+ * `css/landing.css:119-120` is `.lnd-pair__photo{display:block;width:100%;
+ * height:clamp(300px,32vw,460px);object-fit:cover;
+ * border-radius:var(--radius-media)}` and `dist/landing.html:258` puts that
+ * class ON THE <img>. `image()` puts `cssClass` on the WRAPPER
+ * (elementor/factory.mjs, WIDGET_CSS_CLASS_KEY), so all five declarations land
+ * on `div.elementor-element...lnd-pair__photo` and the real <img> two levels
+ * inside it takes Elementor's own `.elementor img{height:auto;max-width:100%;
+ * border-radius:0}` (0,1,1) instead. Same family as `.c2-panel__bg` and
+ * `.em-join__wash`, whose repair also targets the <img> rather than the
+ * wrapper.
+ *
+ * Measured with controlBoxes() live against static before this rule:
+ *
+ *     img|family-outdoors-park.jpg  h  1440   live 686   static 460
+ *                                   h   390   live 435   static 300
+ *                                   borderRadius   live 0px   static 16px
+ *
+ * 1243x1580 intrinsic in a half-width column, with `overflow` visible, so the
+ * photograph rendered 226px past the box that is supposed to crop it and
+ * painted over the copy beside it.
+ *
+ * AND NOT ONE OTHER MEASUREMENT MOVED, which is exactly the case recipe
+ * section 1's third question exists for. `main` matched to the hundredth of a
+ * pixel at 1440, every painted box matched, and the only differing keys were
+ * this image's own two. By the first two questions that is a DEFER. The third
+ * question, "is this difference shaped like a photograph, or shaped like a
+ * wrapper", says fix: the image renders at exactly its intrinsic ratio where
+ * the design asked for a crop, and no photograph would ever have made that
+ * right. The reason nothing else moved is that the WRAPPER is the grid item and
+ * the wrapper carries the class, so it has the correct height and the row is
+ * sized correctly around a photograph spilling out of it.
+ *
+ * THE REPAIR IS `height:100%` AND NOT THE CLAMP RESTATED. The wrapper already
+ * carries the clamp, because it carries the class, and it is the grid item
+ * whose height the design is setting; the <img> only needs to fill it.
+ * Restating the clamp on the <img> would work today and would silently disable
+ * any future responsive override of it, which is the trap recipe section 5
+ * records. `.elementor-widget-container` needs `height:100%` too, because it
+ * sits between the two and would otherwise shrink-wrap and give the <img>'s
+ * percentage nothing to resolve against.
+ *
+ * `border-radius` and `display:block` ARE restated, because Elementor sets both
+ * on the <img> directly (`border-radius:0` at 0,1,1 and `display:inline-block`
+ * from widget-image.min.css at 0,1,1) and a square photograph inside a rounded
+ * box is a visible difference. `object-fit:cover` is restated because it is the
+ * declaration that does the cropping and it means nothing on the wrapper.
+ * Specificity 0,2,1 against both of Elementor's 0,1,1 rules.
+ *
+ * COMPARE THE HERO'S PHOTOGRAPH, which has the SAME five declarations and costs
+ * nothing. `css/landing.css:73-74` is `.lnd-hero__mark img{...}`, a DESCENDANT
+ * selector, so it reaches the real <img> straight through both wrapper divs and
+ * asks no ancestor for a height; it ties `.elementor img{height:auto}` at 0,1,1
+ * and wins on source order. Same declarations, different carrier, and only one
+ * of them survives conversion. The tell is which element the class is on in the
+ * static build, not what the rule says.
+ *
+ * Checked for @media interference before writing: `css/landing.css`'s
+ * `@media (max-width:820px)` block (:133-136) declares only
+ * `grid-template-columns`, `row-gap` and `.lnd-pair--flip`'s `order`, and no
+ * media block anywhere in the file names `.lnd-pair__photo` with a height. The
+ * hero's photograph DOES have a responsive height (:78) and it is the same
+ * descendant selector, so it reaches the same element and needs nothing.
+ *
+ * `.lnd-pair--flip` NEEDS NOTHING and was measured rather than assumed.
+ * `css/landing.css:117` and `:135` give the flipped variant `order:2` and
+ * `order:0`, which is the tenth and eleventh categories' shape, an item
+ * property on an element that could have become an inner node. It survives for
+ * the same accident that breaks the height: the class landed on the wrapper,
+ * and the wrapper IS the grid item. One accident costs the photograph its crop
+ * and saves the modifier.
+ *
+ * After: 460 at 1440 and 300 at 390, borderRadius 16px, matching static
+ * exactly, with the wrapper and the grid row unchanged. */
+.elementor .lnd-pair__photo > .elementor-widget-container{
+  height:100%; /* so the <img>'s own 100% has a definite box to resolve against */
+}
+.elementor .lnd-pair__photo img{
+  display:block;                        /* css/landing.css:119 */
+  width:100%;                           /* css/landing.css:119 */
+  height:100%;                          /* fills the wrapper's own clamp, :119 */
+  object-fit:cover;                     /* css/landing.css:120 */
+  border-radius:var(--radius-media);    /* css/landing.css:120 */
+}
+
+/* ---------- 44. landing: an inline link that stops being a flex item, the
+ *                SIXTH instance of the wrapper-descender defect -----------
+ * Identical in mechanism and repair to `.epa-hero__aside`'s own rule (block
+ * 22), `.ta-hero__actions`'s (block A4), `.wa-hero__actions`'s,
+ * `.em-join__way`'s and `.tp-more__slab`'s. `.lnd-hero__aside` is built as an
+ * html() blob (01-hero.mjs note 6, the same route epic-a takes for the same
+ * shape), so the `.elementor-widget-html` wrapper becomes the flex item of
+ * `.lnd-hero__actions` and the anchor inside it stops being one.
+ *
+ * THIS WAS PREDICTED NOT TO HAPPEN AND IT HAPPENED, and the wrong reasoning is
+ * worth recording because it will be tempting again. The prediction was that
+ * `.epa-hero__aside` needed block 22 because it DECLARES `display:inline-flex`
+ * with a `min-height`, so it was blockified while it was a flex item and
+ * stopped being blockified once a wrapper took its place; `.lnd-hero__aside`
+ * (`css/landing.css:66-67`) declares no `display` at all, so there was nothing
+ * to un-blockify. THAT IS BACKWARDS. Blockification is not a property of what
+ * the element declares: the flex spec blockifies EVERY inline-level flex item,
+ * declared inline or defaulted inline. An anchor that declares nothing is
+ * exactly as vulnerable as one that declares `inline-flex`, and slightly more
+ * so, because nothing in the stylesheet hints that its layout depends on its
+ * parent.
+ *
+ * Measured live against static at 1440 before this rule, and identically at
+ * 390:
+ *
+ *     .lnd-hero__aside      live  display inline   h 24      (the anchor)
+ *                           live  wrapper                    h 27.19
+ *                           static display block    h 27.19  (the anchor)
+ *
+ * so the box sweep reported `a|Read what the waitlist meant h: live 24 /
+ * static 27` at both widths. The 3.19px is the strut's descender: as a flex
+ * item the anchor is a block box whose height is its line box, and as an inline
+ * inside a wrapper it measures only the font's own ascent and descent.
+ *
+ * INVISIBLE IN EVERY GEOMETRIC INSTRUMENT, which is why it is worth a block of
+ * its own rather than a line in block 42's. `main` matched exactly at 1440,
+ * every painted box matched, and `layoutInvariants()` does not key this anchor
+ * at all once block 42 has put the row back on the right axis. Only
+ * `controlBoxes()` saw it, because only `controlBoxes()` reads an anchor's own
+ * height.
+ *
+ * `display:contents` removes the wrapper from the box tree, so the anchor
+ * becomes the flex item the build wrote its rules for. Safe here for block 22's
+ * reason, re-checked on this page rather than inherited: the wrapper carries no
+ * background, no border and no position, and nothing in css/landing.css
+ * addresses this anchor through a child combinator (the file contains no `>`
+ * in any selector at all).
+ *
+ * NAMED TO `.lnd-hero__actions`, so it can only reach the one html() wrapper in
+ * that row. This page's other html() wrappers are deliberately NOT included:
+ * `.lnd-pair__link`'s holds a <p>, which is block-level already and measures
+ * identically on both sides; `.lnd-points`', `.lnd-reading__list`'s and
+ * `.lnd-quote`'s hold block-level elements too. All four were measured and none
+ * differs.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/landing.css's five media blocks names `.lnd-hero__actions` or
+ * `.lnd-hero__aside`.
+ *
+ * After: the anchor is `display:block` and 27.19px tall live and static, at
+ * 1440 and 390. */
+.lnd-hero__actions > .elementor-widget-html{
+  display:contents;
+}
+
+/* ---------- 45. landing: a <figure> that loses its own centring to an
+ *                Elementor reset keyed on the TAG, and the phase's
+ *                THIRTEENTH cost category -------------------------------
+ * NEW SHAPE. Every reset defect this file has paid so far is
+ * `.elementor a{box-shadow:none;text-decoration:none}` at 0,1,1 (blocks 26,
+ * 27, 30, 46). This one is a different rule, at a specificity nothing in this
+ * build can reach by accident. Read off the install rather than from memory, in
+ * `wp-content/plugins/elementor/assets/css/frontend.min.css` (cached at
+ * .snapshots/amb-a/elementor/frontend.min.css):
+ *
+ *     .elementor .elementor-widget:not(.elementor-widget-text-editor)
+ *       :not(.elementor-widget-theme-post-content) figure{margin:0}
+ *
+ * `:not()` contributes its argument's specificity, so that is 0,4,1:
+ * `.elementor`, `.elementor-widget`, and one class from each `:not()`, plus the
+ * type selector. `css/landing.css:151` is `.lnd-quote{margin:0 auto;
+ * max-width:64ch}` at 0,1,0, and it LOSES even though this file loads later,
+ * because specificity is decided before source order.
+ *
+ * WHY IT IS A CATEGORY AND NOT A ONE-OFF. Any <figure> this build authors
+ * inside an html() widget loses every margin it declares, whatever the class,
+ * and Elementor's own `:not(.elementor-widget-text-editor)` says the exemption
+ * is a property of WHICH WIDGET the figure sits in rather than of the figure.
+ * A <figure> is not a rare tag in this build: `who-we-are-a`'s people frames
+ * are figures, and `safety`, `work` and `education` all carry one in their
+ * problem section. None of those has been bitten because none of them declares
+ * a margin on the figure; this page does, and the margin is `auto`, so the
+ * failure mode is a centring that silently becomes a left alignment.
+ *
+ * Measured live against static at 1440 before this rule:
+ *
+ *     .lnd-quote        margin-left / margin-right   live 0px / 305.625px
+ *     .lnd-quote        x    live 144    static 449.63
+ *     .lnd-quote__slot  x    live 144    static 449.63
+ *     .lnd-quote__by    x    live 144    static 449.63
+ *     .lnd-quote__name  x    live 144    static 449.63
+ *     .lnd-quote__role  x    live 246.95 static 552.58
+ *
+ * The figure is 540.75px wide inside a 1152px wrapper on both sides, so the
+ * width is right and only the position is wrong: a 64ch quotation pinned to the
+ * left edge of a wide section, which is precisely the "layout accident"
+ * css/landing.css:148-150 says the centring exists to avoid.
+ *
+ * AT 390 IT COSTS NOTHING AND THAT IS NOT A REPRIEVE. The container there is
+ * narrower than 64ch, so the auto margins resolve to 0 on both sides and the
+ * two agree. A repair that had been checked only at 390 would have found
+ * nothing. This is the third time in the phase a defect has been present at one
+ * register width and absent at the other.
+ *
+ * SWITCHING THE WIDGET WAS CONSIDERED AND REJECTED. Building the <figure> in a
+ * text() widget rather than an html() one would dodge the reset outright,
+ * because Elementor exempts `.elementor-widget-text-editor` by name. It was not
+ * done: a text-editor widget runs the blob through `wpautop` and `wptexturize`,
+ * whose behaviour is a WordPress-core implementation detail this repository
+ * does not test and cannot see change, and the exemption itself is an Elementor
+ * implementation detail that no instrument here would notice being removed. A
+ * named rule is visible, measured, and fails loudly if the reset ever moves.
+ *
+ * SPECIFICITY 0,4,1, TYING Elementor's rule, and this file loads after
+ * Elementor's own stylesheets, so it wins on order at equal specificity. That
+ * is the same argument blocks 20, 32 and 42 make for their own ties. The
+ * qualifying classes are Elementor's own two plus `figure.lnd-quote`, so the
+ * rule can only reach the one figure this page authors: it cannot touch an
+ * Elementor image or gallery figure, which is what the reset exists for.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/landing.css's five media blocks names `.lnd-quote`, and the build
+ * declares this margin unconditionally, so one unconditional declaration is
+ * correct at every width. Confirmed by re-measuring at 390 and across the
+ * middle band.
+ *
+ * After: `.lnd-quote` at x 449.63 at 1440, exactly static, with its four keyed
+ * descendants back at their static positions and 390 unchanged. */
+.elementor .elementor-widget.elementor-widget-html figure.lnd-quote{
+  margin:0 auto; /* css/landing.css:151 */
+}
+
+/* ---------- 46. landing: two supporting links that rely on the UA underline,
+ *                the EIGHTH category's third and fourth instances --------
+ * `css/landing.css:66-67` is `.lnd-hero__aside{font-weight:var(--fw-semibold);
+ * color:var(--em-orange-ink);text-underline-offset:4px}` and `:127-128` is
+ * `.lnd-pair__link a{...}` with the identical three declarations. NEITHER
+ * declares `text-decoration`, so both are relying on the UA's own underline,
+ * and `text-underline-offset:4px` is the design saying there IS one and where
+ * it should sit. Elementor's `.elementor a{box-shadow:none;
+ * text-decoration:none}` at 0,1,1 takes it away, exactly as it does for
+ * `.epa-hero__aside` (block 26) and `.mla-receive__back` (block 27).
+ *
+ * NO INSTRUMENT IN THIS PROJECT COMPARES text-decoration. census() reads
+ * fontSize, lineHeight, fontFamily, color, background, marginBottom, opacity,
+ * visibility and zeroSized; controlBoxes() reads w, h, padding, borderRadius,
+ * borderWidth, fontWeight, letterSpacing and fontSize; layoutInvariants() reads
+ * x, flex-direction, top and height. All three were green on both anchors. They
+ * were found by recipe step 8, hand-probing every anchor inside <main> at rest
+ * and on hover, and by nothing else.
+ *
+ * Measured live against static at 1440 on a 6000px-tall viewport so nothing
+ * scrolls, with the Mailchimp popup removed before each interaction, the
+ * pointer position read back in the same evaluate (`el.matches(':hover')`), and
+ * a settle wait after each state change:
+ *
+ *     .lnd-hero__aside   rest   live none  static underline
+ *                        hover  live none  static underline
+ *     .lnd-pair__link a  rest   live none  static underline
+ *                        hover  live none  static underline
+ *
+ * THE SETTLE WAIT IS NOT DECORATION. `css/landing.css:219-220` puts a `color`
+ * transition on the card links, and the first run of this probe read
+ * `rgb(52, 64, 66)` static against `rgb(0, 60, 80)` live on
+ * `.lnd-read__title a`'s hover colour, which reads exactly like a colour
+ * defect. It was the probe: both sides were mid-transition, and both settle to
+ * `rgb(186, 73, 32)`. Recipe step 8's rule is that a probe asserting a state
+ * must read that state back in the same evaluate; this page adds that it must
+ * also let the state finish.
+ *
+ * WHAT IS NOT REPAIRED, AND WHY, checked rather than assumed. `.lnd-read__title
+ * a` (`css/landing.css:219`) declares `text-decoration:none` ITSELF at rest and
+ * its hover rule (`:222`) changes `color` only, so nothing on the reading cards
+ * relies on the UA underline. Probed anyway: `none` on both sides at rest and
+ * on hover, at both widths. The NINTH category is clear on this page too: the
+ * card link's focus indicator is an `outline` (`:224`), and the `box-shadow`
+ * half of the same reset does not touch `outline`. Probed on real keyboard
+ * focus, keyed on the ANCHOR because focus binds to the focused element (block
+ * 40), and identical on both sides:
+ * `solid 3px rgb(230, 90, 40) off 4px`. `.lnd-hero__aside` and
+ * `.lnd-pair__link a` take css/site.css's own focus outline and match too,
+ * `solid 2px rgb(230, 90, 40) off 2px` on both sides.
+ *
+ * NO :focus-visible COMPANION IS NEEDED HERE, and that is the difference from
+ * block 30. Block 30 restated a `box-shadow` and had to restate the focus ring
+ * with it, because `.em-btn:focus-visible` sets `box-shadow` and a rest-state
+ * restatement at higher specificity would have deleted it. These two anchors
+ * carry no `.em-btn`, their focus indicator is an `outline` rather than a
+ * `box-shadow`, and this rule declares `text-decoration` only, which no focus
+ * rule on either element sets. Verified by real keyboard focus after deploying,
+ * not inferred from the specificity arithmetic: both outlines are unchanged.
+ *
+ * Specificity 0,2,0 and 0,2,1 against Elementor's 0,1,1. `text-decoration-line`
+ * rather than the `text-decoration` shorthand, so the restatement cannot
+ * silently reset `text-decoration-color`, `-style` or `-thickness`, none of
+ * which the build declares and all of which the shorthand would return to
+ * their initial values.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/landing.css's five media blocks names `.lnd-hero__aside` or
+ * `.lnd-pair__link`, and the underline is unconditional in the static build, so
+ * one unconditional declaration is correct at every width. Confirmed by
+ * re-probing at 390.
+ *
+ * After: `underline` on both anchors, live and static, at rest and on hover, at
+ * 1440 and 390, with `text-underline-offset:4px` and both focus outlines
+ * unchanged. */
+.elementor .lnd-hero__aside,
+.elementor .lnd-pair__link a{
+  text-decoration-line:underline; /* the UA default css/landing.css:67 and :128
+    rely on, removed by .elementor a{text-decoration:none} */
+}
+
+/* ---------- 47. landing: a wrapping flex column at ELEMENTOR'S OWN 767, and
+ *                the widget wrapper that stops measuring its own content ---
+ * FOUND BY THE MIDDLE-BAND SWEEP AND BY NOTHING ELSE. Both register widths are
+ * clean, every keyed x matches, every painted box matches, and `main` is
+ * identical to the hundredth of a pixel at 1440 and 390. The defect lives in a
+ * 67px window, 701 to 767 inclusive, and the widest edge of that window is
+ * Elementor's mobile breakpoint, which appears in no stylesheet this build
+ * ships. `css/landing.css`'s own breakpoints are 900 and 820.
+ *
+ * SAME FAMILY AND SAME TRIGGER AS BLOCK 33, different page and different
+ * content. Elementor's frontend stylesheet makes `.e-con.e-flex` take
+ * `--flex-wrap-mobile` (which is `wrap`) at and below 767, so every converted
+ * container silently becomes a WRAPPING flex column there. In a multi-line
+ * column container an item's cross size is its own line's rather than the
+ * container's, so a widget wrapper's block size stops resolving against the
+ * container's width and resolves against its content's intrinsic width
+ * instead.
+ *
+ * Measured live against static, `.lnd-reading .em-container` and its two
+ * children, before this rule:
+ *
+ *     768   container 334.41 / 334.41   wrapper 254.41   list 254.41   exact
+ *     767   container 380.28 / 334.41   wrapper 300.28   list 254.41   +45.87
+ *     730   container 380.08 / 334.20   wrapper 300.08   list 254.41   +45.88
+ *     700   container 379.94 / 379.94   wrapper 300.28   list 300.28   exact
+ *
+ * THE LIST IS THE RIGHT SIZE ON BOTH SIDES AT EVERY WIDTH. 254.41 at 767 live
+ * and static, 300.28 at 700 live and static, and `grid-template-columns` reads
+ * `349.5px 349.5px` at 767 and `316px 316px` at 700 on both. Only the WRAPPER
+ * is wrong, and it is wrong by holding the height the list has at a narrower
+ * viewport: 300.28 is exactly the 700px figure. That is block B3's and block
+ * 33's signature the other way up, a wrapper too TALL rather than too short,
+ * because here the content gets shorter as the viewport widens (two grid
+ * columns of `repeat(auto-fit,minmax(min(100%,260px),1fr))` grow wider and the
+ * cards' text rewraps to fewer lines) where a fixed-ratio figure gets taller.
+ *
+ * WHY IT ENDS AT 700 RATHER THAN AT A BREAKPOINT: it does not end, the two
+ * sides converge. Below about 701 the list's real height and its intrinsically
+ * measured one coincide, so the wrapper is accidentally right. Swept at 27
+ * widths from 1200 to 440; the four that differ are 767, 766, 760 and 730, and
+ * 768 and 700 are both exact.
+ *
+ * INVISIBLE TO EVERY OTHER INSTRUMENT, which is why the sweep is not optional.
+ * `controlBoxes()` compares anchors and images and this is neither.
+ * `census()` compares paragraph and heading properties and none of them moved.
+ * `layoutInvariants()` reported it ONLY through `__main_height__`: no keyed
+ * element's x differed, no painted box differed, and the wrapper itself carries
+ * no build class so it is not keyed at all. A page whose sweep only asserted
+ * keyed elements would have been green.
+ *
+ * THE REPAIR IS THE PARENT-LEVEL ONE, per block 16's discriminator: "the
+ * parent-level repair is right where the static parent is a plain block and
+ * wrong where the build declares the flex column itself". `.em-container`
+ * (tokens/base.css:18) is `width:100%;max-width:var(--container-max);
+ * margin:0 auto;padding:0 var(--gutter)` and declares NO display, so it is a
+ * plain block in the static build. `flex-wrap:nowrap` gives the container back
+ * the single-line behaviour the static build gives it and removes both halves
+ * of the mechanism rather than only the second.
+ *
+ * NAMED TO THIS PAGE'S READING SECTION, and the qualifier matters more than
+ * usual: `.em-container` is a SHARED class on every page in the build, so an
+ * unqualified rule here would reach every converted container on the install.
+ * `.lnd-reading .em-container.e-con` can only ever match inside block 6 of this
+ * page, which is also what keeps the template's blocks independent: deleting
+ * block 6 takes this rule out of play and touches nothing else.
+ *
+ * THE OTHER FIVE BLOCKS WERE CHECKED AT THE SAME WIDTHS AND NEED NOTHING.
+ * `.lnd-voice`'s `.em-container` is the only other one holding an html()
+ * widget directly, and it measured exact at 767, 766, 760 and 730: the
+ * quotation is capped at `max-width:64ch`, so its height does not change with
+ * the container's width in the range where the intrinsic pass disagrees. That
+ * is a property of the content rather than of the structure, so a second
+ * instance of block 4 carrying longer copy could pick this up; the hand-off
+ * note in the task report says so.
+ *
+ * Specificity 0,3,0. Elementor delivers `flex-wrap` through
+ * `.elementor-element:where(.e-con-full,.elementor-widget){flex-wrap:var(--flex-wrap)}`,
+ * which `:where()` makes 0,1,0, so this wins on specificity rather than on
+ * order. Unconditional rather than wrapped in a `@media (max-width:767px)`,
+ * because the static build never wraps at any width, so `nowrap` is correct
+ * everywhere and a media query would only encode Elementor's breakpoint in a
+ * second place.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/landing.css's five media blocks names `.lnd-reading` or `.em-container`,
+ * and tokens/base.css declares `.em-container` unconditionally.
+ *
+ * After: exact at all 27 swept widths from 1200 to 440, `main` identical to the
+ * hundredth of a pixel at every one. */
+.lnd-reading .em-container.e-con{
+  flex-wrap:nowrap;
 }

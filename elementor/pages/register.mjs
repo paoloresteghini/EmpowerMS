@@ -1041,6 +1041,106 @@ export const PAGE_REGISTER = [
     minShared: 29,
     minBoxes: 39,
   },
+  /* landing: Task 20, the sixteenth page and the first that is a TEMPLATE
+     rather than a page. Its floors were measured 2026-08-19 against
+     dist/landing.html ALONE (no live side, served locally the same way the
+     tests do) and NOT scaled from any other entry.
+
+     census() finds 35 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 29 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>,
+     5 <h2>, 6 <h3>, 1 <blockquote> and 16 <p>; outside it 2 <h3> and 4 <p>, the
+     same six-element chrome every page in this build carries. One of the five
+     <h2> is `.em-visually-hidden` (the voice block's own label, which is what
+     that section's aria-labelledby points at) and is compared like any other,
+     because census() reads text rather than visibility. It is a small
+     page by census count, between capitol-a and epic-a, because five of its six
+     blocks are slots rather than essays.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established) is strict, so 19 means at least 20 of 35 must match by text.
+     Six come from the chrome, so the floor demands 14 of this page's own 29.
+     Measured against the same fraction on the other fifteen entries (final
+     35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a 8/19 42%,
+     capitol-a 4/10 40%, who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15
+     47%, epic-a 12/25 48%, give-c 9/19 47%, team-bio 4/7 57%, safety 21/45 47%,
+     work 23/49 47%, education 24/51 47%), 14/29 is 48%, mid-range.
+
+     34 OF THE 35 ARE ACHIEVABLE, and the one that is not is recipe section 7's
+     coverage cost, paid deliberately. dist/landing.html:194 is
+     `<p class="lnd-hero__actions">`, a layout wrapper around two anchors rather
+     than prose, and 01-hero.mjs note 4 builds it as a container. It cannot be
+     built as a container carrying `html_tag:'p'` even though `p` is in
+     Elementor's ALLOWED_HTML_WRAPPER_TAGS: its children are widget <div>s, and
+     an HTML parser closes an open <p> at the first block-level start tag, so
+     the paragraph would render empty with both actions as its siblings. So
+     `p|Contact your legislator Read what the wa` exists on the static side and
+     not on the live one. Measured after deploying: shared is 34 of 35 at both
+     widths, and that key is the only difference.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/landing.html alone, at both 1440 and 390: 68 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 38 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 39 of 68
+     must match).
+
+     64 OF THE 68 ARE ACHIEVABLE. Three are the chrome keys every converted page
+     loses to the Elementor header theme part (`a|Skip to content`,
+     `a|Empower Mississippi home`, `img|logo-reversed.png`). The fourth is
+     `a|Contact your legislator`: 01-hero.mjs note 5 builds the hero CTA as a
+     link() widget, and controlBoxes() skips any anchor inside
+     `.elementor-widget-button` by design, so the anchor exists on the static
+     side and not on the live one. That module records the choice and what it
+     costs; the box itself is still compared through the wrapper, which is what
+     carries `.em-btn`. Measured after deploying: shared is 64 of 68 at both
+     widths, and the four static-only keys are exactly those four.
+
+     THE LIVE SIDE CARRIES MORE KEYS THAN THE STATIC ONE, the same way every
+     entry since give-c records: the install runs a Mailchimp popup
+     (`#PopupSignupForm_0`) that injects its own markup a few seconds after
+     load, so live census counts more than 35 and live controlBoxes more than
+     64. Every one is LIVE-ONLY, so none enters either comparison. It is a
+     hazard for a HOVER probe rather than for these two instruments, and the
+     task report records the probe protocol that closes it.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/landing.html outside its own <main>: 46 <a>, 12 <button>, 2
+     <img>, 60 of this page's 68 box-sweep elements, leaving 8 that belong to
+     this page's own content (the two hero anchors, the two photographs, the
+     pair link and the three reading titles). A live page that failed to load
+     would still share around 57 keys against minBoxes' 38 and the box sweep
+     alone could pass green. minShared is the real load-failure gate here too: a
+     404 shares the 6 chrome census elements, and 6 is under the 20 that
+     minShared:19 demands, so the suite goes red on the census, not the box
+     sweep. The asymmetry is wider on this page than on any other in the
+     register, because 60 of 68 boxes are chrome.
+
+     THE URL IS `/landing/`, WITH NO SUFFIX, AND THAT WAS READ BACK RATHER THAN
+     ASSUMED. `work`'s entry above records the opposite outcome on the same
+     command; the slug here was free because no post of any type on this install
+     held it. elementor/pages/landing/page.mjs records the check.
+
+     THIS PAGE IS A TEMPLATE, AND THE REGISTER GATES THE ONE INSTANCE OF IT
+     THAT EXISTS. A campaign page duplicated from it gets its own slug, its own
+     post and no entry here, and nothing in this file should be read as covering
+     those. What is gated is that the template itself still matches
+     dist/landing.html. */
+  {
+    name: 'landing',
+    envVar: 'LANDING_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/landing/',
+    staticFile: 'dist/landing.html',
+    minShared: 19,
+    minBoxes: 38,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

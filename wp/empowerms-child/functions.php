@@ -267,6 +267,27 @@ function empower_page_styles() {
 		   `education-old` (post 35) also taken; the unsuffixed slug had already
 		   been vacated. elementor/pages/education/page.mjs records the check. */
 		'education'    => array( 'motion', 'solution' ),
+		/* landing, the campaign TEMPLATE. Read off dist/landing.html's own
+		   <head> (lines 10-22), which is the same shared cascade every row
+		   above records and ends in this page's own css/landing.css.
+
+		   THE KEY IS `landing`, WITH NO SUFFIX, and that was read back off the
+		   install rather than assumed, for the reason work's row above records.
+		   `wp post create ... --post_name=landing` returned post 20612 and
+		   `wp post get 20612 --field=post_name` returns `landing`. It was free
+		   because no post of any type on this install held that slug:
+		   `wp post list --post_type=any --post_status=any --name=landing`
+		   returned an empty result set before the page was created.
+		   elementor/pages/landing/page.mjs records the check.
+
+		   THIS ROW SURVIVES THE TEMPLATE BEING DUPLICATED, and that is worth
+		   saying because this page is meant to be duplicated. The map is keyed
+		   by SLUG, so a campaign page copied from this one gets its own slug
+		   and picks up NO row, which means it loads the shared cascade and not
+		   css/landing.css. Whoever duplicates it adds a row here for the new
+		   slug, or the copy renders unstyled. That is a hand-off step and it is
+		   in the task-20 report. */
+		'landing'      => array( 'motion', 'landing' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

@@ -645,6 +645,99 @@ export const PAGE_REGISTER = [
     minShared: 14,
     minBoxes: 41,
   },
+  /* team-bio: Task 16, the tenth page built class-in-markup from the start,
+     and the build's one staff bio. Its own floors, measured 2026-08-18 against
+     dist/team-bio.html alone (no live side, served locally the same way the
+     tests do), not copied from any other entry.
+
+     NOT ONE OF THE FOURTEEN SIGNED-OFF CHOOSER PAGES, and registered anyway.
+     It is the companion bio linked from Team A's staff cards and it is in the
+     conversion order on Paolo's say-so of 2026-08-18; the reason is recorded
+     in elementor/pages/team-bio/page.mjs. What the register gates is what has
+     been converted, not what was signed off, and every directory carrying a
+     page.mjs must appear here or in EXCLUDED_PAGES.
+
+     THIS IS THE SMALLEST PAGE IN THE REGISTER BY CENSUS COUNT, and its floors
+     are set from its own content rather than scaled from a bigger page's.
+     census() finds 13 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 7 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>,
+     1 <h2> and 5 <p>; outside it 2 <h3> and 4 <p>, the same six-element chrome
+     every page in this build carries. A bio is a name, a title and two
+     paragraphs by design (css/team-bio.css's own header says so at length), so
+     a low count here is the page rather than a gap in it.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 9 means at least 10 of 13 must match by text. Six come from the
+     chrome, so the floor demands 4 of this page's own 7. Measured against the
+     same fraction on the other ten entries (final 35/57 61%, solutions-b 9/18
+     50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%, epic-a 12/25 48%,
+     give-c 9/19 47%), 4/7 is 57%, which is the strictest demand in the
+     register as a fraction and is affordable precisely because the page is
+     small: with 7 own elements there is no floor between 3/7 and 4/7.
+
+     ALL 13 ARE ACHIEVABLE, and that is a build decision rather than a given.
+     Recipe section 7's cost does not arise here at all: this page's one call to
+     action is wrapped in a <div> rather than a <p>, so no census key was ever
+     at risk from it, and 01-profile.mjs note 10 builds that <div> as one html()
+     widget (Route A) which keeps the anchor's own box key as well. Measured:
+     shared is 13 of 13 at both widths, and no census key is lost to this page's
+     own build.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/team-bio.html alone, at both 1440 and 390: 66 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 37 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 38 of 66
+     must match).
+
+     63 OF THE 66 ARE ACHIEVABLE, and all three that are not are the shared
+     chrome keys every converted page in this build loses to the Elementor
+     header theme part (`a|Skip to content`, `a|Empower Mississippi `,
+     `img|logo-reversed.png`), which epic-a's entry above is the first to name.
+     None of the three is this page's doing, and this page loses none of its
+     own. Measured: shared is 63 of 66 at both widths.
+
+     THE LIVE SIDE CARRIES MORE KEYS THAN THE STATIC ONE, the same way give-c's
+     entry records: the install runs a Mailchimp popup (`#PopupSignupForm_0`)
+     that injects its own markup a few seconds after load, so live census counts
+     15 rather than 13 (`p|` and `p|Terms and Conditions`) and live controlBoxes
+     counts 67 rather than 66 (`a|Terms and Conditions`, `button|Close`, plus
+     the header's own `a|/` and the footer logo's resized
+     `img|logo-reversed-300x136.png`). Every one is LIVE-ONLY, so none enters
+     either comparison, and `__excluded_count__` is 0 on both sides because all
+     of them have a usable identity. It is a hazard for a HOVER probe rather
+     than for these two instruments, and this task's report records the probe
+     protocol that closes it.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/team-bio.html outside its own <main>: 46 <a>, 12 <button>, 2
+     <img>, 60 of this page's 66 box-sweep elements, leaving 6 that belong to
+     this page's own content (the back link, the three contact rows, the
+     "Support Our Work" call to action and the closing link back to the team
+     page; no photographs, because this page has none). A live page that failed
+     to load would still share around 57 keys against minBoxes' 37 and the box
+     sweep alone could pass green. minShared is the real load-failure gate here
+     too: a 404 shares the 6 chrome census elements, and 6 is under the 10 that
+     minShared:9 demands, so the suite goes red on the census, not the box
+     sweep. */
+  {
+    name: 'team-bio',
+    envVar: 'TEAM_BIO_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/team-bio/',
+    staticFile: 'dist/team-bio.html',
+    minShared: 9,
+    minBoxes: 37,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

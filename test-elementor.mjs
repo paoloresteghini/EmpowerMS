@@ -6,7 +6,7 @@ import os from 'node:os';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
-import { fromRootArgs, syncTheme } from './wp/sync.mjs';
+import { fromRootArgs, syncTheme, FROM_ROOT } from './wp/sync.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
@@ -941,6 +941,49 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
    destination-only bridge.css in place, run the local rsync, and assert the
    file survives with its contents. The css pass must protect it and every
    other pass must not, since a blanket exclude would be a different defect. */
+/* DERIVED, not hand-maintained, and that is the whole point of it. On
+   2026-08-18 `patterns/` was missing from FROM_ROOT while pages.mjs's own
+   SHARED list had carried it since the review site was built, so every
+   converted page had been rendering without the build's hex-lattice motif
+   since Phase 2A: the file 404'd on the install and no instrument in this
+   project could see it, because the mask sits on a ::before, changes no
+   layout and belongs to no control.
+
+   Two hand-maintained coverage lists have now shipped wrong in this
+   repository (the earlier one was a test whose page list was written by
+   hand). So this test does not restate the answer, it derives it: every
+   directory a SHIPPED stylesheet reaches for through url() must be in
+   FROM_ROOT, or the deploy cannot carry it. Adding a stylesheet that
+   references a new directory turns this red without anybody remembering to
+   update a list.
+
+   Scope is deliberately the stylesheets that ship to the theme, which is the
+   same set the sync copies: css/, components/ and tokens/. Inline `data:`
+   URIs have no directory and are ignored. */
+test('every directory a shipped stylesheet reaches for through url() is in wp/sync.mjs FROM_ROOT', () => {
+  const sheets = ['css', 'components', 'tokens']
+    .flatMap((dir) => fs.readdirSync(dir)
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => path.join(dir, f)));
+  assert.ok(sheets.length > 20, `expected the build's stylesheets, found ${sheets.length}`);
+
+  const roots = new Set();
+  for (const sheet of sheets) {
+    const src = fs.readFileSync(sheet, 'utf8');
+    for (const m of src.matchAll(/url\(\s*['"]?([^)'"]+)/g)) {
+      const ref = m[1].trim();
+      if (ref.startsWith('data:') || ref.startsWith('#')) continue;
+      const seg = ref.replace(/^\.\.\//, '').split('/')[0];
+      if (seg && !seg.includes('.')) roots.add(seg);
+    }
+  }
+  assert.ok(roots.size > 0, 'no url() references found at all, which means this test stopped reading the stylesheets');
+
+  const missing = [...roots].filter((r) => !FROM_ROOT.includes(r)).sort();
+  assert.deepEqual(missing, [],
+    `these directories are referenced by a shipped stylesheet and would not reach the install: ${missing.join(', ')}`);
+});
+
 test('the css pass wp/sync.mjs actually issues leaves a destination-only bridge.css in place, run against a real rsync', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-rsync-'));
   try {

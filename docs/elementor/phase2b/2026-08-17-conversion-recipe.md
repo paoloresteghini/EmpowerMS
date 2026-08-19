@@ -159,7 +159,19 @@ not about unpicking repairs that already measure correct.
    defer the rest into the list from section 2.
 5. Write the bridge rules the non-image findings need, one at a time,
    re-measuring after each. Named selectors, never general.
-6. Look at the page at 1440 and at 390. The instruments do not see everything.
+6. Look at the page at 1440 and at 390, SIDE BY SIDE WITH THE STATIC BUILD.
+   The instruments do not see everything. Strengthened 2026-08-18: this step
+   is the only reason anybody noticed that `patterns/hex-lattice.svg` had never
+   reached the install. `wp/sync.mjs`'s `FROM_ROOT` listed five directories and
+   `pages.mjs`'s `SHARED` listed six; the missing one is the build's own
+   background motif, fifteen stylesheets reach for it as a `mask-image`, and it
+   404'd on `empv2` for the whole of Phase 2A and 2B. A mask on a `::before`
+   changes no layout and no computed property of any real element, so all three
+   instruments were green on five pages that were visibly wrong. Two lessons:
+   look at the two builds NEXT TO EACH OTHER rather than at the converted one
+   alone, and derive an asset list from the stylesheets rather than maintaining
+   it by hand (`grep -ohE "url\(['\"]?[^)'\"]+" css/*.css components/*.css
+   tokens/*.css`).
 7. **Sweep the MIDDLE BAND**, added 2026-08-18. The register samples 1440 and
    390; three pages have now been measured between them and two were wrong
    there, each in a window containing none of that page's own breakpoints
@@ -167,6 +179,18 @@ not about unpicking repairs that already measure correct.
    live against static across the band and record the widths in the report. Do
    NOT add a width to the register: that widens a shared gate, which is a
    different and more expensive decision.
+
+   **THE BAND IS NOT ONLY THE PAGE'S OWN BREAKPOINTS**, corrected 2026-08-18 by
+   `team-bio`. That page's breakpoints are 900 and 520, and its largest defect
+   (349px at 390, `bridge.css` block 33) switched on at **767**, which is
+   ELEMENTOR'S mobile breakpoint and appears in no stylesheet this build ships.
+   Elementor makes `.e-con.e-flex` take `--flex-wrap-mobile` at and below 767,
+   so every converted container silently becomes a WRAPPING flex container
+   there, and a wrapping column container resolves its items' cross size from
+   their own content rather than from the container. Sweep continuously, or at
+   minimum include 767, 768, 1024 and 1025 alongside the page's own values.
+   `team-bio` was swept 380 to 1440 in steps of 1, 1061 widths, with a control
+   run shown red first.
 8. **Hand-probe every anchor at rest and on hover**, added 2026-08-18. No
    instrument in this project compares `text-decoration`, `box-shadow` or any
    colour, and Elementor's `.elementor a{box-shadow:none;text-decoration:none}`

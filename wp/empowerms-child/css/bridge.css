@@ -4437,3 +4437,384 @@
 .elementor .gvc-give__act .em-btn:focus-visible{
   box-shadow:var(--shadow-focus); /* components/components.css:6 */
 }
+
+/* ============================================================================
+ * Task 16: team-bio. Five blocks, 31 to 35.
+ *
+ * THREE were priced (31 closes both of the price's prose repairs in one
+ * grouped block; 32 is the row rule and its mandatory breakpoint counterpart;
+ * the price's fourth, the Shape C site, cost NOTHING because it was built
+ * Route A and 01-profile.mjs note 10 argues that choice). TWO were not priced.
+ * 33 is the aspect-ratio-in-a-flex-base family that block B3 records, arriving
+ * with a NEW TRIGGER: Elementor's own 767px mobile breakpoint, which is not a
+ * breakpoint this build has anywhere. 34 is the wrapper-descender defect's
+ * sixth instance. 35 is the ninth cost category's second instance and its
+ * first outside give-c.
+ *
+ * Every "before" and "after" number below was measured live against
+ * dist/team-bio.html served locally, at both registered widths and across a
+ * continuous sweep of the middle band.
+ * ==========================================================================*/
+
+/* ---------- 31. team-bio: one prose block failing in TWO directions at once,
+ *                the EIGHTH and NINTH instances of the structural-pseudo-class
+ *                category ------------------------------------------------
+ * `css/team-bio.css:112-113` is `.tp-bio p{margin:0 0 var(--space-6);
+ * font-size:var(--fs-body);line-height:1.75;color:var(--text-body);
+ * max-width:68ch}`. Two rules contest it, both written for two real siblings
+ * and both at 0,2,1:
+ *
+ *     :114  .tp-bio p:last-child{margin-bottom:0}
+ *     :116  .tp-bio p:first-child{font-size:clamp(1.0625rem,1rem + .35vw,
+ *                                 1.1875rem);color:var(--text-strong)}
+ *
+ * Converted, each paragraph is the only child of its own text-editor widget,
+ * so EVERY paragraph satisfies BOTH: every one loses its bottom margin AND
+ * every one takes the opening paragraph's larger, darker treatment. This is
+ * the first site in the phase where the same element is over-matched in two
+ * directions at once, which is why it is two repairs in one block rather than
+ * one.
+ *
+ * census() live against dist/team-bio.html before these rules, at 1440:
+ *
+ *     p|Grant is a sixth generation Mississippia   marginBottom 0px / 24px
+ *     p|Grant graduated with a B.A. in Political   fontSize   19px / 17px
+ *                                                  lineHeight 33.25 / 29.75px
+ *                                                  color rgb(0,60,80) /
+ *                                                        rgb(74,74,74)
+ *
+ * and at 390 the same two, with the second paragraph at 17.365px against 17px.
+ * The second is the more visible of the two and :116's own comment says why:
+ * "The opening paragraph is the one a visitor reads if they read one."
+ *
+ * ONLY font-size AND color ARE RESTATED FOR :116, NOT line-height AND NOT
+ * max-width, and that is measured rather than reasoned: both are declared by
+ * :112 alone, which nothing contests, and both moved anyway because both are
+ * RELATIVE TO font-size (`line-height:1.75` and `max-width:68ch`). The second
+ * paragraph measured 642.14 x 199.5 live against 574.55 x 178.5 static at
+ * 1440, and restoring the font size restores both derived values with it.
+ *
+ * SHAPE: who-we-are-a's (block 1), epic-a's (block 17) and give-c's (block
+ * 28), not podcast-a's. The definite value goes back on the PARAGRAPH, where
+ * the build puts it, and the widget set is used only for the position test.
+ * THIS PAGE ADDS THE FIFTH MailMunch OBSERVATION AND THE FIRST OF ITS KIND:
+ * `<div class='mailmunch-forms-in-post-middle' style='display: none
+ * !important;'></div>` is injected on this page too, and it lands inside
+ * `.tp-role`'s widget, which no structural pseudo-class addresses, so it
+ * changes nothing here. Read directly out of the live DOM rather than
+ * inferred, and recorded because it is the point: which widget that script
+ * picks is not predictable from the page, so a repair shape that depends on
+ * each widget containing exactly its own paragraph is unsafe by construction,
+ * whether or not it happens to be safe today.
+ *
+ * Specificity: the first rule is 0,3,1 against both :114 and :116 at 0,2,1, so
+ * it wins unconditionally rather than on source order. The other two are 0,4,1
+ * and beat it, restoring `:last-child`'s zero on the genuinely last WIDGET and
+ * `:first-child`'s treatment on the genuinely first one, rather than on
+ * whatever happens to be the first or last node inside one.
+ *
+ * Checked for @media interference before writing: css/team-bio.css has three
+ * media blocks, opening at :141, :147 and :151. The first names
+ * `.tp-profile__grid`, `.tp-frame` and `.tp-profile__copy`; the second names
+ * `.tp-more__slab`; the third names two `svg` hover transforms. None reaches
+ * `.tp-bio` or any paragraph inside it, so this restatement brings nothing
+ * responsive out of sync with itself.
+ *
+ * After: both paragraphs match their static counterparts on every census
+ * property at 1440 and at 390. */
+.elementor .tp-bio .elementor-widget-text-editor p{
+  margin-block-end:var(--space-6);   /* 24px, css/team-bio.css:112 */
+  font-size:var(--fs-body);          /* css/team-bio.css:112 */
+  color:var(--text-body);            /* css/team-bio.css:113 */
+}
+.elementor .tp-bio > .elementor-widget-text-editor:last-child p{
+  margin-block-end:0; /* css/team-bio.css:114, applied to the last WIDGET
+    rather than to whatever happens to be the last node inside one */
+}
+.elementor .tp-bio > .elementor-widget-text-editor:first-child p{
+  font-size:clamp(1.0625rem,1rem + .35vw,1.1875rem); /* css/team-bio.css:116 */
+  color:var(--text-strong);                          /* css/team-bio.css:116 */
+}
+
+/* ---------- 32. team-bio: a slab that Elementor turns into a column, the
+ *                SIXTH instance, with its breakpoint counterpart ----------
+ * css/team-bio.css:126-130 is `.tp-more__slab{display:flex;align-items:center;
+ * justify-content:space-between;gap:clamp(...);flex-wrap:wrap;padding:...;
+ * border-radius:...;background:...}`, which declares the display and NOT the
+ * direction, because in the static build `row` is the initial value and needs
+ * no declaring. Converted, the element is an Elementor container and
+ * `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` (frontend.min.css,
+ * 0,2,0) is fed `column` by `.e-con.e-flex{--flex-direction:column}`, which
+ * the build's 0,1,0 rule cannot reach. Measured at 1440 before:
+ *
+ *     .tp-more__slab   live column 1152x207.95   static row 1152x137.58
+ *     .tp-more                     1440x279.95                1440x209.58
+ *     h2                 x 539.89                   x 201.59
+ *     a.tp-more__link    x 628.63                   x 1055.66
+ *
+ * The heading and the link stack and distribute down the slab instead of
+ * sitting at opposite ends of it, and `justify-content:space-between` then
+ * spreads them vertically, which is what makes the slab 70px taller.
+ *
+ * `align-items` needs nothing and was checked rather than assumed, the same
+ * check block A1 records: the build declares `center` at 0,1,0 (:126) and
+ * `flex-start` at 0,1,0 inside `@media (max-width:520px)` (:148), and
+ * Elementor resolves its own through `.elementor-element:where(...)`, which
+ * `:where()` makes 0,1,0, so the build already wins on source order at both.
+ * Confirmed by measurement after this rule.
+ *
+ * `flex-wrap` needs nothing either, and for a stronger reason than usual:
+ * :127 DECLARES `flex-wrap:wrap`, so this element agrees with Elementor's own
+ * container default by construction and block 15's category cannot bite here
+ * at any width. That is the second element in the build to be safe for a
+ * stated reason rather than by measurement.
+ *
+ * THE @media (max-width:520px) COUNTERPART IS THE OTHER HALF OF THIS REPAIR
+ * AND SHIPS IN THE SAME COMMIT. css/team-bio.css:147-149 is
+ * `.tp-more__slab{flex-direction:column;align-items:flex-start}` at 0,1,0,
+ * which cannot reach the 0,2,0 rule above. Without this the repair would pin
+ * the slab to a ROW at 390, a width the register samples, turning a repair
+ * into a defect. Exactly the collision block A1 documents and block 21 pays
+ * for epic-a.
+ *
+ * THIS IS THE THIRTEENTH `flex-direction:row` CLASS IN THIS FILE, so block
+ * A1's cross-check was re-run before writing it, over every `@media` rule
+ * declaring `flex-direction` in `css/` and `components/` against every class
+ * this file gives a `flex-direction`. Seven media rules exist
+ * (`.em-banner__actions` 420, `.epa-hero__actions` 420, `.epb-hero__actions`
+ * and `.epb-hero__arealist` 420, `.em-process` 1150, `.em-stories__mini` 600,
+ * `.tp-more__slab` 520). Against the twelve classes already here it returns
+ * exactly the two collisions the 2026-08-18 run found, `.epa-hero__actions`
+ * at 420 and `.em-stories__mini` at 600, both already repaired by blocks 21
+ * and A1. `.tp-more__slab` is the third, and this block closes it. The other
+ * four media rules name classes this file gives no direction to (`epic-b` is
+ * unconverted; `.em-banner__actions` and `.em-process` are not row rules
+ * here). Whoever adds the fourteenth should re-run it again.
+ *
+ * After: `row` at 1440 with the slab 1152x137.58 and the link back at
+ * x 1055.66, and `column` at 390 and at 519, matching static at all three. */
+.tp-more__slab.e-con{
+  flex-direction:row;
+}
+@media (max-width:520px){
+  .tp-more__slab.e-con{
+    flex-direction:column; /* css/team-bio.css:148 */
+  }
+}
+
+/* ---------- 33. team-bio: an aspect-ratio portrait whose widget wrapper is
+ *                measured from the monogram inside it, and the ELEMENTOR
+ *                BREAKPOINT that switches the defect on ------------------
+ * SAME FAMILY AS BLOCK B3, NEW TRIGGER, and the trigger is the transferable
+ * half. `css/team-bio.css:43-46` gives `.tp-portrait`
+ * `display:grid;place-items:center;width:100%;aspect-ratio:4/5`, and
+ * `dist/team-bio.html:185-189` wraps it in a `<figure class="tp-frame">` that
+ * 01-profile.mjs note 5 has to build as an html() widget, because Elementor
+ * cannot render a <figure> container at all.
+ *
+ * Measured live against static at 390 before this rule:
+ *
+ *     figure.tp-frame            340 x 425      correct, on both sides
+ *     its .elementor-widget-html 342 x  76.11   348.89px SHORT
+ *     .tp-profile__aside         342 x 470.91   against 342 x 819.80
+ *     .tp-contact                top 204.11     against top 553
+ *     main                       1610.20        against 1943.28
+ *
+ * The figure is the right size and OVERFLOWS its own wrapper, which is B3's
+ * signature exactly. 76.11 is not an arbitrary number: `.tp-portrait__mono`
+ * measures 56.89px wide at 390, plus `.tp-portrait`'s own 2px dashed border on
+ * each side is 60.89, and 60.89 x 5/4 = 76.11. The wrapper's block size is
+ * being resolved from the monogram's max-content INLINE size rather than from
+ * the 340px the figure actually renders at.
+ *
+ * WHERE THE BAND IS, AND IT IS NOT THIS PAGE'S BREAKPOINT. Swept live in 10px
+ * steps from 380 to 1440 and then pinned to the pixel: the wrapper is short
+ * from 380 to 767 INCLUSIVE and correct from 768 up. It tracks
+ * (monogram + 4px) x 5/4 all the way across that band, which is why the
+ * shortfall shrinks as the viewport grows (the monogram's own font-size is a
+ * `clamp()` on vw): 76.11 at 390, 82.50 at 600, 91.36 at 766, and then 425 at
+ * 768.
+ *
+ *     766   figure 425   wrapper  91.36   SHORT
+ *     768   figure 425   wrapper 425      exact
+ *
+ * 767 IS ELEMENTOR'S OWN MOBILE BREAKPOINT, not this build's. This page's
+ * breakpoints are 900 and 520 and neither is anywhere near it. Elementor's
+ * frontend stylesheet makes `.e-con.e-flex` take `--flex-wrap-mobile` (which
+ * is `wrap`) at and below 767, so `.tp-profile__aside`, which Elementor has
+ * already made a flex COLUMN, becomes a WRAPPING flex column there. In a
+ * multi-line column container an item's cross size is its own line's, not the
+ * container's, so the aspect-ratio figure's block size stops resolving against
+ * the container width and resolves against its content's max-content width
+ * instead. Confirmed directly: `.tp-profile__aside.e-con{flex-wrap:nowrap}`
+ * alone takes the wrapper to 425 and the aside to 819.80 at 390.
+ *
+ * That unifies two of this file's categories that were recorded separately:
+ * block 15's flex-wrap default and B3's aspect-ratio flex base are one defect
+ * here, and the second cannot occur without the first. The practical
+ * consequence for the phase, recorded because it is not obvious from any
+ * page's own stylesheet: A MIDDLE-BAND SWEEP MUST COVER ELEMENTOR'S OWN
+ * BREAKPOINTS (767 mobile, 1024 tablet), NOT ONLY THE PAGE'S. Every band this
+ * phase has swept so far was chosen from the page's own media queries, and
+ * this defect lives 133px away from the nearest one.
+ *
+ * NINE CANDIDATES MEASURED AT 390, and the result reproduces blocks 14, 16,
+ * 24 and B3 exactly, which is the strongest evidence yet that this is one
+ * category and not five incidents:
+ *
+ *     display:block on the container        wrapper 425, aside 819.80, EXACT
+ *     flex-wrap:nowrap on the container     wrapper 425, aside 819.80, EXACT
+ *     width:100% on the wrapper             wrapper 425, aside 819.80, EXACT
+ *     flex-basis:content on the wrapper     wrapper still 76.11
+ *     height:fit-content on the wrapper     wrapper still 76.11
+ *     flex:0 0 auto on the wrapper          wrapper still 76.11
+ *     min-height:fit-content on container   wrapper still 76.11
+ *     align-self:flex-start on the wrapper  WORSE: the figure itself narrows
+ *                                           to 60.89 and becomes 76.11 for
+ *                                           real
+ *     display:contents on the wrapper       WORSE, same reason: the figure
+ *                                           becomes the flex item and takes
+ *                                           the defect itself
+ *
+ * THREE WORK, SO THE DISCRIMINATOR CHOOSES RATHER THAN THE MEASUREMENT, and
+ * it is block 16's: "the parent-level repair block 14 uses is right where the
+ * static parent is a plain block and wrong where the build declares the flex
+ * column itself". `.tp-profile__aside` declares NO display anywhere in
+ * css/team-bio.css: it is a plain block in the static build, so this gives the
+ * container back the formatting context the static build gives it, and it
+ * removes both halves of the mechanism rather than only the second.
+ *
+ * Margin arithmetic checked rather than assumed, because display:block
+ * restores collapsing that flex layout suppresses. The aside holds three
+ * widget wrappers. `.tp-back` is `display:inline-flex` with
+ * `margin-bottom:var(--space-7)` (:31-32), an atomic inline-level box whose
+ * margin box sets its line box height on both sides, so it collapses with
+ * nothing and its wrapper is 56px either way. `.tp-frame` is `margin:0`
+ * (:39). `.tp-contact` has `margin-top:clamp(var(--space-7),3vw,
+ * var(--space-9))` (:63) and no bottom margin, which collapses out through
+ * its own wrapper and meets a zero, so static pays max(0, X) and block layout
+ * pays the same max(0, X). Measured: `.tp-contact` at top 553 exactly, which
+ * is 96 + 425 + 32, matching static to the hundredth.
+ *
+ * NAMED to this page's own column. `.tp-profile__aside` appears nowhere else
+ * in the build, and a rule broad enough to cover every converted `.e-con`
+ * would reach every page in it.
+ *
+ * Checked for @media interference before writing: css/team-bio.css:142's
+ * `@media (max-width:900px)` block names `.tp-frame` and `.tp-profile__copy`
+ * but never `.tp-profile__aside`, and nothing in the file gives the aside a
+ * display at any width, so one unconditional declaration is correct
+ * everywhere. Confirmed by re-measuring at 1440, where the aside was already
+ * exact at 832.47 on both sides and is unchanged by this rule. */
+.tp-profile__aside.e-con{
+  display:block; /* the static build's own formatting context */
+}
+
+/* ---------- 34. team-bio: an inline-level link that stops being a flex item,
+ *                the SIXTH instance of the wrapper-descender defect -------
+ * Identical in mechanism, measurement and repair to block 22's two sites, to
+ * `.ta-hero__actions` (block A4), `.wa-hero__actions` and `.em-join__way`.
+ * `css/team-bio.css:133-135` declares `.tp-more__link{display:inline-flex;...}`,
+ * which the flex spec blockifies while the anchor is a direct child of a flex
+ * container. Built with `html()` it stops being a flex item, the blockification
+ * never happens, and the wrapper's line box is taller than the anchor by the
+ * strut's descender.
+ *
+ * Measured at 390, where `.tp-more__slab` is a column on BOTH sides through
+ * the build's own `@media (max-width:520px)`:
+ *
+ *     a.tp-more__link           live 182.75 x 24     static 182.75 x 24
+ *     its .elementor-widget-html live 182.75 x 27.19  no counterpart
+ *     .tp-more__slab            live 342 x 140.48    static 342 x 137.30
+ *
+ * 3.18px, and it is the whole of the slab's remaining height difference at
+ * that width. INVISIBLE at 1440 for the reason block 22 and block A4 both
+ * record: in a row the slab's height comes from the taller sibling, which is
+ * the 36.8px `<h2>`, and 27.19 fits inside it with room to spare. The same
+ * 3.18px is real everywhere the build makes the slab a column, which is every
+ * width at and below 520.
+ *
+ * `.tp-back` is the SAME SHAPE AND NEEDS NOTHING, checked rather than assumed
+ * because it would have been the obvious second site: it is also
+ * `display:inline-flex` (:31) inside an html() widget, but it carries
+ * `margin-bottom:var(--space-7)` and is an atomic inline-level box on both
+ * sides, so its 24 + 32 margin box already exceeds the strut and its wrapper
+ * measures 56px live against a 56px line box static. Measured at both widths.
+ *
+ * `display:contents` removes the wrapper from the box tree, so the anchor
+ * becomes the flex item the build wrote its rules for. Safe here for block
+ * 22's reasons: the wrapper carries no background, no border and no position,
+ * nothing in css/team-bio.css addresses this anchor through a child
+ * combinator, and the anchor's own `data-reveal="rise"` is authored on the
+ * anchor rather than on the wrapper, so the reveal layer is untouched.
+ *
+ * After: the wrapper gone from the box tree, the anchor 182.75 x 24 as a real
+ * flex item, and `.tp-more__slab` 137.30 at 390 and 137.58 at 1440, both
+ * exactly static. */
+.tp-more__slab > .elementor-widget-html{
+  display:contents;
+}
+
+/* ---------- 35. team-bio: the ninth cost category's SECOND instance, and its
+ *                first outside the page that found it --------------------
+ * Block 30 records this category in full and asks for exactly this: it closes
+ * by stating that the reset is site-wide and that "any anchor on any page that
+ * carries a class declaring `box-shadow` at 0,1,0 or lower is subject to it".
+ * `.tp-profile__actions`'s call to action is the second converted anchor in
+ * the build to carry `.em-btn--primary`, because 01-profile.mjs note 10 builds
+ * the whole `<div>` as one html() widget (Route A) and the anchor therefore
+ * reaches the page as itself rather than as a link() wrapper div.
+ *
+ * Elementor's `.elementor a{box-shadow:none;text-decoration:none}` at 0,1,1
+ * beats `components/components.css:11`'s
+ * `.em-btn--primary{background:var(--em-orange);color:var(--white);
+ * box-shadow:var(--shadow-sm)}` at 0,1,0. Hand-probed live against static at
+ * 1440, on a 6000px-tall viewport so nothing scrolls, with every state read
+ * back in the same evaluate that read the properties and with the transitions
+ * allowed to settle first:
+ *
+ *     rest    live  none   static  rgba(0, 41, 53, 0.08) 0px 2px 6px 0px
+ *     hover   live  none   static  rgba(0, 41, 53, 0.08) 0px 2px 6px 0px
+ *     focus   live and static IDENTICAL, before this rule
+ *
+ * THE FOCUS ROW IS WHY THE SECOND RULE EXISTS, and it is measured here rather
+ * than inferred from block 30's arithmetic. `components.css:6` is
+ * `.em-btn:focus-visible{box-shadow:var(--shadow-focus)}` at 0,2,0, which
+ * already beats Elementor's 0,1,1, so the keyboard focus ring was CORRECT on
+ * the live page before this block. A rest-state restatement at 0,3,0 also
+ * beats 0,2,0, and bridge.css loads last, so the first rule alone would have
+ * DELETED a focus ring that was working and shipped a WCAG 2.4.7 failure:
+ * the same shape this file's "Task 5 defect #1" block records for the skip
+ * link. The companion is not optional and the ring was re-verified by real
+ * keyboard focus after deploying, not inferred.
+ *
+ * NO INSTRUMENT IN THIS PROJECT COMPARES box-shadow, and all three were green
+ * on this element throughout. It was found the same way block 30 was, by
+ * hand-probing every anchor inside <main> at rest, on hover and on focus.
+ *
+ * THE OTHER FIVE ANCHORS ON THIS PAGE NEED NOTHING, probed rather than read:
+ * `.tp-back`, the three `.tp-contact__list` rows and `.tp-more__link` all
+ * match static on colour, background, text-decoration line and colour,
+ * underline offset, box-shadow, outline and border colour, at rest, on hover
+ * and on keyboard focus, at 1440 and 390. That is the eighth category scoring
+ * zero on this page for the reason the price gave: all three classes declare
+ * `text-decoration:none` themselves, and the two page-specific ones declare
+ * `underline` on `:hover` at 0,2,0, which outranks Elementor's 0,1,1.
+ *
+ * NAMED to this page's own wrapper, per the standing constraint.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/team-bio.css's three media blocks names `.tp-profile__actions` or
+ * `.em-btn`, and components.css declares both shadows unconditionally, so one
+ * unconditional declaration of each is correct at every width. Confirmed by
+ * re-probing at 390.
+ *
+ * After: `rgba(0, 41, 53, 0.08) 0px 2px 6px 0px` live, matching static
+ * exactly, at rest and on hover, at 1440 and 390, with the focus ring
+ * intact. */
+.elementor .tp-profile__actions .em-btn{
+  box-shadow:var(--shadow-sm); /* components/components.css:11 */
+}
+.elementor .tp-profile__actions .em-btn:focus-visible{
+  box-shadow:var(--shadow-focus); /* components/components.css:6 */
+}

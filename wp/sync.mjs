@@ -9,10 +9,32 @@ const run = promisify(execFile);
    folder name), not a fact about the install. */
 const THEME = 'wp-content/themes/empowerms-child';
 
-/* tokens/, components/, css/, js/ and assets/ are SYNCED from the repository
-   root, never copied into wp/. A second copy in the tree drifts from the first
-   and the drift is invisible until a page renders wrong. */
-const FROM_ROOT = ['tokens', 'components', 'css', 'js', 'assets'];
+/* tokens/, components/, css/, js/, assets/ and patterns/ are SYNCED from the
+   repository root, never copied into wp/. A second copy in the tree drifts from
+   the first and the drift is invisible until a page renders wrong.
+
+   patterns/ WAS MISSING FROM THIS LIST UNTIL 2026-08-18, and every converted
+   page has been rendering without the build's hex-lattice motif since Phase 2A
+   as a result. Fifteen stylesheets reach for `url('../patterns/hex-lattice.svg')`
+   as a `mask-image`, five of them on pages already converted (`final` through
+   css/homepage.css, css/option-a.css and css/option-d.css, plus what-we-do-a,
+   team-a, who-we-are-a and team-bio), and the file 404'd on the install:
+   `wp-content/themes/empowerms-child/patterns/` did not exist at all. Found by
+   LOOKING at team-bio at 1440 during Task 16, next to the static build, and by
+   nothing else: a mask on a `::before` changes no layout and no computed
+   property of any real element, so census(), controlBoxes() and
+   layoutInvariants() are all structurally blind to it. The list this one should
+   have been kept in step with is pages.mjs's own SHARED, which has carried
+   `patterns` since the review site was built; the two were derived
+   independently, which is how they came apart.
+
+   The rule this list needs to stay correct, stated so the next asset directory
+   does not repeat it: what belongs here is every directory any SHIPPED
+   stylesheet reaches for, and that set is derivable rather than remembered.
+   Today `grep -ohE "url\(['\"]?[^)'\"]+" css/*.css components/*.css tokens/*.css`
+   returns exactly three roots: `../assets/`, `../patterns/` and inline `data:`
+   URIs. Both directories are now in this list. */
+export const FROM_ROOT = ['tokens', 'components', 'css', 'js', 'assets', 'patterns'];
 
 /* Exported for the test, and pure on purpose. The window this closes cannot
    be observed from any unit test in this repository, because the failure is a

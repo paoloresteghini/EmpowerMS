@@ -5895,3 +5895,503 @@
 .lnd-reading .em-container.e-con{
   flex-wrap:nowrap;
 }
+
+/* ============================================================================
+ * Task 21: content-a, All Content, "The Four Doors", and the seventeenth page.
+ * SIX blocks, 48 to 53, and nothing above is touched.
+ *
+ * THE PAGE WAS PRICED AT FOUR REPAIRS AND COST SIX. Two of the four priced are
+ * here as predicted (49, the photograph; 53, the lead card as a DECISION rather
+ * than a defect). One priced repair, `.cad-card__meta`'s missing
+ * `flex-direction`, is held at ZERO and block 49's comment says by what. The
+ * three the price missed are 50 (the card title's class on a heading widget's
+ * wrapper), 51 (the click overlay losing its containing block) and 48, which is
+ * a NEW COST CATEGORY, the fourteenth, and the one worth reading.
+ *
+ * EVERY BLOCK BELOW IS NAMED TO ONE OF THIS PAGE'S OWN CLASSES. Four of the six
+ * name `.cad-cards` or `.cad-card`, which exist only inside this page's four
+ * Loop Grids, and the other two name `.cad-browse` and `.cad-card__title`.
+ * Nothing here can reach another page.
+ *
+ * THIS PAGE IS NOT GATED. Its four Loop Grids render 205 real posts where
+ * dist/content-a.html carries 23 authored cards, so it is in EXCLUDED_PAGES
+ * beside podcast-a and every "before" and "after" number below was measured by
+ * hand, live against the static build served locally, at 1440 and 390, keyed on
+ * the FIRST card of the first band (the lead) and on the THIRD (a plain card,
+ * because the second is a `--whole` card in the static build and would have
+ * compared two different treatments). The behavioural gate is the browser
+ * filter test in test-elementor.mjs.
+ * ==========================================================================*/
+
+/* ---------- 48. content-a: a Loop Grid whose own wrapper class is a GRID,
+ *                and the phase's FOURTEENTH cost category ----------------
+ * NEW SHAPE, and it is the difference between `auto-fill` and `auto-fit`.
+ *
+ * podcast-a/03-library.mjs's note 9 measured this family on a real render and
+ * concluded the build's grid rule is a harmless no-op: the class lands on the
+ * loop-grid widget's OUTER wrapper, that wrapper has exactly one child
+ * (`.elementor-widget-container`), and Elementor's own
+ * `div.elementor-loop-container.elementor-grid` two levels deeper does the
+ * actual layout. That conclusion is correct FOR THAT PAGE and false here.
+ *
+ *     css/podcast-a.css:  repeat(auto-fit,  minmax(240px,1fr))
+ *     css/content-a.css:  repeat(auto-fill, minmax(min(100%,300px),1fr))
+ *
+ * `auto-fit` COLLAPSES tracks with no items in them, so a grid with one child
+ * gives that child the whole row and the rule really is inert. `auto-fill`
+ * KEEPS them. So `.cad-cards` created three 362.66px tracks at 1440 and put its
+ * single `.elementor-widget-container` in the first one, and everything below
+ * inherited a third of the row.
+ *
+ * Measured live against static at 1440 before this rule:
+ *
+ *     .cad-cards                    grid, 3 tracks   w 1152   1 child
+ *     .elementor-widget-container   w 362.66   (should be 1152)
+ *     .elementor-loop-container     grid, 3 tracks of 100.88px
+ *     .cad-card                     w 100.88   against 362.66 static
+ *
+ * A 100px card inside a 1152px band, with every photograph, title and date
+ * inside it laid out at that width. The most visible defect on the page and
+ * the one no computed-style comparison would have named: every property on
+ * `.cad-cards` agreed with the static build exactly, including
+ * `grid-template-columns`, because BOTH sides really do compute three 362px
+ * tracks. What differs is how many children there are to put in them.
+ *
+ * THE REPAIR MAKES THE BUILD'S OWN GRID THE REAL ONE, rather than restoring
+ * Elementor's. `display:contents` on the two wrappers between `.cad-cards` and
+ * the loop items removes them from the box tree, so the `.e-loop-item` divs
+ * become grid items of `.cad-cards` itself and css/content-a.css:202-203 lays
+ * the cards out: its `auto-fill` responsive column count AND its `clamp()` gap,
+ * neither of which reached the page under Elementor's own fixed 3/2/1 grid.
+ * That is the higher-fidelity of the two available repairs and it is what
+ * podcast-a's note 9 names as the natural next step ("the spec itself names an
+ * additive bridge stylesheet as the intended fix for exactly this shape of
+ * problem"). It is also what makes block 53 possible: the lead card's
+ * `grid-column:1/-1` needs a grid whose items are the loop items.
+ *
+ * `.elementor-loop-container` is where `.elementor-grid{display:grid}` lands,
+ * at 0,1,0; this selector is 0,2,0 and wins on specificity rather than order.
+ *
+ * WHAT display:contents COSTS HERE, checked rather than waved past. The loop
+ * container carries `role="list"`, and display:contents has dropped IMPLICIT
+ * semantics in shipped browsers while an EXPLICIT role survives it, which is
+ * the same fact src/content-a/sections/02-browse.html's own comment relies on
+ * for its two fieldsets. Neither wrapper carries a background, a border or a
+ * position, and no selector in css/content-a.css reaches through either with a
+ * child combinator (the file contains no `>` in any selector at all). The
+ * `<style id="loop-...">` element Elementor emits inside the loop container is
+ * `display:none` by UA rule, so it never becomes a grid item.
+ *
+ * After: three tracks of 362.66px at 1440 and one of 342px at 390, with a 32px
+ * and a 20px gap, all four numbers identical to the static build. */
+.cad-cards > .elementor-widget-container,
+.cad-cards .elementor-loop-container{
+  display:contents;
+}
+
+/* ---------- 49. content-a: a card photograph whose class the image widget
+ *                moves off the <img> onto the wrapper -------------------
+ * The SECOND cost category, identical in mechanism to `.lnd-pair__photo`
+ * (block 43), `.c2-panel__bg` and `.em-join__wash`. `css/content-a.css:262-264`
+ * is `.cad-card__photo{display:block;width:100%;aspect-ratio:3/2;height:auto;
+ * object-fit:cover;object-position:center;background:var(--surface-subtle);
+ * transition:transform ...}` and dist/content-a.html puts that class ON THE
+ * <img>. `image()` puts cssClass on the WRAPPER (elementor/factory.mjs,
+ * WIDGET_CSS_CLASS_KEY), so the real <img> two levels inside takes Elementor's
+ * own `.elementor img{height:auto;max-width:100%}` and
+ * widget-image.min.css's `display:inline-block` instead.
+ *
+ * Measured live against static at 1440 before this rule, on the third card of
+ * the first band and with block 48 already in play so the widths are
+ * comparable:
+ *
+ *     .cad-card__photo (the wrapper)  360.67 x 240.44   correct, it has the class
+ *     the real <img>                  360.67 x 202.88   object-fit FILL
+ *                                                       display inline-block
+ *
+ * so the photograph rendered at its own intrinsic ratio inside a box that is
+ * the right shape, with the remaining 37.56px of that box showing the
+ * `--surface-subtle` background the rule paints. Every card on the page, 204
+ * of them.
+ *
+ * WHICH DECLARATIONS MOVE AND WHICH STAY, decided per declaration rather than
+ * copied wholesale. `aspect-ratio`, `background` and `transition` STAY on the
+ * wrapper and are correct there: the wrapper is the element the card's layout
+ * sizes, and `.cad-card:hover .cad-card__photo{transform:scale(1.035)}` scaling
+ * the wrapper scales the <img> filling it, clipped by `.cad-card`'s own
+ * `overflow:hidden`, which is the same visual the static build produces by
+ * scaling the <img> directly. `display`, `width`, `height`, `object-fit` and
+ * `object-position` MOVE, because they are the declarations that only mean
+ * anything on a replaced element. `height:100%` rather than the ratio restated:
+ * the wrapper already carries the `aspect-ratio` and is the sized box, and
+ * restating a ratio on the <img> would silently disable any future responsive
+ * override of it, which is the trap recipe section 5 records.
+ *
+ * `.elementor-widget-container` needs `height:100%` too, because it sits
+ * between the two and would otherwise shrink-wrap and give the <img>'s
+ * percentage nothing to resolve against.
+ *
+ * `border-radius` is NOT restated, unlike block 43's. `.cad-card__photo`
+ * declares none: the card carries the radius and clips the photograph with
+ * `overflow:hidden`, so Elementor's `border-radius:0` on the <img> is what the
+ * static build has too.
+ *
+ * `.cad-card__photo--whole` IS NOT REPAIRED BECAUSE IT IS NOT BUILT. Five of
+ * the twenty-three static cards carry it (`object-fit:contain` with padding, so
+ * a campaign card's own type is not cropped in half). It is a per-card modifier
+ * chosen by eye and a Loop Grid renders every item from one template, so it is
+ * dropped. That is a visible difference from the static build and it is in the
+ * task report, not here.
+ *
+ * `.cad-card__meta` NEEDS NOTHING AND THAT IS WHY IT IS MENTIONED HERE.
+ * css/content-a.css:276 is `display:flex` with no `flex-direction`, which is
+ * block 42's exact shape and was priced as this page's second repair. It is
+ * held at zero because the whole meta line is rendered by one shortcode inside
+ * one text() widget (wp/empowerms-child/inc/content-loop.php), so
+ * `.cad-card__meta` is a real <span> rather than an Elementor container and
+ * `.e-con-full.e-flex{flex-direction:var(--flex-direction)}` cannot reach it.
+ * Measured, not assumed: `row` on both sides at 1440 and 390.
+ *
+ * Checked for @media interference before writing: css/content-a.css's only
+ * media rule naming `.cad-card__photo` is the lead's own at :247-250, which
+ * block 53 carries.
+ *
+ * After: 360.67 x 240.44 with `object-fit:cover` and `display:block` on the
+ * real <img>, matching the static build exactly at 1440 and 390. */
+.elementor .cad-card__photo > .elementor-widget-container{
+  height:100%; /* so the <img>'s own 100% has a definite box to resolve against */
+}
+.elementor .cad-card__photo img{
+  display:block;                  /* css/content-a.css:262 */
+  width:100%;                     /* css/content-a.css:262 */
+  height:100%;                    /* fills the wrapper's own aspect-ratio, :262 */
+  object-fit:cover;               /* css/content-a.css:263 */
+  object-position:center;         /* css/content-a.css:263 */
+}
+
+/* ---------- 50. content-a: the card title's class on a heading widget's
+ *                wrapper, the R10 case a SECOND time ------------------
+ * Identical in mechanism and in repair to `.pca-ep__title`'s own rule, and it
+ * is the second instance of the one class-on-wrapper repair that SURVIVED the
+ * class-in-markup migration rather than being deleted with the rest of that
+ * block. The reason it survives is the same both times: the widget binds two
+ * dynamic tags to one element (post-title into `title`, post-url into `link`),
+ * which a text() widget's single editor field cannot do, so it stays a
+ * heading() widget and its class stays on the wrapper.
+ *
+ * `css/content-a.css:283` is `.cad-card__title{margin:0;font-size:var(--fs-h5);
+ * line-height:1.3;color:var(--text-strong)}` and dist/content-a.html puts that
+ * class on the <h3>. On the wrapper, `color` still reaches the <h3> and the <a>
+ * by inheritance and needs nothing; `font-size` and `line-height` do not,
+ * because the <h3> has rules of its own that win outright.
+ *
+ * Measured live against static at 1440 before this rule, on a plain card:
+ *
+ *     the real <h3>   font-size    live 25.6px    static 17px
+ *                     line-height  live 25.6px    static 22.1px
+ *
+ * 25.6px is tokens/base.css:6's `h3{font-size:var(--fs-h3)}` and 25.6px of
+ * line-height is Elementor's `.elementor-widget-heading .elementor-heading-title
+ * {line-height:1}`. So every card title on the page rendered a full heading
+ * size larger and tighter than the design, which at 205 cards is the page's
+ * second most visible defect after block 48's.
+ *
+ * `margin` NEEDS NOTHING and was measured rather than assumed:
+ * tokens/base.css:4 gives every heading `margin:0 0 var(--space-4)`, and
+ * Elementor's own `.elementor-widget-heading .elementor-heading-title{margin:0}`
+ * already zeroes it on both sides. 0px live and 0px static, before this rule.
+ *
+ * TARGETED AT `.elementor-heading-title` RATHER THAN AT `h3`, so the rule can
+ * only ever reach the element Elementor's own reset is aimed at, and so it
+ * would keep working if the heading level ever changed. Specificity 0,3,0
+ * against Elementor's 0,2,0 and tokens/base.css's 0,0,1.
+ *
+ * The lead card's larger title (`css/content-a.css:284`) is block 53's, for the
+ * same reason its photograph is: it is a per-position override, not a per-card
+ * one, once the modifier cannot exist.
+ *
+ * After: 17px and 22.1px at 1440, 17px and 22.1px at 390, matching static. */
+.elementor .cad-card__title .elementor-heading-title{
+  font-size:var(--fs-h5);  /* css/content-a.css:283 */
+  line-height:1.3;         /* css/content-a.css:283 */
+}
+
+/* ---------- 51. content-a: the whole-plate click target loses its
+ *                containing block to two Elementor wrappers ------------
+ * `css/content-a.css:287-289` is the pattern this build uses to make a whole
+ * card clickable without nesting interactive elements: the heading's own <a>
+ * grows a `::before{content:"";position:absolute;inset:0}`, and `.cad-card`
+ * carries `position:relative` (:208) so that overlay resolves against the CARD.
+ * The comment above it says so: "The whole plate is the target; the heading
+ * link is what carries the accessible name and the focus ring."
+ *
+ * Elementor gives EVERY container and EVERY widget wrapper `position:relative`.
+ * So converted, the nearest positioned ancestor of the <a> is no longer
+ * `.cad-card` but the heading widget's own wrapper, and the overlay covers the
+ * title and nothing else.
+ *
+ * Measured live against static at 1440 before this rule, by walking up from the
+ * card link to the first ancestor whose `position` is not `static`:
+ *
+ *     live    .elementor-heading-title = static
+ *             .cad-card__title         = RELATIVE   <- the overlay stops here
+ *             .cad-card__body          = relative
+ *             .cad-card                = relative
+ *     static  .cad-card__title         = static
+ *             .cad-card__body          = static
+ *             .cad-card                = RELATIVE   <- and here on the static build
+ *
+ * INVISIBLE TO EVERY INSTRUMENT IN THIS REPOSITORY. No box moves, no computed
+ * property of any keyed element differs, and the page looks identical: the card
+ * still highlights on hover (that is `.cad-card:hover`, a real hover on the
+ * card) and the link still works. What is lost is that clicking the
+ * photograph, the date or the white space opens the post. Two hundred and five
+ * cards where only the title line is clickable, on a page whose entire job is
+ * getting people into articles.
+ *
+ * BOTH ancestors have to be reset, not just the nearer one: making only
+ * `.cad-card__title` static hands the overlay to `.cad-card__body` instead.
+ *
+ * SAFE ON BOTH, checked rather than assumed. Neither element has an absolutely
+ * positioned descendant of its own other than the overlay this rule is FOR:
+ * the card's own `::after` mark (:297) is on `.cad-card`, which keeps its
+ * `position:relative` and is the element the design intends as the containing
+ * block. `position:static` is what dist/content-a.html computes for both.
+ *
+ * After: the overlay's containing block is `.cad-card` on both sides at 1440
+ * and 390, so the whole plate is the target again. */
+.cad-card .cad-card__body.e-con,
+.cad-card .cad-card__title{
+  position:static;
+}
+
+/* ---------- 52. content-a: a sticky filter bar with nowhere to travel,
+ *                and the first `position:sticky` in the phase ----------
+ * `css/content-a.css:93` is `.cad-controls{position:sticky;top:113px;
+ * z-index:30;...}`, and its comment records that 113px is measured rather than
+ * guessed: 45px of contact strip plus `.em-header__bar`'s scrolled 68px.
+ *
+ * A sticky element travels within its PARENT's box. In dist/content-a.html the
+ * form's parent is `<section class="cad-browse">`, which is the whole browse,
+ * so the bar stays under the header for the entire archive. Converted, the form
+ * is one verbatim html() widget (podcast-a's exception 2, forced here because
+ * fourteen selectors reach its ten radios by id), so its parent is
+ * `.elementor-widget-container` inside `.elementor-widget-html`, and that
+ * wrapper SHRINK-WRAPS to the form's own height.
+ *
+ * Measured live against static at 1440 before this rule, by scrolling to 2500
+ * and reading the bar's own `getBoundingClientRect().top`:
+ *
+ *     live     parent .elementor-widget-html   height 133.39   = the form's own
+ *              bar top after scrolling         -1854.13        (scrolled away)
+ *     static   parent .cad-browse              height 5656.83
+ *              bar top after scrolling         113             (stuck)
+ *
+ * `position` computes to `sticky` on both sides and `top` to `113px` on both,
+ * which is why this needed a SCROLL to find: every computed value agreed and
+ * the behaviour did not. No instrument in this repository scrolls, so this was
+ * predicted from the mechanism before deploying and then measured.
+ *
+ * `display:contents` on both wrappers removes them from the box tree, so the
+ * <form> becomes a child of `.cad-browse` and travels the whole browse again.
+ * Both wrappers are needed: leaving `.elementor-widget-container` in place
+ * leaves the same shrink-wrapped parent one level down.
+ *
+ * SAFE HERE for the reason blocks 22 and 44 record and re-checked on this page:
+ * neither wrapper carries a background, a border or a position of its own, and
+ * css/content-a.css contains no `>` in any selector, so nothing addresses the
+ * form through a child combinator.
+ *
+ * NAMED TO `.cad-browse >`, so it can only reach the ONE html() widget that is
+ * a direct child of this page's browse section. The page's other text() and
+ * html() wrappers are deliberately outside it.
+ *
+ * AT 390 THE STATIC BUILD DOES NOT STICK EITHER, and that is correct rather
+ * than a gap: css/content-a.css:178-180 returns `.cad-controls` to
+ * `position:static` below 720px, because "a filter bar that occupies half a
+ * phone screen is worse than one that scrolls away with the page". Both sides
+ * measured not-stuck at 390 before and after this rule.
+ *
+ * After: the bar's top is 113 on both sides after scrolling at 1440, and
+ * neither sticks at 390. */
+.cad-browse > .elementor-widget-html,
+.cad-browse > .elementor-widget-html > .elementor-widget-container{
+  display:contents;
+}
+
+/* ---------- 53. content-a: the lead card, which a Loop Grid cannot express,
+ *                restored BY POSITION ---------------------------------
+ * NOT A DEFECT. This block is a DESIGN DECISION taken on 2026-08-19 and it is
+ * the one place in this phase where the structural-pseudo-class shape is used
+ * deliberately rather than repaired.
+ *
+ * `css/content-a.css:221-229`, `:244-245` and `:247-250` give the FIRST card of
+ * each band the `cad-card--lead` modifier: it spans the whole first row and
+ * turns sideways, photograph on the left and headline on the right, with a
+ * bounded photograph height, a wider body padding and a larger title.
+ * `.cad-card__photo--whole` is a second per-card variant in the same position.
+ *
+ * A Loop Grid renders every item from ONE template, so no per-item modifier can
+ * exist. Three options were weighed and the task report carries the argument:
+ *
+ *   1. CSS BY POSITION, this block. Nearest to the design.
+ *   2. Drop the lead treatment. Cheapest, and it loses the shape each band is
+ *      built around: four bands of identical plates with no entry point.
+ *   3. Author the first card of each band and loop the rest. NOT taken and not
+ *      takeable without asking: it reintroduces per-card media and per-card alt
+ *      text, which is the whole cost the Loop Grid decision removed.
+ *
+ * `:first-of-type` AND NOT `:first-child`, AND THAT IS THE FINDING IN THIS
+ * BLOCK. Elementor emits a `<style id="loop-20614">` element as the FIRST child
+ * of `.elementor-loop-container`, before any loop item, carrying the template's
+ * own generated CSS. Read off a real render rather than assumed, on podcast-a
+ * before this page was deployed. So `.e-loop-item:first-child` matches NOTHING,
+ * ever, and it fails the way recipe section 6 calls SILENT: no rule wins that
+ * should, nothing looks broken, and the lead card simply never appears. That is
+ * the same trap this phase has repaired eleven times, met here while WRITING a
+ * rule rather than while repairing one. `:first-of-type` counts only elements
+ * of the same type, so it matches the first `.e-loop-item` div whether or not
+ * the <style> is emitted.
+ *
+ * IT NEEDS BLOCK 48. `grid-column:1/-1` is a GRID-ITEM property, the eleventh
+ * cost category, so it has to land on whatever element the grid actually places
+ * and that is Elementor's own `.e-loop-item`, not `.cad-card` inside it. Block
+ * 48 is what makes `.cad-cards` the grid whose items those are.
+ *
+ * Measured live against static at 1440 with this block in place, on the first
+ * card of the first band:
+ *
+ *                              live            static
+ *     .cad-card  width         1151.98         1151.98
+ *                display       grid            grid
+ *                columns       589.02 560.97   589.02 560.97
+ *     .cad-card__photo         589.02 x 345.59 589.02 x 345.59
+ *     the <img>  object-fit    cover           cover
+ *                object-position  50% 35%      50% 35%
+ *     .cad-card__body padding  34.56px         34.56px
+ *     the <h3>   font-size     25.6px          25.6px
+ *                line-height   33.28px         33.28px
+ *
+ * and at 390, where css/content-a.css:247-250 returns the lead to one column:
+ *
+ *     .cad-card  columns       340px           340px
+ *     .cad-card__photo         340 x 300       340 x 300
+ *     .cad-card__body padding  24px            24px
+ *
+ * `.cad-card__photo--whole` FOLLOWS THE SAME LOGIC AND IS DROPPED rather than
+ * restored by position, because unlike the lead it is not positional: which
+ * five of the twenty-three images are "cards rather than photographs" is an
+ * editorial judgement the static build made by looking at them, and nothing
+ * here should infer it from an attachment's dimensions. Reported as a visible
+ * difference rather than approximated.
+ *
+ * The `@media (max-width:720px)` companion is css/content-a.css:247-250's own,
+ * restated at this block's selectors for the same two declarations it makes.
+ * No other media rule in the file names any lead-card class. */
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type{
+  grid-column:1/-1;                                        /* css/content-a.css:225 */
+}
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type > .cad-card{
+  display:grid;                                            /* css/content-a.css:225 */
+  grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);    /* css/content-a.css:226 */
+  align-items:center;                                      /* css/content-a.css:227 */
+  padding:0;                                               /* css/content-a.css:227 */
+}
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__body{
+  padding:clamp(var(--space-6),2.4vw,var(--space-8));       /* css/content-a.css:228 */
+}
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__photo{
+  aspect-ratio:auto;                                       /* css/content-a.css:244 */
+  height:clamp(300px,24vw,420px);                          /* css/content-a.css:244 */
+}
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__photo img{
+  object-position:center 35%;                              /* css/content-a.css:245 */
+}
+.cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__title .elementor-heading-title{
+  font-size:var(--fs-h3);                                  /* css/content-a.css:284 */
+}
+@media (max-width:720px){
+  .cad-cards .elementor-loop-container > .e-loop-item:first-of-type > .cad-card{
+    grid-template-columns:minmax(0,1fr);                   /* css/content-a.css:248 */
+  }
+  .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__body{
+    padding:var(--space-6);                                /* css/content-a.css:249 */
+  }
+}
+
+/* ---------- 54. content-a: a card title's hover colour lost to an Elementor
+ *                per-widget reset that TIES on specificity and wins on
+ *                SOURCE ORDER, and the phase's FIFTEENTH cost category ---
+ * THE FINDING IS THE LOAD ORDER, not the rule. Every comment in this file that
+ * reasons about a tie says some version of "this file loads after Elementor's
+ * own stylesheets, so it wins on order at equal specificity" (block 42's is the
+ * clearest). That is TRUE OF frontend.min.css AND FALSE OF ELEMENTOR'S
+ * PER-WIDGET STYLESHEETS, which Elementor enqueues on demand for whichever
+ * widgets a page actually uses, AFTER the theme's own styles.
+ *
+ * Read off the served <head> on 2026-08-19, which is what turned a puzzle into
+ * a mechanism:
+ *
+ *     ... 30 site.css  31 header-2.css  32 motion.css
+ *         33 content-a.css  34 bridge.css  35 widget-heading.min.css
+ *
+ * and checked across the build: `widget-heading.min.css` appears after
+ * bridge.css on `content-a` and on `podcast-a`, and on NO other converted page,
+ * because those two are the only pages left carrying a heading() widget at all.
+ * On `landing`, `epic-a` and `final`, bridge.css is the last stylesheet on the
+ * page.
+ *
+ * THE RULE IT LOSES TO:
+ *
+ *     .elementor-widget-heading .elementor-heading-title[class*="elementor-size-"] > a
+ *       {color:inherit}
+ *
+ * which is 0,3,1: two classes, one attribute selector and a type selector.
+ * `css/content-a.css:290` is `.cad-card:hover .cad-card__title a
+ * {color:var(--em-orange-ink)}`, which is ALSO 0,3,1. A tie, decided by source
+ * order, and Elementor's sheet is the later one.
+ *
+ * IT IS THE EXACT OPPOSITE OF BLOCK 45'S FINDING, which is why both are worth
+ * keeping. There, a build rule lost to a reset at 0,4,1 even though the build's
+ * sheet loads later, because specificity is decided before order. Here the two
+ * are equal on specificity and the build still loses, because the assumption
+ * about which sheet is later was wrong. Two ways to lose the same contest, and
+ * they need different repairs: raise specificity in both cases, but only after
+ * reading the served <head> rather than trusting the general claim.
+ *
+ * Measured live against static at 1440, with the pointer really over the card
+ * link, the state read back in the same evaluate and a settle wait after the
+ * hover because css/content-a.css:286 transitions `color` over 0.2s:
+ *
+ *     .cad-card__title a   rest    live rgb(0, 60, 80)     static rgb(0, 60, 80)
+ *                          HOVER   live rgb(0, 60, 80)     static rgb(186, 73, 32)
+ *
+ * At REST the two agree by luck rather than by cascade: Elementor's rule and
+ * `css/content-a.css:285`'s own `.cad-card__title a{color:inherit}` declare the
+ * same value, so it makes no difference which wins. Only the hover state
+ * differs, and only because that is the one declaration where the two rules
+ * disagree.
+ *
+ * INVISIBLE TO EVERY INSTRUMENT IN THIS REPOSITORY, which is the eighth and
+ * ninth categories' own story again: nothing here compares a colour, and
+ * nothing here hovers. It was found by recipe step 8's hand probe and by
+ * nothing else. The `outline-color` difference the same probe reported at rest
+ * (rgb(0,60,80) against rgb(186,73,32)) is this defect's shadow rather than a
+ * second one: `outline-color` defaults to `currentColor` and `outline-style` is
+ * `none` on both sides, so no outline is drawn either way.
+ *
+ * Specificity 0,5,1, which clears Elementor's 0,3,1 outright rather than
+ * relying on an order this block exists because of. `.elementor` is the
+ * qualifier every other reset repair in this file uses; `.cad-card:hover` and
+ * `.cad-card__title` are this page's own and cannot reach anything else.
+ *
+ * THE CARD'S OTHER HOVER WORK NEEDS NOTHING, probed rather than assumed and
+ * keyed on the element that CARRIES each class: `.cad-card::after` grows to
+ * 56px on both sides, `.cad-card__photo` reaches
+ * `matrix(1.035, 0, 0, 1.035, 0, 0)` on both, and the link's real keyboard
+ * focus ring is `solid 3px rgb(230, 90, 40) off 4px` on both.
+ *
+ * After: rgb(186, 73, 32) on hover on both sides, at 1440 and 390. */
+.elementor .cad-card:hover .cad-card__title .elementor-heading-title > a{
+  color:var(--em-orange-ink); /* css/content-a.css:290 */
+}

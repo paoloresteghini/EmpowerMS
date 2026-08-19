@@ -1158,11 +1158,42 @@ export const PAGE_REGISTER = [
    so a content mismatch like this cannot be swept under the same mechanism
    as a wrong crop. If podcast-a is ever to be gated, it needs a key that
    identifies a card slot independently of which episode landed in it,
-   which nobody has designed yet. */
+   which nobody has designed yet.
+
+   content-a: the same mismatch, four times over and larger. Its four bands
+   are Loop Grids over Empower News (141 posts today), Community Stories
+   (27), a manual selection of four posts standing in for a Research &
+   Reports category that does not exist on this install, and Press Releases
+   (33), so the live page renders 205 real cards where dist/content-a.html
+   carries 23 authored ones. Every card contributes an anchor key
+   (a|<post title>) and an image key, and 182 of the 205 name posts the
+   static build never chose. DEFERRED_IMAGES cannot be used here either,
+   for the same reason it cannot be used on podcast-a: the recipe restricts
+   deferral to IMAGE keys precisely so a content mismatch cannot be swept
+   under the same mechanism as a wrong crop, and most of these differences
+   are anchor keys. Gating it would need the same undesigned key podcast-a's
+   entry asks for, and would need it for a card slot whose CONTENTS are the
+   point of the page.
+
+   Paolo took the Loop Grid decision on 2026-08-19 knowing that cost. This
+   page's subject IS the live archive, so a converted All Content page
+   showing 23 frozen cards would be wrong in a way no instrument here would
+   report. What stands in for the register is the browser filter test in
+   test-elementor.mjs, which checks a radio on the real page and asserts
+   which bands and cards go away and that a dead-end pair shows its empty
+   state. That is a behavioural gate on the one thing that can silently
+   fail, which is what makes this exclusion safe rather than merely
+   necessary. */
 export const EXCLUDED_PAGES = [
   {
     name: 'podcast-a',
     reason: 'box sweep finds 9 permanent anchor-key differences (66 real episodes vs 9 placeholder '
       + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys',
+  },
+  {
+    name: 'content-a',
+    reason: 'four Loop Grids render 205 real posts where dist/content-a.html carries 23 authored '
+      + 'cards, so census and box keys differ on 182 anchors and their images; a content mismatch, '
+      + 'not an image finding, and gated behind the browser filter test instead',
   },
 ];

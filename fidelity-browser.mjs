@@ -128,6 +128,103 @@ export async function checkVisibleWithJs(url, selector) {
   }
 }
 
+/* checkFilter's bigger sibling, written for content-a, whose filter is two
+   RADIO groups rather than one checkbox group and whose hides act on three
+   different kinds of element: a chosen type hides whole bands, a chosen topic
+   hides individual cards, and three type-and-topic pairs hold nothing at all
+   and reveal a written empty state instead.
+
+   WHY A SECOND FUNCTION RATHER THAN AN OPTION ON checkFilter. That one models
+   a filter as "toggle one control, read one attribute off the items, untoggle,
+   read again", which is the whole of podcast-a's facet and none of this one.
+   Here the two groups interact (css/content-a.css:340 hides three whole bands
+   when Bill Summaries is chosen, because bill summaries are written as
+   articles), so what has to be asserted is a SEQUENCE OF STATES, each read
+   across three selectors. Bending checkFilter into that shape would have made
+   both callers harder to read than two functions that each do one thing.
+
+   THIS FUNCTION MAKES NO ASSERTIONS AND KNOWS NOTHING ABOUT content-a. It
+   drives the states it is given and reports what it saw; every expectation
+   lives in test-elementor.mjs, where a reader can see the filter's rules and
+   its measured behaviour next to each other.
+
+   `steps` is a list of { name, check: [radioId, ...] }. Each step chooses its
+   radios IN ORDER and then reads the page. Radios are never unchecked (that is
+   not a thing a radio group does); a step returns to the unfiltered state by
+   choosing the group's own "all" control, which is exactly how a visitor does
+   it and is what proves the do-nothing states really do nothing.
+
+   IT CLICKS THE LABEL, NOT THE INPUT, and that is not a convenience. This
+   filter's radios are `position:absolute;width:1px;height:1px;opacity:0;
+   pointer-events:none` (css/content-a.css:133-134), clipped behind their own
+   labels on purpose so that they stay in the tab order and on the
+   accessibility tree while the LABEL is what a visitor sees and hits. A click
+   aimed at the input lands on whatever is underneath it, so Playwright's own
+   check() reports "clicking the checkbox did not change its state", which is
+   the harness describing the design correctly rather than a page defect. The
+   label is the control, so the label is what this clicks.
+
+   AND IT ASSERTS THE STATE WAS ENTERED, in the same evaluate, which is recipe
+   step 8's standing rule. A click that silently failed to land would otherwise
+   read as a filter that hides nothing, which is the exact defect this function
+   exists to catch: the two are indistinguishable from the outside.
+
+   `{ force: true }` and `waitUntil: 'load'` are checkFilter's, for the reasons
+   its own comment gives at length: the install runs a MailMunch popup that
+   covers the viewport a few seconds after load and blocks real mouse
+   interaction site-wide, which is a live third-party defect this conversion
+   did not introduce and cannot fix from its own markup. */
+export async function checkRadioFilter(url, { steps, bandSelector, cardSelector, emptySelector }) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url, { waitUntil: 'load' });
+
+    /* Read in ONE evaluate per step, so every number in a step's row is
+       measured at the same moment. Reading them one call at a time would let
+       the popup, a lazy image or a reveal land between two reads and produce a
+       row that never existed on the page. */
+    const read = () => page.evaluate(({ band, card, empty }) => {
+      const shown = (sel) => [...document.querySelectorAll(sel)]
+        .filter((e) => getComputedStyle(e).display !== 'none');
+      const bands = shown(band);
+      const cards = shown(card);
+      const emptyEls = document.querySelectorAll(empty);
+      return {
+        bands: bands.length,
+        bandTypes: bands.map((e) => e.getAttribute('data-type')),
+        /* Cards inside a hidden band have display:block of their own but are
+           not rendered, so a bare display test over-counts. offsetParent is
+           null for anything with a display:none ancestor, which is the
+           question the filter is actually about. */
+        cards: cards.filter((e) => e.offsetParent !== null).length,
+        cardTopics: [...new Set(
+          cards.filter((e) => e.offsetParent !== null)
+            .map((e) => e.getAttribute('data-topic')),
+        )].sort(),
+        cardsWithoutTopic: cards.filter((e) => e.offsetParent !== null && !e.getAttribute('data-topic')).length,
+        emptyTotal: emptyEls.length,
+        emptyShown: [...emptyEls].filter((e) => getComputedStyle(e).display !== 'none').length,
+      };
+    }, { band: bandSelector, card: cardSelector, empty: emptySelector });
+
+    const out = [];
+    for (const step of steps) {
+      for (const id of step.check) {
+        await page.click(`label[for="${id}"]`, { force: true });
+        const checked = await page.$eval(`#${id}`, (el) => el.checked);
+        if (!checked) {
+          throw new Error(`checkRadioFilter: clicking label[for="${id}"] did not check #${id}, so the state under test was never entered`);
+        }
+      }
+      out.push({ name: step.name, ...await read() });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 /* Check 5 of the spec's harness. Catches the two silent infrastructure
    failures: a stylesheet that never enqueued, and Elementor's Theme Style or
    UiCore's own globals winning over css/site.css. Compared against the same

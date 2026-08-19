@@ -14,6 +14,7 @@ const EMPOWER_TOKENS = array(
 
 require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
 require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
+require_once get_stylesheet_directory() . '/inc/content-loop.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -288,6 +289,19 @@ function empower_page_styles() {
 		   slug, or the copy renders unstyled. That is a hand-off step and it is
 		   in the task-20 report. */
 		'landing'      => array( 'motion', 'landing' ),
+		/* content-a. Read off dist/content-a.html's own <head> (lines 10-22),
+		   which loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own content-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason.
+
+		   The slug `content-a` was free before the page was created, checked
+		   with `wp post list --post_type=any --post_status=any
+		   --name=content-a`, and read back as `content-a` with no suffix
+		   afterwards. elementor/pages/content-a/page.mjs records both checks. */
+		'content-a'    => array( 'motion', 'content-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

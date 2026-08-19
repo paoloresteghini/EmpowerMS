@@ -2710,6 +2710,119 @@ test('the podcast guest filter actually filters', { concurrency: 1 }, async () =
   assert.equal(r.restored, r.before, 'unticking did not restore the full list');
 });
 
+/* --- fidelity-browser.mjs / the content-a type and topic filters --------- */
+
+/* Its own guard rather than requirePageUrl(), because content-a is in
+   EXCLUDED_PAGES and therefore has no register entry to read an envVar,
+   exampleUrl or staticFile out of. Same shape and same reason as
+   requireSpikeUrl() above: a missing variable surfaces as Playwright's own
+   "url: expected string, got undefined", which reads like a broken test
+   rather than a missing environment variable. */
+const requireContentAUrl = () => process.env.CONTENT_A_URL
+  ?? assert.fail('CONTENT_A_URL is not set. This test needs the deployed content-a page: CONTENT_A_URL=https://empv2.wpenginepowered.com/content-a/ node --test test-elementor.mjs');
+
+/* THIS TEST IS content-a's GATE, AND IT IS THE ONLY ONE IT HAS.
+   The page is in EXCLUDED_PAGES: its four Loop Grids render 205 real posts
+   where dist/content-a.html carries 23 authored cards, so neither census() nor
+   controlBoxes() can compare the two sides. What CAN silently fail is the
+   thing the whole page is for, and it can fail in exactly the way podcast-a's
+   filter could: a loop item template that does not emit data-topic, or a band
+   container that does not carry data-type, produces a page where every radio
+   still moves, every label still turns navy, and nothing at all hides. No
+   static parse and no computed-style probe can see that.
+
+   FOUR STATES, chosen to exercise each of the filter's four rules
+   (css/content-a.css:330-344) and to end where it started:
+
+     1. everything      both groups on their do-nothing option. The unfiltered
+                        page IS the page with no rule applied, which is the
+                        design's own claim ("the default state is not a special
+                        case, it is the absence of one"), so this is also the
+                        baseline every other step is compared against.
+     2. story           rule 1: a chosen type hides the other three bands.
+     3. story + bills   rule 3 hides three bands INCLUDING this one, and rule 4
+                        shows the written empty state. One of exactly three
+                        dead-end pairs, and the reason the page has an empty
+                        state at all: bill summaries are published as articles,
+                        so no community story carries that topic.
+     4. everything      back to the start, which is what proves the "All" and
+                        "Everything" options really are the absence of a rule
+                        rather than a fifth filter of their own.
+
+   Asserted RELATIVELY wherever possible, never against card counts typed into
+   this file. The bands are Loop Grids over a live archive: 141 Empower News
+   posts today, 27 Community Stories, 33 Press Releases. Empower publishing one
+   more post must not turn this test red, so what is asserted is the SHAPE of
+   each state (which bands survive, which topics survive, that filtering
+   removes cards and that returning restores them) rather than any number the
+   archive controls. */
+test('the content-a type and topic filters actually filter', { concurrency: 1 }, async () => {
+  const { checkRadioFilter } = await import('./fidelity-browser.mjs');
+  const [all, education, story, deadEnd, restored] = await checkRadioFilter(requireContentAUrl(), {
+    bandSelector: '.cad-band',
+    cardSelector: '.cad-card',
+    emptySelector: '.cad-empty',
+    /* Radio IDS, not selectors: checkRadioFilter clicks each one's LABEL and
+       then asserts the input really became checked, because these radios are
+       clipped to a pixel behind their labels and carry `pointer-events:none`
+       (css/content-a.css:133-134). Its own comment carries the argument. */
+    steps: [
+      { name: 'everything', check: ['ca-t-all', 'ca-p-all'] },
+      { name: 'education', check: ['ca-p-education'] },
+      { name: 'story', check: ['ca-p-all', 'ca-t-story'] },
+      { name: 'story + bills', check: ['ca-p-bills'] },
+      { name: 'everything again', check: ['ca-t-all', 'ca-p-all'] },
+    ],
+  });
+
+  /* The baseline. Four bands and some cards, or the page did not render its
+     loops at all and every assertion below would pass trivially. */
+  assert.equal(all.bands, 4, `unfiltered page shows ${all.bands} bands, not the four the design has`);
+  assert.deepEqual(all.bandTypes, ['article', 'story', 'research', 'press'],
+    `unfiltered band order is ${all.bandTypes.join(', ')}`);
+  assert.ok(all.cards > 23, `only ${all.cards} cards rendered; the Loop Grids are not returning the archive`);
+  assert.equal(all.emptyShown, 0, 'the empty state is visible with no filter applied');
+
+  /* data-topic is the attribute the whole filter turns on, and it comes from a
+     PHP hook rather than from anything a static read of the page tree can
+     check. If the hook never fired, or fired once and got cached across the
+     loop, every card carries the same value or none. */
+  assert.ok(all.cardTopics.length > 1,
+    `every visible card carries the same data-topic (${all.cardTopics.join(' / ')}); the loop is emitting one post's value for all of them`);
+
+  /* Rule 2: a chosen topic hides the cards that do not carry it, and leaves
+     every band standing. This is the step that catches BOTH ways the page can
+     fail, which is why it is here rather than left to the cardinality check
+     above: with the filter's CSS gone it shows all 205, and with data-topic
+     missing from the loop item it shows 0. Measured both, red first. */
+  assert.equal(education.bands, all.bands, 'choosing a topic hid a whole band; only Bill Summaries is supposed to do that');
+  assert.ok(education.cards > 0, 'choosing Quality Education hid every card: the loop is not emitting data-topic');
+  assert.ok(education.cards < all.cards, 'choosing Quality Education hid nothing: the filter CSS is not reaching the cards');
+  for (const t of education.cardTopics) {
+    assert.match(t ?? '', /(^|\s)education(\s|$)/,
+      `a card without the education topic is still visible under Quality Education (data-topic="${t}")`);
+  }
+
+  /* Rule 1: a chosen type hides the other three bands. */
+  assert.equal(story.bands, 1, `choosing Community Stories leaves ${story.bands} bands visible`);
+  assert.deepEqual(story.bandTypes, ['story'], `choosing Community Stories leaves ${story.bandTypes.join(', ')}`);
+  assert.ok(story.cards < all.cards, 'choosing a type hid no cards at all');
+  assert.ok(story.cards > 0, 'choosing Community Stories hid everything, including its own band');
+
+  /* Rule 3 and rule 4 together: this pair holds nothing, so every band goes and
+     the page says so in words instead of showing a blank grid. */
+  assert.equal(deadEnd.cards, 0,
+    `the story-and-bills pair still shows ${deadEnd.cards} cards; it is supposed to hold nothing`);
+  assert.equal(deadEnd.emptyShown, 1,
+    'the story-and-bills dead end shows no empty state: a filter that can return nothing has to say so');
+
+  /* And back. A radio group's "all" option is the absence of a rule, not a
+     fifth rule, and this is the assertion that proves it. */
+  assert.equal(restored.bands, all.bands, 'returning to Everything did not restore the bands');
+  assert.equal(restored.cards, all.cards, 'returning to Everything and All did not restore the cards');
+  assert.equal(restored.emptyShown, 0, 'the empty state stayed visible after clearing the filter');
+});
+
 /* Step 9. checkVisibleWithoutJs existed and was bug-fixed but was never
    actually wired into the suite, so it was a snippet, not a regression
    test: nothing would have caught it going red. Diffing against

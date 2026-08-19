@@ -66,6 +66,32 @@ Two sections, two options each, which is the facet's To review count of 4.
 Neither section appears in the Phase 2B conversion order, correctly. They are
 converted after Empower picks, not before.
 
+**BOTH WERE DECIDED ON 2026-08-19**, by Paolo, in these words: "Content-a.html
+and landing.html is also signed off." So the signed-off set is SIXTEEN pages,
+not fourteen, and the two picks are `dist/content-a.html` (All Content, "The
+Four Doors") and `dist/landing.html` (the campaign landing template). The losing
+readings are `content-b.html` and `landing-b.html`.
+
+Both entered the conversion order the same day, after the original fifteen had
+landed. One decision came with them, taken on measurement rather than
+preference:
+
+**`content-a`'s four bands ship as LOOP GRIDS, not as authored cards.** Its whole
+subject is the live archive, its filter is CSS over `data-type` and `data-topic`
+attributes the loop item template must emit, and every post sampled on the
+install already carries a featured image, so the loop costs no media imports and
+adds nothing to the alt-text queue. Two consequences follow and both are
+accepted: the page cannot be gated against the static build the way the other
+fifteen are, which is exactly why `podcast-a` is excluded from `PAGE_REGISTER`,
+and Empower's WordPress has no Research and Reports category, so that one band
+needs a category creating or its query narrowing by hand.
+
+`landing`'s single `data-cms="loop"` block is the opposite case and ships
+AUTHORED: it is a template Kienna duplicates per campaign, and its own note says
+the three posts are "a Loop Grid over the campaign's own tag, or three chosen
+posts if the campaign has no tag". A template cannot query a tag that does not
+exist yet.
+
 ## 4. `team-bio` is not a signed-off page, and the conversion order assumed it was
 
 `docs/elementor/phase2b/2026-08-15-uicore-removal-and-repricing.md` section 6

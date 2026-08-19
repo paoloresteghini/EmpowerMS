@@ -252,6 +252,21 @@ function empower_page_styles() {
 		   unstyled with nothing in the enqueue reporting it.
 		   elementor/pages/work/page.mjs records the collision in full. */
 		'work-2'       => array( 'motion', 'solution' ),
+		/* education. Read off dist/education.html's own <head> (lines 10-22),
+		   which is the same cascade safety's and work's rows record and ends in
+		   css/solution.css, the template sheet all three solution pages share.
+		   This is the third and last row of the solution unit, and the point
+		   safety's row anticipated: three slugs, one stylesheet.
+
+		   THE KEY IS `education`, WITH NO SUFFIX, and that was read back off
+		   the install rather than assumed, for exactly the reason work's row
+		   above records. `wp post create ... --post_name=education` returned
+		   post 20611 and `wp post get 20611 --field=post_name` returns
+		   `education`. It was free because Empower's own live Education page is
+		   post 18537 under `education-3`, with `education-2` (post 11509) and
+		   `education-old` (post 35) also taken; the unsuffixed slug had already
+		   been vacated. elementor/pages/education/page.mjs records the check. */
+		'education'    => array( 'motion', 'solution' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

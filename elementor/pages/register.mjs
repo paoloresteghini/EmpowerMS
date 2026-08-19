@@ -941,6 +941,106 @@ export const PAGE_REGISTER = [
     minShared: 28,
     minBoxes: 39,
   },
+  /* education: Task 19, the thirteenth page built class-in-markup from the
+     start, the SECOND FILL of the phase and the LAST page of the conversion
+     order. Its floors were measured 2026-08-19 against dist/education.html
+     ALONE (no live side, served locally the same way the tests do) and NOT
+     scaled from safety's or work's entry, because the three pages do not carry
+     the same content: this one has four work areas like safety, but it also
+     has a closing block neither sibling has and two paragraphs neither sibling
+     has, so its census count is the largest of the three and had to be its own.
+
+     THIS IS NOW THE LARGEST PAGE IN THE REGISTER BY CENSUS COUNT AFTER THE
+     HOMEPAGE, taking that place from `work`. census() finds 57 elements
+     matching h1,h2,h3,h4,h5,p,blockquote at both 1440 and 390, of which 6 are
+     the shared header and footer chrome and 51 are this page's own. Counted
+     directly from the file: inside <main> 1 <h1>, 6 <h2>, 5 <h3> and 39 <p>;
+     outside it 2 <h3> and 4 <p>, the same six-element chrome every page in this
+     build carries. FOUR lit cards, not five, so the count is not large for
+     work's reason: it is large because .sol-grid__closer adds an <h3> and three
+     <p>, .sol-problem__copy carries four paragraphs where the other two carry
+     three, and .sol-grid__intro carries three where they carry two.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 29 means at least 30 of 57 must match by text. Six come from the
+     chrome, so the floor demands 24 of this page's own 51. Measured against the
+     same fraction on the other thirteen entries (final 35/57 61%, solutions-b
+     9/18 50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%, epic-a 12/25 48%,
+     give-c 9/19 47%, team-bio 4/7 57%, safety 21/45 47%, work 23/49 47%),
+     24/51 is 47%, mid-range and level with the whole solution unit. The floor
+     is one higher than work's for one reason only: two more of this page's own
+     elements exist to be matched.
+
+     ALL 57 ARE ACHIEVABLE, and that is a build decision rather than a given.
+     Recipe section 7's coverage cost does not arise on this page at all:
+     `.sol-latest__more` is a <p> wrapping a call to action, exactly the shape
+     that costs a census key when it is built as a container plus a link(), and
+     07-latest.mjs note 4 builds it as one html() widget carrying the real <p>
+     instead, so `p|See all education research` stays on both sides. Measured
+     after deploying: shared is 57 of 57 at both widths.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/education.html alone, at both 1440 and 390: 70 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. That is the
+     same 70 both siblings measure, by measurement rather than by inheritance:
+     the closing block adds four paragraphs and no anchor and no image, so it
+     moves the census count and not this one. 39 keeps the same proportion as
+     the other entries (roughly 56-58%: at least 40 of 70 must match).
+
+     66 OF THE 70 ARE ACHIEVABLE, the same four lost as on both siblings and for
+     the same reasons. Three are the chrome keys every converted page loses to
+     the Elementor header theme part (`a|Skip to content`,
+     `a|Empower Mississippi home`, `img|logo-reversed.png`). The fourth is
+     `a|See all community stories`: 06-stories.mjs note 3 builds the
+     community-stories CTA as a link() widget, and controlBoxes() skips any
+     anchor inside `.elementor-widget-button` by design, so the anchor exists on
+     the static side and not on the live one. That module records the choice and
+     what it costs; the box itself is still compared through the wrapper, which
+     is what carries `.em-btn`. Measured after deploying: shared is 66 of 70 at
+     both widths, and the four static-only keys are exactly those four.
+
+     THE LIVE SIDE CARRIES MORE KEYS THAN THE STATIC ONE, the same way give-c's,
+     team-bio's, safety's and work's entries record: the install runs a
+     Mailchimp popup (`#PopupSignupForm_0`) that injects its own markup a few
+     seconds after load, so live census counts more than 57 and live
+     controlBoxes more than 66. Every one is LIVE-ONLY, so none enters either
+     comparison. It is a hazard for a HOVER probe rather than for these two
+     instruments, and the task report records the probe protocol that closes it.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/education.html outside its own <main>: 46 <a>, 12 <button>, 2
+     <img>, 60 of this page's 70 box-sweep elements, leaving 10 that belong to
+     this page's own content (the stories CTA, the three feed titles, the three
+     stub titles, the research CTA and the two photographs). A live page that
+     failed to load would still share around 57 keys against minBoxes' 39 and
+     the box sweep alone could pass green. minShared is the real load-failure
+     gate here too: a 404 shares the 6 chrome census elements, and 6 is under
+     the 30 that minShared:29 demands, so the suite goes red on the census, not
+     the box sweep.
+
+     THE URL IS `/education/`, WITH NO SUFFIX, AND THAT WAS READ BACK RATHER
+     THAN ASSUMED. `work`'s entry above records the opposite outcome on the same
+     command; the slug here was free because Empower's own live Education page
+     is post 18537 under `education-3`, with `education-2` and `education-old`
+     also taken. elementor/pages/education/page.mjs records the check. */
+  {
+    name: 'education',
+    envVar: 'EDUCATION_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/education/',
+    staticFile: 'dist/education.html',
+    minShared: 29,
+    minBoxes: 39,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

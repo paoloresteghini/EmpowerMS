@@ -219,6 +219,23 @@ function empower_page_styles() {
 		   sheets beyond that shared cascade belong here: the same shape
 		   every entry above takes, for the same reason. */
 		'team-bio'     => array( 'motion', 'team-bio' ),
+		/* safety. Read off dist/safety.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and css/solution.css
+		   last. The site and header sheets are already enqueued unconditionally
+		   above, so only the two page-specific sheets beyond that shared
+		   cascade belong here: the same shape every entry above takes, for the
+		   same reason.
+
+		   THE SHEET IS NAMED FOR THE TEMPLATE, NOT FOR THE PAGE, and this is
+		   the first row where those differ. css/solution.css is "The
+		   Streetlight", shared by all three solution pages, and its own header
+		   says so; `work` and `education` will be two more slugs pointing at
+		   this same sheet rather than at one of their own. A row that assumed
+		   slug and sheet were the same word would enqueue css/safety.css,
+		   which does not exist, and the page would render unstyled with
+		   nothing in the enqueue reporting it. */
+		'safety'       => array( 'motion', 'solution' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

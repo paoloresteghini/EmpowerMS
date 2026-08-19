@@ -738,6 +738,99 @@ export const PAGE_REGISTER = [
     minShared: 9,
     minBoxes: 37,
   },
+  /* safety: Task 17, the eleventh page built class-in-markup from the start,
+     and the first of the solution unit (safety, work, education, one shared
+     css/solution.css). Its own floors, measured 2026-08-19 against
+     dist/safety.html alone (no live side, served locally the same way the
+     tests do), not copied from any other entry and NOT to be copied to the two
+     fills: `work` carries five work areas where this page carries four and
+     `education` alone closes that section with `.sol-grid__closer`, so both
+     have a different census count and both must be measured against their own
+     static build.
+
+     THIS IS THE LARGEST PAGE IN THE REGISTER BY CENSUS COUNT AFTER THE
+     HOMEPAGE. census() finds 51 elements matching h1,h2,h3,h4,h5,p,blockquote
+     at both 1440 and 390, of which 6 are the shared header and footer chrome
+     and 45 are this page's own. Counted directly from the file: inside <main>
+     1 <h1>, 5 <h2>, 4 <h3> and 35 <p>; outside it 2 <h3> and 4 <p>, the same
+     six-element chrome every page in this build carries. Seven sections, four
+     capped columns and four lit cards are what make the count large; it is the
+     page rather than a duplicate.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 26 means at least 27 of 51 must match by text. Six come from the
+     chrome, so the floor demands 21 of this page's own 45. Measured against the
+     same fraction on the other eleven entries (final 35/57 61%, solutions-b
+     9/18 50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%, epic-a 12/25 48%,
+     give-c 9/19 47%, team-bio 4/7 57%), 21/45 is 47%, mid-range and level with
+     give-c and amb-a.
+
+     ALL 51 ARE ACHIEVABLE, and that is a build decision rather than a given.
+     Recipe section 7's coverage cost does not arise on this page at all:
+     `.sol-latest__more` is a <p> wrapping a call to action, exactly the shape
+     that costs a census key when it is built as a container plus a link(), and
+     07-latest.mjs note 4 builds it as one html() widget carrying the real <p>
+     instead, so `p|See all public safety research` stays on both sides.
+     Measured: shared is 51 of 51 at both widths.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/safety.html alone, at both 1440 and 390: 70 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 39 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 40 of 70
+     must match).
+
+     66 OF THE 70 ARE ACHIEVABLE, and the fourth one lost is this page's own
+     doing rather than the shared chrome's, which is the difference from every
+     entry above. Three are the chrome keys every converted page loses to the
+     Elementor header theme part (`a|Skip to content`, `a|Empower Mississippi `,
+     `img|logo-reversed.png`). The fourth is `a|See all community st`: 06-stories.mjs
+     note 3 builds the community-stories CTA as a link() widget, and
+     controlBoxes() skips any anchor inside `.elementor-widget-button` by
+     design, so the anchor exists on the static side and not on the live one.
+     That module records the choice and what it costs; the box itself is still
+     compared through the wrapper, which is what carries `.em-btn`. Measured:
+     shared is 66 of 70 at both widths.
+
+     THE LIVE SIDE CARRIES MORE KEYS THAN THE STATIC ONE, the same way give-c's
+     and team-bio's entries record: the install runs a Mailchimp popup
+     (`#PopupSignupForm_0`) that injects its own markup a few seconds after
+     load, so live census counts 53 rather than 51 (`p|` and
+     `p|Terms and Conditions`) and live controlBoxes counts 70 rather than 66
+     (`a|Terms and Conditions`, `button|Close`, plus the header's own `a|/` and
+     the footer logo's resized `img|logo-reversed-300x136.png`). Every one is
+     LIVE-ONLY, so none enters either comparison, and `__excluded_count__` is 0
+     on both sides because all of them have a usable identity. It is a hazard
+     for a HOVER probe rather than for these two instruments, and this task's
+     report records the probe protocol that closes it.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/safety.html outside its own <main>: 46 <a>, 12 <button>, 2 <img>,
+     60 of this page's 70 box-sweep elements, leaving 10 that belong to this
+     page's own content (the stories CTA, the three feed titles, the three stub
+     titles, the research CTA and the two photographs). A live page that failed
+     to load would still share around 57 keys against minBoxes' 39 and the box
+     sweep alone could pass green. minShared is the real load-failure gate here
+     too: a 404 shares the 6 chrome census elements, and 6 is under the 27 that
+     minShared:26 demands, so the suite goes red on the census, not the box
+     sweep. */
+  {
+    name: 'safety',
+    envVar: 'SAFETY_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/safety/',
+    staticFile: 'dist/safety.html',
+    minShared: 26,
+    minBoxes: 39,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

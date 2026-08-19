@@ -191,6 +191,27 @@ not about unpicking repairs that already measure correct.
    minimum include 767, 768, 1024 and 1025 alongside the page's own values.
    `team-bio` was swept 380 to 1440 in steps of 1, 1061 widths, with a control
    run shown red first.
+
+   **NEUTRALISE THE REVEAL BEFORE MEASURING ANY GEOMETRY**, added 2026-08-19 by
+   `safety`, where it manufactured two defects that were nearly written up.
+   `getBoundingClientRect` includes transforms, and `css/motion.css:23` gives
+   every unrevealed `data-reveal="clip"` element `clip-path:inset(0 0 14% 0)`
+   and `transform:scale(1.04)`. If the two sides are not in the same reveal
+   state, the probe reports 4% size differences everywhere; one of them read as
+   a container-padding defect complete with a story. Enter the state the SITE
+   enters, never an `!important` override of the properties you assume it uses:
+
+       for (const n of document.querySelectorAll('[data-reveal]'))
+         n.classList.add('is-revealed');
+
+   An override that guessed the properties left the band photograph measuring
+   0px live against 525px static, with every section below it shifted up by
+   exactly that, which reads like a serious width-band defect and is not one.
+   Two further practicalities from the same run: `img.decode()` never settles
+   for a lazy image out of the viewport and will hang the sweep, so force
+   `loading = 'eager'` and poll `complete` with a ceiling; and when a new sweep
+   disagrees with a gate that is green, measure ONE element's computed value on
+   both sides by hand before writing anything up.
 8. **Hand-probe every anchor at rest and on hover**, added 2026-08-18. No
    instrument in this project compares `text-decoration`, `box-shadow` or any
    colour, and Elementor's `.elementor a{box-shadow:none;text-decoration:none}`

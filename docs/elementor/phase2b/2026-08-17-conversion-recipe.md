@@ -135,14 +135,47 @@ not about unpicking repairs that already measure correct.
    string and attribute from the partial rather than from memory. Every
    paragraph and heading is a `text()` carrying the build's own element and
    class. Every photograph is an `image()`.
-3. Deploy, then flush BOTH caches. `bridge.css` is versioned by theme version
-   and not by mtime, so the CDN serves the old file otherwise.
+3. Deploy, then flush FOUR caches and VERIFY IN THE BROWSER. Corrected
+   2026-08-18 after the same trap fired three times in one day. Assets are
+   versioned by filemtime, so a fresh render asks for the current file, but WP
+   Engine's edge serves cached HTML pinned to the PREVIOUS `?ver=`, and an md5
+   over `ssh` proves only that the file reached the disk.
+
+       wp cache flush           object cache
+       wp elementor flush_css   Elementor's generated CSS
+       wp page-cache flush      the one that actually clears the edge
+       wp cdn-cache flush       and its CDN companion
+
+   Then verify, because `syncTheme()` is silent on success AND failure:
+
+       curl -s <page> | grep -o 'bridge\.css?ver=[0-9]*'
+       curl -s "<page>?cb=$(date +%s)" | grep -o 'bridge\.css?ver=[0-9]*'
+
+   Two different numbers mean the edge is still serving a stale render, and a
+   measurement taken then reports the PREVIOUS stylesheet's behaviour, which
+   reads exactly like a repair that does not work. It also fails the suite,
+   which fetches each page URL with no query string.
 4. Measure. Triage every image finding by section 1. Fix the structural ones,
    defer the rest into the list from section 2.
 5. Write the bridge rules the non-image findings need, one at a time,
    re-measuring after each. Named selectors, never general.
 6. Look at the page at 1440 and at 390. The instruments do not see everything.
-7. Record how many bridge rules the page needed. That number re-prices what is
+7. **Sweep the MIDDLE BAND**, added 2026-08-18. The register samples 1440 and
+   390; three pages have now been measured between them and two were wrong
+   there, each in a window containing none of that page's own breakpoints
+   (`final` about 601 to 700, `epic-a` 721 to 767). Run `layoutInvariants()`
+   live against static across the band and record the widths in the report. Do
+   NOT add a width to the register: that widens a shared gate, which is a
+   different and more expensive decision.
+8. **Hand-probe every anchor at rest and on hover**, added 2026-08-18. No
+   instrument in this project compares `text-decoration`, `box-shadow` or any
+   colour, and Elementor's `.elementor a{box-shadow:none;text-decoration:none}`
+   at 0,1,1 beats the build's own 0,1,0 rules on both. Two of the phase's nine
+   cost categories were found this way and by nothing else. A probe that
+   asserts a state must read that state back in the same evaluate: the install
+   runs a Mailchimp popup that intercepts pointer events, and it manufactured
+   thirty false differences before anybody noticed the pointer was not landing.
+9. Record how many bridge rules the page needed. That number re-prices what is
    left.
 
 ## 5. Findings carried from the homepage that will recur

@@ -112,7 +112,7 @@ low sun behind them.
 | `final` | DECORATIVE (Join Us wash) | `""`, `aria-hidden` |
 | `team-a` | MEANINGFUL, **LIVE NOW** | "A parent playing football with two children in a field at sunset" |
 | `mail-a` | MEANINGFUL, pending | "A man playing football with two children in a field at sunset." |
-| `give-c` | MEANINGFUL, pending | "A man playing football with two children in a field at sunset." |
+| `give-c` | MEANINGFUL, **LIVE NOW** | "A man playing football with two children in a field at sunset." |
 
 **Proposed:** "A man playing football with two children in a field at sunset"
 
@@ -137,7 +137,7 @@ yellow. **There is no tablet in the frame.**
 | `what-we-do-a` | DECORATIVE | `""`, `aria-hidden` |
 | `solutions-b` | MEANINGFUL, **LIVE NOW** | "A girl writing at a table in a brightly lit classroom" |
 | `epic-a` | MEANINGFUL, **LIVE NOW** | "A girl writing at a desk in a brightly furnished classroom." |
-| `give-c` | MEANINGFUL, pending | "A girl writing at a desk in a brightly furnished classroom." |
+| `give-c` | MEANINGFUL, **LIVE NOW** | "A girl writing at a desk in a brightly furnished classroom." |
 
 **Proposed:** "A child writing at a table in a brightly coloured classroom"
 

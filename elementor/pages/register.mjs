@@ -565,6 +565,86 @@ export const PAGE_REGISTER = [
     minShared: 17,
     minBoxes: 42,
   },
+  /* give-c: Task 15, the ninth page built class-in-markup from the start, and
+     the build's donate page. Its own floors, measured 2026-08-18 against
+     dist/give-c.html alone (no live side, served locally the same way the tests
+     do), not copied from any other entry.
+
+     census() finds 25 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 19 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>, 3
+     <h2>, 2 <h3> and 13 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 14 means at least 15 of 25 must match by text. Six come from the
+     chrome, so the floor demands 9 of this page's own 19. Measured against the
+     same fraction on the other nine entries (final 35/57 61%, solutions-b 9/18
+     50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%, epic-a 12/25 48%),
+     9/19 is 47%, which puts this page mid-range rather than at either extreme.
+
+     ALL 25 ARE ACHIEVABLE, and that is a build decision rather than a given.
+     Recipe section 7 would have this page lose TWO census keys, `p|Donate
+     Today` and `p|Donate Today#2`, to a container-plus-link() at each of its two
+     calls to action; 01-hero.mjs note 4 and 03-next.mjs note 3 record why both
+     are html() widgets carrying their real <p> and <a> instead. The effect is
+     that no census key and no box-sweep key is lost to this page's own build at
+     all, and it is measured: shared is 25 of 25 at both widths.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/give-c.html alone, at both 1440 and 390: 73 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 41 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 42 of 73
+     must match).
+
+     70 OF THE 73 ARE ACHIEVABLE, and all three that are not are the shared
+     chrome keys every converted page in this build loses to the Elementor
+     header theme part (`a|Skip to content`, `a|Empower Mississippi `,
+     `img|logo-reversed.png`), which epic-a's entry above is the first to name.
+     None of the three is this page's doing, and this page loses none of its own.
+     Measured: shared is 70 of 73 at both widths.
+
+     THE LIVE SIDE CARRIES MORE KEYS THAN THE STATIC ONE AND THE COUNT IS NOT
+     STABLE, which is worth recording because it looks like a defect the first
+     time it is seen and is not one. The install runs a Mailchimp popup
+     (`#PopupSignupForm_0`) that injects its own markup a few seconds after
+     load, so live census counts 27 rather than 25 (`p|` and
+     `p|Terms and Conditions`) and live controlBoxes counts 74 or 75 rather than
+     73 (`a|Terms and Conditions`, `button|Close`, plus the header's own two
+     chrome keys). Every one of those is LIVE-ONLY, so none enters either
+     comparison, and `__excluded_count__` is 0 on both sides because all of them
+     have a usable identity. It is a hazard for a HOVER probe rather than for
+     these two instruments: its `.mc-modal-bg` overlay covers the viewport and
+     intercepts every pointer event, which is recorded in this task's report.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/give-c.html outside its own <main>: 46 <a>, 12 <button>, 2 <img>,
+     60 of this page's 73 box-sweep elements, leaving 13 that belong to this
+     page's own content (11 anchors, being the three frequency options, the six
+     amount tiles and the two Donate Today calls to action, plus 2 photographs).
+     A live page that failed to load would still share around 57 keys against
+     minBoxes' 41 and the box sweep alone could pass green. minShared is the real
+     load-failure gate here too: a 404 shares the 6 chrome census elements, and 6
+     is under the 15 that minShared:14 demands, so the suite goes red on the
+     census, not the box sweep. */
+  {
+    name: 'give-c',
+    envVar: 'GIVE_C_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/give-c/',
+    staticFile: 'dist/give-c.html',
+    minShared: 14,
+    minBoxes: 41,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the

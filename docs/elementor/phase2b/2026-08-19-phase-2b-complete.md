@@ -38,7 +38,7 @@ The two fills are the phase's one clean prediction, and they are the argument fo
 the whole class-in-markup approach: repairs keyed on shared classes are paid once
 and inherited. Seven blocks reached `education` without a line being written.
 
-## The categories, six at the start and twelve at the end
+## The categories, six at the start and fifteen at the end
 
 1. Structural pseudo-classes (`:last-child` family).
 2. Photographs in fixed-ratio or fixed-height containers.
@@ -53,6 +53,12 @@ and inherited. Seven blocks reached `education` without a line being written.
 11. A GRID-item property on an element that becomes an inner node.
 12. A state selector whose state binds to a different element from the one
     carrying the class.
+13. An Elementor reset keyed on a TAG, at a specificity the build cannot reach
+    by accident: `figure{margin:0}` inside a non-text widget computes 0,4,1.
+14. A loop grid's wrapper class, which is inert under `auto-fit` and NOT under
+    `auto-fill`, because the second keeps empty tracks.
+15. Source order itself: `bridge.css` is not always the last stylesheet, since
+    Elementor enqueues per-widget CSS after the theme's.
 
 Ten, eleven and twelve are one mechanism seen from three sides, and twelve is the
 one that shipped a WCAG 2.4.7 failure: `link()` puts `.em-btn` on a wrapper,

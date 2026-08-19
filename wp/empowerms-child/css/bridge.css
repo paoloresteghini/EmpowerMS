@@ -13,14 +13,30 @@
  * rule below exists because one of those two things broke a selector in
  * css/, measured against the live install, never guessed.
  *
- * Loads last (functions.php enqueues it after every other Empower
- * stylesheet, page sheets included), because it has to see, and be able to
+ * Loads after every other EMPOWER stylesheet (functions.php enqueues it
+ * last, page sheets included), because it has to see, and be able to
  * outrank, whatever came before it: Elementor's own frontend.min.css and
  * its per-widget-type stylesheets (widget-image.min.css and the like),
  * which this file is bridging against. Its own specificity choices are
  * documented rule by rule below rather than reached for by reflex, because
  * Elementor's core CSS is not shy about winning fights on specificity: see
  * the flex-direction section for the measurement that made that concrete.
+ *
+ * IT IS NOT ALWAYS THE LAST STYLESHEET ON THE PAGE, corrected 2026-08-19 by
+ * block 54, and several comments below still say some version of "this file
+ * loads after Elementor's own stylesheets, so it wins a tie on order".
+ * READ THAT AS "AFTER frontend.min.css", WHICH IS TRUE, AND NOT AS "AFTER
+ * EVERYTHING", WHICH IS NOT. Elementor enqueues its per-widget stylesheets
+ * on demand, for whichever widgets a page actually uses, AFTER the theme's
+ * own styles: on `content-a` and `podcast-a` the served <head> ends
+ * ... content-a.css, bridge.css, widget-heading.min.css. Every rule in this
+ * file that relies on source order rather than on specificity is therefore
+ * safe only on the pages whose widget set does not enqueue a sheet touching
+ * the same declaration, and block 54 is the one place that assumption has
+ * been measured wrong so far.
+ *
+ * The practical rule: at equal specificity, read the served <head> before
+ * trusting order, and prefer raising specificity to relying on it.
  */
 
 /* ---------- Structural values, Site Settings cannot hold them ----------

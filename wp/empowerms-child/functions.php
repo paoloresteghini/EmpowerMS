@@ -236,6 +236,22 @@ function empower_page_styles() {
 		   which does not exist, and the page would render unstyled with
 		   nothing in the enqueue reporting it. */
 		'safety'       => array( 'motion', 'solution' ),
+		/* work. Read off dist/work.html's own <head> (lines 10-22), which is the
+		   same cascade safety's row records and ends in css/solution.css, the
+		   template sheet all three solution pages share.
+
+		   THE KEY IS `work-2` AND NOT `work`, and that is install state rather
+		   than a naming choice. This map is keyed by the page's SLUG (see the
+		   lookup below, which reads get_post_field( 'post_name' )), and the
+		   slug `work` was already held by post 18512, Empower's own live Work
+		   page. `wp post create ... --post_name=work` returned post 20609 and
+		   WordPress assigned it `work-2`; the slug was read back off the
+		   install rather than assumed, which is the trap safety's own page.mjs
+		   names. A row keyed 'work' would match no page, this page would load
+		   neither the motion sheet nor css/solution.css, and it would render
+		   unstyled with nothing in the enqueue reporting it.
+		   elementor/pages/work/page.mjs records the collision in full. */
+		'work-2'       => array( 'motion', 'solution' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole

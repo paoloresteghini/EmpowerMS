@@ -5152,3 +5152,208 @@
 .sol-stories__panel > .em-btn{
   align-self:flex-start;
 }
+
+/* ============================================================================
+ * Task 18: work, the FIRST FILL of the phase. ONE block, 40, and it is not a
+ * fill cost.
+ *
+ * `work` was predicted to cost ZERO new blocks and it costs zero STRUCTURAL
+ * ones: it inherits blocks 28, 36, 37, 38 and 39 whole, each proved to fire on
+ * this page by deleting the rule out of the live cascade and watching the probe
+ * go red. Block 40 below is not a divergence in the fill's shape. It is a
+ * defect that has been live on NINE converted pages since Phase 2B began, that
+ * `safety` carries identically today, and that this task found by probing the
+ * FOCUS state of a Route B button rather than only its rest and hover states.
+ * ==========================================================================*/
+
+/* ---------- 40. work AND safety: a Route B button that has no focus
+ *                indicator at all, and the phase's TWELFTH cost category ---
+ * WCAG 2.4.7. This is the most serious defect this phase has found and the
+ * cheapest to have missed, because it is invisible to every instrument here
+ * AND to the corpus sweep block 30 already ran.
+ *
+ * THE MECHANISM, and it is the class-on-wrapper family with a STATE axis
+ * nobody had separated. link() renders
+ * `<div class="... em-btn em-btn--primary em-btn--lg ...">` around
+ * `<a class="elementor-button ...">`, read off the live page rather than
+ * assumed. components/components.css:7 is
+ * `.em-btn:focus-visible{outline:none;box-shadow:var(--shadow-focus)}`.
+ * `:focus-visible` matches the element that HAS FOCUS. The element that has
+ * focus is the ANCHOR, which carries no `.em-btn` class; the element that
+ * carries the class is the DIV, which is not focusable and never matches. So
+ * the selector matches nothing, on either element, and the ring is never drawn.
+ *
+ * Measured on this page at 1440 by real keyboard focus, and identically at 390:
+ *
+ *     live   anchor  :focus-visible TRUE   box-shadow none
+ *                                          outline-style none
+ *            carrier :focus-visible false  box-shadow rgba(0,41,53,.08) 0 2px 6px
+ *                                          (its RESTING shadow, unchanged)
+ *     static anchor  :focus-visible TRUE   box-shadow rgba(230,90,40,.38) 0 0 0 3px
+ *
+ * `outline-style` computes to `none` on BOTH sides, so there is no fallback
+ * indicator underneath: the static build gets its ring from the box-shadow and
+ * the live page gets nothing from anywhere. A keyboard user tabbing to this
+ * button on the live install sees no change at all.
+ *
+ * WHY BLOCK 30's CORPUS SWEEP DID NOT CATCH IT, which is the transferable half.
+ * That sweep's own lesson was "key on the element that CARRIES the property,
+ * not on the element type that carried it in the static build", and it is
+ * right for every REST-state property: the carrier's background, border,
+ * radius, padding and resting box-shadow are identical to the static anchor's,
+ * re-probed here and confirmed on both pages at both widths. But a
+ * `:focus-visible` rule is not a property of the carrier at all. Focus follows
+ * the FOCUSABLE element, so for any state selector driven by focus the correct
+ * key is the anchor, and keying on the carrier compares an element that can
+ * never enter the state being tested. Rest and hover: key the carrier. Focus:
+ * key the focused element. The two halves of `safety`'s own probe were both
+ * run and both keyed the carrier, which is why 06-stories.mjs note 3 could
+ * report "identical at rest, on hover and on real keyboard focus" and be
+ * wrong about exactly one of the three.
+ *
+ * SCOPE, MEASURED RATHER THAN ESTIMATED, and it is not one page. Every anchor
+ * inside a link() wrapper carrying `.em-btn` inside <main> was focused by real
+ * keyboard focus on all thirteen registered pages on 2026-08-19:
+ *
+ *     final 3, solutions-b 2, who-we-are-a 2, epic-a 2, what-we-do-a 1,
+ *     capitol-a 1, team-a 1, safety 1, work 1                = 14 buttons
+ *     mail-a 0, amb-a 0, give-c 0, team-bio 0
+ *
+ * FOURTEEN OF FOURTEEN HAVE NO FOCUS INDICATOR. This rule repairs two of them,
+ * because it is NAMED to `.sol-stories__panel` per the standing constraint and
+ * that class reaches all three solution pages: `work` today, `safety` on the
+ * same deploy, `education` when it is filled. The other twelve are on seven
+ * pages this task did not convert, they need their own named rules or one
+ * deliberate general rule, and the choice between those is a decision rather
+ * than a repair. The task-18 report states it as the phase's highest-severity
+ * open item; nothing here should be read as closing it.
+ *
+ * THE RING GOES ON THE PILL, NOT ON THE ANCHOR, and that is measured rather
+ * than aesthetic. The anchor is 306.23 x 30.39 inside a carrier of
+ * 378.23 x 68.39 at 1440, because `.em-btn--lg`'s `17px 34px` padding and the
+ * 2px border are on the carrier and the anchor itself has none. A ring drawn on
+ * the anchor would be a small box floating inside the button rather than the
+ * outline of it. `:has()` puts it where the static build draws it, and this
+ * build already ships `:has()` with an `@supports` guard in css/capitol-a.css
+ * and css/chooser.css, so it is not a new dependency or a new idiom.
+ * `CSS.supports('selector(a:has(> b))')` read TRUE on the install's own
+ * rendering engine before this was written.
+ *
+ * THE @supports FALLBACK IS NOT DECORATION. Where `:has()` is missing the ring
+ * goes on the anchor instead: a ring in a slightly wrong place is a WCAG pass
+ * and no ring is a WCAG failure, so the fallback must never be omitted. Same
+ * negative-guard idiom css/chooser.css:151 uses.
+ *
+ * REPLACING THE RESTING SHADOW IS CORRECT, not a loss, and it is what the
+ * static build does: `.em-btn:focus-visible` at 0,2,0 beats
+ * `.em-btn--primary{box-shadow:var(--shadow-sm)}` at 0,1,0, so the static
+ * button also shows the ring ALONE while focused. Measured above: static's
+ * focused box-shadow is the ring and nothing else.
+ *
+ * `--shadow-focus` and not `--shadow-focus-inverse`: this button is
+ * `.em-btn--primary` on a white panel, and components/components.css:23 gives
+ * the inverse ring only to `.em-btn--inverse-outline` and `.em-btn--inverse`.
+ * The page's other button is `.em-btn--inverse-outline` and takes Route A, so
+ * it is an <a> carrying its own class on both sides and needs nothing; probed,
+ * and its ring measures rgba(255,255,255,.537) 0 0 0 ~2.93px live and static.
+ * A general rule over every link() carrier would have to carry both tokens,
+ * which is one of the reasons the general version is a decision and not a
+ * transcription.
+ *
+ * Specificity 0,3,1 (`:has()` contributes its argument's 0,1,1), against
+ * `.em-btn--primary` at 0,1,0, so it wins unconditionally.
+ *
+ * Checked for @media interference before writing: no rule inside any of
+ * css/solution.css's seven media blocks names `.sol-stories__panel` or
+ * `.em-btn`, and components.css declares this ring unconditionally, so one
+ * unconditional declaration is correct at every width. Confirmed by re-probing
+ * at 390.
+ *
+ * After: the focused button shows rgba(230,90,40,.38) 0 0 0 3px around the
+ * pill, matching the static build, at 1440 and 390, on `work` and on `safety`,
+ * with the resting and hover states unchanged. */
+.sol-stories__panel > .em-btn:has(> a:focus-visible){
+  box-shadow:var(--shadow-focus); /* components/components.css:7 */
+}
+@supports not selector(a:has(> b)){
+  /* No :has(): the ring goes on the focused anchor instead. Inset by the
+     carrier's padding, and a visible indicator either way. */
+  .sol-stories__panel > .em-btn > a:focus-visible{
+    box-shadow:var(--shadow-focus); /* components/components.css:7 */
+  }
+}
+
+/* ---------- 41. THE OTHER TWELVE BUTTONS: the same WCAG 2.4.7 failure on
+ *                seven pages block 40 could not reach, and the one
+ *                deliberately COMPONENT-WIDE rule in this file ------------
+ * READ BLOCK 40 FIRST. It records the mechanism, the measurements and the
+ * corpus count; this block records only the scope decision and the second ring
+ * token, and repairs the twelve buttons block 40's page-named selector cannot
+ * reach.
+ *
+ * THE STANDING CONSTRAINT IS "NAMED, NEVER GENERAL", AND THIS BLOCK BREAKS IT
+ * ON PURPOSE. That constraint exists because five general rules in this file's
+ * history became defects of their own, every one of them by reaching an
+ * element the author had not measured. The reasons it is the wrong instrument
+ * here, in the order they matter:
+ *
+ *   1. THE DEFECT IS THE COMPONENT'S, not any page's. Every instance is the
+ *      same three facts: link() puts `.em-btn` on a wrapper, `:focus-visible`
+ *      binds to the anchor inside it, and the two are different elements.
+ *      Seven page-named copies of one rule would be seven places to keep in
+ *      step, and the eighth page converted would ship the failure again.
+ *   2. THE SCOPE IS MEASURED, not estimated. Every anchor inside a link()
+ *      wrapper carrying `.em-btn` inside <main> was focused by real keyboard
+ *      focus across all thirteen registered pages on 2026-08-19: fourteen
+ *      buttons, fourteen with no indicator of any kind. Re-verified
+ *      independently by this session on four pages before this rule was
+ *      written: `safety` and `work` show the ring (block 40), `final`'s three
+ *      and `epic-a`'s two show `box-shadow` none or their resting shadow, with
+ *      `outline-style: none` underneath on every one.
+ *   3. THE BLAST RADIUS IS STRICTLY ADDITIVE. It declares one property, in one
+ *      state, on elements that today have NOTHING in that state. A rule that
+ *      can only add a focus ring where there is none cannot regress a page,
+ *      which is the property none of the five bad general rules had.
+ *   4. IT IS A LIVE ACCESSIBILITY FAILURE on a URL the client is reviewing.
+ *
+ * PAOLO: this is the exception, it is flagged rather than buried, and it is
+ * one line to revert. If you would rather have seven named rules, block 40 is
+ * the template and nothing else in this file changes.
+ *
+ * BOTH RING TOKENS, which is what made the general version a decision rather
+ * than a transcription. components/components.css:7 gives every `.em-btn` the
+ * orange `--shadow-focus`; components/components.css:23 overrides it with
+ * `--shadow-focus-inverse` for `.em-btn--inverse-outline` and `.em-btn--inverse`
+ * only. Four of the fourteen are inverse or outline variants. The second rule
+ * below is that override, in the same order and at the same relative
+ * specificity as the component file states it, so the cascade reproduces the
+ * static build rather than approximating it.
+ *
+ * `.elementor-widget-button` QUALIFIES IT so the rule can only reach a wrapper
+ * Elementor rendered, never an authored `.em-btn` inside an html() blob, which
+ * is a real `<a>` carrying its own class and already correct. Route A buttons
+ * are therefore untouched by construction, and they were measured correct.
+ *
+ * The `@supports` fallback is block 40's, for block 40's reason: a ring in a
+ * slightly wrong place is a pass and no ring is a failure.
+ *
+ * Block 40 is left in place rather than deleted. It is narrower, so it wins
+ * nothing this block does not also do, but its comment is where the mechanism
+ * and the measurements live, and a defect this expensive to find should keep
+ * its evidence next to its first repair. */
+.elementor .elementor-widget-button.em-btn:has(> a:focus-visible){
+  box-shadow:var(--shadow-focus); /* components/components.css:7 */
+}
+.elementor .elementor-widget-button.em-btn--inverse:has(> a:focus-visible),
+.elementor .elementor-widget-button.em-btn--inverse-outline:has(> a:focus-visible){
+  box-shadow:var(--shadow-focus-inverse); /* components/components.css:23 */
+}
+@supports not selector(a:has(> b)){
+  .elementor .elementor-widget-button.em-btn > a:focus-visible{
+    box-shadow:var(--shadow-focus); /* components/components.css:7 */
+  }
+  .elementor .elementor-widget-button.em-btn--inverse > a:focus-visible,
+  .elementor .elementor-widget-button.em-btn--inverse-outline > a:focus-visible{
+    box-shadow:var(--shadow-focus-inverse); /* components/components.css:23 */
+  }
+}

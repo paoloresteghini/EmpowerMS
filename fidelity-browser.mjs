@@ -760,7 +760,60 @@ export async function controlBoxes(url, { width = 1440, height = 900 } = {}) {
     /* Awaited for the same reason as census() above. */
     const boxes = await page.evaluate(() => {
       const out = {}; const seen = {}; let excluded = 0;
-      const clean = (s) => (s || '').replace(/\s+/g, ' ').trim().slice(0, 20) || null;
+      /* 40, NOT 20, WIDENED 2026-08-19 BY TASK 18 AFTER A 20-CHARACTER PREFIX
+         PAIRED TWO DIFFERENT ELEMENTS. census() above has always used 40; this
+         was the only place in the file still cutting at 20, and the two
+         instruments now agree.
+
+         What went wrong, which is the reason this is a fix and not a tidy-up.
+         An identity here has to do two jobs: name the element for a human
+         reading a failure, and PAIR the element with its counterpart on the
+         other side. The second job is the one a short prefix breaks.
+         dist/work.html's header logo is `<a class="em-header__logo" href="/"
+         aria-label="Empower Mississippi home">`, and that page's own content
+         carries `<a class="sol-stub__title">Empower Mississippi Releases New
+         Research to Help Determine Why More Mississippians Aren't in the
+         Workforce</a>`. Cut at 20 both are `Empower Mississippi `, so the
+         static side emitted `a|Empower Mississippi ` (the header, first in
+         DOM order) and `a|Empower Mississippi #2` (the stub title), while the
+         live side, whose header is an Elementor theme part with different
+         markup, emitted only ONE such element and it took the unsuffixed key.
+         The comparison then measured the static HEADER LOGO against the live
+         STUB TITLE and reported 232x52 against 363x63 as a defect. Both real
+         elements are identical on both sides at 363x63; the difference was
+         manufactured entirely by the key.
+
+         WHY THE DEDUPE SUFFIX CANNOT FIX THIS, recorded so nobody tries. The
+         `#n` counter is assigned in DOM order, so it is a property of the
+         DOCUMENT rather than of the element. When one side has an element the
+         other lacks, every later element sharing that identity shifts by one
+         and pairs with the wrong counterpart. A key used for pairing must be a
+         function of the element alone, which is what widening the slice
+         restores.
+
+         40 IS MEASURED, NOT PICKED. Every a/button/input/select/textarea in
+         all thirteen registered static builds was enumerated at 20, 40, 60 and
+         80 characters. At 20 there are THREE places where one key covers two
+         or more different strings: this page's header-against-stub pair, and
+         two on capitol-a (`2026 Capitol Chat: W` over Weeks 11, 7 and 2, and
+         `Capitol Chat: Week 1` over Weeks 11 and 10). At 40 there are none, and
+         60 and 80 buy nothing further. capitol-a's two pass today only because
+         its colliding elements appear in the same order on both sides, which
+         is luck rather than correctness, and they stop being luck here.
+
+         WIDENING CAN ONLY SPLIT, NEVER MERGE. Two elements that share a
+         40-character prefix necessarily share a 20-character one, so no pair
+         that is distinguished today becomes conflated; the change can only
+         separate elements that were wrongly conflated. That is why the whole
+         suite was expected to stay green across it, and did.
+
+         WHAT IT COSTS: 262 of the 856 keys across the corpus get a longer
+         name, so any key quoted in a comment or a report before this date is
+         written in the old form. Nothing in the code depends on the names:
+         DEFERRED_IMAGES only ever holds `img|` keys, whose identity is built
+         from the filename below and never passes through clean() at all, and
+         CONTENT_HEIGHT_EXEMPTIONS keys on layoutInvariants()'s class tokens. */
+      const clean = (s) => (s || '').replace(/\s+/g, ' ').trim().slice(0, 40) || null;
       for (const el of document.querySelectorAll('a,button,input,select,textarea,img')) {
         if (el.closest('.elementor-widget-button')) continue;
         let ident;

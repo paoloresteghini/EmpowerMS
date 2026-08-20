@@ -69,3 +69,63 @@ absence: the sweep goes red on the defect it was built to find.
    cards were short, on `education` three were.
 3. **It compares boxes, so a difference that moves nothing is invisible to it**,
    which is the same limit every geometric instrument here has.
+
+---
+
+# The middle-band extension, run 2026-08-20
+
+Gap 1 above ("two widths, not the bands between them") is now closed for the
+twelve pages that had only the two-width sweep.
+
+## Method, and what differs from the run above
+
+Same derivation: selectors read out of each page's own stylesheets rather than
+listed by hand. Two things changed.
+
+1. **The sheet list comes from `empower_page_styles()`** in the child theme
+   rather than from the page name, so it cannot drift from what the install
+   actually enqueues. This matters more than it did yesterday: after the slug
+   rename, `/solutions/` loads `css/solutions-b.css` and the three solution
+   pages share `css/solution.css`, so name and sheet no longer coincide.
+2. **The widths are derived per page**: every `@media` breakpoint in that page's
+   own sheets, then the MIDPOINT between each consecutive pair, plus 767 and 768
+   because Elementor's own mobile breakpoint is 767 and the build ships nothing
+   there. Between five and fourteen widths per page, none of them 1440 or 390
+   except where a page's own breakpoints put one there.
+
+The control was `final`, which the run above documents as carrying four
+differences at 390. The probe reproduced them to the hundredth of a pixel
+(`.em-stories__mini` 221.50 static against 200.78 and 165.59 live, which is
+`CONTENT_HEIGHT_EXEMPTIONS`'s own entry), so it was measuring before it was
+believed.
+
+## Result: clean on every gated page, at every band
+
+| Page | Widths swept | Differences |
+| --- | --- | --- |
+| `what-we-do-a` | 500, 680, 767, 768, 910, 1270 | 0 |
+| `solutions-b` | 570, 767, 768, 890, 1220 | 0 |
+| `capitol-a` | 540, 767, 768, 790, 880, 1170 | 0 |
+| `team-a` | 420, 560, 767, 768, 770, 1000, 1270 | 0 |
+| `who-we-are-a` | 500, 767, 768, 770, 1000, 1270 | 0 |
+| `mail-a` | 440, 710, 767, 768, 1170 | 0 |
+| `amb-a` | 460, 730, 767, 768, 950, 1220 | 0 |
+| `epic-a` | 390, 570, 767, 768, 810, 1170 | 0 |
+| `give-c` | 440, 710, 767, 768, 962, 1232 | 0 |
+| `team-bio` | 440, 710, 767, 768, 1170 | 0 |
+| `final` | fourteen widths | 10, all `.em-stories__mini` and the `.em-input` shift it propagates, at 390 and 510 |
+| `podcast-a` | 630, 767, 768, 940, 1210 | 4, all `.pca-frame--tall` |
+
+**Nothing new.** `final` and `podcast-a` are the same two pages the two-width run
+flagged, for the same documented reason: their live content is not the static
+build's. `podcast-a`'s difference is worth one extra line, because it is the kind
+of thing a reader could mistake for a band-specific defect: the ratio between the
+two sides is 1.453 at 940px and 1.439 at 1210px, near enough constant, so the
+live frame is proportionally smaller at every width rather than breaking at one.
+That is a content and ratio difference on an EXCLUDED page, not a band defect.
+
+## What this still does not cover
+
+Gaps 2 and 3 above are unchanged: a container declaring `flex` on ITSELF is
+invisible to a geometric probe until content makes it visible, and a difference
+that moves nothing is invisible to any instrument here.

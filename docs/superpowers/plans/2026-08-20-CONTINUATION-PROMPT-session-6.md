@@ -1,3 +1,7 @@
+> **SUPERSEDED 2026-08-20 by `2026-08-20-CONTINUATION-PROMPT-session-7.md`.**
+> Every URL below is wrong: all seventeen pages were renamed to real slugs the
+> same day, and the suite is 213 rather than 208. Kept for the record only.
+
 # Continuation prompt, session 7. Paste the block below into a new context window
 
 Everything above the line is for a human. Everything below it is the prompt.

@@ -728,7 +728,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `wp/empowerms-child/css/bridge.css` (block 62)
 
 **Interfaces:**
-- Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html` from `../factory.mjs`.
+- Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html`, `loopGrid` from `../factory.mjs`.
 - Produces: `searchArchivePart()` returning the tree; `SEARCH_ARCHIVE_POST_ID` (integer); `SEARCH_ARCHIVE_CONDITIONS = ['include/archive/search']`; `searchResultItem()` and `SEARCH_RESULT_ITEM_POST_ID`.
 
 - [ ] **Step 1: Create the two library posts on the install**
@@ -809,9 +809,28 @@ Use Elementor's dynamic-tag widgets the way `elementor/pages/content-a/loop-item
 
 - [ ] **Step 5: Write `search-archive.mjs`**
 
-Structure, top to bottom: a band echoing the query and the count and carrying the search form again; the `archive-posts` widget with `_skin: 'custom'` and `template_id: SEARCH_RESULT_ITEM_POST_ID`; pagination; the empty state.
+Structure, top to bottom: a band echoing the query and the count and carrying the search form again; the results grid; pagination; the empty state.
 
-`archive-posts` is the widget that reads the current query. The `loop-grid` widget used on `podcast-a` and `content-a` takes a query of its own and is the wrong instrument on an archive; `factory.mjs`'s `loopGrid()` therefore does not apply here and a new small factory or a direct `el()` call is needed. Record which and why.
+> **CORRECTED 2026-08-20, before this task was dispatched.** This step first said to use
+> the `archive-posts` widget with `_skin: 'custom'` and a `template_id`, and claimed
+> `loop-grid` was the wrong instrument. Both halves are wrong, measured against Elementor
+> Pro 4.2.1 on the install:
+>
+> - `archive-posts` registers exactly three skins (`register_skins()` in
+>   `modules/theme-builder/widgets/archive-posts.php`): Classic, Cards and Full Content.
+>   There is no custom skin and no `template_id`, so it CANNOT render a Loop Item
+>   template at all.
+> - `loop-grid` CAN read the current query. `current_query` is a valid value of the query
+>   group's `post_type` field, defined in
+>   `modules/query-control/controls/group-control-query.php:45`.
+>
+> So the instrument is `loop-grid`, `factory.mjs`'s existing `loopGrid()` applies
+> unchanged, and NO new factory is needed. The earlier ruling to add an `archivePosts()`
+> factory is withdrawn.
+
+Use `loopGrid()` from `../factory.mjs` exactly as `elementor/pages/podcast-a/03-library.mjs:348` does, with `templateId: SEARCH_RESULT_ITEM_POST_ID` and `post_query_post_type: 'current_query'`. That last key is the whole difference between this grid and podcast-a's: podcast-a passes `'post'` plus term filters, and this one defers to whatever query WordPress already resolved, which on a search results template is the search.
+
+Verify by measurement, not by assumption, that the grid paginates on a search results page and that `posts_per_page` behaves as expected when the query is inherited rather than built. Record what you measured.
 
 - [ ] **Step 6: Add it to the theme-parts CLI**
 

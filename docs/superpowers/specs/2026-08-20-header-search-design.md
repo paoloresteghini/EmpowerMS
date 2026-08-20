@@ -160,10 +160,19 @@ Page shape, top to bottom:
    Beaver's current page has none, and "nothing matched" is a routine
    outcome, not an edge case.
 
-The results widget is Elementor Pro's Archive Posts with a custom loop-item
-template. Archive Posts is the widget that reads the current query, which is
-what an archive template needs; the Loop Grid widget used on `podcast-a` and
-`content-a` takes its own query and is the wrong instrument here.
+The results widget is Elementor Pro's Loop Grid, reading the current query,
+with a custom loop-item template.
+
+CORRECTED 2026-08-20. This paragraph first named Archive Posts and dismissed
+Loop Grid. Both halves were wrong, measured against Elementor Pro 4.2.1 on the
+install. Archive Posts registers exactly three skins (Classic, Cards, Full
+Content) and has no custom skin and no template_id, so it cannot render a Loop
+Item template at all. Loop Grid can read the current query: `current_query` is
+a valid value of the query group's `post_type` field
+(`modules/query-control/controls/group-control-query.php:45`). So the build's
+existing `loopGrid()` factory applies here unchanged, and the results page uses
+the same instrument `podcast-a` and `content-a` already use, with
+`post_query_post_type: 'current_query'` in place of an explicit post type.
 
 The card is deliberately type-agnostic: title, kind label, date, excerpt.
 Search crosses pages, posts, `person` records and podcast episodes in one

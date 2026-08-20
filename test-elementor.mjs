@@ -1379,7 +1379,7 @@ test('the theme registers its Elementor locations so later parts can be assigned
    wp/empowerms-child/css/bridge.css: it exists under wp/empowerms-child/ and
    has no counterpart at the repository root. That is deliberate. The root
    js/ directory is synced into the theme by wp/sync.mjs and is the protected
-   static build (functions.php:479 records what editing it cost last time);
+   static build (functions.php:485 records what editing it cost last time);
    an Elementor-only script placed there would ship inside a static hand-off
    it is not part of, and would join the three-way fight over a top-level
    `const root` that this file's own comments describe.
@@ -1399,7 +1399,7 @@ test('theme-js is not excluded from the theme sync', () => {
    other classic script on the page, and the second file to declare an
    identifier the first already claimed throws a SyntaxError and never runs.
    That is not hypothetical here: it took down every desktop dropdown on the
-   site once, and functions.php's own comment at :446 is the post-mortem.
+   site once, and functions.php's own comment at :452 is the post-mortem.
    wp_script_add_data($handle,'type','module') looks like the fix and is not
    one; the script_loader_tag filter is, and it reads its handle list from
    empower_module_script_handles(). A handle missing from that list loads
@@ -2712,7 +2712,7 @@ test('the header markup matches the static partial, string for string', () => {
 
 /* The overlay exists ONLY in the Elementor build. src/_shared/header-2.html
    still carries a decorative button with no form, because js/ and src/ are
-   the protected static build (functions.php:479). That divergence is the
+   the protected static build (functions.php:485). That divergence is the
    whole reason this test is structural rather than a comparison against the
    static partial: there is nothing on the static side to compare to, and a
    fidelity-shaped test here would either fail forever or quietly stop

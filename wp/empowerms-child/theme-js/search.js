@@ -3,8 +3,8 @@
 // DESTINATION-ONLY, and that is the point. Every other script this theme
 // loads lives at the repository root in js/ and is synced here by
 // wp/sync.mjs. That directory is the protected static build: functions.php's
-// comment at :446 records the site-wide dropdown regression that came from
-// three files there competing for a top-level `const root`, and :479 records
+// comment at :452 records the site-wide dropdown regression that came from
+// three files there competing for a top-level `const root`, and :485 records
 // that renaming those declarations is not available as a fix. This file is
 // Elementor-only, so it lives where the Elementor-only bridge stylesheet
 // lives, and it declares nothing at top level that js/ already claims.

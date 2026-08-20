@@ -292,6 +292,329 @@ export async function checkGuestFilter(url, { steps, cardSelector, facetSelector
   }
 }
 
+/* Reads /team/'s two Loop Grids as data: who is in each, in what order, with
+   what role, where each card points, and where the ledger's hairlines land.
+   Nothing here decides whether any of it is CORRECT; the test that calls it
+   does, and it does so against rules rather than against a list of names,
+   because the names are Empower's to change in wp-admin and a test that
+   hard-codes them goes red on a hire.
+
+   waitUntil: 'load', not 'networkidle', for the reason checkFilter's own
+   comment gives: the live install's third-party scripts (MailMunch, a Facebook
+   pixel, Cloudflare) keep the network non-idle well past Playwright's default
+   timeout.
+
+   THE BORDERS ARE READ AS COMPUTED VALUES, IN DOCUMENT ORDER, because the
+   defect this exists to catch is positional: `.ta-ledger__row:last-child`
+   matches every row once each row is the only child of its own loop item
+   (elementor/pages/team-a/03-fellows.mjs's note 1 predicted it, bridge.css
+   block 59 repairs it), and a repair that stops working would show as five
+   hairlines where the design has one. A count of rows would not see it. */
+export async function teamRoster(url) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url, { waitUntil: 'load' });
+
+    /* AWAITED, not returned unawaited: the finally below closes the browser, and
+       a returned-but-unresolved evaluate() races it and fails with "Target
+       page, context or browser has been closed". Caught the first time this
+       helper ran. */
+    return await page.evaluate(() => {
+      const txt = (el) => (el ? el.textContent.replace(/\s+/g, ' ').trim() : null);
+
+      const staff = [...document.querySelectorAll('.ta-person')].map((card) => {
+        const link = card.querySelector('a.ta-person__link');
+        const img = card.querySelector('.ta-portrait img');
+        return {
+          name: txt(card.querySelector('.ta-person__name')),
+          role: txt(card.querySelector('.ta-person__title')),
+          href: link ? link.getAttribute('href') : null,
+          more: txt(card.querySelector('.ta-person__more')),
+          img: img ? img.getAttribute('src') : null,
+          imgW: img ? Math.round(img.getBoundingClientRect().width) : null,
+          imgH: img ? Math.round(img.getBoundingClientRect().height) : null,
+          imgFit: img ? getComputedStyle(img).objectFit : null,
+        };
+      });
+
+      const fellows = [...document.querySelectorAll('.ta-ledger__row')].map((row) => {
+        const img = row.querySelector('.ta-disc img');
+        const cs = getComputedStyle(row);
+        return {
+          name: txt(row.querySelector('.ta-ledger__name')),
+          field: txt(row.querySelector('.ta-ledger__field')),
+          img: img ? img.getAttribute('src') : null,
+          borderBottom: cs.borderBottomWidth,
+          tracks: cs.gridTemplateColumns.split(' ').length,
+        };
+      });
+
+      /* The board is still hand-written markup with monogram tiles, and its
+         own `.ta-pending` note says so. Read so the test can assert the note
+         moved with the placeholders rather than being deleted with them. */
+      const board = [...document.querySelectorAll('.ta-roll__item')].map((li) => txt(li.querySelector('.ta-roll__name')));
+
+      return {
+        staff,
+        fellows,
+        board,
+        note: txt(document.querySelector('.ta-note')),
+        pending: txt(document.querySelector('.ta-pending')),
+        pendingInBoard: !!document.querySelector('.ta-board .ta-pending'),
+      };
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+/* Reads one `person` single as data: which of the design's optional blocks are
+   present, where the two back links go, and whether the page's own stylesheet
+   arrived. Called once per person by the test, because the whole point of the
+   Single template is that eighteen different records go through it and the
+   parts that vary are exactly the parts that can be wrong.
+
+   THE STYLESHEET IS READ AS A COMPUTED VALUE, NOT AS A <link> IN THE HEAD.
+   `.tp-role`'s colour comes from css/team-bio.css and from nothing else, so a
+   page that lost its stylesheet reports the UA default here. That is the check
+   that would have caught seventeen bios shipping unstyled while Grant Callen's
+   shipped correctly through a slug collision, which is the defect this helper
+   was written after. A <link> check would have passed on the collision too. */
+export async function personSingle(url) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url, { waitUntil: 'load' });
+
+    return await page.evaluate(() => {
+      const txt = (el) => (el ? el.textContent.replace(/\s+/g, ' ').trim() : null);
+      const h1 = document.querySelector('h1#bio-title');
+      const img = document.querySelector('.tp-portrait img');
+      const role = document.querySelector('.tp-role');
+      const bio = document.querySelector('.tp-bio');
+
+      return {
+        h1: txt(h1),
+        h1Count: document.querySelectorAll('h1').length,
+        labelledBy: document.querySelector('.tp-profile')?.getAttribute('aria-labelledby') ?? null,
+        role: txt(role),
+        /* Read off the element the stylesheet is the only source for. */
+        roleColor: role ? getComputedStyle(role).color : null,
+        portrait: img ? img.getAttribute('src') : null,
+        portraitFit: img ? getComputedStyle(img).objectFit : null,
+        portraitBorder: img ? getComputedStyle(img.closest('.tp-portrait')).borderTopWidth : null,
+        contact: !!document.querySelector('.tp-contact'),
+        mailto: document.querySelector('.tp-contact a')?.getAttribute('href') ?? null,
+        pending: !!document.querySelector('.tp-contact__pending'),
+        bioParagraphs: bio ? bio.querySelectorAll('p').length : 0,
+        bioColor: bio ? getComputedStyle(bio.querySelector('p') ?? bio).lineHeight : null,
+        share: !!document.querySelector('.sfsi_Sicons, .sfsibeforpstwpr, .sfsiaftrpstwpr'),
+        backLinks: [...document.querySelectorAll('.tp-back, .tp-more__link')].map((a) => a.getAttribute('href')),
+        cta: document.querySelector('.tp-profile__actions a')?.getAttribute('href') ?? null,
+      };
+    });
+  } finally {
+    await browser.close();
+  }
+}
+
+/* Asks the DOCUMENT what is under the pointer at given points inside a card,
+   which is the only way to check a whole-plate click target.
+   `.da-door h3 a::after{inset:0}` and its cousins make a whole card one click
+   target while keeping exactly one anchor in the accessibility tree. When
+   Elementor's widget wrapper captures the overlay's containing block, EVERY
+   element is still present, every class still matches and every computed
+   property still agrees with the static build; what changes is which box the
+   overlay is sized against. A census, a box sweep and a computed-style probe
+   all pass over the defect, and the card looks correct because the heading text
+   still navigates and the hover animation still fires (it is driven by
+   `.da-door:hover`, not by the anchor).
+
+   So this hit-tests instead. Each probe is a selector INSIDE the card; the
+   answer is the href of the anchor the point resolves into, or a description of
+   whatever non-anchor element is on top.
+
+   SCROLLED INTO VIEW FIRST, AND THAT IS LOAD-BEARING: elementFromPoint is
+   viewport-relative and returns null for a point below the fold, which reads as
+   "no anchor here" and is indistinguishable from the defect. The first run of
+   this helper returned null for every probe on a page whose cards were simply
+   further down. */
+export async function clickTargets(url, { cardSelector, probeSelectors, width = 1440 }) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height: 1000 } });
+    await page.goto(url, { waitUntil: 'load' });
+
+    const cards = await page.$$(cardSelector);
+    const out = [];
+
+    for (const card of cards) {
+      /* PLAYWRIGHT'S OWN SCROLL, NOT Element.scrollIntoView() INSIDE evaluate().
+         The in-page call was the first implementation and it silently did
+         nothing on this install: measured at `load`, window.scrollY stayed 0
+         through three scrollIntoView() calls and every probe came back with a
+         point 1200-1600px below a 1000px viewport, so elementFromPoint returned
+         null for all six. That reads as "no anchor here", which is exactly what
+         the defect this helper exists to find looks like — a false RED, which
+         is the same class of error as a false green and harder to notice
+         because it points at real code.
+
+         THE CAUSE, confirmed afterwards rather than left as a mystery: this
+         install runs a Mailchimp popup that opens a second or two after load
+         and LOCKS SCROLLING while it is up. An in-page scrollIntoView() against
+         a locked document silently does nothing and reports no error, so the
+         probe points stayed where they were. Any browser check against this
+         install that scrolls has the same exposure.
+
+         scrollIntoViewIfNeeded() is an auto-waiting Playwright action: it waits
+         for the element to be stable before and after scrolling, so the
+         measurement below runs against settled layout rather than against
+         whatever the page looked like mid-load, and it fails loudly instead of
+         quietly not moving. */
+      await card.scrollIntoViewIfNeeded();
+
+      const result = await card.evaluate((el, probeSelectors) => {
+        const anchor = el.querySelector('a[href]');
+        const probes = {};
+        for (const sel of probeSelectors) {
+          const target = el.querySelector(sel);
+          if (!target) { probes[sel] = 'MISSING'; continue; }
+          const r = target.getBoundingClientRect();
+          if (!r.width || !r.height) { probes[sel] = 'ZERO-SIZED'; continue; }
+          const x = r.left + r.width / 2;
+          const y = r.top + r.height / 2;
+          /* Reported distinctly from a real miss, and the caller MUST treat it
+             as a broken measurement rather than as a failed assertion: a point
+             outside the viewport is not evidence about the click target. */
+          if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) {
+            probes[sel] = `UNMEASURABLE:point ${Math.round(x)},${Math.round(y)} outside ${window.innerWidth}x${window.innerHeight} viewport`;
+            continue;
+          }
+          const hit = document.elementFromPoint(x, y);
+          if (!hit) { probes[sel] = 'UNMEASURABLE:elementFromPoint returned null inside the viewport'; continue; }
+          const a = hit.closest('a[href]');
+          probes[sel] = a
+            ? a.getAttribute('href')
+            : `NO-ANCHOR:${hit.tagName.toLowerCase()}.${(hit.className || '').toString().split(' ')[0]}`;
+        }
+        return { href: anchor ? anchor.getAttribute('href') : null, probes };
+      }, probeSelectors);
+
+      /* Fail here rather than returning an unmeasurable value for a caller to
+         assert against. This helper's contract is "what is under this point";
+         if it could not look, that is its own bug, not a finding about the
+         page. */
+      for (const [sel, value] of Object.entries(result.probes)) {
+        if (String(value).startsWith('UNMEASURABLE:')) {
+          throw new Error(
+            `clickTargets: could not hit-test ${sel} inside ${cardSelector} — ${String(value).slice('UNMEASURABLE:'.length)}. `
+            + 'The measurement is broken; this is not a statement about the page.',
+          );
+        }
+      }
+
+      out.push(result);
+    }
+
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+/* Scrolls, then reports where the named sticky elements actually sat.
+   THE ONLY FUNCTION IN THIS FILE THAT SCROLLS, and it exists because that was a
+   blind spot with a cost. `position:sticky` fails when an ancestor gives it
+   nowhere to travel, and when it fails EVERY computed value still matches the
+   static build: `position` is `sticky`, `top` is the authored offset, the
+   element is present and correctly classed. census(), controlBoxes(),
+   computedStyles() and layoutInvariants() all measure at scroll position 0,
+   where a sticky element and a static one are indistinguishable. The site
+   header was not sticky on any converted page for fourteen conversions and
+   nothing here reported it.
+
+   Returns the element's viewport `top` after scrolling, which is the whole
+   test: a stuck element sits at its own `top` offset, an unstuck one is
+   somewhere far negative.
+
+   NOT waitUntil:'networkidle', for the reason checkFilter's comment gives (the
+   install's third-party scripts never let the network idle), and the scroll is
+   done with window.scrollTo rather than an element method because there is no
+   element to scroll to — the question is what happens at an arbitrary depth. */
+/* Below this much available scroll, a page cannot demonstrate stickiness: the
+   header is 113px, so a document offering less than roughly three times that
+   never moves the element far enough for "still at top:0" to mean anything. */
+const MIN_USEFUL_SCROLL = 400;
+
+export async function stickyAfterScroll(url, probes, { scrollY = 2000, width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto(url, { waitUntil: 'load' });
+    /* CLAMPED TO WHAT THE DOCUMENT ACTUALLY HAS, then checked against the
+       clamp rather than against the request. A short page cannot scroll 2000px
+       and that is not a finding about stickiness: /grant-callen/ is one bio and
+       offers 907px, which the first version of this helper reported as "the
+       document did not scroll". Two different situations were producing one
+       error, so the clamp separates them: falling short of the CLAMP means
+       something is holding the document, falling short of the REQUEST just
+       means the page is short.
+
+       The install runs a Mailchimp popup that can lock scrolling once it opens,
+       so the scroll happens before it appears and the result is verified. */
+    const target = await page.evaluate((y) => {
+      const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const to = Math.min(y, max);
+      window.scrollTo(0, to);
+      return { to: Math.round(to), max: Math.round(max) };
+    }, scrollY);
+    await page.waitForTimeout(700);
+
+    const out = await page.evaluate(({ probes, scrollY }) => {
+      const reached = Math.round(window.scrollY);
+      const res = { scrollY: reached, requestedScrollY: scrollY, elements: {} };
+      for (const sel of probes) {
+        const el = document.querySelector(sel);
+        if (!el) { res.elements[sel] = null; continue; }
+        const cs = getComputedStyle(el);
+        res.elements[sel] = {
+          top: Math.round(el.getBoundingClientRect().top),
+          height: Math.round(el.getBoundingClientRect().height),
+          position: cs.position,
+          cssTop: cs.top,
+          parentHeight: el.parentElement ? Math.round(el.parentElement.getBoundingClientRect().height) : null,
+        };
+      }
+      return res;
+    }, { probes, scrollY });
+
+    if (out.scrollY < target.to * 0.9) {
+      throw new Error(
+        `stickyAfterScroll: the document offers ${target.max}px of scroll, this asked for ${target.to} and `
+        + `reached ${out.scrollY}. Something is holding the document, so nothing measured here is a `
+        + 'statement about stickiness. On this install the usual cause is the Mailchimp popup locking '
+        + 'scroll once it opens.',
+      );
+    }
+
+    /* A page that barely scrolls cannot demonstrate stickiness either way: if
+       the whole travel is shorter than the element itself, "still visible" is
+       not evidence. Reported as an unusable measurement rather than a pass. */
+    if (target.max < MIN_USEFUL_SCROLL) {
+      throw new Error(
+        `stickyAfterScroll: this page offers only ${target.max}px of scroll, which is too little to show `
+        + `whether an element sticks (need at least ${MIN_USEFUL_SCROLL}px). Point this at a longer page.`,
+      );
+    }
+
+    out.availableScroll = target.max;
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 /* Check 5 of the spec's harness. Catches the two silent infrastructure
    failures: a stylesheet that never enqueued, and Elementor's Theme Style or
    UiCore's own globals winning over css/site.css. Compared against the same
@@ -309,11 +632,20 @@ export async function computedStyles(url, probes) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.goto(url, { waitUntil: 'load' });
     const out = {};
-    for (const { name, selector, property } of probes) {
+    for (const { name, selector, property, pseudo = null } of probes) {
+      /* `pseudo` is optional and defaults to null, which is exactly what
+         getComputedStyle's second argument means when it is omitted, so every
+         probe written before it existed reads identically.
+
+         IT EXISTS BECAUSE A GENERATED BOX CAN BE A LAYOUT PARTICIPANT that no
+         element selector can reach. Beaver's `.fl-post-grid::before/::after`
+         clearfix pair are inert while their parent is a block box and become
+         two blank grid items the moment it is a grid; the only way to assert
+         they are gone is to read the pseudo-element's own `content`. */
       out[name] = await page.$eval(
         selector,
-        (el, prop) => getComputedStyle(el).getPropertyValue(prop).trim(),
-        property,
+        (el, [prop, pseudoEl]) => getComputedStyle(el, pseudoEl).getPropertyValue(prop).trim(),
+        [property, pseudo],
       ).catch(() => null);
     }
     return out;

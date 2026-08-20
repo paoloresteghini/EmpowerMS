@@ -1,0 +1,270 @@
+/* ==========================================================================
+   SINGLE POST — the closing "More" grid, given the All Content card design
+   ==========================================================================
+
+   WHAT THIS SHEET IS FOR, AND WHAT IT IS NOT.
+
+   /kyle-jackson-a-fathers-footsteps/ and the other 489 posts on this install
+   are NOT converted. They render through a Beaver Themer layout, "Post
+   Singular" (fl-theme-layout post 11272, published), which owns the whole
+   page: the title, the post content, the author callout and the closing "More"
+   grid are all Beaver Builder modules. `wp/empowerms-child/single.php` never
+   draws them; it asks Elementor for a `single` location first, gets nothing
+   for post type `post`, and Beaver's own template_include has already won by
+   then. The proof is on the rendered page: `<body>` carries
+   `fl-theme-builder-singular-post-singular`, and the grid is
+   `.fl-module-post-grid`.
+
+   So this sheet is a REVERSIBLE DRESSING ON LEGACY MARKUP, not a conversion.
+   Paolo's 2026-08-20 instruction was narrow: "can we fix the 'MORE' section at
+   the bottom? Use the same card style as the rest of the 'all content'". The
+   card design it points at is `.cad-card` in css/content-a.css:202-300, which
+   is the signed-off All Content page. Every rule below is that design applied
+   to the class names Beaver already emits. Nothing here changes any markup,
+   any Beaver setting or any post, so converting single posts later deletes
+   this file and loses nothing.
+
+   THE MARKUP IT DRESSES, read off the live page rather than assumed:
+
+       div.fl-post-grid
+         div.fl-post-column                  one per card on this layout
+           div.fl-post-grid-post .has-post-thumbnail?   <- .cad-card
+             a.pcw-post-card-image-link
+               div.pcw-post-card-image       background-image, not an <img>
+             div.pcw-post-card-content
+               a.post-card-content-link      <- .cad-card__body
+                 header.pcw-post-card-header
+                   span.pcw-post-card-category   <- .cad-card__topic
+                   h3.pcw-post-card-title        <- .cad-card__title
+                   span.pcw-post-card-author
+                 section.pcw-post-card-excerpt
+         div.fl-clear
+
+   The `pcw-` prefix is not Beaver's own. It comes from a custom post-grid
+   layout that lives on the install rather than in this repository (no file
+   under wp-content matches it), so the markup is treated here as a fixed
+   input: read, never edited.
+
+   THREE DIFFERENCES FROM .cad-card, all forced by that markup:
+
+   1. NO DATE. `.cad-card__meta` is a topic and a date side by side. This
+      markup emits the date only into a `<meta itemprop="datePublished">`,
+      which is not renderable text, and emits an AUTHOR line instead. So the
+      author takes the date's position and the date's muted treatment, and the
+      meta line is a column rather than a row because the two strings are a
+      caps eyebrow and a sentence rather than two eyebrows. Adding a real date
+      means editing the install-side layout, which is reported rather than done
+      here.
+
+   2. THE PHOTOGRAPH IS A BACKGROUND, NOT AN <img>, so it gets
+      `background-size:cover` in place of `object-fit:cover`. The 3:2 plate,
+      the grey underneath it and the 1.035 hover scale are all
+      css/content-a.css:262-274's own.
+
+      IT IS HIDDEN WHEN THERE IS NO FEATURED IMAGE, and that has to be gated on
+      the POST rather than on the image: the layout writes
+      `style="background-image: url();"` with an empty url for a post with no
+      thumbnail, which is an invalid value, so the declaration is dropped and
+      the computed `background-image` is `none` either way. CSS cannot tell
+      that apart from a card that simply has no rule. What it CAN see is
+      WordPress's own `has-post-thumbnail` class on `.fl-post-grid-post`, which
+      the same render carries, so the empty plate is suppressed from there. On
+      the page this was built against two of the three cards have no featured
+      image, so this is the common case and not an edge one.
+
+   3. THE WHOLE PLATE IS THE CLICK TARGET VIA `.post-card-content-link`, not
+      via the heading. `.cad-card__title a::before{inset:0}` works because the
+      heading's anchor is the card's only link. Here there are TWO anchors per
+      card pointing at the same post, and the heading is not one of them: it is
+      an `<h3>` inside the content anchor. So the overlay goes on that anchor,
+      which is the one carrying the readable accessible name.
+
+      WHAT THIS DOES NOT FIX: the image anchor is still a separate tab stop to
+      the same destination, so every card with a photograph costs two. That is
+      a property of the layout's markup, not of these rules, and no CSS removes
+      a tab stop. Reported.
+
+   WHERE IT LOADS. empower_page_styles()['post'] in functions.php, which
+   empower_style_key() reaches for because a `post` is singular and is not a
+   `page`, the same mechanism the `person` row uses. Single posts only:
+   archives and category pages run the same Beaver post-grid module but are not
+   singular, so empower_style_key() returns '' for them and they keep the plain
+   treatment. That is deliberately narrow, matching the instruction, and this
+   sheet would need no change to cover them.
+
+   NO motion.css. Every `.cad-card` on All Content carries `data-reveal="rise"`
+   and this markup carries no reveal attributes at all, so the motion sheet
+   would be dead weight and its reveal selector would have nothing to bind to.
+   The hover transitions below are therefore declared directly on the elements,
+   which is safe here for exactly the reason it is not safe on a converted
+   page: nothing sets a `transition` on these elements to be replaced. */
+
+/* ============================== 1 · The grid ============================= */
+
+/* Beaver floats `.fl-post-column` and clears with a trailing `.fl-clear`. A
+   grid on the parent makes the floats inert, and `display:contents` on the
+   columns lifts each card into that grid so the track sizing sees cards rather
+   than columns. Column count then comes from the same auto-fill expression All
+   Content uses, with ONE number changed.
+
+   THE MINIMUM TRACK IS 280px, NOT `.cad-cards`'s 300px, and the difference is
+   this page's own width rather than a preference. All Content's grid sits in a
+   1152px container; this one sits in the Beaver row's 960. Three 300px tracks
+   plus two 32px gaps need 964, four pixels more than there is, so auto-fill
+   dropped to TWO columns and stranded the third card on a row of its own.
+   Measured, not predicted: at 1440 the cards came back 464 wide at x 240 and
+   736, with the third at 240 on the next row. At 280 the same three fit (904 of
+   960) and the band reads across in three, which is both what All Content does
+   and what this module did before it was restyled. Nothing below 768 changes:
+   the one and two column counts are set by the `min(100%, ...)` floor rather
+   than by this number. */
+.pcw-post-cards .fl-post-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7))}
+
+/* THE MODULE'S NEGATIVE MARGINS HAVE TO GO WITH THE COLUMNS THEY PAIRED WITH.
+   Beaver's own generated CSS for this module is
+   `.fl-node-5d766512dd505 .fl-post-grid{margin-left:-20px;margin-right:-20px}`,
+   which is one half of a gutter: the grid bleeds 20px past its row and each
+   `.fl-post-column` pads 20px back in, so the outer cards line up with the
+   column and the space between them is 40px. `display:contents` on the columns
+   throws away their half of that bargain and leaves the bleed, which at 768
+   put the first card's left edge at x:0, hard against the viewport. Zeroing it
+   hands the gutters to the grid's own `gap`, which is the same clamp
+   `.cad-cards` uses.
+
+   Written with `.fl-module` in the selector so it outweighs Beaver's own
+   `.fl-node-<id>` rule on specificity rather than on load order, which is not
+   this sheet's to control: the module bundle is enqueued by Beaver. */
+.pcw-post-cards.fl-module .fl-post-grid{margin-left:0;margin-right:0}
+.pcw-post-cards .fl-post-column{display:contents}
+.pcw-post-cards .fl-clear{display:none}
+
+/* THE CLEARFIX PSEUDO-ELEMENTS ARE GRID ITEMS, and suppressing them is not
+   tidying. Beaver's base sheet clears the grid's floated columns with
+   `.fl-post-grid::before/::after{content:" ";display:table}`, which costs
+   nothing while the parent is a block box and becomes TWO BLANK CARDS the
+   moment it is a grid: a generated box with a `content` value is a grid item
+   like any other. Measured on the live page before this rule existed, at 1440
+   with three cards and three 312px tracks: `::before` took cell 1, so the
+   first card sat in the SECOND column, the second card finished the row, and
+   the third dropped to a row of its own, with `::after` taking a fourth cell.
+   Both boxes computed 312 x 441.891, exactly a card, which is why the hole
+   read as a layout bug rather than as a stray element.
+
+   `content:none` rather than `display:none`, because it is the content value
+   that generates the box at all. */
+.pcw-post-cards .fl-post-grid::before,
+.pcw-post-cards .fl-post-grid::after{content:none}
+
+/* ============================== 2 · The card ============================= */
+
+/* css/content-a.css:208-210 verbatim, plus the margin and padding resets that
+   Beaver's own base-desktop.css puts on a grid post. */
+.pcw-post-cards .fl-post-grid-post{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  margin:0;padding:0;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-card)}
+
+/* THE ONLY !important IN THIS SHEET, AND IT IS BEATING A SCRIPT, NOT A RULE.
+   Beaver's post-grid module equalises its cards in JavaScript: it measures the
+   tallest one and writes `style="height: 456.062px"` onto EVERY card in the
+   module, which is a specificity a stylesheet cannot reach any other way.
+
+   Left alone that is not merely redundant beside the grid, it is wrong in the
+   one place the grid gets right. Grid stretches items within THEIR OWN ROW, so
+   a row of three cards is level and a lone card on a half-empty last row is its
+   own height, which is `.cad-cards`'s behaviour on All Content. Beaver's number
+   is global: measured at 768, where the grid is two columns wide, the third
+   card sat alone on the second row and was still forced to the height of the
+   one card in the set that carries a photograph, leaving about 220px of empty
+   plate under its excerpt.
+
+   Handing the height back to the grid also means it keeps working at a width
+   this page was never checked at: the script re-measures on resize, the grid
+   does not need to. */
+.pcw-post-cards .fl-post-grid-post{height:auto !important}
+
+/* The mark again, at card scale: 56 x 4, growing from the bottom-left corner
+   on hover. css/content-a.css:297-300. `z-index:1` because the click overlay
+   below is a positioned pseudo-element on a later sibling and would otherwise
+   paint over it. */
+.pcw-post-cards .fl-post-grid-post::after{
+  content:"";position:absolute;left:0;bottom:0;height:4px;width:0;z-index:1;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover::after,
+.pcw-post-cards .fl-post-grid-post:focus-within::after{width:56px}
+
+/* ============================ 3 · The photograph ========================= */
+
+.pcw-post-cards .pcw-post-card-image-link{display:block;line-height:0}
+.pcw-post-cards .fl-post-grid-post:not(.has-post-thumbnail) .pcw-post-card-image-link{
+  display:none}
+.pcw-post-cards .pcw-post-card-image{
+  width:100%;aspect-ratio:3/2;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  background-color:var(--surface-subtle);
+  transition:transform var(--dur-slow) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-image{transform:scale(1.035)}
+
+/* ============================== 4 · The copy ============================= */
+
+/* `position:static` is load-bearing: the click overlay two rules down is
+   `inset:0` and must resolve against the CARD. Beaver's base sheet does not
+   position this wrapper today, but the overlay silently shrinking to the copy
+   box is the exact failure this project has already paid for twice, so it is
+   stated rather than relied on. */
+.pcw-post-cards .pcw-post-card-content{
+  position:static;display:flex;flex-direction:column;flex:1 1 auto}
+
+/* .cad-card__body (css/content-a.css:218-219), which on this markup is the
+   anchor itself. */
+.pcw-post-cards .post-card-content-link{
+  display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6);flex:1 1 auto;
+  color:inherit;text-decoration:none}
+.pcw-post-cards .post-card-content-link::before{content:"";position:absolute;inset:0}
+.pcw-post-cards .post-card-content-link:focus-visible{
+  outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+.pcw-post-cards .pcw-post-card-header{
+  display:flex;flex-direction:column;gap:var(--space-3)}
+
+/* .cad-card__meta + .cad-card__topic (css/content-a.css:276-279). */
+.pcw-post-cards .pcw-post-card-category{
+  font-size:var(--fs-caption);font-weight:var(--fw-semibold);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink)}
+
+/* .cad-card__title (css/content-a.css:283-290). The colour transition sits on
+   the heading rather than on an inner anchor because there is no inner
+   anchor. */
+.pcw-post-cards .pcw-post-card-title{
+  margin:0;font-size:var(--fs-h5);line-height:1.3;color:var(--text-strong);
+  transition:color var(--dur) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-title{color:var(--em-orange-ink)}
+
+/* .cad-card__date's treatment on the string this markup has instead
+   (css/content-a.css:280-281). */
+.pcw-post-cards .pcw-post-card-author{
+  font-size:var(--fs-caption);font-weight:var(--fw-medium);
+  letter-spacing:normal;text-transform:none;
+  color:var(--text-muted)}
+
+.pcw-post-cards .pcw-post-card-excerpt{margin:0}
+.pcw-post-cards .pcw-post-card-excerpt p{
+  margin:0;font-size:var(--fs-body);line-height:1.6;color:var(--text-body)}
+.pcw-post-cards .pcw-post-card-excerpt p:last-child{margin-bottom:0}
+
+/* ========================== 5 · Reduced motion =========================== */
+
+/* css/content-a.css:358-360's own list, translated to these elements. */
+@media (prefers-reduced-motion:reduce){
+  .pcw-post-cards .fl-post-grid-post::after,
+  .pcw-post-cards .pcw-post-card-image,
+  .pcw-post-cards .pcw-post-card-title{transition:none}
+  .pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-image{transform:none}
+}

@@ -6411,3 +6411,654 @@
 .elementor .cad-card:hover .cad-card__title .elementor-heading-title > a{
   color:var(--em-orange-ink); /* css/content-a.css:290 */
 }
+
+/* ---------- 55. THREE ARTIFACTS THAT ARE NOT ELEMENTOR'S, and are not the
+ * static build's either: they belong to three plugins active on the install
+ * that this repository does not own and did not enable.
+ *
+ * This is the first block in the file whose selectors are not Elementor-
+ * shaped. The header's "only file allowed to carry an Elementor-shaped
+ * selector" still holds as a floor; read it now as "the only file allowed to
+ * name anything the INSTALL puts on the page", Elementor included. The static
+ * build under src/ and css/ has no plugins at all, so there is no honest place
+ * for these rules there, and a fourth stylesheet enqueued after this one would
+ * buy nothing but a fourth thing to keep in the sync's head.
+ *
+ * ALL THREE REPRODUCE ON empowerms.org, checked before anything was written
+ * here: the empty paragraph and the Terms and Conditions strip are both in the
+ * live site's served HTML today. None of them is a conversion regression, and
+ * none of them is repaired by turning a plugin off, because these are the
+ * client's plugins on the client's install.
+ *
+ * 55a. THE WHITE BAR ABOVE THE FOOTER, which is an empty paragraph.
+ *
+ * `mailchimp-forms-by-mailmunch` filters the_content through
+ * insert_form_after_paragraph() (public/class-mailchimp-mailmunch-public.php:
+ * around 150). That helper explodes the content on `</p>` and then appends
+ * `</p>` back onto every non-empty chunk. The LAST chunk is everything after
+ * the content's final `</p>`, which on an Elementor page is several thousand
+ * characters of container markup and is emphatically non-empty, so it is
+ * handed a closing tag it never opened. An unmatched `</p>` is not discarded
+ * by the HTML parser: the spec has it insert an empty `<p>` element, and that
+ * paragraph arrives with the UA's 1em bottom margin.
+ *
+ * Measured on the homepage before the repair: main bottom 6050.72, footer top
+ * 6066.72, difference 16px exactly, over the white body background.
+ *
+ * `:empty` is exact here rather than approximate: the element genuinely has no
+ * children and no text, which is why its own height reads 0 and only the
+ * margin shows. Scoped to `main#main >` so it can only ever reach the one
+ * position the artifact occupies. An unconverted Beaver Builder page keeps its
+ * own copy of the same artifact, nested inside .fl-post-content where this
+ * selector cannot see it, and that is deliberate: repairing pages this project
+ * did not build is not this file's job. */
+main#main > p:empty{
+  display:none;
+}
+
+/* 55b. THE TERMS AND CONDITIONS STRIP BELOW THE FOOTER.
+ *
+ * `auto-terms-of-service-and-privacy-policy` appends
+ * `<div class="wpautoterms-footer">` straight to <body>, after the Elementor
+ * footer location has already closed. It is outside <footer> in the DOM and
+ * cannot be moved from CSS, so the repair is to make the strip read as the
+ * footer's last line rather than as a white bar hanging off the bottom of it.
+ *
+ * NOT HIDDEN, decided with Paolo on 2026-08-20. The footer's own MORE column
+ * already links "Privacy Policy & Terms of Service", so nothing would be lost
+ * as a route, but the strip is a compliance link the plugin manages and the
+ * client publishes the same one on their live site. Restyling keeps it.
+ *
+ * The plugin's own colours are an inline <style> in the head (0,1,0) plus
+ * css/wpautoterms.css (0,1,0 and 0,1,1); both are earlier in the served <head>
+ * than bridge.css, so plain class selectors would already win on order. They
+ * are qualified with `body` anyway, per this file's own rule: read the head
+ * before trusting order, and prefer specificity to it. 0,1,1 and 0,1,2 clear
+ * both plugin rules on specificity alone.
+ *
+ * The strip's <p> carries the UA bottom margin, which currently collapses out
+ * through the borderless, paddingless div and escapes below <body>. Giving the
+ * div padding stops that collapse, so the margin is zeroed on the <p> in the
+ * same block rather than left to become 16px of navy nobody asked for.
+ *
+ * Type and colour are the footer's bottom row, not the footer's link column:
+ * --fs-caption is what "© Empower Mississippi" and the address line use
+ * (components/components.css:155), and the hover is the --orange-300 that
+ * every other footer link uses (components/components.css:150). */
+body .wpautoterms-footer{
+  background:var(--surface-navy);
+  padding:0 var(--space-6) var(--space-8);
+  font-family:var(--font-body);
+  font-size:var(--fs-caption);
+  color:var(--text-inverse-muted);
+}
+body .wpautoterms-footer p{
+  margin:0;
+}
+body .wpautoterms-footer a{
+  color:var(--white);
+  font-family:inherit;
+  font-size:inherit;
+  text-decoration:none;
+  transition:color var(--dur) var(--ease-out);
+}
+body .wpautoterms-footer a:hover,
+body .wpautoterms-footer a:focus-visible{
+  color:var(--orange-300);
+  text-decoration:underline;
+}
+
+/* 55c. THE GREEN PANEL IN THE BOTTOM RIGHT CORNER.
+ *
+ * `ultimate-social-media-icons` 2.9.9 renders #usm-admin-notification-widget,
+ * a fixed-position marketing nag from the plugin author. IT IS ADMIN ONLY:
+ * the string does not appear once in the logged-out HTML of the homepage,
+ * checked with curl against a session that has no cookies, so no visitor has
+ * ever seen it and nothing about the public page changes here.
+ *
+ * Hidden anyway, on Paolo's 2026-08-20 say-so, because every screenshot and
+ * every logged-in walk-through of this build is taken by someone who is
+ * signed in, and a green panel parked over the bottom right corner of the
+ * design is noise in all of them. It is a plugin nag, not content: there is
+ * nothing behind it this project needs. */
+#usm-admin-notification-widget{
+  display:none !important;
+}
+
+/* ==========================================================================
+ * TEAM-A, 2026-08-20. The staff roster and the fellows ledger became Loop
+ * Grids over the `person` post type, and these are the four blocks that
+ * conversion costs. Nothing here is a new cost CATEGORY: 56 is content-a's
+ * block 48 (a build grid whose loop wrappers steal its tracks), 57 and 58 are
+ * the second category (an image widget's class landing on the wrapper), and 59
+ * is the position-dependent-selector family this phase already prices. What is
+ * new is that all four were PREDICTED IN WRITING before the deploy — two of
+ * them by the very modules being replaced, whose notes argued against this
+ * construction and named these exact defects — and then measured live rather
+ * than assumed.
+ *
+ * THIS PAGE IS NO LONGER GATED. It moved to EXCLUDED_PAGES in
+ * elementor/pages/register.mjs on the same day, because the live page renders
+ * 13 staff and 5 fellows where dist/team-a.html carries 10 and 5, with four
+ * people on each side the other does not have. So every "before" and "after"
+ * number below was measured by hand, live against the static build served
+ * locally by `node dev.mjs`, at 1440 and 390, keyed on the FIRST card and the
+ * FIRST ledger row (both sides' first item is Grant Callen and Joe
+ * Bishop-Henchman respectively only after the fix; before it the comparison is
+ * of boxes, not of people, which is all these four blocks are about). The
+ * behavioural gate that replaces the register is the roster test in
+ * test-elementor.mjs.
+ * ==========================================================================*/
+
+/* ---------- 56. team-a: two Loop Grids whose own wrapper classes are the
+ *                page's real grids -------------------------------------
+ * content-a's block 48 exactly, twice, and the more damaging of the two is the
+ * roster because `.ta-roster` is an EXPLICIT track list rather than an
+ * auto-fit one:
+ *
+ *     css/team-a.css:154-159   .ta-roster{display:grid;
+ *                                grid-template-columns:repeat(3,minmax(0,280px));
+ *                                justify-content:space-between; ...}
+ *
+ * podcast-a's `auto-fit` grid collapses its empty tracks and the class is a
+ * harmless no-op there. `repeat(3, ...)` cannot collapse anything: three tracks
+ * exist whether or not there is anything to put in them, and the loop-grid
+ * widget wrapper that carries the class has exactly ONE child. So the whole
+ * roster rendered inside track 1.
+ *
+ * Measured live against static before this rule:
+ *
+ *                                   1440                    390
+ *     .ta-roster (the wrapper)      w 1152   3 tracks       w 342   2 tracks
+ *     .elementor-widget-container   w 280    (of 1152)      w 163   (of 342)
+ *     .elementor-loop-container     3 tracks of 73.33px     1 track of 163px
+ *     .ta-person                    w 73.33  h 270.25       w 163
+ *     against static                w 280    h 463.28       w 342
+ *
+ * A 73px staff card with a 73x92 photograph and a name set across it, thirteen
+ * times. `.ta-roster`'s own computed `grid-template-columns` agreed with the
+ * static build's exactly on both sides, which is block 48's point restated: the
+ * defect is not in the properties, it is in how many children there are.
+ *
+ * `.ta-ledger` is the same mechanism with a different symptom. It is not a grid
+ * at all in the build (css/team-a.css:220 is `list-style:none;margin:0;padding:0`),
+ * so nothing of ITS own was stolen; what happened is that Elementor's
+ * `.elementor-loop-container.elementor-grid` imposed a grid the design does not
+ * have, and laid five ledger ROWS out in three columns:
+ *
+ *                                   1440
+ *     .elementor-loop-container     3 tracks of 188.89px
+ *     .ta-ledger__row               w 188.89  h 287.5
+ *       its own tracks              52px 79.30px 0px
+ *     against static                w 626.70  h 101
+ *       its own tracks              52px 240.50px 276.61px
+ *
+ * so every row was a third of its width, three times its height, and its own
+ * third column (`.ta-ledger__field`, the fellow's subject, which
+ * css/team-a.css:231 sets `text-align:right`) had collapsed to zero.
+ *
+ * THE REPAIR MAKES EACH BUILD'S OWN CONTAINER THE REAL ONE, which is block 48's
+ * higher-fidelity choice rather than a restoration of Elementor's grid.
+ * `display:contents` on the two wrappers takes them out of the box tree, so the
+ * `.e-loop-item` divs become children of `.ta-roster` and `.ta-ledger`
+ * themselves: the roster gets its own `repeat(3,minmax(0,280px))` with
+ * `justify-content:space-between` and its own clamp()ed gaps at every
+ * breakpoint, and the ledger goes back to being a plain block flow of full-width
+ * rows, which is what a ledger is.
+ *
+ * WHAT display:contents COSTS, checked rather than waved past, and it is block
+ * 48's checklist run again on this page. The loop container carries
+ * role="list"; display:contents drops IMPLICIT semantics in shipped browsers
+ * while an EXPLICIT role survives, so the role is why the announcement survives
+ * at all here (the <ul>/<li> tree is what was lost, and loop-item.mjs's note 1
+ * records that as a real cost this cannot recover). Neither wrapper carries a
+ * background, a border or a position. css/team-a.css contains no `>` combinator
+ * in any selector, so nothing reaches through either wrapper by child
+ * relationship. Elementor's `<style id="loop-...">` inside the loop container is
+ * display:none by UA rule and never becomes a grid item.
+ *
+ * After: three tracks of 280px at 1440 and two at 390 for the roster, and
+ * full-width 101px rows for the ledger, all matching the static build. */
+.ta-roster > .elementor-widget-container,
+.ta-roster .elementor-loop-container,
+.ta-ledger > .elementor-widget-container,
+.ta-ledger .elementor-loop-container{
+  display:contents;
+}
+
+/* ---------- 57. team-a: a placeholder tile that now holds a real
+ *                photograph ---------------------------------------------
+ * TWO THINGS AT ONCE, and they are worth separating because only one of them
+ * is an Elementor cost.
+ *
+ * THE ELEMENTOR COST is the second category, identical in mechanism to
+ * `.cad-card__photo` (block 49) and `.lnd-pair__photo` (block 43). `image()`
+ * puts cssClass on the WRAPPER (elementor/factory.mjs, WIDGET_CSS_CLASS_KEY),
+ * so `.ta-portrait`'s box lands on a div and the real <img> two levels inside
+ * takes Elementor's own `.elementor img{height:auto;max-width:100%}` and
+ * widget-image's `display:inline-block`. Measured live at 1440 with block 56
+ * already in play, so the widths are comparable:
+ *
+ *     .ta-portrait (the wrapper)   280 x 350   correct, it has the class
+ *     the real <img>               276 x 232.4  aspect-ratio auto 1024/862
+ *                                               object-fit fill
+ *
+ * a photograph at its own intrinsic ratio, centred in a 4:5 box, with 118px of
+ * tinted background showing under it on every card.
+ *
+ * THE OTHER HALF IS NOT ELEMENTOR'S AT ALL, and it would be needed whatever
+ * built this page. `.ta-portrait` is a PLACEHOLDER, and css/team-a.css:53-54
+ * says so in its own words: "The placeholder monogram, in two sizes. Dashed
+ * rather than solid on purpose: a solid tile reads as a designed empty state
+ * and a client stops seeing it, which is exactly how a placeholder ships." Its
+ * 2px dashed edge and its hex-lattice ::before exist to look pending. The
+ * source's own comment names the swap this build has now made — "swap the
+ * span.ta-portrait for an image tag pointing at the headshot (4:5...)" — and
+ * the static build is frozen, so the swap is expressed here.
+ *
+ * WHAT IS KEPT: the 4:5 box, the radius, and the whole hover treatment
+ * (css/team-a.css:165-169), which still lifts the tile by 4px under the
+ * pointer. What goes: the dashed edge, the honeycomb, and the tinted fill,
+ * because all three are the frame-waiting-for-a-picture and the picture has
+ * arrived. `--surface-subtle` stays underneath as the letterbox colour for a
+ * portrait whose own ratio is not 4:5, which is every one of them today.
+ *
+ * `object-fit:cover` IS A CROP, AND IT IS THE ONE THE DESIGN ASKED FOR: the
+ * source comment specifies a 4:5 image tag, and every headshot in the library
+ * is wider than 4:5 (Grant's is 1024x862), so each is cropped top and bottom to
+ * a portrait box. `object-position:center` is Elementor's own default and is
+ * left alone. WHICH FACES SURVIVE THAT CROP IS NOT SOMETHING ANY TEST HERE CAN
+ * SEE, and it is on the task report as an eyes-on check, the same way
+ * empowerms-landing-templates' object-fit note is. */
+.ta-portrait{
+  border:0;
+  background:var(--surface-subtle);
+  overflow:hidden;
+}
+.ta-portrait::before{
+  content:none;
+}
+.ta-portrait img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+
+/* ---------- 58. team-a: the same swap at 52px, on the fellows ledger ----
+ * `.ta-disc` is `.ta-portrait`'s sibling in css/team-a.css:74-77: a 52x52 pill
+ * with a 2px dashed edge, holding two monogram letters. Same two halves as
+ * block 57 and the same repair at a different size, kept as its own block
+ * because the two classes appear on two different sections with two different
+ * backgrounds and deleting either page should take exactly one block out of
+ * play.
+ *
+ * Measured live at 1440 with block 56 in play:
+ *
+ *     .ta-disc (the wrapper)   52 x 52    correct, it has the class
+ *     the real <img>           48 x 48    aspect-ratio auto 460/460
+ *
+ * 48 rather than 52 because the wrapper's own 2px dashed border eats 4px, and
+ * square rather than round because `border-radius` is on the wrapper and the
+ * <img> inside it is not clipped by anything. Every fellow's headshot rendered
+ * as a small square inside a dashed circle.
+ *
+ * `.ta-disc--roll` IS DELIBERATELY NOT TOUCHED. It is the 44px board variant
+ * (css/team-a.css:78), and the board section is still eight hand-written names
+ * with monogram tiles, because none of those eight has a `person` entry on the
+ * install (elementor/pages/team-a/04-board.mjs note 6). Its dashed edge is
+ * still a true statement about a real placeholder, and the `.ta-pending` line
+ * above it now says so. These selectors cannot reach it: they are scoped to
+ * `.ta-disc` carrying an <img>, and the board's discs carry text. */
+.ta-disc:has(img){
+  border:0;
+  overflow:hidden;
+}
+.ta-disc img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+
+/* ---------- 59. team-a: a ledger hairline that lands on every row -------
+ * THE DEFECT THE MODULE BEING REPLACED PREDICTED, in writing, before it
+ * existed. elementor/pages/team-a/03-fellows.mjs's note 1 argued for building
+ * the ledger as one html() widget and gave this as the reason:
+ *
+ *     "built as a container tree instead, each <li> would become the only child
+ *      of its own wrapper, so EVERY row would be :last-child, not only the
+ *      fifth, and every row would take the bottom border."
+ *
+ * A Loop Grid is that shape: `.ta-ledger__row` is the only child of its own
+ * `.e-loop-item`, so css/team-a.css:227's
+ * `.ta-ledger__row:last-child{border-bottom:1px solid var(--border-inverse)}`
+ * matches all five. Measured live, at both widths, reading
+ * border-bottom-width off every row in document order:
+ *
+ *     LIVE    ["1px","1px","1px","1px","1px"]
+ *     STATIC  ["0px","0px","0px","0px","1px"]
+ *
+ * which is the LOUD half of the recipe's asymmetry: five hairlines where the
+ * design has one, visible at a glance, unlike the silent over- and
+ * under-matching the phase's earlier `:last-child` findings were.
+ *
+ * THE REPAIR RESTORES THE RULE BY POSITION, on the loop item rather than on the
+ * row. `:last-of-type` rather than `:last-child` for the reason block 53's
+ * comment records off a real render: Elementor emits a `<style id="loop-...">`
+ * element as a child of `.elementor-loop-container`, which offsets the
+ * child-counting pseudo-classes and does not offset the type-counting ones. It
+ * is the first child there rather than the last, so `:last-child` would in fact
+ * work today; `:last-of-type` is used anyway because it is correct whether the
+ * style element is emitted first, last or twice, and because the two blocks
+ * should read the same way.
+ *
+ * The cancelling selector is 0,3,0 and the restoring one is 0,4,0, both above
+ * css/team-a.css:227's 0,2,0, so neither depends on stylesheet order. Both are
+ * scoped under `.ta-ledger`, which exists only inside this page's fellows
+ * section.
+ *
+ * After: ["0px","0px","0px","0px","1px"] at both widths, identical to static. */
+.ta-ledger .e-loop-item .ta-ledger__row:last-child{
+  border-bottom:0;
+}
+.ta-ledger .elementor-loop-container > .e-loop-item:last-of-type .ta-ledger__row{
+  border-bottom:1px solid var(--border-inverse);
+}
+
+/* ---------- 60. team-a: a ledger row whose three columns arrive as two --
+ * `.ta-ledger__row` is a three-column grid, and its tracks are sized to what
+ * is in them:
+ *
+ *     css/team-a.css:221-226  grid-template-columns:auto minmax(0,1fr) auto
+ *
+ * track 1 the 52px disc, track 2 the fellow's name, track 3 the subject, which
+ * css/team-a.css:231 sets `text-align:right` so the ledger reads as two edges
+ * with a rule between them. Source puts three `<span>`s in the row and they are
+ * its three grid items.
+ *
+ * The loop item has two children, not three: the disc is an image widget, and
+ * the name and the subject are one text widget holding one shortcode, for the
+ * reason wp/empowerms-child/inc/person-loop.php's docblock gives (a bare inline
+ * <span> carrying a meta value has no widget that can produce it, and a fellow
+ * with no `position_title` must render no `.ta-ledger__field` box rather than
+ * an empty one). So both spans are inside ONE grid item.
+ *
+ * Measured live at 1440 with blocks 56 to 59 already in play:
+ *
+ *     .ta-ledger__row tracks   live   52px  517.11px  0px
+ *                              static 52px  240.50px  276.61px
+ *
+ * The row was the right width and the right height; what was wrong is that the
+ * subject sat immediately after the name in the middle track instead of at the
+ * right-hand edge, and track 3 collapsed to nothing. A defect of alignment
+ * rather than of size, which is why it survived the first three repairs.
+ *
+ * THE REPAIR TAKES THE WIDGET OUT OF THE BOX TREE rather than splitting the
+ * shortcode into two widgets. Both were available. Two widgets would have given
+ * the row three children without any CSS at all, and it was rejected because
+ * the grid items would then be two Elementor widget DIVS rather than the
+ * source's two spans: `.ta-ledger__field`'s `text-align:right` would be
+ * resolving inside a shrink-to-fit wrapper instead of on the item the design
+ * puts it on, and a fellow with no subject would still contribute an empty
+ * third widget. `display:contents` promotes the real `.ta-ledger__name` and
+ * `.ta-ledger__field` spans to grid items, which is exactly what they are in
+ * dist/team-a.html, and a fellow with no subject contributes no third item at
+ * all because the shortcode emits none.
+ *
+ * ONE LEVEL, NOT TWO, and that was read off the render rather than assumed:
+ * Elementor's Text Editor widget prints its content directly inside
+ * `div.elementor-widget-text-editor` with no `.elementor-widget-container` in
+ * between (unlike the Image widget, which has one). So a single selector does
+ * it, and a second one aimed at a container that is not there would be dead
+ * weight.
+ *
+ * Scoped under `.ta-ledger__row`, which exists only in this page's fellows
+ * section, and further restricted to the text-editor widget so it cannot reach
+ * the image widget beside it.
+ *
+ * After: 52px 240.50px 276.61px at 1440, identical to the static build. */
+.ta-ledger__row > .elementor-widget-text-editor{
+  display:contents;
+}
+
+/* ==========================================================================
+ * THE `person` SINGLE TEMPLATE, 2026-08-20. dist/team-bio.html's design,
+ * rendered by an Elementor Theme Builder Single template
+ * (elementor/theme-parts/person-single.mjs) for all eighteen published people
+ * rather than hand-filled for one. Block 61 is the only repair it needs, and it
+ * is block 57's twin.
+ *
+ * NOT GATED, AND NOT GATEABLE THE USUAL WAY. dist/team-bio.html is ONE person's
+ * bio; this template is eighteen, so census() and controlBoxes() would compare
+ * different content on seventeen of them. The page-based conversion at
+ * /grant-callen/ (page 20607) is still in PAGE_REGISTER and still gated against
+ * the static build, which is what keeps this design honest: the template and
+ * that page render the same tree, from the same source file, and the page is
+ * the one with the instrument on it.
+ * ==========================================================================*/
+
+/* ---------- 61. person single: the bio portrait's placeholder frame -----
+ * css/team-bio.css:41-52 is `.ta-portrait`'s larger sibling and carries the
+ * same two things for the same reason, in its own words: "The placeholder
+ * monogram, in the box the headshot will use. Dashed, so it reads as pending on
+ * sight." A 2px dashed edge, a tinted fill and a hex-lattice ::before, none of
+ * which should survive a real photograph.
+ *
+ * Measured live at 1440 on /person/grant-callen/ before this rule:
+ *
+ *     .tp-portrait (the wrapper)   340 x 425   correct, it has the class
+ *     the real <img>               336 x 283   its own 1024x862 ratio,
+ *                                              object-fit fill, centred
+ *
+ * so every bio opened with a headshot floating in the middle of a dashed
+ * rectangle, with 142px of tinted honeycomb showing above and below it. Exactly
+ * block 57's picture at a larger size, and the second cost category underneath
+ * it is identical: `image()` puts cssClass on the wrapper, so the box is right
+ * and the <img> two levels inside takes Elementor's own `.elementor img`
+ * defaults.
+ *
+ * WHAT IS KEPT: the 4:5 box, `--radius-xl`, and `box-shadow:var(--shadow-lg)`,
+ * which is this page's own lift and is not part of the pending treatment.
+ * `--surface-subtle` replaces `--blue-100` as the letterbox colour for the same
+ * reason block 57 uses it: neutral rather than tinted under a photograph whose
+ * own ratio is not 4:5.
+ *
+ * SEPARATE FROM BLOCK 57 rather than a shared selector list, because
+ * `.ta-portrait` belongs to /team/ and `.tp-portrait` to this template, and the
+ * whole point of naming every block to one page's classes is that deleting
+ * either takes exactly one block out of play. They also differ: this one keeps
+ * a shadow and the other does not.
+ *
+ * SCOPED WITH :has(img), WHICH IS NOT DECORATION. `.tp-portrait` also exists on
+ * the CONVERTED PAGE at /grant-callen/ (page 20607), where it is still the
+ * static build's monogram <span> inside an html() blob, and that page is IN
+ * PAGE_REGISTER and gated against dist/team-bio.html box for box. An unscoped
+ * rule here would strip the dashed edge and the tint off a real placeholder on
+ * a page whose whole job is to match the static build, turning this repair into
+ * a regression on the one team-bio surface that has an instrument on it. Caught
+ * before the first sync, by asking which OTHER elements carry this class rather
+ * than by the suite going red afterwards. Block 58 is scoped the same way and
+ * for the same shape of reason (the board's discs carry text, not images).
+ *
+ * After: a 340 x 425 photograph filling its own frame, cropped top and bottom,
+ * with the shadow and radius the design draws, on the eighteen template-rendered
+ * bios and on nothing else. WHICH FACES SURVIVE THAT CROP is an eyes-on check on
+ * the task report, the same as block 57's. */
+.tp-portrait:has(img){
+  border:0;
+  background:var(--surface-subtle);
+  overflow:hidden;
+}
+.tp-portrait:has(img)::before{
+  content:none;
+}
+.tp-portrait img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+
+/* ---------- 62. what-we-do-a: a whole-card click target captured by the
+ *                widget wrapper nearest to it -------------------------------
+ * BLOCK 51's FAMILY, ON A SECOND PAGE, and the reason it is a separate block
+ * rather than a shared selector is that the two pages lose the containing block
+ * to DIFFERENT elements and need different repairs.
+ *
+ * css/what-we-do-a.css:82 is `.da-door h3 a::after{content:"";position:absolute;
+ * inset:0}`, the idiom that makes a whole card one click target while keeping
+ * exactly one anchor in the accessibility tree. `inset:0` resolves against the
+ * nearest POSITIONED ancestor, and the design provides one deliberately:
+ * css/what-we-do-a.css:63 gives `.da-door` `position:relative`.
+ *
+ * Elementor provides two more, both nearer. `.e-con` carries
+ * `position:relative` and so does `.elementor-widget`, so the chain from the
+ * anchor up differs between the two builds like this, read off both renders at
+ * 1440 rather than reasoned about:
+ *
+ *   STATIC  a -> h3 -> div.da-door__body   (static)   -> article.da-door (relative)
+ *   LIVE    a -> h3 -> div.elementor-widget-text-editor (RELATIVE)
+ *                   -> div.da-door__body   (RELATIVE)
+ *                   -> article.da-door     (relative)
+ *
+ * so live the overlay sized itself to the heading's own widget box. Measured by
+ * asking the document what is actually under the pointer, which is the only
+ * check that answers this question:
+ *
+ *   elementFromPoint over the "Learn More" cue    -> DIV.elementor-element
+ *   elementFromPoint over the photograph          -> IMG.attachment-large
+ *
+ * neither of them inside an <a>. The heading TEXT still navigated, so the card
+ * looked entirely correct and reported nothing: the cue reads as a link, has a
+ * hover animation that still fires (it is driven by `.da-door:hover`, not by
+ * the anchor), and does nothing when clicked. No census, box-sweep or
+ * computed-style check can see this, because every element is present and every
+ * property matches; what differs is which element the OVERLAY is sized against.
+ *
+ * WHY landing IS NOT AFFECTED, checked rather than assumed, because it carries
+ * the same idiom at css/landing.css:221 (`.lnd-read__title a::before{inset:0}`).
+ * Its whole card list is one html() widget, so the chain is
+ * `a -> h3.lnd-read__title -> li.lnd-read (relative)` with no widget wrapper in
+ * between at all, and the overlay resolves to the element the design intends.
+ * That is the discriminator for this whole family: the defect needs a widget
+ * wrapper BETWEEN the anchor and the positioned ancestor the CSS was written
+ * for, which happens when a card is built as a container tree and not when it
+ * is built as one markup string.
+ *
+ * THE REPAIR TAKES THE TWO INTERPOSED WRAPPERS OUT OF THE POSITIONING CHAIN
+ * rather than moving the overlay. `position:static` on every Elementor element
+ * INSIDE `.da-door` (the selector cannot reach `.da-door` itself, which is a
+ * descendant selector away) restores `.da-door` as the nearest positioned
+ * ancestor, exactly as in the static build. Neither wrapper carries an offset,
+ * a z-index or a transform, so making them static moves nothing: verified by
+ * measuring the card's own box before and after.
+ *
+ * `z-index:1` ON THE OVERLAY IS THE SECOND HALF AND IS NOT OPTIONAL. Restoring
+ * the containing block is not enough on its own: the anchor sits in the FIRST
+ * of the body's three widgets, and the paragraph and the cue are later
+ * siblings, so once every wrapper is static the overlay and those siblings are
+ * all unpositioned-or-auto and paint in document order, leaving the cue on top.
+ * The static build does not need this because there the overlay is the only
+ * positioned box among them. css/current-2.css:293 and css/option-c.css:196
+ * write the same idiom WITH `z-index:1` already, so this is the build's own
+ * convention rather than an invention here.
+ *
+ * After: elementFromPoint over the cue and over the photograph both resolve to
+ * the anchor, at 1440 and at 390, on all three cards. */
+.da-door .elementor-element{
+  position:static;
+}
+.da-door h3 a::after{
+  z-index:1;
+}
+
+/* ==========================================================================
+ * THE SITE HEADER'S STICKINESS, 2026-08-20. One block, and it is the only rule
+ * in this file that is deliberately not scoped to a single page's classes,
+ * because the element it repairs is the one element every page shares.
+ *
+ * NUMBERED 63 WITH 64 TO 70 LEFT FREE. A second session is working on the
+ * header search overlay in a separate worktree and has taken 71 and 72. The gap
+ * is reserved headroom agreed between the two branches, not a numbering
+ * accident.
+ * ==========================================================================*/
+
+/* ---------- 63. the site header has never been sticky on a converted
+ *                page, and the filter bar is what made it visible --------
+ * REPORTED AS A GAP UNDER THE FILTER BAR ON /all-content/, which is where the
+ * defect is legible rather than where it lives. `.cad-controls` sticks at
+ * `top:113px` (css/content-a.css:93), and its own comment records that 113 is
+ * measured rather than guessed: 45px of contact strip plus `.em-header__bar`'s
+ * 68px. That number reserves the space the SITE HEADER occupies once stuck. The
+ * filter bar stuck correctly and the header did not arrive to fill the space,
+ * so the archive scrolled through a 113px transparent band.
+ *
+ * THE HEADER IS THE DEFECT, AND IT IS ON EVERY PAGE. `css/site.css:79` is
+ * `.em-header{position:sticky;top:0}`. A sticky element travels within its
+ * PARENT's box, and since Phase 2A the header is an Elementor Theme Builder
+ * part, so its parent is Elementor's own
+ * `<header class="elementor elementor-20573 elementor-location-header">`, which
+ * SHRINK-WRAPS to the header's own height. A 113px box gives a 113px element
+ * exactly zero travel.
+ *
+ * That is block 52's mechanism one level up, on the part rather than on a
+ * widget, which is why it reaches everything. Measured at 1440 after scrolling
+ * to 2000, reading `.em-header`'s own `getBoundingClientRect().top`:
+ *
+ *     /              -1976      /what-we-do/    -1815
+ *     /team/         -1976      /solutions/     -1976
+ *     /all-content/  -1976      /grant-callen/   -907
+ *
+ * against 0 on the static build at the same scroll position. Six of six
+ * converted pages, every one of them scrolled entirely away. `position`
+ * computes to `sticky` and `top` to `0px` on both sides, so every
+ * computed-style probe in this repository agrees with the static build while
+ * the header is not sticky at all: it needs a SCROLL to see, and nothing here
+ * scrolls. Same blind spot block 52 names, and the same reason it went
+ * unreported through fourteen page conversions.
+ *
+ * THE OTHER SUSPECT WAS TESTED AND CLEARED. The live `<body>` computes
+ * `overflow:auto` where the static build computes `visible`, and an
+ * overflow-clipping ancestor is the other classic way to kill `position:sticky`.
+ * It is not this: forcing `body{overflow:visible}` in the live page left the
+ * header at -2476, and `display:contents` on the wrapper alone moved it to 0.
+ * Both were tried separately against the real page rather than reasoned about,
+ * because the two causes are indistinguishable from the symptom.
+ *
+ * WHY display:contents AND NOT `height:100%` OR A POSITION CHANGE. The wrapper
+ * must stop being a box at all; making it tall would make it a real element
+ * with a real height in the flow, and making it `position:static` changes
+ * nothing because it is already static. `display:contents` removes it from the
+ * box tree, so `.em-header` becomes a child of <body> and travels the whole
+ * document, which is exactly the relationship dist/*.html gives it.
+ *
+ * SAFE, checked against the same list blocks 22, 44, 48 and 52 use, and read
+ * off the live wrapper on all six pages rather than assumed: transparent
+ * background, no background-image, `border-top-width:0`, `position:static`,
+ * no padding, no margin, `z-index:auto`, `transform:none`. It carries nothing
+ * to lose.
+ *
+ * ITS SEMANTICS ARE AN IMPROVEMENT, NOT A COST, which is the opposite of the
+ * usual display:contents trade and worth stating because block 48's comment
+ * warns about it. The live markup nests TWO <header> elements: Elementor's
+ * wrapper and the build's own `.em-header` inside it. Both are banner-eligible,
+ * so the page ships two banners today. display:contents drops IMPLICIT
+ * semantics in shipped browsers, so in those the wrapper stops being a banner
+ * and exactly one remains; in a browser that has fixed that behaviour, the
+ * count is unchanged from today. Neither direction is worse than the current
+ * page, and one is better.
+ *
+ * THE FOOTER WRAPPER IS DELIBERATELY NOT TOUCHED. `.elementor-location-footer`
+ * has the identical shape, and nothing in the footer is sticky, so collapsing
+ * it would be a change with no defect behind it.
+ *
+ * After: `.em-header` holds top:0 on all six pages while scrolled, and
+ * /all-content/'s filter bar sits directly under a header that is actually
+ * there. */
+.elementor-location-header{
+  display:contents;
+}

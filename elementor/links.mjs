@@ -121,14 +121,24 @@ const BY_LABEL = new Map(Object.entries({
 /* Internal destinations with NO converted page, each with the reason, so that a
    link this file leaves alone is a recorded decision rather than an oversight.
    Anything internal that is neither remapped nor listed here is reported by
-   unresolvedInternalLinks() and fails the test that calls it. */
+   unresolvedInternalLinks() and fails the test that calls it.
+
+   `/reports` WAS HERE UNTIL 2026-08-20 AND IS DELIBERATELY GONE. It covered
+   what-we-do-a's four annual report tiles (/reports/2025 .. /reports/2022),
+   which the static build invented as a route and which never existed on this
+   install: the project's todo carried them as "the one link defect the remap
+   does not fix". They are fixed now, but NOT by this map, and that is why the
+   entry is deleted rather than rewritten. Each tile points at the report PDF in
+   Empower's own media library, keyed off the announcement post Empower
+   published for that year, so the destinations are absolute media URLs with no
+   route to remap. elementor/pages/what-we-do-a/03-reports.mjs carries the four
+   URLs and the evidence for each. This map is for INTERNAL PATHS with no
+   converted page; those hrefs are no longer internal paths at all, so leaving a
+   key here would claim a defect that no longer exists. */
 export const NO_CONVERTED_PAGE = new Map(Object.entries({
   '/contact': 'no contact page is in the signed-off set; 301s to Empower\'s live contact page',
   '/privacy': 'no privacy page is in the signed-off set; 301s to Empower\'s live privacy page',
   '/join': 'a bare /join with no disambiguating label; the two Join Us menu items are keyed by label',
-  '/reports': 'what-we-do-a\'s four annual report links (/reports/2025 .. /reports/2022); no annual '
-    + 'report page exists on the install or in the signed-off set, so these 404 by omission rather '
-    + 'than by remap. Raised for Empower.',
 }));
 
 const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };

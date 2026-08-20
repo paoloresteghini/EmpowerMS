@@ -15,6 +15,7 @@ const EMPOWER_TOKENS = array(
 require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
 require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
 require_once get_stylesheet_directory() . '/inc/content-loop.php';
+require_once get_stylesheet_directory() . '/inc/person-loop.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -169,6 +170,30 @@ function empower_page_styles() {
 		   entry above, for the same reason: the site and header sheets are
 		   already enqueued unconditionally. */
 		'team'         => array( 'motion', 'team-a' ),
+		/* THE `person` POST TYPE, NOT A PAGE SLUG, and empower_style_key()'s
+		   docblock carries why the two are looked up differently. Every single
+		   in this post type is rendered by the Elementor Single template in
+		   elementor/theme-parts/person-single.mjs, which is
+		   dist/team-bio.html's design serving all eighteen published people
+		   instead of the one page it was hand-filled for. So the sheets are
+		   that page's own, read off dist/team-bio.html's <head>: the shared
+		   tokens/components cascade, the site sheet and the header sheet are
+		   already enqueued unconditionally, leaving the motion sheet and
+		   css/team-bio.css, in that order. Same shape as every entry above.
+
+		   The converted page at /grant-callen/ (page 20607) keeps its own
+		   `grant-callen` row below and is unaffected: it is a page, so it is
+		   still keyed by slug. */
+		'person'       => array( 'motion', 'team-bio' ),
+		/* THE `post` POST TYPE, AND IT IS NOT A CONVERSION. All 490 posts still
+		   render through the Beaver Themer layout "Post Singular"; this sheet
+		   dresses ONE part of that legacy page, the closing "More" grid, in the
+		   All Content card design, per Paolo's 2026-08-20 instruction.
+		   css/post-single.css's own header carries the full account, including
+		   why it loads on singles only and why motion.css is deliberately not
+		   beside it: the markup it styles carries no reveal attributes, so the
+		   motion sheet would have nothing to bind to. */
+		'post'         => array( 'post-single' ),
 		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
 		   10-22), which loads the shared tokens cascade, components.css, then
 		   the site stylesheet, the header sheet, the motion sheet, and its own
@@ -346,7 +371,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	   the per-slug map to this unconditional block. */
 	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), empower_asset_ver( 'css/header-2.css' ) );
 
-	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
+	$slug = empower_style_key();
 	$prev = 'empower-header-2';
 	foreach ( empower_page_styles()[ $slug ] ?? array() as $sheet ) {
 		$handle = 'empower-page-' . $sheet;
@@ -363,6 +388,69 @@ add_action( 'wp_enqueue_scripts', function () {
 	 */
 	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), empower_asset_ver( 'css/bridge.css' ) );
 }, EMPOWER_STYLES_PRIORITY );
+
+/**
+ * The key empower_page_styles() is looked up by, for the current request.
+ *
+ * A PAGE'S KEY IS ITS SLUG; A SINGULAR OF ANY OTHER POST TYPE IS KEYED BY ITS
+ * POST TYPE. That distinction is not cosmetic, and it was added on 2026-08-20
+ * because the version without it was already wrong on the live install in two
+ * directions at once.
+ *
+ * WHAT WAS BROKEN. The lookup used to be
+ * `get_post_field( 'post_name', get_queried_object_id() )` for every singular,
+ * of every post type. That is fine while pages are the only Elementor-rendered
+ * singulars, and it stopped being true the moment the `person` post type got a
+ * Single template of its own (elementor/theme-parts/person-single.mjs), which
+ * renders dist/team-bio.html's design and therefore needs css/team-bio.css.
+ * Eighteen person singles rendered that design with no page stylesheet at all.
+ *
+ * AND ONE OF THEM DID NOT, WHICH IS THE HALF WORTH READING. The `person` post
+ * for Grant Callen has post_name `grant-callen`, and so does the converted page
+ * at /grant-callen/ (the hand-filled bio, page 20607). So `/person/grant-callen/`
+ * matched the PAGE's row by coincidence of slug and loaded exactly the right
+ * two sheets, while the other seventeen loaded none. A bug that is correct on
+ * the one example anybody would check first is the kind this file should not be
+ * able to have: without this function, adding a Person whose slug happened to
+ * equal a converted page's slug would silently give that person that page's
+ * stylesheet.
+ *
+ * The `person` row therefore keys the POST TYPE, and Grant's own single now
+ * resolves through it like everybody else's rather than through a collision.
+ * The two rows still name the same sheets, which is why the symptom was
+ * invisible on his page.
+ *
+ * Pages keep the slug because their rows genuinely differ per page, which is
+ * the whole reason the map exists. If a second custom post type is ever given a
+ * design of its own, it gets a row keyed by its post type here, not eighteen
+ * rows keyed by its posts' slugs.
+ *
+ * A COLLISION IS STILL POSSIBLE IN PRINCIPLE, between a post type name and a
+ * page slug, and it is not guarded here because it cannot happen quietly: a
+ * page slugged `person` would have to be created by hand, and it would show up
+ * immediately as a page wearing the bio stylesheet. The failure this function
+ * exists to remove is the one that produced NO symptom on the page anybody
+ * would look at.
+ *
+ * @return string The map key, or '' when nothing should be looked up.
+ */
+function empower_style_key() {
+	if ( ! is_singular() ) {
+		return '';
+	}
+
+	$post_id = get_queried_object_id();
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$post_type = get_post_type( $post_id );
+	if ( 'page' !== $post_type ) {
+		return (string) $post_type;
+	}
+
+	return (string) get_post_field( 'post_name', $post_id );
+}
 
 /**
  * Scripts have no equivalent to the styles priority problem: nothing else on
@@ -435,7 +523,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	   js/dropdown.js ship together or the panels never close. */
 	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), empower_asset_ver( 'js/dropdown.js' ), array( 'strategy' => 'defer' ) );
 
-	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
+	$slug = empower_style_key();
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {
 		$handle = 'empower-script-' . $script;
 		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), empower_asset_ver( 'js/' . $script . '.js' ), array( 'strategy' => 'defer' ) );

@@ -30,6 +30,7 @@ import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThem
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
+import { personSingle } from './elementor/theme-parts/person-single.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
 import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
 import {
@@ -1805,16 +1806,22 @@ async function discoverTrees(dir, { skip = [] } = {}) {
   return found;
 }
 
-test('every container in every podcast-a mapping module and both theme parts sets content_width: \'full\'', async () => {
+test('every container in every podcast-a mapping module and every theme part sets content_width: \'full\'', async () => {
   function* everyContainer(nodes) {
     for (const n of nodes) {
       if (n.elType === 'container') yield n;
       if (n.elements?.length) yield* everyContainer(n.elements);
     }
   }
+  /* personSingle() joined this list on 2026-08-20, and it did not join it
+     voluntarily: the drift check below went red the moment
+     elementor/theme-parts/person-single.mjs existed, naming 6 walked trees
+     against 7 that exist. That is the check doing exactly the job its own
+     comment describes, on the first new theme part added since it was
+     written. */
   const trees = [
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
-    headerPart(), footerPart(),
+    headerPart(), footerPart(), personSingle(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -2221,10 +2228,22 @@ test('deployThemePart writes the footer template type', async () => {
   }
 });
 
-test('deployThemePart refuses a location that is not header or footer', async () => {
-  /* 'wp-page' and 'loop-item' are real template types with their own deploy
+test('deployThemePart refuses a location it does not know', async () => {
+  /* Renamed on 2026-08-20: it said "not header or footer", and the list grew a
+     third entry ('single-post', for the person bio template) that day. The name
+     is deliberately not a list any more, because THEME_PART_LOCATIONS is the
+     list and a test title that restates it goes stale every time a real Theme
+     Builder document type is added.
+
+     'wp-page' and 'loop-item' are real template types with their own deploy
      functions. Accepting one here would write a page's type onto a library
-     post that Elementor then never renders in a location, with no error. */
+     post that Elementor then never renders in a location, with no error.
+
+     'single' IS NOT 'single-post', and that near-miss is worth keeping rather
+     than replacing with an obviously-invented string: Elementor Pro has a
+     Single_Base class and documents.php registers the concrete type as
+     'single-post', so 'single' is exactly the plausible-but-wrong value a
+     reader of the plugin might pass. It must still be refused. */
   await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
 });
@@ -4086,6 +4105,433 @@ test('the podcast-a guest facets actually filter, and un-filter', { concurrency:
   assert.deepEqual(cleared.byGuest, start.byGuest, 'clearing every facet did not restore the unfiltered library');
 });
 
+/* --- fidelity-browser.mjs / the sticky header ---------------------------- */
+
+/* THE ONE TEST IN THIS SUITE THAT SCROLLS, and the reason it exists is that
+   nothing else did.
+
+   css/site.css:79 makes `.em-header` sticky at top:0, and since Phase 2A the
+   header is an Elementor Theme Builder part whose wrapper shrink-wraps to the
+   header's own height. A sticky element travels within its parent's box, so a
+   113px parent gives a 113px header zero travel and it scrolls away. That was
+   true on EVERY converted page for fourteen conversions and no instrument here
+   reported it, because at scroll position 0 — where census(), controlBoxes(),
+   computedStyles() and layoutInvariants() all measure — a sticky element and a
+   static one are identical, and every computed value (`position: sticky`,
+   `top: 0px`) agreed with the static build the whole time. bridge.css block 63
+   repairs it.
+
+   ASSERTED ON THREE PAGES RATHER THAN ONE, because the defect was in the
+   site-wide header and a single-page test would not have distinguished "this
+   page is fine" from "the header is fine". They are chosen to differ in the
+   ways that could plausibly matter: the front page, a page whose own content is
+   a Loop Grid, and a Theme Builder single, which is a different document type
+   again.
+
+   /all-content/ IS ASSERTED HARDER, because it is where the defect was
+   reported. Its own filter bar sticks at top:113px (css/content-a.css:93), a
+   number that exists to sit exactly under the stuck header. Asserting the two
+   numbers TOGETHER is what catches the real user-visible failure: a header at
+   0 and a bar at 113 are flush, and any other pair leaves the gap Paolo saw. */
+const STICKY_HEADER_PAGES = [
+  { name: 'the front page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+  { name: 'a Loop Grid page', envVar: 'TEAM_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/team/' },
+  { name: 'a Theme Builder single', envVar: 'TEAM_BIO_URL', exampleUrl: 'https://empv2.wpenginepowered.com/grant-callen/' },
+];
+
+for (const page of STICKY_HEADER_PAGES) {
+  test(`the site header stays put when ${page.name} is scrolled`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { stickyAfterScroll } = await import('./fidelity-browser.mjs');
+    const read = await stickyAfterScroll(url, ['.em-header']);
+    const header = read.elements['.em-header'];
+
+    assert.ok(header, `no .em-header on ${url}; the site-wide header part is not rendering`);
+    assert.equal(header.position, 'sticky',
+      `.em-header computes position:${header.position}; css/site.css:79 makes it sticky`);
+    assert.equal(header.top, 0,
+      `after scrolling to ${read.scrollY}, .em-header sits at top ${header.top} instead of 0, so it is not `
+      + `sticking. Its parent is ${header.parentHeight}px tall; if that is about the height of the header `
+      + 'itself, Elementor\'s theme-part wrapper is shrink-wrapping and giving it nowhere to travel, which '
+      + 'is what bridge.css block 63 collapses with display:contents.');
+  });
+}
+
+test('the all-content filter bar sits flush under the stuck header', { concurrency: 1 }, async (t) => {
+  const page = { name: 'content-a', envVar: 'CONTENT_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/all-content/' };
+  const url = requirePageUrl(page, t);
+  if (!url) return;
+  const { stickyAfterScroll } = await import('./fidelity-browser.mjs');
+  const read = await stickyAfterScroll(url, ['.em-header', '.cad-controls']);
+  const header = read.elements['.em-header'];
+  const controls = read.elements['.cad-controls'];
+
+  assert.ok(header && controls, 'the header or the filter bar is missing from this page');
+  assert.equal(controls.position, 'sticky', `.cad-controls computes position:${controls.position}`);
+
+  /* The bar's own offset is read from the page rather than hard-coded, so a
+     design change to the header's height moves both numbers together and this
+     test keeps meaning the same thing. */
+  const barOffset = parseFloat(controls.cssTop);
+  assert.ok(Number.isFinite(barOffset), `.cad-controls has top:${controls.cssTop}, which is not a length`);
+
+  assert.equal(header.top, 0, `the header is at ${header.top}, not stuck (see the three tests above)`);
+  assert.equal(controls.top, barOffset,
+    `the filter bar sits at ${controls.top} rather than at its own ${barOffset}px offset, so it is not sticking`);
+
+  /* THE ASSERTION THAT WOULD HAVE CAUGHT WHAT PAOLO SAW. Both elements can be
+     stuck at exactly their authored offsets and still leave a hole: the bar
+     reserves a fixed 113px, and if the header above it is not filling that
+     113px the archive scrolls through the difference. So the check is that the
+     header's BOTTOM EDGE meets the bar's TOP EDGE, computed from what the two
+     elements actually occupy rather than from either number alone. */
+  const gap = controls.top - (header.top + header.height);
+  assert.equal(gap, 0,
+    `there is a ${gap}px band between the bottom of the header (${header.top} + ${header.height}) and the `
+    + `top of the filter bar (${controls.top}). The archive scrolls through it. The bar reserves `
+    + `${barOffset}px for the header via css/content-a.css:93; if the header is shorter or taller than `
+    + 'that, the two numbers have drifted apart and one of them has to move.');
+});
+
+/* --- fidelity-browser.mjs / what-we-do-a's cards and reports ------------- */
+
+/* Read out of the register rather than named here, so the envVar, the example
+   URL and the page's existence all stay in one place. Fails loudly if the entry
+   is ever renamed or moved to EXCLUDED_PAGES, instead of quietly skipping. */
+const WHAT_WE_DO_A = PAGE_REGISTER.find((p) => p.name === 'what-we-do-a')
+  ?? assert.fail('what-we-do-a is no longer in PAGE_REGISTER; the two tests below read its envVar from there');
+
+/* what-we-do-a IS a gated page, so unlike the three tests below this one is not
+   standing in for a register entry. It covers the two things that page's
+   register entry cannot: a click target, which no box or computed-style
+   comparison can see, and four outbound destinations, which live outside the
+   document entirely.
+
+   1. THE WHOLE CARD IS ONE CLICK TARGET. css/what-we-do-a.css:82 makes the
+      card's heading anchor span the whole plate with an `inset:0` overlay.
+      Elementor gives BOTH `.e-con` and `.elementor-widget` `position:relative`,
+      so on the live page the overlay was captured by the heading's own widget
+      wrapper and covered only the heading: clicking the photograph or the
+      "Learn More" cue did nothing, while the cue kept its hover animation and
+      still read as a link. bridge.css block 62 repairs it. Hit-testing the
+      photograph and the cue is the assertion, because every element and every
+      property was already correct while the page was broken.
+
+   2. THE FOUR REPORT TILES RESOLVE. They pointed at `/reports/<year>`, a route
+      the static build invented and this install has never had, and they 404'd
+      by omission for the whole conversion. They now point at the report PDFs in
+      Empower's media library. Asserted as real HTTP responses rather than as
+      strings, because the failure mode being guarded is a URL that is perfectly
+      well-formed and serves nothing: a media file can be replaced or renamed in
+      wp-admin with no signal here at all, which is exactly what happened to the
+      route these replaced. */
+test('every what-we-do-a card is clickable across its whole plate', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(WHAT_WE_DO_A, t);
+  if (!url) return;
+  const { clickTargets } = await import('./fidelity-browser.mjs');
+  const cards = await clickTargets(url, {
+    cardSelector: '.da-door',
+    probeSelectors: ['.da-door__cue', 'img'],
+  });
+
+  assert.equal(cards.length, 3, `expected three solution cards, found ${cards.length}`);
+
+  for (const card of cards) {
+    assert.ok(card.href, 'a card has no anchor at all');
+    for (const [probe, hit] of Object.entries(card.probes)) {
+      assert.equal(hit, card.href,
+        `on the "${card.href}" card, the point over ${probe} resolves to ${JSON.stringify(hit)} `
+        + `rather than to the card's own link. The overlay at css/what-we-do-a.css:82 is being sized `
+        + 'against a nearer positioned ancestor than .da-door, which is what Elementor\'s '
+        + 'position:relative on .e-con and .elementor-widget does unless bridge.css block 62 makes '
+        + 'them static. The card still looks correct: the heading text navigates and the cue still '
+        + 'animates on hover.');
+    }
+  }
+});
+
+test('every what-we-do-a annual report tile serves a real report', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(WHAT_WE_DO_A, t);
+  if (!url) return;
+  const { clickTargets } = await import('./fidelity-browser.mjs');
+  const tiles = await clickTargets(url, {
+    cardSelector: '.da-years li',
+    probeSelectors: ['span'],
+  });
+
+  assert.equal(tiles.length, 4, `expected four report tiles, found ${tiles.length}`);
+
+  const stale = tiles.filter((t) => /\/reports\//.test(t.href ?? '')).map((t) => t.href);
+  assert.deepEqual(stale, [],
+    'these tiles still point at /reports/<year>, the route the static build invented and this '
+    + 'install has never had; they 404 by omission');
+
+  for (const tile of tiles) {
+    assert.match(tile.href ?? '', /^https?:\/\/\S+\.pdf$/i,
+      `a report tile points at ${JSON.stringify(tile.href)}, which is not a PDF URL`);
+    const res = await fetch(tile.href, { method: 'HEAD', redirect: 'follow' });
+    assert.equal(res.status, 200,
+      `${tile.href} returned ${res.status}. The report PDFs live in Empower's media library and can `
+      + 'be replaced or renamed in wp-admin, which this test exists to catch.');
+    assert.match(res.headers.get('content-type') ?? '', /application\/pdf/i,
+      `${tile.href} is served as ${res.headers.get('content-type')} rather than a PDF`);
+  }
+});
+
+/* --- fidelity-browser.mjs / the team-a roster ---------------------------- */
+
+/* Its own guard rather than requirePageUrl(), because team-a moved to
+   EXCLUDED_PAGES on 2026-08-20 and therefore no longer has a register entry to
+   read an envVar, exampleUrl or staticFile out of. Same shape and same reason
+   as requireSpikeUrl() and requireContentAUrl() above. */
+const requireTeamAUrl = () => process.env.TEAM_A_URL
+  ?? assert.fail('TEAM_A_URL is not set. This test needs the deployed team-a page: TEAM_A_URL=https://empv2.wpenginepowered.com/team/ node --test test-elementor.mjs');
+
+/* THIS TEST IS team-a's GATE, AND IT IS THE ONLY ONE IT HAS.
+   The page left the register when its staff roster and fellows ledger became
+   Loop Grids over the `person` post type: the live page renders 13 staff and 5
+   fellows where dist/team-a.html carries 10 and 5, with four people on each
+   side the other does not have, so neither census() nor controlBoxes() can
+   compare the two.
+
+   WHAT IT ASSERTS IS RULES, NOT NAMES, and that is the whole design of it.
+   Every name, role and photograph on this page is Empower's to change in
+   wp-admin without touching this repository — that is the point of the
+   conversion — so a test carrying a list of thirteen people would go red on
+   the next hire and teach whoever is on call that this test is noise. What
+   this build actually OWNS is three derivations, and all three can fail
+   silently:
+
+     1. THE SPLIT. wp/empowerms-child/inc/person-loop.php sorts people into the
+        two sections on whether `position_title` begins with the word "Fellow".
+        If that stops working, fellows appear in Our Team with a photograph and
+        a "Read bio" line, which looks entirely correct.
+
+     2. THE ORDER. The page tells the visitor, out loud in its own `.ta-note`,
+        "In alphabetical order by last name". WordPress cannot express that
+        ordering, so person-loop.php computes it. If that regresses to
+        WP_Query's default the page silently starts lying to the reader, and
+        every element on it still carries every correct class.
+
+     3. THE LEDGER'S HAIRLINE. `.ta-ledger__row:last-child` matches EVERY row
+        once each row is the only child of its own loop item.
+        elementor/pages/team-a/03-fellows.mjs's note 1 predicted this in
+        writing before the conversion existed; bridge.css block 59 repairs it.
+        A repair that stops applying is five hairlines where the design has
+        one.
+
+   It also asserts the two things the Loop Grid conversion is FOR: that the
+   portraits are real photographs from the media library rather than the
+   monogram placeholders the static build ships, and that every card links to
+   its own person. Both are what Empower asked for and neither is visible to a
+   class-based check. */
+test('the team-a roster is driven by the person post type', { concurrency: 1 }, async () => {
+  const { teamRoster } = await import('./fidelity-browser.mjs');
+  const roster = await teamRoster(requireTeamAUrl());
+
+  assert.ok(roster.staff.length >= 5,
+    `found ${roster.staff.length} staff cards; the Loop Grid is rendering almost nothing, which is what `
+    + 'an empty post__in looks like (see the guard in empower_person_groups()\'s hook)');
+  assert.ok(roster.fellows.length >= 2, `found ${roster.fellows.length} fellow rows`);
+
+  /* 1. THE SPLIT, asserted from both sides so neither an empty Our Team nor an
+        empty ledger can pass by matching a vacuous "none of these are". */
+  const fellowish = /^fellow\b/i;
+  const misfiled = roster.staff.filter((p) => p.role && fellowish.test(p.role));
+  assert.deepEqual(misfiled.map((p) => p.name), [],
+    'these people are in Our Team with a Fellow role, so the split in '
+    + 'wp/empowerms-child/inc/person-loop.php is not being applied');
+  const notFellows = roster.fellows.filter((f) => !f.field || !fellowish.test(f.field));
+  assert.deepEqual(notFellows.map((f) => f.name), [],
+    'these rows are in Contributing Fellows without a Fellow role, so the ledger query is not the '
+    + 'fellows query');
+
+  /* 2. THE ORDER, derived from the rendered names rather than compared against
+        a list. The sort key is person-loop.php's own: the last whitespace-
+        separated word of the title, folded to lower case. Asserted on both
+        grids, because both are sorted by the same code. */
+  const surname = (name) => {
+    const parts = name.split(/\s+/).filter(Boolean);
+    return (parts.length ? parts[parts.length - 1] : '').toLowerCase();
+  };
+  for (const [label, list] of [['staff', roster.staff], ['fellows', roster.fellows]]) {
+    const keys = list.map((p) => surname(p.name));
+    const sorted = [...keys].sort();
+    assert.deepEqual(keys, sorted,
+      `the ${label} are not in alphabetical order by last name: rendered ${JSON.stringify(keys)}. `
+      + `The page promises this order in its own visible note (${JSON.stringify(roster.note)}), and it `
+      + 'comes from empower_person_groups(), not from WP_Query.');
+  }
+  assert.match(roster.note, /alphabetical order by last name/i,
+    'the note that this test holds the page to has changed; if the design no longer promises an order, '
+    + 'the ordering code and this assertion should go together');
+
+  /* 3. THE LEDGER'S HAIRLINE: the last row alone. */
+  const borders = roster.fellows.map((f) => f.borderBottom);
+  const expected = borders.map((_, i) => (i === borders.length - 1 ? '1px' : '0px'));
+  assert.deepEqual(borders, expected,
+    `ledger row bottom borders read ${JSON.stringify(borders)}. Every row carrying one means `
+    + 'bridge.css block 59 is not applying and :last-child is matching each row inside its own '
+    + 'loop item, which is the defect 03-fellows.mjs predicted.');
+  assert.deepEqual(roster.fellows.map((f) => f.tracks), roster.fellows.map(() => 3),
+    'a ledger row is not laying out as three columns, so bridge.css block 60 is not promoting the '
+    + 'name and field spans to grid items and the subject is not at the right-hand edge');
+
+  /* WHAT THE CONVERSION WAS FOR: real photographs, and a destination per
+     person. */
+  const noPhoto = roster.staff.filter((p) => !p.img).map((p) => p.name);
+  assert.deepEqual(noPhoto, [],
+    'these staff cards have no <img> in their portrait, so the tile is back to being a placeholder');
+  const badFit = roster.staff.filter((p) => p.imgFit !== 'cover').map((p) => p.name);
+  assert.deepEqual(badFit, [],
+    'these portraits are not object-fit:cover, so the photograph is letterboxed inside its 4:5 box '
+    + '(bridge.css block 57)');
+  const badLink = roster.staff.filter((p) => !p.href || !/\/person\//.test(p.href)).map((p) => p.name);
+  assert.deepEqual(badLink, [],
+    'these cards do not link to their own person single');
+  assert.deepEqual([...new Set(roster.staff.map((p) => p.href))].length, roster.staff.length,
+    'two or more cards share a destination, which is what a Loop Item template renders when '
+    + "`_element_cache: 'yes'` is missing and Elementor reuses the first item's HTML");
+  assert.deepEqual([...new Set(roster.staff.map((p) => p.more))], ['Read bio'],
+    'not every card carries the "Read bio" line');
+
+  /* THE BOARD IS STILL HAND-WRITTEN, and its placeholder note moved with it.
+     04-board.mjs note 6 records why none of these eight can be a Loop Grid:
+     none has a `person` entry on the install. */
+  assert.ok(roster.board.length >= 5, `found ${roster.board.length} board names`);
+  assert.ok(roster.pendingInBoard,
+    'the .ta-pending placeholder note is not in the board section. It moved there on 2026-08-20 '
+    + 'because staff and fellows now carry real photographs and the board is the last placeholder; '
+    + 'if it has gone back up to the staff head it is describing sections that no longer have '
+    + 'placeholders.');
+  assert.match(roster.pending, /board/i,
+    'the placeholder note no longer names the board, which is the only section it is still true of');
+});
+
+/* --- fidelity-browser.mjs / the person Single template ------------------- */
+
+/* Three real people, chosen because between them they exercise every optional
+   block in the template. Read off the install on 2026-08-20 and named here
+   rather than discovered, because the point of the test is to pin the three
+   SHAPES, and a discovered sample could quietly stop covering one of them.
+
+   If Empower fill in a missing field, the row's expectation here goes stale and
+   the test says so in its own message rather than just going red: that is the
+   correct outcome, because filling those fields is exactly what this build has
+   asked them to do, and this is the record of what was missing when. */
+const PERSON_SINGLE_CASES = [
+  { slug: 'grant-callen', role: true, email: true, note: 'the only person with both a role and an email' },
+  { slug: 'matt-ladner', role: true, email: false, note: 'a fellow: role, no email' },
+  { slug: 'ashley-green', role: false, email: false, note: 'neither field filled in on the install' },
+];
+
+const requirePersonBaseUrl = () => process.env.PERSON_BASE_URL
+  ?? assert.fail('PERSON_BASE_URL is not set. This test needs the install\'s person singles: PERSON_BASE_URL=https://empv2.wpenginepowered.com/person/ node --test test-elementor.mjs');
+
+/* THIS TEST IS THE person SINGLE TEMPLATE'S GATE.
+   The template (elementor/theme-parts/person-single.mjs) renders
+   dist/team-bio.html's design for all eighteen published people. It cannot be
+   gated the usual way: census() and controlBoxes() compare a converted page to
+   its static counterpart, and seventeen of these eighteen have no counterpart.
+   The converted page at /grant-callen/ IS still gated against
+   dist/team-bio.html and covers the design; what it cannot cover is the part
+   that only exists because the template is dynamic.
+
+   FOUR THINGS, ALL OF WHICH CAN FAIL WITHOUT LOOKING WRONG:
+
+     1. THE OPTIONAL BLOCKS. `.tp-role` and `.tp-contact` render only when the
+        record has the field. A widget would emit its wrapper either way and
+        draw `.tp-role`'s padding and its rule under blank space; the shortcodes
+        in inc/person-loop.php emit nothing. Asserted in BOTH directions on
+        three real records, so "always absent" cannot pass.
+
+     2. THE STYLESHEET. Read as `.tp-role`'s computed colour, which
+        css/team-bio.css is the only source of. Seventeen of these pages
+        shipped with no stylesheet at all until empower_style_key() stopped
+        keying non-pages by slug, and Grant Callen's shipped correctly the whole
+        time through a slug collision with the converted page at
+        /grant-callen/. A <link>-in-head check would have passed on the
+        collision. This is the assertion that would not have.
+
+     3. THE PORTRAIT. A real photograph, filling its frame, with the
+        placeholder's dashed edge gone (bridge.css block 61) — and that block is
+        scoped `:has(img)` precisely so it cannot reach the gated page's
+        monogram, so a regression there shows up here as a border coming back.
+
+     4. THE THINGS THAT ARE NOT SUPPOSED TO BE THERE. The social plugin appends
+        a Follow/Share/Tweet row to `the_content` on every singular; the design
+        has none, and inc/person-loop.php removes the filter for this post type
+        only. And `.tp-contact__pending` explained a placeholder inbox that no
+        longer exists. Both are absences, which no fidelity instrument on the
+        converted page can see. */
+for (const person of PERSON_SINGLE_CASES) {
+  test(`the person single template renders ${person.slug} (${person.note})`, { concurrency: 1 }, async () => {
+    const { personSingle: readPerson } = await import('./fidelity-browser.mjs');
+    const base = requirePersonBaseUrl().replace(/\/?$/, '/');
+    const page = await readPerson(`${base}${person.slug}/`);
+
+    assert.ok(page.h1, 'no <h1 id="bio-title">, so the name shortcode did not run');
+    assert.equal(page.h1Count, 1, `the page has ${page.h1Count} <h1> elements; the template contributes exactly one`);
+    assert.equal(page.labelledBy, 'bio-title',
+      'the profile section does not point aria-labelledby at the heading, so its accessible name is not the person');
+
+    /* 1. The optional blocks, both directions. */
+    assert.equal(!!page.role, person.role,
+      person.role
+        ? `${person.slug} has a position_title on the install but no .tp-role rendered`
+        : `${person.slug} has NO position_title on the install, so no .tp-role should render; found ${JSON.stringify(page.role)}. `
+          + 'If Empower have filled the field in, update PERSON_SINGLE_CASES rather than the template.');
+    assert.equal(page.contact, person.email,
+      person.email
+        ? `${person.slug} has an email on the install but no "Get in touch" block rendered`
+        : `${person.slug} has NO email on the install, so no .tp-contact should render. `
+          + 'If Empower have filled the field in, update PERSON_SINGLE_CASES.');
+    if (person.email) {
+      assert.match(page.mailto ?? '', /^mailto:/, 'the contact row is not a mailto: link');
+    }
+
+    /* 2. The stylesheet, read through the element only it can style. */
+    if (person.role) {
+      assert.notEqual(page.roleColor, 'rgb(0, 0, 0)',
+        `.tp-role computes ${page.roleColor}, which is the UA default: css/team-bio.css did not load on this page. `
+        + 'empower_style_key() keys non-page singulars by POST TYPE; a `person` row must exist in '
+        + 'empower_page_styles(). Note that /person/grant-callen/ can load it by slug collision with the '
+        + 'converted page at /grant-callen/, so check a different person before believing it is fixed.');
+    }
+
+    /* 3. The portrait. */
+    assert.ok(page.portrait, 'no <img> in .tp-portrait, so the frame is back to being a placeholder');
+    assert.equal(page.portraitFit, 'cover',
+      'the portrait is not object-fit:cover, so it floats at its own ratio inside a 4:5 box (bridge.css block 61)');
+    assert.equal(page.portraitBorder, '0px',
+      `.tp-portrait still draws a ${page.portraitBorder} border around a real photograph; block 61's `
+      + ':has(img) scope is not matching');
+
+    /* 4. The absences. */
+    assert.equal(page.share, false,
+      'the social plugin\'s share row is inside the bio. inc/person-loop.php removes '
+      + 'sfsi_social_buttons_below from the_content on singular person views only');
+    assert.equal(page.pending, false,
+      '.tp-contact__pending is rendering; it explained the organisation-inbox placeholder, and the '
+      + "block now carries the person's own address");
+
+    /* The way back out, which dist/team-bio.html's own comment says every bio
+       needs and which is now a real route rather than a review-site stand-in. */
+    assert.deepEqual(page.backLinks, ['/team/', '/team/'],
+      `the two back links point at ${JSON.stringify(page.backLinks)}; both should be the converted roster at /team/`);
+    /* `/donate/` with the trailing slash, because elementor/links.mjs's remap
+       runs inside deployElements() and therefore over theme-builder templates
+       too, not only over the converted page set. It rewrote this module's
+       authored `/donate` to the install's real path. Matched as a pattern
+       rather than pinned to one spelling, so a future remap that normalises
+       the other way does not fail a link that works. */
+    assert.match(page.cta ?? '', /^\/donate\/?$/,
+      `the Support Our Work button points at ${JSON.stringify(page.cta)} rather than the donate page`);
+    assert.ok(page.bioParagraphs >= 1, 'the bio rendered no paragraphs, so the Post Content widget is empty');
+  });
+}
+
 /* Every converted page's slug has a row in functions.php's stylesheet map.
 
    WRITTEN AFTER IT FAILED IN PRODUCTION, 2026-08-20. empower_page_styles() is
@@ -4129,4 +4575,130 @@ test('every converted page slug still has a stylesheet row in functions.php', ()
     `${missing.length} converted page(s) would render with no page stylesheet at all:\n  `
     + missing.join('\n  ')
     + '\nempower_page_styles() is keyed by install slug; renaming a page means renaming its key.');
+});
+
+/* --- fidelity-browser.mjs / the legacy post page's "More" grid ----------- */
+
+/* WHAT THIS GATES, AND WHY IT IS NOT A CONVERSION TEST.
+ *
+ * Paolo reported the closing "More" grid on /kyle-jackson-a-fathers-footsteps/
+ * as unstyled and asked for the All Content card treatment on it. That page is
+ * NOT converted and is not going to be by this change: all 490 posts render
+ * through the Beaver Themer layout "Post Singular", and every element the
+ * assertions below touch is Beaver's own markup. css/post-single.css dresses
+ * it; css/post-single.css's header carries the whole account.
+ *
+ * So there is no static counterpart to diff against, and none of the five
+ * conversion instruments apply. What can be asserted is that the sheet REACHED
+ * the page and won, which is exactly the pair of failures computedStyles()
+ * exists for (a stylesheet that never enqueued, and another sheet winning over
+ * it). Both are live here rather than hypothetical: the sheet loads through a
+ * new `post` row in empower_page_styles(), keyed off empower_style_key()'s post
+ * type branch rather than a slug, and it is fighting `a{color:var(--text-link)}`
+ * in tokens/base.css for the title and the excerpt, which is what made the
+ * cards read as a wall of orange underlines in the first place.
+ *
+ * THE PHOTOGRAPH ASSERTION IS WRITTEN NOT TO GO VACUOUS. Which related posts
+ * this grid shows is Beaver's choice and changes as Empower publishes, so a
+ * test pinned to "there is a card with no featured image" would quietly stop
+ * asserting anything the day that stopped being true. Both cases are probed,
+ * at least one is required to exist (which is also the check that the grid has
+ * any cards at all), and whichever are present are asserted. */
+const POST_SINGLE_PAGE = {
+  name: 'legacy single post',
+  envVar: 'POST_SINGLE_URL',
+  exampleUrl: 'https://empv2.wpenginepowered.com/kyle-jackson-a-fathers-footsteps/',
+};
+
+/* css/site.css:28 is `--em-orange-ink:#BA4920`, which is the accessible orange
+   the accessibility overrides established and the colour css/content-a.css:279
+   gives `.cad-card__topic`. Written as the rgb() a computed style returns. */
+const ORANGE_INK = 'rgb(186, 73, 32)';
+
+test('the legacy post page\'s More grid wears the All Content card design', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(POST_SINGLE_PAGE, t);
+  if (!url) return;
+  const { computedStyles } = await import('./fidelity-browser.mjs');
+
+  const read = await computedStyles(url, [
+    { name: 'gridDisplay', selector: '.pcw-post-cards .fl-post-grid', property: 'display' },
+    { name: 'cardRadius', selector: '.pcw-post-cards .fl-post-grid-post', property: 'border-top-left-radius' },
+    { name: 'cardBorder', selector: '.pcw-post-cards .fl-post-grid-post', property: 'border-top-width' },
+    { name: 'topicColor', selector: '.pcw-post-cards .pcw-post-card-category', property: 'color' },
+    { name: 'topicCase', selector: '.pcw-post-cards .pcw-post-card-category', property: 'text-transform' },
+    { name: 'titleColor', selector: '.pcw-post-cards .pcw-post-card-title', property: 'color' },
+    { name: 'bodyUnderline', selector: '.pcw-post-cards .post-card-content-link', property: 'text-decoration-line' },
+    { name: 'plainPhoto', selector: '.pcw-post-cards .fl-post-grid-post:not(.has-post-thumbnail) .pcw-post-card-image-link', property: 'display' },
+    { name: 'realPhoto', selector: '.pcw-post-cards .fl-post-grid-post.has-post-thumbnail .pcw-post-card-image-link', property: 'display' },
+    { name: 'clearBefore', selector: '.pcw-post-cards .fl-post-grid', property: 'content', pseudo: '::before' },
+    { name: 'clearAfter', selector: '.pcw-post-cards .fl-post-grid', property: 'content', pseudo: '::after' },
+    { name: 'gridBleed', selector: '.pcw-post-cards .fl-post-grid', property: 'margin-left' },
+  ]);
+
+  assert.ok(read.gridDisplay,
+    `no .pcw-post-cards .fl-post-grid on ${url}. Either the Beaver layout "Post Singular" stopped `
+    + 'rendering the closing grid, or this URL is not a post any more.');
+  assert.equal(read.gridDisplay, 'grid',
+    `the More grid computes display:${read.gridDisplay}. css/post-single.css replaces Beaver's floated `
+    + '.fl-post-column layout with the same auto-fill grid .cad-cards uses; if this is not grid, the sheet '
+    + 'did not load at all (check the `post` row in empower_page_styles(), and that empower_style_key() '
+    + 'still returns the post type for a non-page singular).');
+
+  assert.notEqual(read.cardRadius, '0px',
+    'the cards have square corners, so .cad-card\'s border-radius did not reach them');
+  assert.equal(read.cardBorder, '1px',
+    `the cards have a ${read.cardBorder} top border rather than the 1px hairline .cad-card carries`);
+
+  assert.equal(read.topicColor, ORANGE_INK,
+    `the category eyebrow is ${read.topicColor}, not the ${ORANGE_INK} of .cad-card__topic`);
+  assert.equal(read.topicCase, 'uppercase',
+    `the category eyebrow computes text-transform:${read.topicCase}; the All Content eyebrow is caps`);
+
+  /* The two assertions that catch what Paolo actually saw: every string in the
+     card was a link colour with a link underline, because the whole card body
+     IS one anchor and nothing was overriding tokens/base.css:8. */
+  assert.notEqual(read.titleColor, ORANGE_INK,
+    'the card headline is still the link colour, so tokens/base.css:8 is winning over css/post-single.css '
+    + 'and the card reads as a wall of orange');
+  assert.equal(read.bodyUnderline, 'none',
+    `the card body computes text-decoration-line:${read.bodyUnderline}. The whole copy block is one anchor `
+    + 'on this markup, so an underline there underlines the headline, the byline and the excerpt together.');
+
+  /* FOUND ON THE FIRST LIVE RENDER, and worth a gate of its own because every
+     other assertion here was already green while the grid was visibly wrong.
+     Beaver clears its floated columns with
+     `.fl-post-grid::before/::after{content:" ";display:table}`. A generated box
+     with a content value is a grid item, so turning the parent into a grid
+     turned those two into blank cards: `::before` took the first cell and every
+     real card shifted one place, leaving a hole in the top-left and a card
+     stranded on a row of its own. Both boxes measured 312 x 441.891, the size
+     of a card, which is why it read as a layout bug rather than a stray
+     element. Asserted on `content` because that is what generates the box. */
+  assert.equal(read.clearBefore, 'none',
+    `.fl-post-grid::before still generates a box (content: ${read.clearBefore}). It is Beaver's clearfix, `
+    + 'and in a grid container it is a blank card that pushes every real one out of place.');
+  assert.equal(read.clearAfter, 'none',
+    `.fl-post-grid::after still generates a box (content: ${read.clearAfter}); see the assertion above`);
+
+  /* The module's own generated rule pulls the grid 20px past the row on each
+     side, because Beaver pads it back in on `.fl-post-column` and the pair is a
+     gutter. `display:contents` on those columns keeps the bleed and loses the
+     padding, which at 768 put the first card's left edge at x:0, hard against
+     the viewport. */
+  assert.equal(read.gridBleed, '0px',
+    `the More grid still carries margin-left:${read.gridBleed}. That is half of Beaver's gutter, and its `
+    + 'other half went with the columns; the grid\'s own gap replaces both.');
+
+  assert.ok(read.plainPhoto !== null || read.realPhoto !== null,
+    'the More grid rendered no cards at all, so nothing above was actually measured on a card');
+  if (read.plainPhoto !== null) {
+    assert.equal(read.plainPhoto, 'none',
+      'a related post with no featured image is still drawing its photo plate. The layout writes '
+      + '`background-image: url()` with an empty url for those, which computes to none and leaves an empty '
+      + 'grey 3:2 block; css/post-single.css suppresses it from WordPress\'s own has-post-thumbnail class.');
+  }
+  if (read.realPhoto !== null) {
+    assert.equal(read.realPhoto, 'block',
+      'a related post WITH a featured image is not drawing it, so the has-post-thumbnail gate is inverted');
+  }
 });

@@ -284,15 +284,18 @@ export const PAGE_REGISTER = [
      load-failure gate here too: only 6 of the 25 census elements live in
      the header and footer (counted the same way, outside <main>: 2 <h3>,
      4 <p>), a 404 shares 6, and 6 is under the 14 that minShared:13
-     demands, so the suite goes red on the census, not the box sweep. */
-  {
-    name: 'team-a',
-    envVar: 'TEAM_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/team/',
-    staticFile: 'dist/team-a.html',
-    minShared: 13,
-    minBoxes: 35,
-  },
+     demands, so the suite goes red on the census, not the box sweep.
+
+     THIS PAGE IS NO LONGER GATED, AND THE NUMBERS ABOVE ARE KEPT RATHER THAN
+     DELETED. On 2026-08-20 its staff roster and fellows ledger became Loop
+     Grids over the `person` post type, so the live page renders 13 staff and
+     5 fellows against dist/team-a.html's 10 and 5, with four names on one
+     side that are not on the other in each direction. That is the same
+     content mismatch podcast-a and content-a carry and it is measured the
+     same way, so team-a moved to EXCLUDED_PAGES below with the behavioural
+     gate that replaces it. The floors above are what the page measured while
+     it was still gated, on 2026-08-18, and they are the number to restore if
+     the roster is ever frozen back into markup. */
   /* who-we-are-a: Task 10, the fifth page built class-in-markup from the
      start. Its own floors, measured the same way the other five entries'
      were, not copied from any.
@@ -1197,7 +1200,32 @@ export const PAGE_REGISTER = [
    which bands and cards go away and that a dead-end pair shows its empty
    state. That is a behavioural gate on the one thing that can silently
    fail, which is what makes this exclusion safe rather than merely
-   necessary. */
+   necessary.
+   team-a: the third of the same shape, and the one that was gated until
+   2026-08-20. Its staff roster and fellows ledger became Loop Grids over the
+   `person` post type on Paolo's decision that the CPT is the roster and the
+   static build is not a second opinion about who works at Empower. The two
+   sides now hold different people, in both directions: the install publishes
+   Katie Elliott, Brett Kittredge and Steven Randle as staff and Donald
+   Nielsen and Joe Bishop-Henchman as fellows, none of whom is in
+   dist/team-a.html, and the static build lists Rebekah Staples, who has no
+   `person` entry at all, and J. Robertson, who is `private` on the install.
+   Two more entries (Ashley Green, Dr. Kristin Vance Richards) publish with an
+   empty `position_title`, so their cards correctly render no title line where
+   the static build has one. Every one of those is an anchor-key difference,
+   which is exactly what DEFERRED_IMAGES may not be used for.
+
+   GATED BEHAVIOURALLY INSTEAD by `the team-a roster is driven by the person
+   post type` in test-elementor.mjs. What can silently fail here is not the
+   copy, which is Empower's to change, but the two derivations this build owns
+   and neither of which any static comparison would report: the staff/fellow
+   split (wp/empowerms-child/inc/person-loop.php's title test) and the
+   surname ordering the page promises out loud in its own `.ta-note`. The test
+   drives the live page, reads the rendered names in document order, and
+   asserts both against the install's own data rather than against a list
+   typed into the test. It also asserts the ledger's hairline lands on the
+   last row only, which is the one visible defect the conversion was known in
+   advance to cause. */
 /* exampleUrl is present on these two as well as on every gated page, and it is
    NOT redundant with the gate they are excluded from. elementor/links.mjs reads
    every converted page's install path out of this one field so that the link
@@ -1219,5 +1247,14 @@ export const EXCLUDED_PAGES = [
     reason: 'four Loop Grids render 205 real posts where dist/content-a.html carries 23 authored '
       + 'cards, so census and box keys differ on 182 anchors and their images; a content mismatch, '
       + 'not an image finding, and gated behind the browser filter test instead',
+  },
+  {
+    name: 'team-a',
+    exampleUrl: 'https://empv2.wpenginepowered.com/team/',
+    reason: 'the staff roster and the fellows ledger are Loop Grids over the `person` post type as '
+      + 'of 2026-08-20, so the live page renders 13 staff and 5 fellows where dist/team-a.html '
+      + 'carries 10 and 5; four people differ in each direction, which is an anchor-key content '
+      + 'mismatch of the same kind podcast-a and content-a carry, not an image finding. Gated '
+      + 'behind the browser roster test instead',
   },
 ];

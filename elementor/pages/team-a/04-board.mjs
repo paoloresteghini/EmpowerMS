@@ -36,9 +36,44 @@ import { container, text, html } from '../../factory.mjs';
       board, matching dist/team-a.html's own comment. His board entry
       carries no `.ta-roll__role` span (he and four others have no officer
       title), matching source exactly: only Abb Payne (Chairman) and
-      Gerard Gibert (Treasurer) carry one. */
+      Gerard Gibert (Treasurer) carry one.
+
+   6. THE BOARD STAYS HAND-WRITTEN, AND THAT IS THE DATA'S DECISION RATHER
+      THAN THIS FILE'S. The staff roster and the fellows ledger became Loop
+      Grids over the `person` post type on 2026-08-20. This roll did not,
+      because NONE of these eight people has a `person` entry on the install.
+      Grant Callen has one, and he is here because he is on the board, not
+      because the post type says so; the other seven do not exist as data
+      anywhere on empv2. A Loop Grid here would render one name.
+
+      That is reported to Empower rather than repaired by inventing seven
+      posts: creating them would put seven headshot-less, bio-less entries
+      into a post type whose every existing row carries both, and they would
+      immediately appear in the staff roster too, because nothing in the data
+      would say they are board members. If Empower want the board driven by
+      the CPT, that is eight new People plus the group distinction this build
+      currently derives from `position_title`
+      (wp/empowerms-child/inc/person-loop.php), and it is their content
+      decision to make.
+
+   7. `.ta-pending` LIVES HERE NOW. It was the staff section's third head
+      paragraph until 2026-08-20 and 02-staff.mjs's note 5 records the move.
+      css/team-a.css:137's own comment sets the rule the move follows: "Build
+      scaffolding, not client copy: this line names what is missing so the
+      monogram tiles are never mistaken for a design decision... It comes out
+      with the last placeholder." Staff and fellows now carry real
+      photographs from the media library, so this section holds the last
+      placeholders on the page and the line belongs above them.
+
+      THE WORDING CHANGED WITH THE MOVE, because the old line named three
+      sections ("staff, fellow and board headshots") of which two are no
+      longer true, and a scaffolding note that overstates what is missing is
+      the same failure as one that understates it. It now names the board
+      alone. It is still build scaffolding and still comes out entirely when
+      Empower supply these eight. */
 
 const HEADLINE = 'Board of Directors';
+const PENDING = 'Placeholder portraits: board headshots to be supplied by Empower.';
 
 const BOARD = [
   { initials: 'AP', name: 'Abb Payne', role: 'Chairman' },
@@ -76,6 +111,10 @@ export function section() {
           [
             text({
               markup: `<h2 id="board-title">${HEADLINE}</h2>`,
+              _attributes: 'data-reveal|rise',
+            }),
+            text({
+              markup: `<p class="ta-pending">${PENDING}</p>`,
               _attributes: 'data-reveal|rise',
             }),
           ],

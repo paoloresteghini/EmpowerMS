@@ -29,9 +29,68 @@ import { container, text, html } from '../../factory.mjs';
 
 const HEADLINE = 'View our annual reports:';
 
-const YEARS = ['2025', '2024', '2023', '2022'];
+/* THE FOUR REPORTS, AND WHERE EACH ONE ACTUALLY LIVES.
+ *
+ * dist/what-we-do-a.html writes these as `/reports/<year>`, which is a route
+ * that has never existed on this install. elementor/links.mjs recorded all four
+ * as NO_CONVERTED_PAGE so they could not be mistaken for an oversight, and the
+ * project's own todo carried them as "the one link defect the remap does not
+ * fix". Paolo asked for them wired up on 2026-08-20, so they are.
+ *
+ * WHAT THEY POINT AT NOW: the report PDFs in Empower's own media library.
+ * Every URL below was taken from the announcement post that Empower published
+ * for that year's report, NOT from a filename match and NOT from the
+ * attachment's parent, and that distinction caught a real trap. Attachment
+ * 16797 (`EM-Annual-Report-FINAL.pdf`) has post 16794, the 2022 announcement,
+ * as its POST PARENT, so a parent-based match would have chosen it. That post's
+ * own body links attachment 16810 (`2022-Annual-Report-web-1.pdf`) instead. The
+ * attached file and the published file are two different PDFs, and only one of
+ * them is the one Empower actually released.
+ *
+ * All four were checked live on 2026-08-20 and return 200 with
+ * Content-Type: application/pdf.
+ *
+ * EMPOWER CHANGED THE NAME AND THE HEADING DID NOT. 2022 is an "Annual
+ * Report"; 2023, 2024 and 2025 are each an "Impact Report". The heading above
+ * this list still reads "View our annual reports:", which is the signed-off
+ * copy, so it is left alone and the discrepancy is Empower's to settle. Nothing
+ * here renames anything.
+ *
+ * THESE ARE ABSOLUTE URLS ON PURPOSE, and they are the only absolute internal
+ * URLs this page carries. A media-library file is not a route: it has no page,
+ * no slug, and nothing for elementor/links.mjs's remap to key on, so writing it
+ * as a path would be inventing a shape the install does not have.
+ *
+ * NO `target="_blank"`. dist/what-we-do-a.html's own anchors carry none, and
+ * the static build is frozen. That means a 2022 click replaces the page with a
+ * 50 MB PDF, which is worth knowing and is on the task report as Empower's
+ * call rather than settled quietly here. */
+const REPORTS = [
+  {
+    year: '2025',
+    /* Post 20396, "Empower MS Releases 2025 Impact Report", 2026-03-02. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/03/2025-EM-Impact-Report-.pdf',
+  },
+  {
+    year: '2024',
+    /* Post 19392, "2024 Impact Report: Celebrating 10 Years Of Service In
+       Mississippi", 2025-02-18. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2025/02/2024-EM-Impact-Report-for-Web.pdf',
+  },
+  {
+    year: '2023',
+    /* Post 17643, "Empower releases 2023 impact report", 2024-02-19. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2024/02/EM-Impact-Report.pdf',
+  },
+  {
+    year: '2022',
+    /* Post 16794, "Empower releases 2022 annual report", 2023-03-02. This is
+       the one with the decoy attachment; see the note above. 50 MB. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2023/03/2022-Annual-Report-web-1.pdf',
+  },
+];
 
-const yearMarkup = (year) => `<li><a href="/reports/${year}"><span>${year}</span>Report</a></li>`;
+const yearMarkup = ({ year, href }) => `<li><a href="${href}"><span>${year}</span>Report</a></li>`;
 
 export function section() {
   return container(
@@ -54,7 +113,7 @@ export function section() {
             ]),
             html({
               markup: `<ul class="da-years" data-reveal="rise">
-      ${YEARS.map(yearMarkup).join('\n      ')}
+      ${REPORTS.map(yearMarkup).join('\n      ')}
     </ul>`,
             }),
           ],

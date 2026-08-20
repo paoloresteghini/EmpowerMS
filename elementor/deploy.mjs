@@ -125,7 +125,22 @@ export async function deployLoopItem(postId, elements) {
    value here would be a real template type belonging to a different deploy
    path (wp-page, loop-item), written onto a library post that Elementor
    then never renders in a location, with nothing reporting it. */
-const THEME_PART_LOCATIONS = ['header', 'footer'];
+/* Extended on 2026-08-20 with the third Theme Builder document this build
+   deploys. 'single-post' is Single_Post::get_type() (wp-content/plugins/
+   elementor-pro/modules/theme-builder/documents/single-post.php on empv2), the
+   document type behind every single-post-shaped template Elementor Pro offers,
+   and it is what elementor/theme-parts/person-single.mjs writes: one bio design
+   conditioned on `include/singular/person`, serving every entry in the `person`
+   post type.
+
+   It is in the SAME list as header and footer rather than in a list of its own
+   because this function's check is about what it is safe to write into a
+   document's `_elementor_template_type`, and all three are real Theme Builder
+   types belonging to this same write path. The thing the check exists to catch
+   is a page type ('wp-page') or a loop type ('loop-item') arriving here, which
+   would leave a library post claiming to be something Elementor never renders
+   in a location. */
+const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post'];
 
 /* deployElements() overwrites _elementor_data and _elementor_template_type
    wholesale, with no check of its own that postId names a document of the

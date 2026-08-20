@@ -747,6 +747,31 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html`, `loopGrid` from `../factory.mjs`.
 - Produces: `searchArchivePart()` returning the tree; `SEARCH_ARCHIVE_POST_ID` (integer); `SEARCH_ARCHIVE_CONDITIONS = ['include/archive/search']`; `searchResultItem()` and `SEARCH_RESULT_ITEM_POST_ID`.
 
+- [x] **Step 1: Create the two library posts on the install. ALREADY DONE, do not repeat.**
+
+> **DONE 2026-08-20 by the controller, on Paolo's explicit approval.** The two posts
+> exist and their ids are fixed values for this task. Do not create anything, do not
+> reach the install, and do not treat these as placeholders to verify:
+>
+> ```
+> SEARCH_ARCHIVE_POST_ID     = 20639   "Empower Search Results"   term: search-results
+> SEARCH_RESULT_ITEM_POST_ID = 20640   "Search result card"       term: loop-item
+> ```
+>
+> Both are `publish` with NO `_elementor_conditions`, so nothing renders them and no
+> visitor can reach either. Reversible with `wp post delete 20639 20640 --force`.
+>
+> A trap was hit doing this and is recorded so nobody repeats it: capturing a WP-CLI
+> value into a REMOTE shell variable fails on this install, because a PHP deprecation
+> notice is glued onto the porcelain output. `wpe.mjs`'s `stripNotices` cleans what
+> `wpe()` returns to node and cannot reach a value the remote shell captured mid-script.
+> `set -e` then aborts AFTER the create has already happened, so a naive retry
+> duplicates. Create, read the id back from a listing on the node side, pass it as a
+> literal. A parallel session hit the identical error three hours earlier, so it is a
+> property of the install rather than a one-off.
+
+<details><summary>Original step text, kept as the record</summary>
+
 - [ ] **Step 1: Create the two library posts on the install**
 
 Neither post exists yet. Read the ids back rather than assuming them, the same discipline `header.mjs` used for attachment 20578.
@@ -772,6 +797,8 @@ wp post term set <ITEM_ID> elementor_library_type loop-item
 ```
 
 Record both ids and both commands in `docs/elementor/phase2b/2026-08-20-search.md`.
+
+</details>
 
 - [ ] **Step 2: Write the failing test**
 

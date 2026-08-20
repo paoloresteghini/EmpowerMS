@@ -26,7 +26,7 @@ import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
 import { POST_ID as whatWeDoAPostId, sections as whatWeDoASections } from './elementor/pages/what-we-do-a/page.mjs';
-import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
+import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle, THEME_PART_LOCATIONS } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
@@ -2227,6 +2227,21 @@ test('deployThemePart refuses a location that is not header or footer', async ()
      post that Elementor then never renders in a location, with no error. */
   await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
+});
+
+/* The search results template is the build's first theme part that is neither
+   header nor footer. 'archive' here is Elementor Pro's own render LOCATION,
+   which Search_Results inherits from Archive, and it is what
+   wp/empowerms-child/search.php already asks for at line 12. The document
+   TYPE is 'search-results' and the two are deliberately different strings;
+   see search-archive.mjs for which is written where. */
+test('deployThemePart accepts the archive location and still refuses an invented one', async () => {
+  assert.ok(THEME_PART_LOCATIONS.includes('archive'),
+    'THEME_PART_LOCATIONS does not include archive, so the search results part can never deploy');
+  await assert.rejects(
+    () => deployThemePart(1, [], 'sidebar'),
+    /location must be one of/,
+    'deployThemePart no longer refuses a location that is not a real document type');
 });
 
 /* I4 from the final review: deployElements() validates only postId's shape,

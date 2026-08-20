@@ -124,8 +124,17 @@ export async function deployLoopItem(postId, elements) {
    returns 'header' from get_type(), footer.php returns 'footer'. Any other
    value here would be a real template type belonging to a different deploy
    path (wp-page, loop-item), written onto a library post that Elementor
-   then never renders in a location, with nothing reporting it. */
-const THEME_PART_LOCATIONS = ['header', 'footer'];
+   then never renders in a location, with nothing reporting it.
+
+   'archive' is the third, added 2026-08-20 for the search results template.
+   Unlike header and footer it is the RENDER LOCATION rather than the
+   document type: Elementor Pro's Search_Results document
+   (modules/theme-builder/documents/search-results.php) returns
+   'search-results' from get_type() and 'search' from get_sub_type(), and
+   inherits its location from Archive. wp/empowerms-child/search.php:12 asks
+   for the 'archive' location, so that is the string this validation gate is
+   about. search-archive.mjs writes the document type separately. */
+export const THEME_PART_LOCATIONS = ['header', 'footer', 'archive'];
 
 /* deployElements() overwrites _elementor_data and _elementor_template_type
    wholesale, with no check of its own that postId names a document of the

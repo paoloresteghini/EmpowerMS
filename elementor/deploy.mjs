@@ -1,4 +1,5 @@
 import { wpe } from '../wpe.mjs';
+import { remapLinks } from './links.mjs';
 
 /* The version Task 2 actually captured on empv2: core moved to 4.2.2 by the
    time Pro was installed, so this is the re-pinned value, not the plan's
@@ -59,7 +60,15 @@ function deployElements(postId, elements, templateType) {
     throw new Error(`deployElements: postId must be an integer, got ${JSON.stringify(postId)}`);
   }
 
-  const json = JSON.stringify(elements);
+  /* THE LINK REMAP, applied here and nowhere else. The static build's routes do
+     not exist on this install, so every tree on its way to the install is
+     rewritten to point at the converted pages. This is the only place all three
+     producers meet (the 17 page modules, the header and footer extracted
+     verbatim from the frozen src/_shared/*.html, and content-a's loop item), so
+     it is the only place where a page converted later cannot miss the remap.
+     elementor/links.mjs carries the map and the reasoning; it returns a new tree
+     and never mutates this one. */
+  const json = JSON.stringify(remapLinks(elements));
   const suffix = uniqueSuffix();
   const heredoc = `ELEMENTOR_DATA_${suffix}`;
   const tmpFile = `/tmp/elementor-data-${postId}-${suffix}.json`;

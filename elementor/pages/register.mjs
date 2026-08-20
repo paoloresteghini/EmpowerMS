@@ -1184,14 +1184,23 @@ export const PAGE_REGISTER = [
    state. That is a behavioural gate on the one thing that can silently
    fail, which is what makes this exclusion safe rather than merely
    necessary. */
+/* exampleUrl is present on these two as well as on every gated page, and it is
+   NOT redundant with the gate they are excluded from. elementor/links.mjs reads
+   every converted page's install path out of this one field so that the link
+   remap cannot drift from the slug the page actually has; an excluded page is
+   still a link DESTINATION (podcast-a is the Podcast menu item, content-a is
+   four of them), so leaving it out here would mean writing its path by hand
+   somewhere else, which is the failure this field exists to prevent. */
 export const EXCLUDED_PAGES = [
   {
     name: 'podcast-a',
+    exampleUrl: 'https://empv2.wpenginepowered.com/podcast-a/',
     reason: 'box sweep finds 9 permanent anchor-key differences (66 real episodes vs 9 placeholder '
       + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys',
   },
   {
     name: 'content-a',
+    exampleUrl: 'https://empv2.wpenginepowered.com/content-a/',
     reason: 'four Loop Grids render 205 real posts where dist/content-a.html carries 23 authored '
       + 'cards, so census and box keys differ on 182 anchors and their images; a content mismatch, '
       + 'not an image finding, and gated behind the browser filter test instead',

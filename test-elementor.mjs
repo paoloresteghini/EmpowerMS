@@ -31,6 +31,7 @@ import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
+import { remapLinks } from './elementor/links.mjs';
 import {
   isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
   validateContentExemption, explainLayoutHeights, CONTENT_HEIGHT_EXEMPTIONS, MEASURED_WIDTHS,
@@ -1944,7 +1945,11 @@ test('deployPage writes the Elementor data through a temporary file on the insta
     const sections = [podcastHero()];
     await deployPage(42, sections);
     const script = fs.readFileSync(capturePath, 'utf8');
-    const json = JSON.stringify(sections);
+    /* remapLinks(), not `sections`, because deployElements() rewrites internal
+       links on the way out and podcast-a's hero carries two of them: the
+       payload on the wire is the remapped tree, and comparing against the
+       authored one would fail on a difference this test is not about. */
+    const json = JSON.stringify(remapLinks(sections));
 
     /* The payload is large and contains quotes, so it must land in the
        script as heredoc body content, not as an inline CLI argument to
@@ -2577,6 +2582,17 @@ test('the Our Solutions item stays a link plus a disclosure button', () => {
   assert.match(json, /em-header__item--split/);
   assert.match(json, /em-header__disclosure/);
   assert.match(json, /href=\\"\/solutions\\"/);
+
+  /* The three assertions above are about the tree as AUTHORED, which since the
+     link remap of 2026-08-20 is no longer the tree that ships: /solutions 301s
+     to Empower's existing live page rather than to the converted one. Empower's
+     requirement is that the WORDS navigate to the Solutions landing page, so it
+     is only really tested on the deployed shape. Asserted here rather than in a
+     separate test because it is the same requirement, and splitting it would
+     let one half pass while the half a visitor experiences fails. */
+  const shipped = JSON.stringify(remapLinks(headerPart()));
+  assert.match(shipped, /href=\\"\/solutions-b\/\\"/,
+    'the Our Solutions link no longer resolves to the converted Solutions page after the remap');
 });
 
 test('the header carries the mobile nav and its toggle', () => {
@@ -3898,4 +3914,98 @@ test('the static build alone settles at 390px, not just relative to the live pag
   } finally {
     await server.close();
   }
+});
+
+/* THE LINK REMAP.
+
+   Three tests, and the split between them is the point. The first is a
+   property of the map that goes red if a label mapping is lost; the second
+   drives the corpus and goes red if any authored link points nowhere; the
+   third goes red if the remap is ever unwired from the deploy path.
+
+   WHY THE FIRST TEST IS NOT A RESTATEMENT OF THE MAP. src/_shared/header-2.html
+   uses `/latest` as a placeholder for seven different destinations, so the one
+   thing the remap can silently get wrong is collapsing several menu items onto
+   one page. Deleting any label from BY_LABEL does exactly that: the link still
+   RESOLVES (it falls through to the href entry) so unresolvedInternalLinks()
+   stays green, and only a distinctness assertion catches it. Asserting the
+   count of distinct destinations tests that property without copying the
+   pairs. */
+test('the seven /latest menu items resolve to seven different pages', async () => {
+  const { resolveHref } = await import('./elementor/links.mjs');
+  const LABELS = ['Articles', 'Community Stories', 'Press Releases', 'Research',
+    'Research (EPIC)', 'The Empower Podcast', 'Capitol Chat'];
+
+  const resolved = LABELS.map((label) => [label, resolveHref('/latest', label)]);
+  for (const [label, target] of resolved) {
+    assert.ok(target, `the "${label}" menu item still resolves to nothing, so it would ship as /latest, which 404s`);
+  }
+
+  /* Each item must resolve BY ITS LABEL, not by falling through to the href.
+     Proved necessary: deleting one label from BY_LABEL leaves distinctness
+     green, because the orphan lands on the bare fallback and collides with
+     nobody. Only comparing against the fallback catches a single lost label,
+     which is the likelier accident of the two. */
+  const fallback = resolveHref('/latest', 'a label no menu item carries');
+  for (const [label, target] of resolved) {
+    assert.notEqual(target, fallback,
+      `the "${label}" menu item no longer has a label mapping, so it falls through to ${fallback} `
+      + 'instead of its own destination. The link still works, which is why nothing else catches this.');
+  }
+  const distinct = new Set(resolved.map(([, target]) => target));
+  assert.equal(distinct.size, LABELS.length,
+    'two or more of the All Content / Podcast / Our Solutions menu items now resolve to the SAME page. '
+    + `Got ${distinct.size} distinct destinations for ${LABELS.length} menu items: `
+    + resolved.map(([l, t]) => `${l} -> ${t}`).join(', '));
+
+  /* The same collapse in the other two placeholders, which have two items each. */
+  assert.notEqual(resolveHref('/', 'Home'), resolveHref('/', 'Who We Are'), 'Home and Who We Are collapsed onto one page');
+  assert.notEqual(resolveHref('/solutions', 'Our Solutions'), resolveHref('/solutions', 'What We Do'), 'Our Solutions and What We Do collapsed onto one page');
+  assert.notEqual(resolveHref('/join', 'Newsletter'), resolveHref('/join', 'Ambassador Program'), 'Newsletter and Ambassador Program collapsed onto one page');
+});
+
+/* Every internal link every converted page and both theme parts carry, after
+   the remap, points at a page that exists on this install or at a destination
+   NO_CONVERTED_PAGE records a reason for. The page list is DERIVED from the
+   directories on disk rather than typed, for the reason recorded on
+   convertedPageDirs(): two hand-written page lists have already shipped wrong
+   here, one of them a test that passed green while measuring nothing. */
+test('no converted page links to a route that does not exist', { concurrency: 1 }, async () => {
+  const { remapLinks, unresolvedInternalLinks } = await import('./elementor/links.mjs');
+
+  const trees = [];
+  for (const dir of convertedPageDirs()) {
+    const page = await import(`./elementor/pages/${dir}/page.mjs`);
+    trees.push([dir, page.sections()]);
+  }
+  trees.push(['theme-parts/header', headerPart()], ['theme-parts/footer', footerPart()]);
+
+  assert.ok(trees.length >= 19,
+    `only ${trees.length} trees were collected; the corpus is 17 pages plus the header and footer, `
+    + 'so something is importing as empty and this test would pass while measuring nothing');
+
+  const broken = [];
+  for (const [name, tree] of trees) {
+    for (const link of unresolvedInternalLinks(remapLinks(tree))) {
+      broken.push(`${name}: href="${link.href}"${link.label ? ` (${link.label})` : ''}`);
+    }
+  }
+  assert.deepEqual(broken, [],
+    `${broken.length} internal link(s) point at a route that exists neither as a converted page nor `
+    + 'in NO_CONVERTED_PAGE. Either map it in elementor/links.mjs or record why it has no page:\n  '
+    + broken.join('\n  '));
+});
+
+/* The remap is applied by deployElements(), so every tree reaches the install
+   rewritten whether it is a page, a loop item or a theme part. This asserts the
+   wiring rather than the map: it fails if links.mjs is ever imported but not
+   called, which is the one way all of the above can be green while the install
+   still ships /latest. */
+test('the deploy path rewrites links rather than only the map being able to', async () => {
+  const source = fs.readFileSync(new URL('./elementor/deploy.mjs', import.meta.url), 'utf8');
+  const serialise = /const json = JSON\.stringify\((.+?)\);/.exec(source);
+  assert.ok(serialise, 'deployElements() no longer serialises with JSON.stringify(...); this test needs rewriting');
+  assert.match(serialise[1], /^remapLinks\(/,
+    `deployElements() serialises ${serialise[1]}, which does not pass the tree through remapLinks(). `
+    + 'Every converted page would ship the static build\'s routes, which 404 or leave the build.');
 });

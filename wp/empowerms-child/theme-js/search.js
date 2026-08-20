@@ -12,7 +12,7 @@
 // Progressive enhancement, the same contract js/nav.js and js/dropdown.js
 // state for themselves: the panel ships OPEN in the markup
 // (elementor/theme-parts/header.mjs) and this script sets
-// [data-search="on"], which is the gate bridge.css block 61 keys its
+// [data-search="on"], which is the gate bridge.css block 71 keys its
 // closed-by-default rules off. If this file never loads, the panel is an
 // open search form under the header: not the design, still usable, and still
 // submits to /?s= because the form is a native GET form and always was.

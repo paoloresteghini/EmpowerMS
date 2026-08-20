@@ -85,7 +85,7 @@ const withSearchControl = (actions) => {
  * typeahead pane of its own markup and CSS to it.
  *
  * The label is real and visible to screen readers. It is visually hidden by
- * bridge.css block 61 rather than by a placeholder attribute standing in for
+ * bridge.css block 71 rather than by a placeholder attribute standing in for
  * it, because a placeholder is not an accessible name.
  *
  * No `hidden` attribute on the panel, matching every other panel in

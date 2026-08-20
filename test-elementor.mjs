@@ -1423,7 +1423,7 @@ test('the search script is enqueued and loads as a module', () => {
 test('the search script gates its CSS on a root attribute rather than inline styles', () => {
   const js = fs.readFileSync('wp/empowerms-child/theme-js/search.js', 'utf8');
   assert.match(js, /setAttribute\(\s*['"]data-search['"]\s*,\s*['"]on['"]\s*\)/,
-    'search.js never sets [data-search="on"], so bridge.css block 61 has no gate to key on');
+    'search.js never sets [data-search="on"], so bridge.css block 71 has no gate to key on');
   assert.doesNotMatch(js, /\.style\.(display|visibility|opacity)\s*=/,
     'search.js closes the panel with inline styles, which breaks the JavaScript-off contract');
 });
@@ -2299,6 +2299,19 @@ test('deployThemePart accepts the search-results document type and still refuses
     () => deployThemePart(1, [], 'sidebar'),
     /location must be one of/,
     'deployThemePart no longer refuses a location that is not a real document type');
+  /* 'search' is not an obviously-bogus value like 'sidebar': it is a real
+     Elementor string for this exact document, one method away from the
+     correct one. Elementor Pro's Search_Results document returns
+     'search-results' from get_type() and 'search' from get_sub_type(), so
+     'search' is what a future author gets by reading the wrong method off
+     the same object. An earlier draft of this plan specified 'archive'
+     here, which is the render LOCATION rather than the document type, and
+     it shipped a fix round; a test that only rejects an obviously-bogus
+     string would not have caught that class of error either. */
+  await assert.rejects(
+    () => deployThemePart(1, [], 'search'),
+    /location must be one of/,
+    'deployThemePart accepts get_sub_type() (\'search\') where only get_type() (\'search-results\') is a real document type');
 });
 
 /* I4 from the final review: deployElements() validates only postId's shape,

@@ -6421,9 +6421,9 @@
  * assumed from the gap. Tasks 2 and 3 each wrote a comment pointing forward
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
- * search.js:15), along with the test whose message carries the same stale
- * number (test-elementor.mjs:1425), so the reference and its target land
- * together.
+ * search.js:15), along with the assertion whose message carries the same
+ * stale number (test-elementor.mjs:1425), so the reference and its target
+ * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
  * builds `.em-search > .em-container > .em-search__form`, and the form
@@ -6446,7 +6446,7 @@
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:2784 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:2649 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the
@@ -6464,7 +6464,7 @@
  *
  * TRAP 2, THE 400PX RULE'S PREMISE IS GONE: css/site.css:232 is
  * `.em-header__search{display:none}` inside the @media(max-width:400px)
- * block opened at css/site.css:228, and its own comment (css/site.css:
+ * block opened at css/site.css:229, and its own comment (css/site.css:
  * 218-226) gives the reason: search had no unique destination yet below
  * that width, so it was the one action dropped to clear the measured
  * ~326px min-content width against a ~257px available inside 320px. This
@@ -6485,7 +6485,7 @@
  * the live check.
  *
  * THE PANEL RENDERS IN NORMAL FLOW, not as a position:absolute overlay
- * like css/header-2.css:80's dropdown panels or css/megamenu.css:55's mega
+ * like css/header-2.css:79's dropdown panels or css/megamenu.css:55's mega
  * panel. Both of those rely on their nearest positioned ancestor being
  * `.em-header` (`position:relative`, components.css:127) with nothing
  * positioned in between. Here that gap is exactly one Elementor wrapper

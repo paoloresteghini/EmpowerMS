@@ -2875,6 +2875,33 @@ test('the header carries a search panel with a native GET form', () => {
    This assertion is what stops the opt-out being lost in a later edit
    without anything reporting it: the failure mode is a third party's
    dropdown appearing in the most-seen component on the site. */
+/* Paolo asked for a visible way to dismiss the panel on 2026-08-20. The
+   trigger already toggled, and Escape and an outside click already closed it,
+   but none of those is discoverable to someone looking at an open panel.
+
+   type="button" is the load-bearing attribute and the reason this test exists:
+   a bare <button> inside a <form> defaults to type="submit", so a close control
+   that lost this attribute would run an empty search instead of closing the
+   panel, and would look identical in the markup. */
+test('the search panel carries a close control that cannot submit the form', () => {
+  const widgets = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'widget') widgets.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(headerPart());
+  const panel = widgets.find(w => w.widgetType === 'html' && /class="em-search"/.test(w.settings.html ?? ''));
+  assert.ok(panel, 'no html widget in the header carries .em-search');
+
+  const closer = (panel.settings.html.match(/<button class="em-search__close"[^>]*>/) || [])[0];
+  assert.ok(closer, 'the search panel has no .em-search__close control');
+  assert.match(closer, /type="button"/,
+    'the close control is not type="button", so it will submit the form and run an empty search instead of closing the panel');
+  assert.match(closer, /aria-label="[^"]+"/,
+    'the close control is an icon with no accessible name');
+});
+
 test('the header search input opts out of SearchWP Live Ajax Search', () => {
   const markup = JSON.stringify(headerPart());
   assert.match(markup, /data-swplive=\\"false\\"/,

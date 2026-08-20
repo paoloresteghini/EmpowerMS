@@ -88,6 +88,16 @@ const withSearchControl = (actions) => {
  * bridge.css block 71 rather than by a placeholder attribute standing in for
  * it, because a placeholder is not an accessible name.
  *
+ * THE CLOSE BUTTON is type="button", so it never submits the form it sits
+ * inside. That matters: a bare <button> in a <form> defaults to type="submit"
+ * and would run an empty search instead of closing the panel. It carries an
+ * aria-label rather than visible text because its content is an icon, the same
+ * shape the header's own toggle and search buttons already use. Added
+ * 2026-08-20 on Paolo's request, alongside the trigger's existing toggle:
+ * clicking the magnifier again already closed the panel, and Escape and an
+ * outside click already did too, but none of those is visible to someone
+ * looking at an open panel and wanting it gone.
+ *
  * No `hidden` attribute on the panel, matching every other panel in
  * header-2.html (drop-about, drop-solutions, mobile-nav and its subpanels):
  * they all ship in normal flow, and their triggers' own JS is what hides
@@ -102,6 +112,9 @@ const SEARCH_PANEL = `<div class="em-search" id="site-search">
       <label class="em-search__label" for="site-search-input">Search this site</label>
       <input class="em-search__input" id="site-search-input" type="search" name="s" data-swplive="false" autocomplete="off">
       <button class="em-search__submit em-btn em-btn--primary em-btn--sm" type="submit">Search</button>
+      <button class="em-search__close" type="button" aria-label="Close search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </form>
   </div>
 </div>`;

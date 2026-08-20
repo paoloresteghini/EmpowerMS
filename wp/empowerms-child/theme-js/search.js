@@ -21,13 +21,14 @@ const doc = document.documentElement;
 const button = document.querySelector('.em-header__search');
 const panel = document.getElementById('site-search');
 const input = document.getElementById('site-search-input');
+const closer = document.querySelector('.em-search__close');
 
 if (button && panel && input) {
   doc.setAttribute('data-search', 'on');
 
   // The panel ships OPEN in the markup, with no `hidden` attribute and with
   // the button at aria-expanded="true", because that is this build's
-  // no-JavaScript contract and test-elementor.mjs:2704 enforces it. So the
+  // no-JavaScript contract and test-elementor.mjs:2760 enforces it. So the
   // script's job at load is to CLOSE it, exactly as js/nav.js:12-13 does for
   // the mobile nav. Setting the attribute here rather than in the markup is
   // what keeps the panel reachable when this file fails to load.
@@ -53,6 +54,14 @@ if (button && panel && input) {
   button.addEventListener('click', () => {
     if (isOpen()) close(); else open();
   });
+
+  /* The panel's own close control. Optional rather than required by the guard
+     above: the trigger, Escape and an outside click all close the panel
+     already, so a header rendered without this button is still fully
+     dismissable and the script must not stand down over its absence. */
+  if (closer) {
+    closer.addEventListener('click', () => close());
+  }
 
   // Escape closes and returns focus to the button, which is where the user
   // was before they opened it.

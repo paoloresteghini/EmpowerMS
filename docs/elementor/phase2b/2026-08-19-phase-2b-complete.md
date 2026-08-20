@@ -108,7 +108,13 @@ pages had no focus indicator of any kind. Blocks 40 and 41 repair all sixteen.
 2. `css/solution.css:276`'s `.sol-grid__closer-line{margin-bottom:0}` never
    applies, outranked by `:274` at 0,1,1. The static build is frozen, so it is a
    hand-off question rather than a fix.
-3. `href="team-a.html"` still 404s, deliberately, as part of the hand-off remap.
+3. ~~`href="team-a.html"` still 404s, deliberately, as part of the hand-off
+   remap.~~ **DONE 2026-08-20**, commit `30df5ba`. Every internal link on all
+   seventeen pages and both theme parts now resolves to a converted page. See
+   `2026-08-20-link-remap.md`, and note the finding that shaped it: the static
+   header uses PLACEHOLDER hrefs, so the map is keyed on the pair (href, label)
+   rather than on the href. Four `/reports/{year}` links still 404 by omission
+   and need Empower; they are the only internal links the remap does not fix.
 4. `.tp-portrait` needs re-pricing when a real headshot arrives, because the
    ratio is on the container.
 5. The item-property sweep covers two widths rather than the bands between them

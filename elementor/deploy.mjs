@@ -124,7 +124,32 @@ export async function deployLoopItem(postId, elements) {
    returns 'header' from get_type(), footer.php returns 'footer'. Any other
    value here would be a real template type belonging to a different deploy
    path (wp-page, loop-item), written onto a library post that Elementor
-   then never renders in a location, with nothing reporting it. */
+   then never renders in a location, with nothing reporting it.
+
+   This array, despite deployThemePart()'s parameter below being named
+   `location`, holds DOCUMENT TYPES, not render locations: deployElements()
+   writes its third argument verbatim into _elementor_template_type
+   (line 93, `wp post meta update ${postId} _elementor_template_type
+   ${templateType}`), and deployThemePart() passes `location` straight
+   through as that argument. `location` is a known misnomer, kept rather
+   than renamed because a parallel workstream is building against this
+   same parameter while this comment is being written.
+
+   header and footer hid the type/location distinction because, for those
+   two, the document type and the render location happen to be the same
+   string (Header::get_type() is 'header' and it renders at the 'header'
+   location). 'archive' was added here on 2026-08-20 on that false
+   premise and then corrected the same day: Elementor Pro's Search_Results
+   document (modules/theme-builder/documents/search-results.php) is the
+   first theme part in this build where the two diverge. Its get_type()
+   returns 'search-results', its get_sub_type() returns 'search', and it
+   extends Archive and inherits Archive's render location. The render
+   location is unaffected by this array and stays 'archive': that is what
+   wp/empowerms-child/search.php:12 asks for and what the Theme Builder
+   condition (include/archive/search) targets. Only the document type
+   written by this function needed to change, from 'archive' to
+   'search-results'. */
+
 /* Extended on 2026-08-20 with the third Theme Builder document this build
    deploys. 'single-post' is Single_Post::get_type() (wp-content/plugins/
    elementor-pro/modules/theme-builder/documents/single-post.php on empv2), the
@@ -140,7 +165,7 @@ export async function deployLoopItem(postId, elements) {
    is a page type ('wp-page') or a loop type ('loop-item') arriving here, which
    would leave a library post claiming to be something Elementor never renders
    in a location. */
-const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post'];
+export const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post', 'search-results'];
 
 /* deployElements() overwrites _elementor_data and _elementor_template_type
    wholesale, with no check of its own that postId names a document of the

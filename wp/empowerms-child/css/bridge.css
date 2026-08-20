@@ -1852,10 +1852,11 @@
  *     (`[data-dropdown="on"] .em-header__item:last-child .em-header__menu`)
  *     are five structural pseudo-class hits in the shared sheets, every one
  *     targeting content built as a widget, and every one needs nothing,
- *     because elementor/theme-parts/header.mjs:72,81,85 delivers
+ *     because elementor/theme-parts/header.mjs:151,160,166 delivers
  *     `.em-header__nav`, `.em-header__actions` and `.em-mobilenav` as three
- *     html() blobs and the whole subtree inside each is authored markup,
- *     this case exactly.
+ *     of the header's four html() blobs (the fourth, the search panel at
+ *     :164, carries none of these five selectors) and the whole subtree
+ *     inside each is authored markup, this case exactly.
  *   - BROKEN case, this page's own defect: the reference point and the
  *     target are built as SEPARATE widgets, so Elementor's wrapper for one
  *     of them sits directly between them. `.sb-hero__copy p:last-child` is
@@ -2299,8 +2300,8 @@
  * a definite height; their defect was class-on-wrapper and their repair targets
  * the <img>):
  *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:429-435
- *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2015-2017
- *   `.ta-hero__media`                          team-a,      bridge.css:2197-2199
+ *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2016-2018
+ *   `.ta-hero__media`                          team-a,      bridge.css:2198-2200
  *   (line ranges read off the file today; the repricing document cites the
  *   first two as 403-419 and 1999-2000, which are the comment start and the
  *   selector list without their declaration.)
@@ -7061,4 +7062,282 @@ body .wpautoterms-footer a:focus-visible{
  * there. */
 .elementor-location-header{
   display:contents;
+
+/* ---------- 71. header search: the overlay panel, closed-by-default and
+ *            the 400px override ----------
+ * Block number 71, not the next free one. The plan reserved 61 for this
+ * block; a parallel session in the main tree took 61 and 62 while this task
+ * was in flight and may take up to 65, and 63 through 70 are deliberate
+ * headroom above that. Confirmed with that session directly rather than
+ * assumed from the gap. Tasks 2 and 3 each wrote a comment pointing forward
+ * at "block 61"; both are corrected to 71 in this same commit
+ * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
+ * search.js:15), along with the assertion whose message carries the same
+ * stale number (test-elementor.mjs:1428), so the reference and its target
+ * land together.
+ *
+ * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
+ * builds `.em-search > .em-container > .em-search__form`, and the form
+ * holds `.em-search__label`, `.em-search__input` and `.em-search__submit`
+ * (header.mjs:99-107), all inside one html() widget. That is the
+ * INSIDE-ONE-WIDGET case this file already names at :1841-1858: every one
+ * of those elements sits in the SAME markup string, so no Elementor wrapper
+ * can land between them and no child combinator or structural pseudo-class
+ * gymnastics are needed to reach any of them, unlike the header's nav and
+ * actions groups a few blocks up, which are two SEPARATE html() widgets and
+ * needed :241's display:contents fix for exactly that reason.
+ *
+ * THE GATE: both state hooks live on :root, not on the trigger button,
+ * because the button and the panel are not siblings in the Elementor box
+ * tree and will not become siblings (html() wraps the actions group and the
+ * panel in two different widgets, the same separation :241 exists to
+ * repair for a different pair). wp/empowerms-child/theme-js/search.js sets
+ * [data-search="on"] on document.documentElement at load and toggles
+ * [data-search-open] on the same element as the panel opens and closes, so
+ * the CSS below never has to travel from the button to the panel at all.
+ *
+ * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
+ * markup for the no-JavaScript contract test-elementor.mjs:2704 enforces,
+ * so there is a brief window on every load, before search.js's first
+ * statement sets [data-search="on"], where the panel is visible. js/nav.js
+ * and js/dropdown.js already pay the same cost for the mobile menu and the
+ * header dropdowns; hiding the panel unconditionally here would remove the
+ * flash by making the panel unreachable with JavaScript off, which is worse.
+ *
+ * TRAP 1, CHECKED RATHER THAN ASSUMED: css/motion.css's reveal selector
+ * (`[data-reveal="on"] [data-reveal]{...}`, css/motion.css:10-15) deletes
+ * an element's own transition, and has caused three snapping bugs on this
+ * project and shipped one. It reaches only elements CARRYING a
+ * data-reveal attribute. Read header.mjs's SEARCH_PANEL markup line by
+ * line: neither `.em-search` nor any element inside it carries
+ * data-reveal. Confirmed inert for this panel; nothing below needs to
+ * defend against it.
+ *
+ * TRAP 2, THE 400PX RULE'S PREMISE IS GONE: css/site.css:232 is
+ * `.em-header__search{display:none}` inside the @media(max-width:400px)
+ * block opened at css/site.css:229, and its own comment (css/site.css:
+ * 218-226) gives the reason: search had no unique destination yet below
+ * that width, so it was the one action dropped to clear the measured
+ * ~326px min-content width against a ~257px available inside 320px. This
+ * build gives it a destination, so the premise the static rule stood on no
+ * longer holds, and it is overridden below for Elementor pages only:
+ * css/site.css itself is read-only and still correct for the static build,
+ * where the rule's reasoning still applies.
+ *
+ * NO NEW WIDTH JUGGLING: css/site.css:241's `.em-header__bar{flex-wrap:
+ * wrap;row-gap:var(--space-3)}`, added for the SC 1.4.4 200% text case,
+ * already lets the actions group drop to its own line rather than force
+ * the row wider, and its own comment says so. Restoring the search button
+ * is one more item for that existing wrap to carry; the logo is not
+ * shrunk and the Donate label is not capped, matching the instruction this
+ * task was given. NOT RE-MEASURED AT 320PX IN THIS WORKTREE: confirming
+ * the row still fits needs the rendered Elementor header on the live
+ * install, and this worktree is deliberately offline. UNVERIFIED, left for
+ * the live check.
+ *
+ * THE PANEL RENDERS IN NORMAL FLOW, not as a position:absolute overlay
+ * like css/header-2.css:79's dropdown panels or css/megamenu.css:55's mega
+ * panel. Both of those rely on their nearest positioned ancestor being
+ * `.em-header` (`position:relative`, components.css:127) with nothing
+ * positioned in between. Here that gap is exactly one Elementor wrapper
+ * wide (`.elementor-widget-html`, the same wrapper this file's own :224-226
+ * names for the header's other html() widgets).
+ *
+ * THIS IS A SETTLED DECISION, NOT AN OPEN QUESTION. The panel stays in
+ * normal flow deliberately, for two reasons. First, `.em-header` carries
+ * `z-index:40` (components.css:127) and is made `position:sticky`
+ * (css/site.css:79), and an absolutely positioned panel inside a sticky
+ * header invites a stacking fight rather than avoiding one. Second, the
+ * absolute approach depends on `.elementor-widget-html`
+ * being unpositioned all the way up to `.em-header`, and that cannot be
+ * checked without the live install, so it would trade one measured risk
+ * (whether normal flow reads acceptably) for one unmeasured one (whether
+ * the panel floats where intended at all). In normal flow the panel drops
+ * below the header bar and pushes the mobile nav down rather than floating
+ * over the page, which is what ships here.
+ *
+ * WHAT REMAINS OPEN: a later task MAY add `position:absolute` once the
+ * live install confirms the wrapper chain between the panel and
+ * `.em-header` is unpositioned throughout. That would be a refinement of
+ * this decision, not a reversal of it.
+ *
+ * VISUALLY HIDDEN LABEL: header.mjs:102's `.em-search__label` does not
+ * carry the build's own `.em-visually-hidden` utility class (css/site.css:
+ * 46-47), so nothing already reaches it; the same five declarations are
+ * restated here under the class the markup actually carries.
+ *
+ * INPUT: `.em-search__input` carries no `.em-input` class either (it is
+ * `em-search__input` alone, header.mjs:103), so components.css:107's base
+ * text-input styling does not reach it. The values below are that rule's
+ * own literals, copied rather than reinvented, so the search field reads
+ * as the same control as every other text input the build ships. Not
+ * reached by the Elementor kit fight below: post-20547.css's control rule
+ * (cited in full at :1449-1526) matches only button, input[type=button],
+ * input[type=submit] and .elementor-button, never input[type=search].
+ *
+ * SUBMIT: header.mjs:104's button carries `em-btn em-btn--primary
+ * em-btn--sm`. `.em-btn` base and `--primary` are already restated for
+ * native buttons under the kit fight (:830-846 and :3348-3355, the latter
+ * added when mail-a's newsletter submit became this build's first native
+ * --primary use). `--sm` is not: this is the first native button on the
+ * install to use it, so it is added below at the same class-plus-element
+ * specificity the --md/--lg pair beside it uses, with components.css:8's
+ * own literal values, following :827-829's own rule that only the
+ * modifiers a native button actually uses get restated. */
+:root[data-search="on"] .em-search{
+  display:none;
+}
+:root[data-search="on"][data-search-open] .em-search{
+  display:block;
+}
+.em-search{
+  border-top:1px solid var(--border-subtle);
+  background:var(--surface-page);
+}
+.em-search__form{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:var(--space-3);
+  padding:var(--space-4) 0;
+}
+.em-search__label{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0; /* css/site.css:46-47 */
+}
+.em-search__input{
+  flex:1 1 240px;
+  min-width:0;
+  font-family:var(--font-body);
+  font-size:var(--fs-body);
+  color:var(--text-strong);
+  background:var(--white);
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-input);
+  padding:12px 14px; /* components.css:107 */
+  transition:border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out); /* components.css:107 */
+}
+.em-search__input::placeholder{
+  color:var(--grey-500); /* components.css:108 */
+}
+.em-search__input:hover{
+  border-color:var(--blue-400); /* components.css:109 */
+}
+.em-search__input:focus{
+  outline:none;
+  border-color:var(--em-orange);
+  box-shadow:var(--shadow-focus); /* components.css:110 */
+}
+.elementor button.em-btn--sm,
+.elementor input[type="submit"].em-btn--sm{
+  padding:9px 18px;
+  font-size:var(--fs-caption); /* components.css:8 */
+}
+@media (max-width:400px){
+  .elementor .em-header__search{
+    display:grid; /* css/site.css:85, restoring what css/site.css:232 hides */
+  }
+}
+
+/* ---------- 72. search results: the archive page this build owns ----------
+ * elementor/theme-parts/search-archive.mjs and search-result-item.mjs build
+ * the first page in this build with no static HTML partial behind it, per
+ * docs/superpowers/specs/2026-08-20-header-search-design.md. There is no
+ * dist/search.html and no css/search-a.css to measure against, so unlike
+ * every other block in this file, nothing here is a repair against a
+ * captured static value: it is this file's own first-pass design for a page
+ * that did not exist before Task 5. Kept in the same class-on-wrapper family
+ * as the rest of the build (R10: a heading() widget bound to two dynamic
+ * tags keeps its class on the wrapper, not the heading element itself) so
+ * the same repair shape applies where it applies.
+ *
+ * NOT MEASURED AGAINST A LIVE RENDER, RECORDED PLAINLY: Task 5 was built
+ * under an explicit no-install constraint. The two `.elementor-heading-title`
+ * repairs below are written by pattern-matching the R10 repair this file
+ * already carries for `.pca-ep__title` (:1140) and `.cad-card__title`
+ * (:6130), on the reasoning that any heading() widget on this install meets
+ * the same `.elementor-widget-heading .elementor-heading-title{line-height:1;
+ * margin:0}` kit reset those two measured directly; they are not themselves
+ * a live measurement.
+ *
+ * THE EMPTY STATE IS DELIBERATELY LEFT UNSTYLED HERE. loop-grid's own
+ * `nothing_found_message_text` setting (search-archive.mjs's own loopGrid()
+ * call) is a real, captured control (docs/elementor/schema-4.2.2.md's
+ * loop-grid fixture), but which element and class wrap its rendered message
+ * is not something that fixture captured and not something this task can
+ * check without the live install. Naming a selector for it here would be
+ * exactly the kind of guessed `file:line` this build has already lost three
+ * review rounds to, applied to a CSS selector instead. Left to Elementor's
+ * own default presentation until a later task can measure it. */
+.elementor .srs-head__title .elementor-heading-title{
+  font-size:var(--fs-h1);
+  line-height:var(--lh-hero);
+  margin:0 0 var(--space-4);
+}
+.srs-head__count{
+  color:var(--text-muted);
+  font-size:var(--fs-small);
+  margin:0 0 var(--space-4);
+}
+.srs-head__form{
+  max-width:520px;
+}
+.srs-results .em-container{
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-6);
+}
+.srs-grid .elementor-loop-container{
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-4);
+}
+.srs-card{
+  display:flex;
+  flex-direction:column;
+  gap:var(--space-2);
+  padding:var(--space-5);
+  border:1px solid var(--border-subtle);
+  border-radius:var(--radius-card);
+}
+.srs-card__kind{
+  display:inline-block;
+  font-family:var(--type-eyebrow-family);
+  font-weight:var(--fw-bold);
+  font-size:var(--fs-caption);
+  letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase;
+  color:var(--em-orange); /* tokens/base.css:17, .em-eyebrow's own literals */
+}
+.elementor .srs-card__title .elementor-heading-title{
+  font-size:var(--fs-h4);
+  line-height:1.3;
+  margin:0;
+}
+.srs-card__date{
+  color:var(--text-muted);
+  font-size:var(--fs-caption);
+}
+.srs-card__excerpt{
+  color:var(--text-body);
+  font-size:var(--fs-body);
+  margin:0;
+}
+/* No transition on `.srs-card` itself: it carries `data-reveal="rise"`
+ * (search-result-item.mjs), the attribute that elsewhere in the build feeds
+ * css/motion.css's reveal selector (`[data-reveal="on"] [data-reveal]{...}`,
+ * :10-15), which deletes an element's OWN transition, the trap this codebase
+ * has already shipped once. THAT SELECTOR IS INERT ON THIS PAGE: motion.css
+ * is enqueued per page from `empower_page_styles()[$slug]` (functions.php),
+ * and a search archive is not `is_singular()`, so `$slug` is `''` and the
+ * sheet never loads here. The attribute is kept anyway, not stripped, the
+ * same call the footer makes for its own `data-reveal`: script without CSS
+ * leaves content visible, a benign direction if a later task wires the layer
+ * up on this page. Whether or not the reveal selector ever reaches this
+ * rule, the instant colour swap on hover, scoped to the title link, carries
+ * no transition property at all, so there is nothing for it to delete
+ * either way; identical mechanism to the `.cad-card:hover .cad-card__title`
+ * rule above (:6411). */
+.elementor .srs-card:hover .srs-card__title .elementor-heading-title > a{
+  color:var(--em-orange-ink);
 }

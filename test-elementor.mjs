@@ -26,11 +26,13 @@ import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
 import { POST_ID as whatWeDoAPostId, sections as whatWeDoASections } from './elementor/pages/what-we-do-a/page.mjs';
-import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
+import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle, THEME_PART_LOCATIONS } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { personSingle } from './elementor/theme-parts/person-single.mjs';
+import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './elementor/theme-parts/search-result-item.mjs';
+import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './elementor/theme-parts/search-archive.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
 import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
 import {
@@ -1376,6 +1378,59 @@ test('the theme registers its Elementor locations so later parts can be assigned
     'the theme never registers its Elementor locations');
 });
 
+/* theme-js/ is a DESTINATION-ONLY directory, the same shape as
+   wp/empowerms-child/css/bridge.css: it exists under wp/empowerms-child/ and
+   has no counterpart at the repository root. That is deliberate. The root
+   js/ directory is synced into the theme by wp/sync.mjs and is the protected
+   static build (functions.php:486 records what editing it cost last time);
+   an Elementor-only script placed there would ship inside a static hand-off
+   it is not part of, and would join the three-way fight over a top-level
+   `const root` that this file's own comments describe.
+
+   This test exists because the sync is the silent part. syncTheme() reports
+   nothing on failure, and a script that never reaches the install produces a
+   header whose panel is simply always open: wrong-looking, not broken, and
+   therefore easy to miss. */
+test('theme-js is not excluded from the theme sync', () => {
+  assert.ok(!FROM_ROOT.includes('theme-js'),
+    'theme-js is in FROM_ROOT, so the wp/empowerms-child pass will exclude it and nothing will ever upload it');
+  assert.ok(fs.existsSync('wp/empowerms-child/theme-js/search.js'),
+    'wp/empowerms-child/theme-js/search.js does not exist');
+});
+
+/* An ES module loaded as a classic script shares one global scope with every
+   other classic script on the page, and the second file to declare an
+   identifier the first already claimed throws a SyntaxError and never runs.
+   That is not hypothetical here: it took down every desktop dropdown on the
+   site once, and functions.php's own comment at :452 is the post-mortem.
+   wp_script_add_data($handle,'type','module') looks like the fix and is not
+   one; the script_loader_tag filter is, and it reads its handle list from
+   empower_module_script_handles(). A handle missing from that list loads
+   classic. */
+test('the search script is enqueued and loads as a module', () => {
+  const fn = themeFile('functions.php');
+  assert.match(fn, /wp_enqueue_script\(\s*'empower-search',\s*\$dir \. '\/theme-js\/search\.js'/,
+    'empower-search is not enqueued from theme-js/search.js');
+  assert.match(fn, /empower_asset_ver\(\s*'theme-js\/search\.js'\s*\)/,
+    'the search script is enqueued without a content-derived version, so a change will not bust the cache');
+  assert.match(fn, /\$handles = array\([^)]*'empower-search'/,
+    'empower-search is missing from empower_module_script_handles(), so it will load as a classic script and collide');
+});
+
+/* The panel ships open in the markup by design (Task 2's comment says why),
+   and this attribute is what lets CSS close it. If the script never runs the
+   attribute is never set, the closed-by-default rules never apply, and the
+   form stays visible and usable. That is the intended degraded state and it
+   is worth asserting the gate exists, because a script that closes the panel
+   with inline styles instead would break the no-JavaScript contract silently. */
+test('the search script gates its CSS on a root attribute rather than inline styles', () => {
+  const js = fs.readFileSync('wp/empowerms-child/theme-js/search.js', 'utf8');
+  assert.match(js, /setAttribute\(\s*['"]data-search['"]\s*,\s*['"]on['"]\s*\)/,
+    'search.js never sets [data-search="on"], so bridge.css block 71 has no gate to key on');
+  assert.doesNotMatch(js, /\.style\.(display|visibility|opacity)\s*=/,
+    'search.js closes the panel with inline styles, which breaks the JavaScript-off contract');
+});
+
 /* --- elementor/pages/final/ (the homepage) ------------------------------ */
 
 test('the homepage hero mapping carries the section class and its copy', () => {
@@ -1822,6 +1877,7 @@ test('every container in every podcast-a mapping module and every theme part set
   const trees = [
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
     headerPart(), footerPart(), personSingle(),
+    searchArchivePart(), searchResultItem(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -1893,6 +1949,39 @@ test('the header and footer theme-part post ids are real integers', () => {
   assert.ok(Number.isInteger(HEADER_POST_ID), 'theme-parts/header.mjs HEADER_POST_ID is not an integer');
   assert.equal(typeof FOOTER_POST_ID, 'number', 'theme-parts/footer.mjs FOOTER_POST_ID is not a number');
   assert.ok(Number.isInteger(FOOTER_POST_ID), 'theme-parts/footer.mjs FOOTER_POST_ID is not an integer');
+});
+
+/* SEARCH_ARCHIVE_POST_ID and SEARCH_RESULT_ITEM_POST_ID are two different
+   library posts: the archive document and the loop item its Loop Grid
+   points at by id (elementor/theme-parts/search-archive.mjs:191). Task 5's
+   brief fixed both ids and the archive's own Theme Builder condition, so
+   this checks all three land as the values the brief actually specifies,
+   and that the two posts were not accidentally given the same id. */
+test('the search results part is a real archive document with a search condition', () => {
+  assert.ok(Number.isInteger(SEARCH_ARCHIVE_POST_ID),
+    'SEARCH_ARCHIVE_POST_ID is not an integer post id');
+  assert.deepEqual(SEARCH_ARCHIVE_CONDITIONS, ['include/archive/search'],
+    'the search results condition is not include/archive/search');
+  assert.ok(Number.isInteger(SEARCH_RESULT_ITEM_POST_ID),
+    'SEARCH_RESULT_ITEM_POST_ID is not an integer post id');
+  assert.notEqual(SEARCH_ARCHIVE_POST_ID, SEARCH_RESULT_ITEM_POST_ID,
+    'the archive template and its loop item point at the same post');
+});
+
+/* The page has to say what was searched for and it has to have an empty
+   state. Beaver's page has the first and not the second, and "nothing
+   matched" is a routine outcome rather than an edge case: it is the reason
+   search.php's own fallback calls get_search_form() again. */
+test('the search results page echoes the query, offers a form, and has an empty state', () => {
+  const markup = JSON.stringify(searchArchivePart());
+  assert.match(markup, /name=\\"s\\"/,
+    'the results page carries no search input, so a visitor cannot refine in place');
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the results page search input does not opt out of SearchWP Live Ajax Search');
+  assert.match(markup, /name=\\"archive-title\\"/,
+    'the head band does not bind archive-title, so the page never echoes what was searched for');
+  assert.match(markup, /No results found\. Try different search terms/,
+    'the results grid does not carry the search-specific empty-state message, the thing Beaver never had');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */
@@ -2246,6 +2335,38 @@ test('deployThemePart refuses a location it does not know', async () => {
      reader of the plugin might pass. It must still be refused. */
   await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
+});
+
+/* The search results template is the build's first theme part where the
+   Elementor document type and the Theme Builder render location are not
+   the same string (see the comment above THEME_PART_LOCATIONS for why
+   header and footer never exposed this). deployThemePart()'s `location`
+   parameter reaches deployElements() as the value written to
+   _elementor_template_type, so what belongs in THEME_PART_LOCATIONS is
+   Search_Results' document type, 'search-results', not the 'archive'
+   render location it inherits from Archive. wp/empowerms-child/search.php
+   still asks for the 'archive' location; that string is unaffected by this
+   array. search-archive.mjs writes the document type separately. */
+test('deployThemePart accepts the search-results document type and still refuses an invented one', async () => {
+  assert.ok(THEME_PART_LOCATIONS.includes('search-results'),
+    'THEME_PART_LOCATIONS does not include search-results, so the search results part can never deploy');
+  await assert.rejects(
+    () => deployThemePart(1, [], 'sidebar'),
+    /location must be one of/,
+    'deployThemePart no longer refuses a location that is not a real document type');
+  /* 'search' is not an obviously-bogus value like 'sidebar': it is a real
+     Elementor string for this exact document, one method away from the
+     correct one. Elementor Pro's Search_Results document returns
+     'search-results' from get_type() and 'search' from get_sub_type(), so
+     'search' is what a future author gets by reading the wrong method off
+     the same object. An earlier draft of this plan specified 'archive'
+     here, which is the render LOCATION rather than the document type, and
+     it shipped a fix round; a test that only rejects an obviously-bogus
+     string would not have caught that class of error either. */
+  await assert.rejects(
+    () => deployThemePart(1, [], 'search'),
+    /location must be one of/,
+    'deployThemePart accepts get_sub_type() (\'search\') where only get_type() (\'search-results\') is a real document type');
 });
 
 /* I4 from the final review: deployElements() validates only postId's shape,
@@ -2628,21 +2749,25 @@ test('the header carries the mobile nav and its toggle', () => {
   assert.match(json, /id=\\"mobile-nav\\"/);
 });
 
-test('the header takes exactly three html widgets, and they are the named three', () => {
-  /* The spec sanctions a fourth exception for the nav, the actions and the
+test('the header takes exactly four html widgets, and they are the named four', () => {
+  /* The spec sanctions four exceptions: the nav, the actions, the search
+     panel (added 2026-08-20, Task 2 of the header-search plan) and the
      mobile nav. A fifth html widget here is scope drift and should fail
      loudly rather than be noticed later by eye. */
   const json = JSON.stringify(headerPart());
   const htmlWidgets = json.match(/"widgetType":"html"/g) || [];
-  assert.equal(htmlWidgets.length, 3);
-  for (const marker of ['em-header__nav', 'em-header__actions', 'em-mobilenav']) {
+  assert.equal(htmlWidgets.length, 4);
+  for (const marker of ['em-header__nav', 'em-header__actions', 'em-search', 'em-mobilenav']) {
     assert.ok(json.includes(marker), `the header part is missing ${marker}`);
   }
 });
 
 test('the header markup matches the static partial, string for string', () => {
-  /* The three html widgets exist to preserve markup exactly. Anything in
-     them that is not in the partial is drift. */
+  /* Three of the header's four html widgets (nav, actions, mobile nav) exist
+     to preserve markup exactly against the partial below. The fourth, the
+     search panel added 2026-08-20, has no partial counterpart and is not
+     checked here. Anything the three DO carry that is not in the partial is
+     drift. */
   const partial = fs.readFileSync('src/_shared/header-2.html', 'utf8');
   for (const copy of [
     'A non-profit working to expand opportunity in Mississippi',
@@ -2654,6 +2779,70 @@ test('the header markup matches the static partial, string for string', () => {
     assert.ok(partial.includes(copy), `"${copy}" is not in src/_shared/header-2.html`);
     assert.ok(JSON.stringify(headerPart()).includes(copy), `"${copy}" is not in the header part`);
   }
+});
+
+/* The overlay exists ONLY in the Elementor build. src/_shared/header-2.html
+   still carries a decorative button with no form, because js/ and src/ are
+   the protected static build (functions.php:486). That divergence is the
+   whole reason this test is structural rather than a comparison against the
+   static partial: there is nothing on the static side to compare to, and a
+   fidelity-shaped test here would either fail forever or quietly stop
+   checking anything. */
+test('the header carries a search panel with a native GET form', () => {
+  const widgets = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'widget') widgets.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(headerPart());
+
+  const panel = widgets.find(w => w.widgetType === 'html' && /class="em-search"/.test(w.settings.html ?? ''));
+  assert.ok(panel, 'no html widget in the header carries .em-search');
+
+  const markup = panel.settings.html;
+  assert.match(markup, /<form[^>]+method="get"/, 'the search panel form is not a GET form');
+  assert.match(markup, /<form[^>]+action="\/"/, 'the search panel form does not post to the site root');
+  assert.match(markup, /<form[^>]+role="search"/, 'the search panel form has no role="search"');
+  assert.match(markup, /name="s"/, 'the search input is not named s, so WordPress will never see the query');
+  assert.match(markup, /id="site-search"/, 'the panel has no id for aria-controls to point at');
+  assert.match(markup, /<label[^>]+for="site-search-input"/, 'the search input has no label');
+  assert.match(markup, /type="submit"/, 'the form has no submit control, so it cannot be used without JavaScript');
+});
+
+/* SearchWP Live Ajax Search is active and enabled on the install
+   (searchwp_live_search_settings: enable-live-search true). Left alone it
+   binds itself to any input[name="s"] and injects its own results pane, its
+   own markup and its own stylesheet into our header. data-swplive="false"
+   is the plugin's own opt-out, read from its shipped JavaScript
+   (assets/javascript/dist/script.js) rather than from its documentation.
+   This assertion is what stops the opt-out being lost in a later edit
+   without anything reporting it: the failure mode is a third party's
+   dropdown appearing in the most-seen component on the site. */
+test('the header search input opts out of SearchWP Live Ajax Search', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the search input does not carry data-swplive="false"');
+});
+
+/* The button was <button type="button"> with an aria-label and nothing else
+   from Phase 2A until 2026-08-20. A control that toggles a panel needs to
+   say so, and the two attributes have to agree with the panel's real id or
+   the relationship exists only in the markup's intention.
+
+   aria-expanded="true", not "false": every other trigger in the header
+   ships expanded, with its panel in normal flow, and JS is what closes it
+   on load (see header.mjs's own comment on withSearchControl for the
+   header-2.html line numbers and js/nav.js:12-13). This is also what keeps
+   the search button inside 'the header part keeps the no-JavaScript
+   contract' below, rather than being the one trigger in the header that
+   is exempt from it. */
+test('the header search button is a real disclosure control', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /class=\\"em-header__search\\"[^>]*aria-expanded=\\"true\\"/,
+    'the search button has no aria-expanded, so it is still decoration');
+  assert.match(markup, /aria-controls=\\"site-search\\"/,
+    'the search button does not point at the panel it controls');
 });
 
 test('the converted page carries the chrome sections in order', () => {

@@ -15,7 +15,7 @@
 - **No em dashes anywhere.** Code, comments, copy, commit messages. Commas, colons, parentheses or separate sentences instead. Hyphens in compound words and ranges are fine.
 - **The static build is frozen.** Do not edit `src/`, `js/`, `css/`, `components/`, `tokens/`, `patterns/` or `assets/`. `functions.php:479` names `js/` as protected. Everything this plan adds to the front end goes in `wp/empowerms-child/` or `elementor/`.
 - **The working tree is dirty with someone else's in-flight work.** As of 2026-08-20 13:14 the branch carries uncommitted team-a Loop Grid work: modified `elementor/pages/register.mjs`, four `elementor/pages/team-a/*.mjs`, `wp/empowerms-child/css/bridge.css` (blocks 56 to 60), `wp/empowerms-child/functions.php`, plus untracked `elementor/pages/team-a/loop-item.mjs`, `elementor/theme-parts/person-single.mjs`, `wp/empowerms-child/inc/person-loop.php` and `measure-tmp.mjs`. **Do not stash, revert or commit any of it.** Two files in this plan are seams that work also needs: `elementor/deploy.mjs:128` (`THEME_PART_LOCATIONS`) and the `trees` array in `test-elementor.mjs`. Read both immediately before editing, and if `person-single.mjs` has already extended them, extend what is there rather than replacing it.
-- **Next free `bridge.css` block number is 61.** Verify with `grep -n "^/\* ---------- [0-9]" wp/empowerms-child/css/bridge.css | tail -1` before writing, since the in-flight work may have added more.
+- **Your `bridge.css` block numbers are 71 and 72, deliberately leaving a gap.** A parallel session in the main tree is adding blocks to the same file and has already taken 55 through 62, moving from 60 to 62 in under an hour. Numbering yours immediately after theirs would collide again the moment they add one more. 63 to 70 are left free as headroom for them, and the gap is deliberate: say so in your block comment so it never reads as an accident.
 - **Cache-bust with `?nocache=<ts>`, never `?s=` or `?w=`.** Those are WordPress query vars and return a 200-shaped 404. See `empowerms-reserved-query-vars`. This plan searches with `?s=` deliberately, which makes the distinction load-bearing: a `?s=` fetch that returns the 404 page still returns 200 and still renders the real header and footer.
 - **Exact Elementor values, read from Elementor Pro 4.2.1's own source, not guessed:** document type `search-results`, sub-type `search`, class `ElementorPro\Modules\ThemeBuilder\Documents\Search_Results` extending `Archive`, condition string `include/archive/search`, render location `archive`.
 - **Commit after every task.** Never bundle two tasks into one commit.
@@ -26,14 +26,14 @@
 
 | File | Status | Responsibility |
 |---|---|---|
-| `elementor/deploy.mjs` | Modify (line 128) | Add `'archive'` to `THEME_PART_LOCATIONS` so `deployThemePart()` will accept the new document type |
+| `elementor/deploy.mjs` | Modify (line 128) | Add `'search-results'` to `THEME_PART_LOCATIONS` so `deployThemePart()` will accept the new document type |
 | `elementor/theme-parts/header.mjs` | Modify | Add the overlay panel widget; record the static-build divergence in its comment |
 | `elementor/theme-parts/search-archive.mjs` | Create | The search results tree, its post id and its condition |
 | `elementor/theme-parts/search-result-item.mjs` | Create | The Loop Item template for one result card, and its post id |
 | `elementor/theme-parts/deploy.mjs` | Modify | Add `search-archive` to the CLI so the new part can be redeployed |
 | `wp/empowerms-child/theme-js/search.js` | Create | Overlay open/close behaviour, focus management, Escape and click-outside |
 | `wp/empowerms-child/functions.php` | Modify | Enqueue the new script and add its handle to `empower_module_script_handles()` |
-| `wp/empowerms-child/css/bridge.css` | Modify | Block 61 (overlay) and block 62 (results page) |
+| `wp/empowerms-child/css/bridge.css` | Modify | Block 71 (overlay) and block 72 (results page) |
 | `test-elementor.mjs` | Modify | New tests, plus the `trees` array entry `discoverTrees()` will demand |
 | `docs/elementor/phase2b/2026-08-20-search.md` | Create | The task report: what was measured, what was moved aside, and the command that puts Beaver back |
 
@@ -43,13 +43,25 @@
 
 `deployThemePart()` refuses any location outside `THEME_PART_LOCATIONS`, which today is `['header', 'footer']`. Nothing else in this plan can deploy until it accepts the search results document type.
 
+> **CORRECTED 2026-08-20, after this task was first implemented.** The steps below as
+> originally written said `'archive'`, and that was wrong. `deployElements()` writes its
+> third argument verbatim into `_elementor_template_type`, so that argument is the
+> Elementor DOCUMENT TYPE, not the render location, despite `deployThemePart()` naming
+> its parameter `location`. Header and footer hide the distinction because their type
+> and their location are the same string. Search results is the first case where they
+> differ: `Search_Results::get_type()` is `search-results` and it inherits Archive's
+> `archive` render location. **The value is `'search-results'`.** The condition
+> (`include/archive/search`) and the render location (`archive`) never changed and were
+> always right. The literal step text below is left as first written, so the record
+> shows what was specified as well as what was corrected.
+
 **Files:**
 - Modify: `elementor/deploy.mjs:128`
 - Test: `test-elementor.mjs`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `deployThemePart(postId, elements, 'archive')` no longer throws on its location check. `THEME_PART_LOCATIONS` becomes `['header', 'footer', 'archive']`.
+- Produces: `deployThemePart(postId, elements, 'search-results')` no longer throws on its type check. `THEME_PART_LOCATIONS` becomes `['header', 'footer', 'search-results']`.
 
 - [ ] **Step 1: Read the seam before touching it**
 
@@ -60,7 +72,7 @@ sed -n '118,150p' elementor/deploy.mjs
 git diff elementor/deploy.mjs
 ```
 
-If `THEME_PART_LOCATIONS` already contains entries beyond `header` and `footer`, add `'archive'` to what is there. Do not replace the array.
+If `THEME_PART_LOCATIONS` already contains entries beyond `header` and `footer`, add `'search-results'` to what is there. Do not replace the array.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -153,7 +165,7 @@ The header's search button has been decoration since Phase 2A. This gives it a p
 
 **Interfaces:**
 - Consumes: `container`, `html` from `../factory.mjs` (already imported).
-- Produces: `headerPart()` returns one more child inside the `.em-header` container. The panel's DOM id is `site-search`; the input's id is `site-search-input`. `wp/empowerms-child/theme-js/search.js` (Task 3) and `bridge.css` block 61 (Task 4) both key on `.em-search`, `.em-search__form`, `.em-search__input` and `.em-header__search`.
+- Produces: `headerPart()` returns one more child inside the `.em-header` container. The panel's DOM id is `site-search`; the input's id is `site-search-input`. `wp/empowerms-child/theme-js/search.js` (Task 3) and `bridge.css` block 71 (Task 4) both key on `.em-search`, `.em-search__form`, `.em-search__input` and `.em-header__search`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -369,9 +381,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `wp/empowerms-child/functions.php`
 - Test: `test-elementor.mjs`
 
+> **CORRECTED 2026-08-20, after Task 2 was implemented.** This task's script was
+> written assuming the panel ships closed (`hidden`, `aria-expanded="false"`). It does
+> not. `test-elementor.mjs:2576` enforces that every header panel ships expanded and
+> the script closes it at load, and Task 2 was implemented that way. The script below
+> has been corrected to close at load rather than to un-hide. It also now sets a second
+> root attribute, `data-search-open`, which is the state hook Task 4's CSS keys on.
+
 **Interfaces:**
-- Consumes: the DOM contract from Task 2: `.em-header__search` (the button), `#site-search` (the panel), `#site-search-input` (the input).
-- Produces: the script sets `[data-search="on"]` on `document.documentElement`, which is the gate `bridge.css` block 61 (Task 4) keys its closed-by-default styles off. Enqueued as handle `empower-search`.
+- Consumes: the DOM contract from Task 2: `.em-header__search` (the button, shipping `aria-expanded="true"`), `#site-search` (the panel, shipping open with no `hidden` attribute), `#site-search-input` (the input).
+- Produces: the script sets `[data-search="on"]` on `document.documentElement` at load, which is the gate `bridge.css` block 71 (Task 4) keys its closed-by-default styles off, and toggles `[data-search-open]` on the same element, which is the open-state hook. Two attributes, both on the root, so no selector in block 71 depends on where the panel sits in the box tree. Enqueued as handle `empower-search`.
 
 - [ ] **Step 1: Confirm `theme-js/` will actually reach the install**
 
@@ -487,17 +506,19 @@ const input = document.getElementById('site-search-input');
 if (button && panel && input) {
   doc.setAttribute('data-search', 'on');
 
-  // The markup ships the panel with `hidden` so that a no-JavaScript render
-  // is not a permanently-open panel... except that it must NOT stay hidden
-  // in that case. So `hidden` is removed here and the closed state becomes
-  // CSS's job from this point on. Removing it is safe precisely because we
-  // have just proved JavaScript runs.
-  panel.hidden = false;
+  // The panel ships OPEN in the markup, with no `hidden` attribute and with
+  // the button at aria-expanded="true", because that is this build's
+  // no-JavaScript contract and test-elementor.mjs:2576 enforces it. So the
+  // script's job at load is to CLOSE it, exactly as js/nav.js:12-13 does for
+  // the mobile nav. Setting the attribute here rather than in the markup is
+  // what keeps the panel reachable when this file fails to load.
+  button.setAttribute('aria-expanded', 'false');
 
   const isOpen = () => button.getAttribute('aria-expanded') === 'true';
 
   const open = () => {
     button.setAttribute('aria-expanded', 'true');
+    doc.setAttribute('data-search-open', '');
     // focus() after the attribute flip, not before: while the panel is still
     // closed it is display:none and focus() on a hidden element is a no-op
     // that reports no error.
@@ -506,6 +527,7 @@ if (button && panel && input) {
 
   const close = ({ restoreFocus = true } = {}) => {
     button.setAttribute('aria-expanded', 'false');
+    doc.removeAttribute('data-search-open');
     if (restoreFocus) button.focus();
   };
 
@@ -590,7 +612,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Block 61, the overlay's styling
+## Task 4: Block 71, the overlay's styling
 
 **Files:**
 - Modify: `wp/empowerms-child/css/bridge.css`
@@ -629,18 +651,58 @@ sed -n '225,245p' css/site.css
 
 - [ ] **Step 3: Write the block**
 
-Follow the file's own conventions exactly: a `/* ---------- N. TITLE ---------- */` header, prose explaining what was measured and why the selector is shaped as it is, and file:line citations that land on real lines. Do not use a child combinator or a `:last-child`-family selector to reach the panel: it is a widget inside a container, and any selector keyed on sibling position breaks when Elementor changes the box tree. (`>` is not banned outright, block 60 uses one deliberately; what is banned is depending on position.)
+Follow the file's own conventions exactly: a `/* ---------- N. TITLE ---------- */`
+header, prose explaining what was measured and why the selector is shaped as it is, and
+file:line citations that land on real lines.
 
-The block needs to cover: the panel closed by default once `[data-search="on"]` is set; the panel open when the button's `aria-expanded="true"`; the visually-hidden label; the input and submit sizing; and the 400px override that keeps the button reachable.
-
-Key the open state off the button's own attribute via the root, not off a class the script adds, so the accessible state and the visual state cannot disagree:
+**The state hooks are settled and are both on the root element**, decided when Task 2
+landed so that no selector here depends on where the panel sits in the Elementor box
+tree. `wp/empowerms-child/theme-js/search.js` sets `data-search="on"` on
+`document.documentElement` at load, and adds or removes `data-search-open` on the same
+element as the panel opens and closes. So:
 
 ```css
-:root[data-search="on"] .em-search{ display:none; }
-:root[data-search="on"] .em-header__search[aria-expanded="true"] ~ * .em-search{ /* wrong: position-dependent */ }
+:root[data-search="on"] .em-search{ /* closed */ }
+:root[data-search="on"][data-search-open] .em-search{ /* open */ }
 ```
 
-That second selector is shown as the shape to avoid. The panel is not a sibling of the button in the Elementor box tree and will not be. Use a root-level state attribute the script also sets, or key the panel's own attribute. Decide which when you can see the rendered box tree, and write the reason into the comment.
+Do NOT reach for the button's `aria-expanded` in a selector that has to travel from the
+button to the panel. They are not siblings in the Elementor box tree and will not
+become siblings. An earlier draft of this plan printed
+`.em-header__search[aria-expanded="true"] ~ * .em-search` as an example of what NOT to
+write; it is unusable and is recorded here only so nobody reinvents it.
+
+`>` is not banned: block 60 uses a child combinator deliberately. What is banned is
+depending on sibling POSITION, which is what breaks when a target is a widget rather
+than a container.
+
+The block needs to cover: the panel closed by default once `[data-search="on"]` is set;
+the panel open under `[data-search-open]`; the visually-hidden label; the input and
+submit sizing; and the 400px override that keeps the button reachable.
+
+**Note the flash, and say so in the comment.** Because the panel ships open for the
+no-JavaScript contract, there is a brief moment on every page load before the script
+sets `data-search="on"` where the panel is visible. That is the same cost
+`js/dropdown.js` and `js/nav.js` already pay, and it is the price of the contract that
+`test-elementor.mjs:2576` enforces. It is a known consequence, not a defect to design
+around by hiding the panel unconditionally, which would make it unreachable without
+JavaScript.
+
+- [ ] **Step 3b: Correct the three forward references to this block**
+
+Tasks 2 and 3 each wrote a comment pointing forward at "bridge.css block 61", which was
+the reserved number at the time. It is not any more: a parallel session took 61 and 62
+while this plan was running, and this block is 71. Three committed sites carry the stale
+number and this task owns the correction, because this task is what makes the number
+real:
+
+- `elementor/theme-parts/header.mjs:88`
+- `wp/empowerms-child/theme-js/search.js:15`
+- `test-elementor.mjs:1426`
+
+Change each to 71 and re-read the surrounding sentence to confirm it still says
+something true. Do this in the SAME commit as the block itself, so the citation and its
+target land together and the tree is never in a state where the reference is wrong.
 
 - [ ] **Step 4: Verify the citations**
 
@@ -655,7 +717,7 @@ Expected: PASS. This test exists because a commit once added sixteen lines to th
 ```bash
 node --test test-elementor.mjs 2>&1 | tail -5
 git add wp/empowerms-child/css/bridge.css
-git commit -m "style(bridge): block 61, the header search overlay
+git commit -m "style(bridge): block 71, the header search overlay
 
 Closed-by-default keyed on [data-search=on], which theme-js/search.js sets,
 so the panel is open and usable when the script does not load.
@@ -679,11 +741,36 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Create: `elementor/theme-parts/search-result-item.mjs`
 - Modify: `elementor/theme-parts/deploy.mjs`
 - Modify: `test-elementor.mjs`
-- Modify: `wp/empowerms-child/css/bridge.css` (block 62)
+- Modify: `wp/empowerms-child/css/bridge.css` (block 72)
 
 **Interfaces:**
-- Consumes: `deployThemePart(postId, elements, 'archive')` from Task 1; `container`, `text`, `html` from `../factory.mjs`.
+- Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html`, `loopGrid` from `../factory.mjs`.
 - Produces: `searchArchivePart()` returning the tree; `SEARCH_ARCHIVE_POST_ID` (integer); `SEARCH_ARCHIVE_CONDITIONS = ['include/archive/search']`; `searchResultItem()` and `SEARCH_RESULT_ITEM_POST_ID`.
+
+- [x] **Step 1: Create the two library posts on the install. ALREADY DONE, do not repeat.**
+
+> **DONE 2026-08-20 by the controller, on Paolo's explicit approval.** The two posts
+> exist and their ids are fixed values for this task. Do not create anything, do not
+> reach the install, and do not treat these as placeholders to verify:
+>
+> ```
+> SEARCH_ARCHIVE_POST_ID     = 20639   "Empower Search Results"   term: search-results
+> SEARCH_RESULT_ITEM_POST_ID = 20640   "Search result card"       term: loop-item
+> ```
+>
+> Both are `publish` with NO `_elementor_conditions`, so nothing renders them and no
+> visitor can reach either. Reversible with `wp post delete 20639 20640 --force`.
+>
+> A trap was hit doing this and is recorded so nobody repeats it: capturing a WP-CLI
+> value into a REMOTE shell variable fails on this install, because a PHP deprecation
+> notice is glued onto the porcelain output. `wpe.mjs`'s `stripNotices` cleans what
+> `wpe()` returns to node and cannot reach a value the remote shell captured mid-script.
+> `set -e` then aborts AFTER the create has already happened, so a naive retry
+> duplicates. Create, read the id back from a listing on the node side, pass it as a
+> literal. A parallel session hit the identical error three hours earlier, so it is a
+> property of the install rather than a one-off.
+
+<details><summary>Original step text, kept as the record</summary>
 
 - [ ] **Step 1: Create the two library posts on the install**
 
@@ -710,6 +797,8 @@ wp post term set <ITEM_ID> elementor_library_type loop-item
 ```
 
 Record both ids and both commands in `docs/elementor/phase2b/2026-08-20-search.md`.
+
+</details>
 
 - [ ] **Step 2: Write the failing test**
 
@@ -763,9 +852,28 @@ Use Elementor's dynamic-tag widgets the way `elementor/pages/content-a/loop-item
 
 - [ ] **Step 5: Write `search-archive.mjs`**
 
-Structure, top to bottom: a band echoing the query and the count and carrying the search form again; the `archive-posts` widget with `_skin: 'custom'` and `template_id: SEARCH_RESULT_ITEM_POST_ID`; pagination; the empty state.
+Structure, top to bottom: a band echoing the query and the count and carrying the search form again; the results grid; pagination; the empty state.
 
-`archive-posts` is the widget that reads the current query. The `loop-grid` widget used on `podcast-a` and `content-a` takes a query of its own and is the wrong instrument on an archive; `factory.mjs`'s `loopGrid()` therefore does not apply here and a new small factory or a direct `el()` call is needed. Record which and why.
+> **CORRECTED 2026-08-20, before this task was dispatched.** This step first said to use
+> the `archive-posts` widget with `_skin: 'custom'` and a `template_id`, and claimed
+> `loop-grid` was the wrong instrument. Both halves are wrong, measured against Elementor
+> Pro 4.2.1 on the install:
+>
+> - `archive-posts` registers exactly three skins (`register_skins()` in
+>   `modules/theme-builder/widgets/archive-posts.php`): Classic, Cards and Full Content.
+>   There is no custom skin and no `template_id`, so it CANNOT render a Loop Item
+>   template at all.
+> - `loop-grid` CAN read the current query. `current_query` is a valid value of the query
+>   group's `post_type` field, defined in
+>   `modules/query-control/controls/group-control-query.php:45`.
+>
+> So the instrument is `loop-grid`, `factory.mjs`'s existing `loopGrid()` applies
+> unchanged, and NO new factory is needed. The earlier ruling to add an `archivePosts()`
+> factory is withdrawn.
+
+Use `loopGrid()` from `../factory.mjs` exactly as `elementor/pages/podcast-a/03-library.mjs:348` does, with `templateId: SEARCH_RESULT_ITEM_POST_ID` and `post_query_post_type: 'current_query'`. That last key is the whole difference between this grid and podcast-a's: podcast-a passes `'post'` plus term filters, and this one defers to whatever query WordPress already resolved, which on a search results template is the search.
+
+Verify by measurement, not by assumption, that the grid paginates on a search results page and that `posts_per_page` behaves as expected when the query is inherited rather than built. Record what you measured.
 
 - [ ] **Step 6: Add it to the theme-parts CLI**
 
@@ -817,7 +925,7 @@ This is the only task that changes what visitors see. Everything before it is in
 set -a && . ./.env && set +a
 node -e "import('./wp/sync.mjs').then(m => m.syncTheme()).then(d => console.log('synced to', d))"
 node elementor/theme-parts/deploy.mjs header
-node elementor/theme-parts/deploy.mjs search-archive
+node elementor/theme-parts/deploy.mjs search-results
 ```
 
 Ours is now deployed and conditioned, and Beaver is still winning, so `/?s=` is unchanged. That ordering is deliberate: it means the risky step is reversible by itself.

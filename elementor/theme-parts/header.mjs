@@ -27,6 +27,85 @@ const LOGO = { id: 20578, url: 'https://empv2.wpenginepowered.com/wp-content/upl
 
 const PARTIAL = readFileSync(new URL('../../src/_shared/header-2.html', import.meta.url), 'utf8');
 
+/* THE ONE PLACE THE ELEMENTOR HEADER DELIBERATELY DIVERGES FROM THE STATIC
+   BUILD, 2026-08-20, on Paolo's decision.
+ *
+ * src/_shared/header-2.html:80 carries a search button with an aria-label, an
+ * SVG and nothing else: no form, no handler, no panel. It has been decoration
+ * since Phase 2A. Making it work needs markup and a script, and js/ and src/
+ * are the protected static build (see functions.php:486, which records what
+ * happened the last time js/ was edited). So the working search lives here
+ * and in wp/empowerms-child/, and the static hand-off keeps an inert icon.
+ *
+ * That is a divergence, and the only thing that makes it safe rather than a
+ * defect is that it is written down: here, in todo.md, and in
+ * docs/superpowers/specs/2026-08-20-header-search-design.md. Anyone comparing
+ * the two headers will find this difference; this comment is what tells them
+ * it was chosen.
+ *
+ * The patch is a literal single replacement rather than a regex rewrite of
+ * the button, because extractBlock() hands back the static markup verbatim
+ * and the useful property of that is that it is verbatim. A targeted
+ * replace that throws when its target is absent keeps the failure loud: if
+ * the static partial ever changes shape, this stops rather than silently
+ * emitting a button with no aria-expanded.
+ *
+ * aria-expanded="true" here, not "false": every other trigger in
+ * header-2.html ships expanded (lines 21, 39, 49, 59, 67, 75, 95...) with
+ * its panel in normal flow, and js/nav.js:12-13 is what sets aria-expanded
+ * to false and panel.hidden to true at load, the same way js/dropdown.js
+ * does for the desktop menus. Shipping this button closed instead would be
+ * the one trigger in the whole header that renders unusable without
+ * theme-js/search.js, which contradicts this task's own goal of a search
+ * form that works with JavaScript off. */
+const withSearchControl = (actions) => {
+  const target = '<button class="em-header__search" type="button" aria-label="Search">';
+  if (!actions.includes(target)) {
+    throw new Error('header.mjs: the actions block no longer contains the search button this patch targets');
+  }
+  return actions.replace(
+    target,
+    '<button class="em-header__search" type="button" aria-label="Search" aria-expanded="true" aria-controls="site-search">'
+  );
+};
+
+/* The panel. Authored in this file, not lifted from the static partial,
+   because the static partial does not have one and cannot be given one.
+ *
+ * It is a plain GET form to the site root. /?s= is what the install already
+ * answers correctly (measured 2026-08-20: /?s=education returns 200 and
+ * twelve results), which means this markup works with JavaScript off. That
+ * is the same contract js/nav.js and js/dropdown.js state for themselves:
+ * the markup ships usable and the script adds the closed-by-default
+ * behaviour. Without theme-js/search.js the panel is simply an open search
+ * form under the header, which is worse-looking and still works.
+ *
+ * data-swplive="false" opts the input out of SearchWP Live Ajax Search,
+ * which is active and enabled on this install and would otherwise attach a
+ * typeahead pane of its own markup and CSS to it.
+ *
+ * The label is real and visible to screen readers. It is visually hidden by
+ * bridge.css block 71 rather than by a placeholder attribute standing in for
+ * it, because a placeholder is not an accessible name.
+ *
+ * No `hidden` attribute on the panel, matching every other panel in
+ * header-2.html (drop-about, drop-solutions, mobile-nav and its subpanels):
+ * they all ship in normal flow, and their triggers' own JS is what hides
+ * them at load (js/nav.js:12-13, js/dropdown.js's equivalent). A `hidden`
+ * baked into this markup would leave the panel permanently unreachable on
+ * any visit where theme-js/search.js does not load, which is the opposite
+ * of "without theme-js/search.js the panel is simply an open search form
+ * under the header" below. */
+const SEARCH_PANEL = `<div class="em-search" id="site-search">
+  <div class="em-container">
+    <form class="em-search__form" role="search" method="get" action="/">
+      <label class="em-search__label" for="site-search-input">Search this site</label>
+      <input class="em-search__input" id="site-search-input" type="search" name="s" data-swplive="false" autocomplete="off">
+      <button class="em-search__submit em-btn em-btn--primary em-btn--sm" type="submit">Search</button>
+    </form>
+  </div>
+</div>`;
+
 export const headerPart = () => [
   /* The skip link sits before the header element in the partial and is the
      target every page's <main id="main"> serves. Kept native per the spec;
@@ -78,9 +157,11 @@ export const headerPart = () => [
            The spec left this to measurement; the measurement is that one
            markup block costs nothing and one native button costs a bridge
            rule, so it stays. Recorded rather than assumed. */
-        html({ markup: extractBlock(PARTIAL, 'div', 'em-header__actions') }),
+        html({ markup: withSearchControl(extractBlock(PARTIAL, 'div', 'em-header__actions')) }),
       ]),
     ]),
+
+    html({ markup: SEARCH_PANEL }),
 
     html({ markup: extractBlock(PARTIAL, 'nav', 'em-mobilenav') }),
   ]),

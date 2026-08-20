@@ -4370,7 +4370,7 @@ test('the landing template is six independent blocks', () => {
   assert.equal(sections.length, 6, `expected six blocks on the landing template, found ${sections.length}`);
   const files = readdirSync('src/landing/sections').sort();
   assert.deepEqual(files,
-    ['00-note.html', '01-hero.html', '02-ask.html', '03-pair.html',
+    ['01-hero.html', '02-ask.html', '03-pair.html',
      '04-voice.html', '05-act.html', '06-reading.html'],
     'the landing template’s blocks are not one file each');
 });
@@ -4470,12 +4470,26 @@ test('every landing template collects nothing and invents nothing', () => {
   }
 });
 
-test('every landing template says it is a template', () => {
+test('the handed-off landing template has shed its review strip, and the other has not', () => {
   /* Review-only chrome, and the thing that stops a worked example being read as
-     a live campaign or as approved copy. It is deleted at hand-off; until then
-     it has to be there, on both. */
-  for (const { out, html } of LANDINGPAGES) {
-    assert.match(html, /<div class="ln[bd]-note" role="note">/, `${out} has lost its review strip`);
-    assert.match(textOf(html), /This page is a template/, `${out}'s review strip no longer says what it is`);
-  }
+     a live campaign or as approved copy. It was required on both until the
+     template was handed off; Paolo called that on 2026-08-20 for dist/landing.html,
+     which is the reading Kienna duplicates, so it is now required to be ABSENT
+     there and still required on dist/landing-b.html, which nobody chose.
+
+     Asserted in both directions rather than simply deleted. A test that only
+     stopped checking would let the strip reappear on the handed-off template
+     silently, and would stop noticing if landing-b lost the warning that its
+     sample Save Our ESA copy is not approved copy. */
+  const handedOff = LANDINGPAGES.find((p) => p.out === 'dist/landing.html');
+  const other = LANDINGPAGES.find((p) => p.out !== 'dist/landing.html');
+  assert.ok(handedOff && other, 'the two landing templates are no longer distinguishable by name');
+
+  assert.doesNotMatch(handedOff.html, /<div class="ln[bd]-note" role="note">/,
+    'dist/landing.html has its review strip back; it is deleted at hand-off and Kienna duplicates this file');
+  assert.doesNotMatch(textOf(handedOff.html), /This page is a template/,
+    'dist/landing.html still carries the review strip’s copy');
+
+  assert.match(other.html, /<div class="ln[bd]-note" role="note">/, `${other.out} has lost its review strip`);
+  assert.match(textOf(other.html), /This page is a template/, `${other.out}'s review strip no longer says what it is`);
 });

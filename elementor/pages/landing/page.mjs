@@ -1,4 +1,3 @@
-import { section as note } from './00-note.mjs';
 import { section as hero } from './01-hero.mjs';
 import { section as ask } from './02-ask.mjs';
 import { section as pair } from './03-pair.mjs';
@@ -12,10 +11,17 @@ import { section as reading } from './06-reading.mjs';
    array at the call site is one dropped import away from silently publishing a
    page missing part of itself.
 
-   SIX BLOCKS PLUS THE REVIEW STRIP, and the numbering says which is which. The
-   six are BLOCK 1 to BLOCK 6 in dist/landing.html's own comments; 00-note is
-   the review strip, which is not part of the template and is deleted at
-   hand-off. 00-note.mjs's header records how to delete it in one action.
+   SIX BLOCKS, BLOCK 1 to BLOCK 6 in dist/landing.html's own comments.
+
+   THE REVIEW STRIP IS GONE, deleted 2026-08-20 on Paolo's instruction, and the
+   deletion is the hand-off step 00-note.mjs's header described. It was review
+   chrome (`.lnd-note`, `role="note"`) sitting inside <main> to stop a worked
+   example being read as a live campaign; it was removed from the static source
+   (src/landing/sections/00-note.html), from the built page and from this module
+   in one pass, because removing it from only one side would have made the live
+   page differ from the static build in a way no instrument could tell from a
+   defect. dist/landing-b.html keeps its own copy: nobody chose that reading, so
+   it is still under review. test.mjs asserts BOTH directions.
 
    THIS PAGE IS A TEMPLATE, NOT A PAGE, and the property worth protecting is
    that every block is independent. css/landing.css's header states it: "Delete
@@ -75,5 +81,5 @@ import { section as reading } from './06-reading.mjs';
 export const POST_ID = 20612;
 
 export const sections = () => [
-  note(), hero(), ask(), pair(), voice(), act(), reading(),
+  hero(), ask(), pair(), voice(), act(), reading(),
 ];

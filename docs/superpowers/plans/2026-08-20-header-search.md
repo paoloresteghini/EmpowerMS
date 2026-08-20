@@ -15,7 +15,7 @@
 - **No em dashes anywhere.** Code, comments, copy, commit messages. Commas, colons, parentheses or separate sentences instead. Hyphens in compound words and ranges are fine.
 - **The static build is frozen.** Do not edit `src/`, `js/`, `css/`, `components/`, `tokens/`, `patterns/` or `assets/`. `functions.php:479` names `js/` as protected. Everything this plan adds to the front end goes in `wp/empowerms-child/` or `elementor/`.
 - **The working tree is dirty with someone else's in-flight work.** As of 2026-08-20 13:14 the branch carries uncommitted team-a Loop Grid work: modified `elementor/pages/register.mjs`, four `elementor/pages/team-a/*.mjs`, `wp/empowerms-child/css/bridge.css` (blocks 56 to 60), `wp/empowerms-child/functions.php`, plus untracked `elementor/pages/team-a/loop-item.mjs`, `elementor/theme-parts/person-single.mjs`, `wp/empowerms-child/inc/person-loop.php` and `measure-tmp.mjs`. **Do not stash, revert or commit any of it.** Two files in this plan are seams that work also needs: `elementor/deploy.mjs:128` (`THEME_PART_LOCATIONS`) and the `trees` array in `test-elementor.mjs`. Read both immediately before editing, and if `person-single.mjs` has already extended them, extend what is there rather than replacing it.
-- **Next free `bridge.css` block number is 61.** Verify with `grep -n "^/\* ---------- [0-9]" wp/empowerms-child/css/bridge.css | tail -1` before writing, since the in-flight work may have added more.
+- **Your `bridge.css` block numbers are 71 and 72, deliberately leaving a gap.** A parallel session in the main tree is adding blocks to the same file and has already taken 55 through 62, moving from 60 to 62 in under an hour. Numbering yours immediately after theirs would collide again the moment they add one more. 63 to 70 are left free as headroom for them, and the gap is deliberate: say so in your block comment so it never reads as an accident.
 - **Cache-bust with `?nocache=<ts>`, never `?s=` or `?w=`.** Those are WordPress query vars and return a 200-shaped 404. See `empowerms-reserved-query-vars`. This plan searches with `?s=` deliberately, which makes the distinction load-bearing: a `?s=` fetch that returns the 404 page still returns 200 and still renders the real header and footer.
 - **Exact Elementor values, read from Elementor Pro 4.2.1's own source, not guessed:** document type `search-results`, sub-type `search`, class `ElementorPro\Modules\ThemeBuilder\Documents\Search_Results` extending `Archive`, condition string `include/archive/search`, render location `archive`.
 - **Commit after every task.** Never bundle two tasks into one commit.
@@ -33,7 +33,7 @@
 | `elementor/theme-parts/deploy.mjs` | Modify | Add `search-archive` to the CLI so the new part can be redeployed |
 | `wp/empowerms-child/theme-js/search.js` | Create | Overlay open/close behaviour, focus management, Escape and click-outside |
 | `wp/empowerms-child/functions.php` | Modify | Enqueue the new script and add its handle to `empower_module_script_handles()` |
-| `wp/empowerms-child/css/bridge.css` | Modify | Block 61 (overlay) and block 62 (results page) |
+| `wp/empowerms-child/css/bridge.css` | Modify | Block 71 (overlay) and block 72 (results page) |
 | `test-elementor.mjs` | Modify | New tests, plus the `trees` array entry `discoverTrees()` will demand |
 | `docs/elementor/phase2b/2026-08-20-search.md` | Create | The task report: what was measured, what was moved aside, and the command that puts Beaver back |
 
@@ -165,7 +165,7 @@ The header's search button has been decoration since Phase 2A. This gives it a p
 
 **Interfaces:**
 - Consumes: `container`, `html` from `../factory.mjs` (already imported).
-- Produces: `headerPart()` returns one more child inside the `.em-header` container. The panel's DOM id is `site-search`; the input's id is `site-search-input`. `wp/empowerms-child/theme-js/search.js` (Task 3) and `bridge.css` block 61 (Task 4) both key on `.em-search`, `.em-search__form`, `.em-search__input` and `.em-header__search`.
+- Produces: `headerPart()` returns one more child inside the `.em-header` container. The panel's DOM id is `site-search`; the input's id is `site-search-input`. `wp/empowerms-child/theme-js/search.js` (Task 3) and `bridge.css` block 71 (Task 4) both key on `.em-search`, `.em-search__form`, `.em-search__input` and `.em-header__search`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -390,7 +390,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: the DOM contract from Task 2: `.em-header__search` (the button, shipping `aria-expanded="true"`), `#site-search` (the panel, shipping open with no `hidden` attribute), `#site-search-input` (the input).
-- Produces: the script sets `[data-search="on"]` on `document.documentElement` at load, which is the gate `bridge.css` block 61 (Task 4) keys its closed-by-default styles off, and toggles `[data-search-open]` on the same element, which is the open-state hook. Two attributes, both on the root, so no selector in block 61 depends on where the panel sits in the box tree. Enqueued as handle `empower-search`.
+- Produces: the script sets `[data-search="on"]` on `document.documentElement` at load, which is the gate `bridge.css` block 71 (Task 4) keys its closed-by-default styles off, and toggles `[data-search-open]` on the same element, which is the open-state hook. Two attributes, both on the root, so no selector in block 71 depends on where the panel sits in the box tree. Enqueued as handle `empower-search`.
 
 - [ ] **Step 1: Confirm `theme-js/` will actually reach the install**
 
@@ -612,7 +612,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Block 61, the overlay's styling
+## Task 4: Block 71, the overlay's styling
 
 **Files:**
 - Modify: `wp/empowerms-child/css/bridge.css`
@@ -688,6 +688,22 @@ sets `data-search="on"` where the panel is visible. That is the same cost
 around by hiding the panel unconditionally, which would make it unreachable without
 JavaScript.
 
+- [ ] **Step 3b: Correct the three forward references to this block**
+
+Tasks 2 and 3 each wrote a comment pointing forward at "bridge.css block 61", which was
+the reserved number at the time. It is not any more: a parallel session took 61 and 62
+while this plan was running, and this block is 71. Three committed sites carry the stale
+number and this task owns the correction, because this task is what makes the number
+real:
+
+- `elementor/theme-parts/header.mjs:88`
+- `wp/empowerms-child/theme-js/search.js:15`
+- `test-elementor.mjs:1426`
+
+Change each to 71 and re-read the surrounding sentence to confirm it still says
+something true. Do this in the SAME commit as the block itself, so the citation and its
+target land together and the tree is never in a state where the reference is wrong.
+
 - [ ] **Step 4: Verify the citations**
 
 ```bash
@@ -701,7 +717,7 @@ Expected: PASS. This test exists because a commit once added sixteen lines to th
 ```bash
 node --test test-elementor.mjs 2>&1 | tail -5
 git add wp/empowerms-child/css/bridge.css
-git commit -m "style(bridge): block 61, the header search overlay
+git commit -m "style(bridge): block 71, the header search overlay
 
 Closed-by-default keyed on [data-search=on], which theme-js/search.js sets,
 so the panel is open and usable when the script does not load.
@@ -725,7 +741,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Create: `elementor/theme-parts/search-result-item.mjs`
 - Modify: `elementor/theme-parts/deploy.mjs`
 - Modify: `test-elementor.mjs`
-- Modify: `wp/empowerms-child/css/bridge.css` (block 62)
+- Modify: `wp/empowerms-child/css/bridge.css` (block 72)
 
 **Interfaces:**
 - Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html`, `loopGrid` from `../factory.mjs`.

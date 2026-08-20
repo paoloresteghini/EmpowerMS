@@ -7219,33 +7219,49 @@ body .wpautoterms-footer a:focus-visible{
   transition:border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out); /* components.css:107 */
 }
 
-/* The panel's own close control, added 2026-08-20. A 38px square to match
- * `.em-header__search` itself (css/site.css:85), so the control that closes the
- * panel is the same size as the one that opened it and the row reads as a pair
- * rather than as three unrelated widths.
+/* The panel's own close control, added 2026-08-20, restyled the same day on
+ * Paolo's "it can just be an outlined X".
  *
- * `flex:0 0 auto` because the form is a flex row whose input carries
- * `flex:1 1 240px`: without it this button would be a flex item free to shrink
- * below its own icon at narrow widths. Not a hover-only affordance: it keeps a
- * visible border at rest, because a control that only appears on hover is
- * unreachable by touch, and this panel is reachable on phones now that block 71
- * overrides the 400px rule that used to hide the trigger. */
-.em-search__close{
-  width:38px;height:38px;flex:0 0 auto;
+ * IT WAS A GREEN PILL BEFORE THIS, and the reason is worth recording because
+ * the obvious repair does not work here. Something on this install styles a
+ * bare `button` with a teal background, and `.em-search__close{background:none}`
+ * at one class of specificity loses to it. The usual fix in this file is the
+ * kit-fight pattern at :1449-1526, `.elementor button.<class>`, which is what
+ * `.em-header__search` uses at :1570. That pattern CANNOT be used here:
+ * measured in the browser, `el.matches('.elementor button.em-search__close')`
+ * is FALSE, because block 63 gives `.elementor-location-header` display:contents
+ * and no `.elementor` ancestor survives on this element. So the specificity has
+ * to come from the panel's own markup instead, which it can: `.em-search`, the
+ * form and the button are all in ONE html() widget (header.mjs's SEARCH_PANEL),
+ * so no Elementor wrapper can ever land between them and this three-part
+ * selector is stable rather than position-dependent.
+ *
+ * NO BOX AT ALL: no background, no border, no shadow. The X is the affordance.
+ * A bordered pill next to the orange Search button read as a second, competing
+ * action rather than as a dismissal.
+ *
+ * 38px square anyway, matching `.em-header__search` (css/site.css:85), because
+ * the tap target has to stay finger-sized even though nothing is drawn around
+ * it. Colour, not a background, carries the hover state, for the same reason:
+ * there is no box to fill. */
+.em-search .em-search__form button.em-search__close{
+  width:38px;height:38px;
+  flex:0 0 auto;
   display:grid;place-items:center;
   padding:0;
-  border:1px solid var(--border-default);
-  border-radius:var(--radius-pill);
-  background:none;
+  border:0;
+  box-shadow:none;
+  background-color:transparent;
+  background-image:none;
   color:var(--em-blue);
   cursor:pointer;
-  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out);
+  transition:color var(--dur) var(--ease-out);
 }
-.em-search__close:hover{
-  background:var(--blue-100);
-  border-color:var(--blue-400);
+.em-search .em-search__form button.em-search__close:hover{
+  background-color:transparent;
+  color:var(--em-orange-ink);
 }
-.em-search__close svg{
+.em-search .em-search__form button.em-search__close svg{
   width:17px;height:17px;
 }
 .em-search__input::placeholder{

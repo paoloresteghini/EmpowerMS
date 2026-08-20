@@ -30,6 +30,8 @@ import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThem
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
+import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './elementor/theme-parts/search-result-item.mjs';
+import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './elementor/theme-parts/search-archive.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
 import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
 import {
@@ -1867,7 +1869,7 @@ test('every container in every podcast-a mapping module and both theme parts set
   }
   const trees = [
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
-    headerPart(), footerPart(),
+    headerPart(), footerPart(), searchArchivePart(), searchResultItem(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -1939,6 +1941,37 @@ test('the header and footer theme-part post ids are real integers', () => {
   assert.ok(Number.isInteger(HEADER_POST_ID), 'theme-parts/header.mjs HEADER_POST_ID is not an integer');
   assert.equal(typeof FOOTER_POST_ID, 'number', 'theme-parts/footer.mjs FOOTER_POST_ID is not a number');
   assert.ok(Number.isInteger(FOOTER_POST_ID), 'theme-parts/footer.mjs FOOTER_POST_ID is not an integer');
+});
+
+/* discoverTrees() counts tree-shaped exports in elementor/theme-parts/ and
+   fails when the hard-coded trees array above has drifted from what actually
+   exists. It exists because that array was once hand-written and silently
+   left the header and footer out entirely, fourteen containers, while a
+   comment claimed it covered every container in the build. Adding a new
+   theme part is exactly the drift it watches for, so it goes red here by
+   design and the fix is to add the tree to the walk above, never to the skip
+   list. */
+test('the search results part is a real archive document with a search condition', () => {
+  assert.ok(Number.isInteger(SEARCH_ARCHIVE_POST_ID),
+    'SEARCH_ARCHIVE_POST_ID is not an integer post id');
+  assert.deepEqual(SEARCH_ARCHIVE_CONDITIONS, ['include/archive/search'],
+    'the search results condition is not include/archive/search');
+  assert.ok(Number.isInteger(SEARCH_RESULT_ITEM_POST_ID),
+    'SEARCH_RESULT_ITEM_POST_ID is not an integer post id');
+  assert.notEqual(SEARCH_ARCHIVE_POST_ID, SEARCH_RESULT_ITEM_POST_ID,
+    'the archive template and its loop item point at the same post');
+});
+
+/* The page has to say what was searched for and it has to have an empty
+   state. Beaver's page has the first and not the second, and "nothing
+   matched" is a routine outcome rather than an edge case: it is the reason
+   search.php's own fallback calls get_search_form() again. */
+test('the search results page echoes the query, offers a form, and has an empty state', () => {
+  const markup = JSON.stringify(searchArchivePart());
+  assert.match(markup, /name=\\"s\\"/,
+    'the results page carries no search input, so a visitor cannot refine in place');
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the results page search input does not opt out of SearchWP Live Ajax Search');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */

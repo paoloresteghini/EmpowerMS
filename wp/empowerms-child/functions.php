@@ -15,6 +15,7 @@ const EMPOWER_TOKENS = array(
 require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
 require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
 require_once get_stylesheet_directory() . '/inc/content-loop.php';
+require_once get_stylesheet_directory() . '/inc/search-loop.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and

@@ -1381,7 +1381,7 @@ test('the theme registers its Elementor locations so later parts can be assigned
    wp/empowerms-child/css/bridge.css: it exists under wp/empowerms-child/ and
    has no counterpart at the repository root. That is deliberate. The root
    js/ directory is synced into the theme by wp/sync.mjs and is the protected
-   static build (functions.php:485 records what editing it cost last time);
+   static build (functions.php:486 records what editing it cost last time);
    an Elementor-only script placed there would ship inside a static hand-off
    it is not part of, and would join the three-way fight over a top-level
    `const root` that this file's own comments describe.
@@ -1943,14 +1943,12 @@ test('the header and footer theme-part post ids are real integers', () => {
   assert.ok(Number.isInteger(FOOTER_POST_ID), 'theme-parts/footer.mjs FOOTER_POST_ID is not an integer');
 });
 
-/* discoverTrees() counts tree-shaped exports in elementor/theme-parts/ and
-   fails when the hard-coded trees array above has drifted from what actually
-   exists. It exists because that array was once hand-written and silently
-   left the header and footer out entirely, fourteen containers, while a
-   comment claimed it covered every container in the build. Adding a new
-   theme part is exactly the drift it watches for, so it goes red here by
-   design and the fix is to add the tree to the walk above, never to the skip
-   list. */
+/* SEARCH_ARCHIVE_POST_ID and SEARCH_RESULT_ITEM_POST_ID are two different
+   library posts: the archive document and the loop item its Loop Grid
+   points at by id (elementor/theme-parts/search-archive.mjs:191). Task 5's
+   brief fixed both ids and the archive's own Theme Builder condition, so
+   this checks all three land as the values the brief actually specifies,
+   and that the two posts were not accidentally given the same id. */
 test('the search results part is a real archive document with a search condition', () => {
   assert.ok(Number.isInteger(SEARCH_ARCHIVE_POST_ID),
     'SEARCH_ARCHIVE_POST_ID is not an integer post id');
@@ -1972,6 +1970,10 @@ test('the search results page echoes the query, offers a form, and has an empty 
     'the results page carries no search input, so a visitor cannot refine in place');
   assert.match(markup, /data-swplive=\\"false\\"/,
     'the results page search input does not opt out of SearchWP Live Ajax Search');
+  assert.match(markup, /name=\\"archive-title\\"/,
+    'the head band does not bind archive-title, so the page never echoes what was searched for');
+  assert.match(markup, /No results found\. Try different search terms/,
+    'the results grid does not carry the search-specific empty-state message, the thing Beaver never had');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */
@@ -2307,7 +2309,7 @@ test('deployThemePart writes the footer template type', async () => {
   }
 });
 
-test('deployThemePart refuses a location that is not header or footer', async () => {
+test('deployThemePart refuses a location outside THEME_PART_LOCATIONS', async () => {
   /* 'wp-page' and 'loop-item' are real template types with their own deploy
      functions. Accepting one here would write a page's type onto a library
      post that Elementor then never renders in a location, with no error. */
@@ -2741,8 +2743,11 @@ test('the header takes exactly four html widgets, and they are the named four', 
 });
 
 test('the header markup matches the static partial, string for string', () => {
-  /* The three html widgets exist to preserve markup exactly. Anything in
-     them that is not in the partial is drift. */
+  /* Three of the header's four html widgets (nav, actions, mobile nav) exist
+     to preserve markup exactly against the partial below. The fourth, the
+     search panel added 2026-08-20, has no partial counterpart and is not
+     checked here. Anything the three DO carry that is not in the partial is
+     drift. */
   const partial = fs.readFileSync('src/_shared/header-2.html', 'utf8');
   for (const copy of [
     'A non-profit working to expand opportunity in Mississippi',
@@ -2758,7 +2763,7 @@ test('the header markup matches the static partial, string for string', () => {
 
 /* The overlay exists ONLY in the Elementor build. src/_shared/header-2.html
    still carries a decorative button with no form, because js/ and src/ are
-   the protected static build (functions.php:485). That divergence is the
+   the protected static build (functions.php:486). That divergence is the
    whole reason this test is structural rather than a comparison against the
    static partial: there is nothing on the static side to compare to, and a
    fidelity-shaped test here would either fail forever or quietly stop

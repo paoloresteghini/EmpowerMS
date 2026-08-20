@@ -33,7 +33,7 @@ const PARTIAL = readFileSync(new URL('../../src/_shared/header-2.html', import.m
  * src/_shared/header-2.html:80 carries a search button with an aria-label, an
  * SVG and nothing else: no form, no handler, no panel. It has been decoration
  * since Phase 2A. Making it work needs markup and a script, and js/ and src/
- * are the protected static build (see functions.php:479, which records what
+ * are the protected static build (see functions.php:486, which records what
  * happened the last time js/ was edited). So the working search lives here
  * and in wp/empowerms-child/, and the static hand-off keeps an inert icon.
  *

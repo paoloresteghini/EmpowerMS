@@ -4,7 +4,7 @@
 // loads lives at the repository root in js/ and is synced here by
 // wp/sync.mjs. That directory is the protected static build: functions.php's
 // comment at :452 records the site-wide dropdown regression that came from
-// three files there competing for a top-level `const root`, and :485 records
+// three files there competing for a top-level `const root`, and :486 records
 // that renaming those declarations is not available as a fix. This file is
 // Elementor-only, so it lives where the Elementor-only bridge stylesheet
 // lives, and it declares nothing at top level that js/ already claims.
@@ -27,7 +27,7 @@ if (button && panel && input) {
 
   // The panel ships OPEN in the markup, with no `hidden` attribute and with
   // the button at aria-expanded="true", because that is this build's
-  // no-JavaScript contract and test-elementor.mjs:2576 enforces it. So the
+  // no-JavaScript contract and test-elementor.mjs:2684 enforces it. So the
   // script's job at load is to CLOSE it, exactly as js/nav.js:12-13 does for
   // the mobile nav. Setting the attribute here rather than in the markup is
   // what keeps the panel reachable when this file fails to load.

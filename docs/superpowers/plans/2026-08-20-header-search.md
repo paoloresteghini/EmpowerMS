@@ -925,7 +925,7 @@ This is the only task that changes what visitors see. Everything before it is in
 set -a && . ./.env && set +a
 node -e "import('./wp/sync.mjs').then(m => m.syncTheme()).then(d => console.log('synced to', d))"
 node elementor/theme-parts/deploy.mjs header
-node elementor/theme-parts/deploy.mjs search-archive
+node elementor/theme-parts/deploy.mjs search-results
 ```
 
 Ours is now deployed and conditioned, and Beaver is still winning, so `/?s=` is unchanged. That ordering is deliberate: it means the risky step is reversible by itself.

@@ -1852,10 +1852,11 @@
  *     (`[data-dropdown="on"] .em-header__item:last-child .em-header__menu`)
  *     are five structural pseudo-class hits in the shared sheets, every one
  *     targeting content built as a widget, and every one needs nothing,
- *     because elementor/theme-parts/header.mjs:72,81,85 delivers
+ *     because elementor/theme-parts/header.mjs:151,160,166 delivers
  *     `.em-header__nav`, `.em-header__actions` and `.em-mobilenav` as three
- *     html() blobs and the whole subtree inside each is authored markup,
- *     this case exactly.
+ *     of the header's four html() blobs (the fourth, the search panel at
+ *     :164, carries none of these five selectors) and the whole subtree
+ *     inside each is authored markup, this case exactly.
  *   - BROKEN case, this page's own defect: the reference point and the
  *     target are built as SEPARATE widgets, so Elementor's wrapper for one
  *     of them sits directly between them. `.sb-hero__copy p:last-child` is
@@ -2299,8 +2300,8 @@
  * a definite height; their defect was class-on-wrapper and their repair targets
  * the <img>):
  *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:429-435
- *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2015-2017
- *   `.ta-hero__media`                          team-a,      bridge.css:2197-2199
+ *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2016-2018
+ *   `.ta-hero__media`                          team-a,      bridge.css:2198-2200
  *   (line ranges read off the file today; the repricing document cites the
  *   first two as 403-419 and 1999-2000, which are the comment start and the
  *   selector list without their declaration.)
@@ -6446,7 +6447,7 @@
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:2682 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:2684 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the
@@ -6673,12 +6674,19 @@
   margin:0;
 }
 /* No transition on `.srs-card` itself: it carries `data-reveal="rise"`
- * (search-result-item.mjs), and css/motion.css's reveal selector
- * (`[data-reveal="on"] [data-reveal]{...}`, :10-15) deletes an element's
- * OWN transition, the trap this codebase has already shipped once. An
- * instant colour swap on hover, scoped to the title link, carries no
- * transition property at all, so there is nothing for that selector to
- * delete; identical mechanism to the `.cad-card:hover .cad-card__title`
+ * (search-result-item.mjs), the attribute that elsewhere in the build feeds
+ * css/motion.css's reveal selector (`[data-reveal="on"] [data-reveal]{...}`,
+ * :10-15), which deletes an element's OWN transition, the trap this codebase
+ * has already shipped once. THAT SELECTOR IS INERT ON THIS PAGE: motion.css
+ * is enqueued per page from `empower_page_styles()[$slug]` (functions.php),
+ * and a search archive is not `is_singular()`, so `$slug` is `''` and the
+ * sheet never loads here. The attribute is kept anyway, not stripped, the
+ * same call the footer makes for its own `data-reveal`: script without CSS
+ * leaves content visible, a benign direction if a later task wires the layer
+ * up on this page. Whether or not the reveal selector ever reaches this
+ * rule, the instant colour swap on hover, scoped to the title link, carries
+ * no transition property at all, so there is nothing for it to delete
+ * either way; identical mechanism to the `.cad-card:hover .cad-card__title`
  * rule above (:6411). */
 .elementor .srs-card:hover .srs-card__title .elementor-heading-title > a{
   color:var(--em-orange-ink);

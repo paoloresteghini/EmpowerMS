@@ -1062,6 +1062,62 @@ test('the css pass wp/sync.mjs actually issues leaves a destination-only bridge.
    Neither invariant catches a citation that moves onto a DIFFERENT assertion
    or a DIFFERENT selector, and that limit is deliberate: this asserts what a
    machine can decide. The rest still needs a reader. */
+/* bridge.css's braces must balance, and every numbered block must sit at the
+   TOP LEVEL of the file rather than nested inside another rule.
+
+   Written 2026-08-20 after a merge resolution silently deleted the closing
+   brace of block 63's `.elementor-location-header{display:contents}`. Nothing
+   caught it: the file still parsed, the citation validator still passed, both
+   suites still went green, and the file even LOOKED right, because the missing
+   brace is invisible in a 7000-line file whose blocks are separated by pages of
+   prose. What it actually did was nest blocks 71 and 72 inside block 63's rule,
+   so every declaration in them was dead on the live site while being present in
+   the served stylesheet. It took a browser and a computed-style read to find,
+   which is exactly the kind of defect this file's own header warns is invisible
+   to source inspection.
+
+   Comments are stripped before counting because this file's prose is full of
+   braces (selectors quoted inside explanations), and a naive count reports a
+   false imbalance on a correct file. */
+test('bridge.css braces balance and every numbered block sits at the top level', () => {
+  const raw = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const opens = (css.match(/\{/g) || []).length;
+  const closes = (css.match(/\}/g) || []).length;
+  assert.equal(opens, closes,
+    `bridge.css has ${opens} opening braces and ${closes} closing ones; an unclosed rule silently nests every block after it`);
+
+  /* Depth at each block header, measured on the comment-stripped text but
+     located by the block's first selector, because the header itself is a
+     comment and is gone by then. */
+  let depth = 0;
+  let line = 1;
+  const depthAtLine = new Map();
+  for (const ch of css) {
+    if (ch === '\n') { line += 1; depthAtLine.set(line, depth); }
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') depth -= 1;
+  }
+  assert.equal(depth, 0, 'bridge.css does not return to depth 0 at end of file');
+
+  /* Every block header line in the raw file, then the first non-blank line
+     after it that is not comment prose, is where that block's rules start. */
+  const rawLines = raw.split('\n');
+  const headers = [];
+  rawLines.forEach((l, idx) => {
+    const m = l.match(/^\/\* -+ (\d+)\./);
+    if (m) headers.push({ number: Number(m[1]), line: idx + 1 });
+  });
+  assert.ok(headers.length >= 60, `only ${headers.length} numbered blocks found; this test has stopped finding them`);
+
+  for (const h of headers) {
+    const d = depthAtLine.get(h.line) ?? 0;
+    assert.equal(d, 0,
+      `bridge.css block ${h.number} (line ${h.line}) starts at nesting depth ${d}, not top level, so its rules are trapped inside an unclosed rule above it`);
+  }
+});
+
 test('every internal file:line citation still lands on the kind of line it claims', () => {
   const files = [
     'elementor/pages/register.mjs',

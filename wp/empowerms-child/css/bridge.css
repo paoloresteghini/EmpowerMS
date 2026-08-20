@@ -7062,6 +7062,7 @@ body .wpautoterms-footer a:focus-visible{
  * there. */
 .elementor-location-header{
   display:contents;
+}
 
 /* ---------- 71. header search: the overlay panel, closed-by-default and
  *            the 400px override ----------

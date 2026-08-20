@@ -87,7 +87,21 @@ const BY_HREF = new Map(Object.entries({
   '/research': PAGE('content-a', 'band-research'),
   '/latest': PAGE('content-a'),
   '/about/team': PAGE('team-a'),
-  '/person/grant-callen/': PAGE('team-bio'),
+  /* '/person/grant-callen/' WAS MAPPED TO PAGE('team-bio') AND IS DELIBERATELY
+     GONE, on Paolo's 2026-08-20 decision that one person gets one URL.
+
+     It sent podcast-a's "Grant Callen" link to /grant-callen/, the hand-filled
+     page converted from dist/team-bio.html. That was right when it was the only
+     bio page that existed. It stopped being right when the person single
+     template shipped: /team/'s roster links /person/grant-callen/ for all
+     thirteen staff, so Grant alone had two working pages with two slightly
+     different renderings, and which one a reader got depended on where they
+     clicked. Deleting the entry lets podcast-a's authored href stand as itself,
+     which is already /person/grant-callen/.
+
+     Page 20607 is untouched and stays converted: it is dist/team-bio.html's
+     gated counterpart and the only thing the box sweep can compare that design
+     against. It simply stops being linked. */
   'team-a.html': PAGE('team-a'),
   'team-bio.html': PAGE('team-bio'),
 }));
@@ -139,7 +153,54 @@ export const NO_CONVERTED_PAGE = new Map(Object.entries({
   '/contact': 'no contact page is in the signed-off set; 301s to Empower\'s live contact page',
   '/privacy': 'no privacy page is in the signed-off set; 301s to Empower\'s live privacy page',
   '/join': 'a bare /join with no disambiguating label; the two Join Us menu items are keyed by label',
+  /* Keyed on the SEGMENT, so it covers all eighteen people rather than the one
+     link that happens to exist today. A person single is not a converted page
+     and never will be: it is rendered by the Theme Builder template in
+     elementor/theme-parts/person-single.mjs, which has no POST_ID in the
+     register because it is one document serving eighteen URLs. The register is
+     where convertedPagePaths() reads its slugs from, so there is nothing here
+     for it to find, and that is correct rather than missing.
+
+     This entry appeared when '/person/grant-callen/' was deleted from BY_HREF
+     above. While that mapping existed, podcast-a's link was rewritten to
+     /grant-callen/ (a real converted page) and this gate never saw the /person
+     path at all. */
+  '/person': 'the person singles are a Theme Builder template, not converted pages; see person-single.mjs',
 }));
+
+/* EMPOWER'S LIVE SITE, WRITTEN ABSOLUTELY, INSIDE THE CONVERTED PAGES.
+   Seven converted pages carry 29 links of the form
+   `https://empowerms.org/<slug>/`: capitol-a's six weekly chats, epic-a's four
+   reports, and the story links on safety, work, education and landing. They are
+   not routes the static build invented; they are real posts, and they were
+   authored absolutely because the static build was written against
+   empowerms.org.
+
+   THEY ALL EXIST ON THIS INSTALL AT THE IDENTICAL PATH. Checked, 29 of 29
+   returning 200 on empv2 on 2026-08-20, which is unsurprising: the install is a
+   clone of that site. So a reviewer clicking a story on the converted
+   /public-safety/ page was being taken to Empower's LIVE site to read it, in
+   the old design, with no way of knowing they had left the build. That is the
+   same failure Paolo's 2026-08-20 decision was about ("point at the converted
+   set"); it survived because isInternal() reads an absolute http URL as
+   external and the remap never looked at it.
+
+   ROOT-RELATIVE RATHER THAN REWRITTEN TO THE INSTALL'S ORIGIN, and the
+   difference matters at hand-off. `https://empv2.wpenginepowered.com/<slug>/`
+   would fix review and bake the review host into content destined for
+   production. `/<slug>/` is correct in BOTH places, because the post lives at
+   that path on the review install and on empowerms.org alike. Nothing here
+   needs undoing when the build ships. */
+const OLD_SITE = /^https?:\/\/(?:www\.)?empowerms\.org(?=\/|$)/i;
+
+/* An old-site absolute URL as a root-relative path, or the href untouched.
+   Exported so a test can drive the rule directly rather than through a tree. */
+export function localisedHref(href) {
+  const value = String(href ?? '');
+  if (!OLD_SITE.test(value)) return value;
+  const rest = value.replace(OLD_SITE, '');
+  return rest === '' ? '/' : rest;
+}
 
 const ENTITIES = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 
@@ -173,11 +234,19 @@ function splitHref(href) {
    alone. Exported so a test can drive it directly with the corpus's own pairs
    rather than through a deployed tree. */
 export function resolveHref(href, label, paths = convertedPagePaths()) {
-  if (!isInternal(href)) return null;
+  /* Localise FIRST, so an old-site absolute URL gets the same treatment as the
+     path it becomes. `https://empowerms.org/solutions` is then remapped to the
+     converted solutions page by the map below, rather than merely being made
+     relative, which is the behaviour you would want and not the behaviour you
+     would get from a separate pass. */
+  const local = localisedHref(href);
+  if (!isInternal(local)) return null;
 
-  const { path, tail } = splitHref(href);
+  const { path, tail } = splitHref(local);
   const destination = BY_LABEL.get(normaliseLabel(label)) ?? BY_HREF.get(path);
-  if (!destination) return null;
+  /* No mapping. If localising CHANGED the href, that change is still the
+     answer: the link keeps its own path and stops leaving the install. */
+  if (!destination) return local === String(href ?? '') ? null : local;
 
   const target = paths.get(destination.name);
   if (!target) {
@@ -251,11 +320,60 @@ export function remapLinks(elements, paths = convertedPagePaths()) {
   return walk(elements);
 }
 
+/* Every path a tree reaches by way of an empowerms.org absolute URL, read off
+   the tree BEFORE the remap runs. Two callers want it and they want it for
+   opposite reasons: unresolvedInternalLinks() must not flag these (they are
+   real posts, not invented routes), and the live gate must check every one of
+   them (they are the only links in the build whose existence nothing else
+   proves).
+
+   Derived from the tree rather than listed here, for the reason
+   convertedPagePaths() gives about its own list: a hand-written set of 29
+   slugs would be wrong the first time a page module gained a story link. */
+export function oldSitePaths(elements) {
+  const found = new Set();
+
+  const check = (href) => {
+    const value = String(href ?? '');
+    if (!OLD_SITE.test(value)) return;
+    found.add(splitHref(localisedHref(value)).path);
+  };
+
+  const walk = (node) => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (node === null || typeof node !== 'object') return;
+    const settings = node.settings;
+    if (settings && typeof settings === 'object') {
+      if (settings.link && typeof settings.link === 'object') check(settings.link.url);
+      for (const key of ['editor', 'html']) {
+        if (typeof settings[key] === 'string') {
+          for (const a of anchorsIn(settings[key])) check(a.href);
+        }
+      }
+    }
+    Object.values(node).forEach(walk);
+  };
+
+  walk(elements);
+  return found;
+}
+
 /* Internal links a remapped tree still carries that point nowhere on this
-   install, excluding the ones NO_CONVERTED_PAGE records a reason for. The test
+   install, excluding the ones NO_CONVERTED_PAGE records a reason for.The test
    that calls this is the thing that stops a newly authored link from shipping
-   as a 404. */
-export function unresolvedInternalLinks(elements, paths = convertedPagePaths()) {
+   as a 404.
+
+   `allow` IS NOT A LOOSENING, and it exists because the remap now localises
+   empowerms.org URLs. Before that, a story link was absolute and isInternal()
+   skipped it; after it, the same link is `/some-post/`, which is internal, is
+   not a converted page, and has no NO_CONVERTED_PAGE entry, so all 29 of them
+   would land here and this gate would go red on links that work. Passing
+   oldSitePaths() of the SAME tree, read before the remap, tells this function
+   which internal paths arrived that way. Their existence is not unchecked: it
+   is asserted against the live install by its own test, which is a stronger
+   check than this one can make, because whether a post exists is not knowable
+   from a tree. */
+export function unresolvedInternalLinks(elements, paths = convertedPagePaths(), allow = new Set()) {
   const known = new Set(paths.values());
   const unresolved = [];
 
@@ -263,6 +381,7 @@ export function unresolvedInternalLinks(elements, paths = convertedPagePaths()) 
     if (!isInternal(href)) return;
     const { path } = splitHref(href);
     if (known.has(path) || known.has(`${path}/`)) return;
+    if (allow.has(path)) return;
     if (NO_CONVERTED_PAGE.has(path)) return;
     if (NO_CONVERTED_PAGE.has(path.replace(/^(\/[^/]+).*$/, '$1'))) return;
     unresolved.push({ href, label: normaliseLabel(label) });

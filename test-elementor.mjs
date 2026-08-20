@@ -4269,7 +4269,7 @@ test('the seven /latest menu items resolve to seven different pages', async () =
    convertedPageDirs(): two hand-written page lists have already shipped wrong
    here, one of them a test that passed green while measuring nothing. */
 test('no converted page links to a route that does not exist', { concurrency: 1 }, async () => {
-  const { remapLinks, unresolvedInternalLinks } = await import('./elementor/links.mjs');
+  const { remapLinks, unresolvedInternalLinks, oldSitePaths } = await import('./elementor/links.mjs');
 
   const trees = [];
   for (const dir of convertedPageDirs()) {
@@ -4284,7 +4284,11 @@ test('no converted page links to a route that does not exist', { concurrency: 1 
 
   const broken = [];
   for (const [name, tree] of trees) {
-    for (const link of unresolvedInternalLinks(remapLinks(tree))) {
+    /* oldSitePaths() is read off the UNREMAPPED tree, which is the only point
+       at which an empowerms.org link is still recognisable as one. See
+       unresolvedInternalLinks()'s own note on why these are allowed here and
+       checked live instead. */
+    for (const link of unresolvedInternalLinks(remapLinks(tree), undefined, oldSitePaths(tree))) {
       broken.push(`${name}: href="${link.href}"${link.label ? ` (${link.label})` : ''}`);
     }
   }
@@ -4849,6 +4853,138 @@ test('every converted page slug still has a stylesheet row in functions.php', ()
     + '\nempower_page_styles() is keyed by install slug; renaming a page means renaming its key.');
 });
 
+/* --- /team/ links every person it lists ---------------------------------- */
+
+/* THE DEFECT THIS EXISTS FOR SHIPPED, and it shipped because the two halves of
+   the roster were built from different templates and only one of them got a
+   link. The thirteen staff cards are anchors carrying "Read bio"; the five
+   contributing fellows were a ledger of names with no link of any kind, so
+   their `person` singles existed, rendered correctly, and were reachable only
+   by typing the URL. Nothing caught it: every page-level gate passed, because
+   a missing link changes no box and no computed style on the page that should
+   have carried it.
+
+   Found by auditing the install's own outgoing links rather than by any test,
+   which is why the gate is written against the RENDERED page: the roster is two
+   Loop Grids over a post type, so what it links is a fact about the install's
+   data and its two loop item templates together, and neither one alone can be
+   asserted usefully.
+
+   THE LEDGER IS ASSERTED SEPARATELY from the total, and that is the whole
+   point. A single "the roster links at least 18 people" check goes green the
+   moment the thirteen staff cards are joined by five more staff, which is the
+   shape the bug had. Asserting the fellows section on its own is what fails if
+   the ledger ever loses its links again. */
+test('every person the roster lists is linked to their bio', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'team-a', envVar: 'TEAM_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/team/' },
+    t,
+  );
+  if (!url) return;
+
+  const html = await (await fetch(url)).text();
+  const hrefs = [...html.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]);
+  const distinct = [...new Set(hrefs)];
+
+  /* 18 published people on 2026-08-20: 13 staff, 5 fellows. A floor rather than
+     an equality, because Empower adding a nineteenth is not a defect. */
+  assert.ok(distinct.length >= 18,
+    `/team/ links only ${distinct.length} distinct person page(s), and there were 18 published people `
+    + 'on 2026-08-20. Someone in the roster is rendering without a link to their bio.');
+
+  /* The fellows ledger, on its own. It carried ZERO links until 2026-08-20. */
+  const ledgerAt = html.indexOf('ta-ledger');
+  assert.ok(ledgerAt > 0, 'no .ta-ledger on /team/, so the fellows section is not rendering at all');
+  const ledger = html.slice(ledgerAt);
+  const ledgerLinks = [...new Set([...ledger.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]))];
+  assert.ok(ledgerLinks.length >= 5,
+    `the fellows ledger links ${ledgerLinks.length} bio(s) and there are 5 contributing fellows. The `
+    + 'ledger rows carry no "read bio" affordance, so a fellow whose name is not a link is a bio page '
+    + 'nothing on the site reaches.');
+
+  const broken = [];
+  for (const href of distinct) {
+    const res = await fetch(new URL(href, url).href, { redirect: 'manual' });
+    if (res.status >= 400) broken.push(`${href} -> ${res.status}`);
+  }
+  assert.deepEqual(broken, [], `the roster links ${broken.length} bio page(s) that do not resolve:\n  ` + broken.join('\n  '));
+});
+
+/* --- links.mjs / the story links that used to leave the install ---------- */
+
+/* SEVEN CONVERTED PAGES CARRIED 29 ABSOLUTE LINKS TO EMPOWER'S LIVE SITE, and
+   a reviewer clicking one left the build without being told. capitol-a's six
+   weekly chats, epic-a's four reports, and the story links on safety, work,
+   education and landing were all authored as `https://empowerms.org/<slug>/`,
+   because that is the site the static build was written against. isInternal()
+   reads an absolute http URL as external, so the remap had never looked at
+   them.
+
+   They are now localised to `/<slug>/`, which is correct on the review install
+   AND after hand-off, since the post sits at that path on both.
+
+   WHAT THIS TEST EXISTS FOR. The static gate above cannot check these: whether
+   a post exists is not a property of a tree. This one asks the install, which
+   is the only place the answer lives. It is also the gate that would catch the
+   localisation being WRONG in a way that still looks fine, i.e. a slug that
+   differs between empowerms.org and this install; a link that 404s here after
+   the rewrite is exactly that case, and before the rewrite it would have gone
+   on working by pointing off-site. */
+test('every story link a converted page carries resolves on the install', { concurrency: 1 }, async (t) => {
+  const home = requirePageUrl(
+    { name: 'install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!home) return;
+  const { oldSitePaths } = await import('./elementor/links.mjs');
+
+  const paths = new Set();
+  for (const dir of convertedPageDirs()) {
+    const page = await import(`./elementor/pages/${dir}/page.mjs`);
+    for (const p of oldSitePaths(page.sections())) paths.add(p);
+  }
+
+  /* A floor, so this cannot pass by collecting nothing. 29 were found on
+     2026-08-20; asserting the exact number would fail the day a page gains a
+     story link, which is not a defect. */
+  assert.ok(paths.size >= 25,
+    `only ${paths.size} old-site links were collected from the page modules, and there were 29 on `
+    + '2026-08-20. Either oldSitePaths() has stopped recognising them or the pages import as empty, '
+    + 'and in both cases this test would otherwise pass while checking almost nothing.');
+
+  const origin = new URL(home).origin;
+  const broken = [];
+
+  /* A PER-REQUEST CACHE BUSTER, not a flush at the top of the loop. This loop
+     makes ~29 sequential requests, which is long enough for another session's
+     traffic to re-warm WP Engine's page cache underneath it: a flush makes a
+     page fresh ONCE, and a loop that outlives that freshness reads whatever the
+     cache has. A parallel session in this tree hit exactly that on 2026-08-20
+     and its gate went red on a page nothing was wrong with, so this uses the
+     convention it settled on rather than inventing a second one.
+
+     `empower_cb`, and the PREFIX is the point. This install returns a
+     200-shaped 404 for WordPress's reserved query vars (`?s=` is a search,
+     `?w=` a week number), which a corpus sweep in this repository was fooled by
+     once: it read "0 found" on every page and reported success. A prefixed name
+     cannot collide with a public query var.
+
+     `Math.random()` is deliberately not used for the run id: the value only has
+     to be unique WITHIN this loop, and the index alone gives that. */
+  for (const [i, path] of [...paths].sort().entries()) {
+    const bust = new URL(origin + path);
+    bust.searchParams.set('empower_cb', `story-${i}`);
+    const res = await fetch(bust.href, { redirect: 'manual' });
+    if (res.status >= 400) broken.push(`${path} -> ${res.status}`);
+  }
+
+  assert.deepEqual(broken, [],
+    `${broken.length} of ${paths.size} story link(s) do not resolve on the install:\n  `
+    + broken.join('\n  ')
+    + '\nThese were absolute empowerms.org URLs before the remap localised them, so a 404 here means '
+    + 'the slug differs between Empower\'s live site and this install.');
+});
+
 /* --- fidelity-browser.mjs / the legacy post page's "More" grid ----------- */
 
 /* WHAT THIS GATES, AND WHY IT IS NOT A CONVERSION TEST.
@@ -4973,4 +5109,361 @@ test('the legacy post page\'s More grid wears the All Content card design', { co
     assert.equal(read.realPhoto, 'block',
       'a related post WITH a featured image is not drawing it, so the has-post-thumbnail gate is inverted');
   }
+});
+
+/* --- the reveal gate ------------------------------------------------------
+   THE HERO ENTRANCE ANIMATION WAS DEAD ON ALL EIGHTEEN CONVERTED PAGES, and
+   the suite was green throughout. Repaired 2026-08-20; these three tests are
+   the instruments that would have caught it.
+
+   WHAT WAS BROKEN. css/motion.css nests every hidden start-state under
+   [data-reveal="on"]. js/reveal.js set that attribute as its first statement
+   and js/reveal.js is a deferred script, so on the live install the gate
+   landed AFTER first paint, every time (measured: /person/kienna-horn/ first
+   paint 392ms, gate 408ms; / first paint 268ms, gate 304ms). The page painted
+   fully visible; only then did opacity:0 apply; and .is-revealed followed two
+   frames later. A frame-by-frame read of the hero's computed opacity was
+   1.00 for the entire load. Scroll reveals further down were unaffected,
+   because by the time they intersect the start state has long since applied,
+   which is exactly why the symptom read to a human as "some pages animate and
+   some do not".
+
+   WHY NOTHING HERE SAW IT. Every existing reveal instrument in this harness
+   (settleReveal, checkVisibleWithJs, the no-JS parity tests) asks "did
+   everything end up visible?" The broken page answered yes. The defect was
+   purely temporal, and a suite with no temporal instrument cannot have an
+   opinion about it. entranceAnimation() in fidelity-browser.mjs is that
+   instrument, and its own header records why it reads the gate off the HTTP
+   response rather than off the DOM. */
+
+/* Cheap and exhaustive: every converted page, one fetch each, no browser.
+   Derived from the register's own exampleUrl the same way elementor/links.mjs
+   derives its targets, so a page added to the register is covered here
+   without this test being edited, and EXCLUDED_PAGES are covered too -- they
+   render the same motion layer and their exclusion is about census
+   comparability, not about motion. */
+test('every converted page serves the reveal gate and its no-JS fallback in the markup', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10,
+    `only ${pages.length} pages carry an exampleUrl; this test would be passing on almost nothing`);
+  /* Unique per run, not per file: two runs of this suite minutes apart must
+     not share a cache entry either. */
+  const cacheBuster = Date.now();
+  /* A PER-REQUEST CACHE BUSTER RATHER THAN A FLUSH, and the difference is
+     not a style preference: this loop makes eighteen requests over about
+     forty seconds, and WP Engine's page cache re-warms from any other
+     traffic while it runs. A flush at the top is a race the loop loses -
+     observed 2026-08-20, where a concurrent suite in another session
+     re-cached /solutions/ between the flush and this loop reaching it, and
+     fetchConverted() refused the HIT. A flush makes the page fresh ONCE; a
+     unique query string makes every one of these requests uncacheable, so
+     the test cannot be made to read a stale <html> tag no matter what else
+     is touching the install.
+
+     `empower_cb`, and the name matters. This install returns a 200-shaped
+     404 for the RESERVED query vars (`?s=` is a search and `?w=` a week
+     number), which a corpus sweep in this repository has already been
+     fooled by once: it read "0 found" on every page and reported success.
+     A prefixed name cannot collide with WordPress's own public query vars.
+     Verified against /solutions/ before being relied on here: x-cache goes
+     HIT -> MISS and the page still renders as itself, title and all. */
+  const missing = [];
+  for (const [i, page] of pages.entries()) {
+    const bust = new URL(page.exampleUrl);
+    bust.searchParams.set('empower_cb', `${cacheBuster}-${i}`);
+    const html = await fetchConverted(bust.href);
+    /* Asserted on the <html> tag as the SERVER sent it. js/reveal.js sets the
+       same attribute on documentElement at runtime, so any DOM-side reading
+       of this passes identically on the broken page: the bytes are the only
+       place the two states differ. */
+    if (!/<html[^>]*\sdata-reveal="on"/.test(html)) missing.push(`${page.name}: no data-reveal="on" on <html>`);
+    if (!/<noscript><style>\[data-reveal\]\{[^<]*opacity:1!important/.test(html)) {
+      missing.push(`${page.name}: no <noscript> reveal fallback`);
+    }
+  }
+  assert.deepEqual(missing, [],
+    `${missing.length} converted pages do not paint the reveal start state:\n${missing.join('\n')}\n`
+    + 'The gate comes from the language_attributes filter in the child theme\'s functions.php, which is keyed '
+    + 'off empower_page_has_motion(). A page missing it either is not in empower_page_styles() or does not '
+    + 'list the motion sheet there.');
+});
+
+/* The temporal half, on one page rather than eighteen: this one needs a real
+   browser and 2.2s of frame sampling each time, and the fetch test above
+   already proves the gate reaches every page. /person/kienna-horn/ is the
+   page the defect was reported on, so it is the page the gate watches. */
+test('the person single hero actually animates rather than snapping into place', { concurrency: 1 }, async () => {
+  const base = requirePersonBaseUrl();
+  const { entranceAnimation } = await import('./fidelity-browser.mjs');
+  const r = await entranceAnimation(new URL('kienna-horn/', base).href);
+
+  assert.ok(r.frames > 30,
+    `only ${r.frames} frames were sampled; the sampler did not run and nothing below was measured`);
+  assert.ok(r.gateInMarkup, 'the server did not send data-reveal="on" on <html>; see the fetch test above');
+  assert.ok(r.hiddenAtFirstFrame,
+    'the hero was already visible on the document\'s first frame, so the start state never painted and there '
+    + 'is nothing for the transition to animate FROM. This is the exact defect repaired on 2026-08-20: it '
+    + 'means the gate is arriving after first paint again.');
+  assert.ok(r.fadeFrames > 0,
+    'no frame caught the hero part-way through the fade: it went from hidden straight to shown. That is a '
+    + 'snap, not an animation - check --dur-reveal and css/motion.css\'s transition declaration.');
+  assert.ok(r.endsVisible,
+    'the hero never became visible at all. js/reveal.js did not run, and with the gate now in the server '
+    + 'markup that leaves the page permanently blank - check for a classic-script collision on a top-level '
+    + 'identifier such as `root`.');
+});
+
+/* The gate is only as good as the thing it is derived from. This is the same
+   rule elementor/links.mjs's own targets follow and the same failure this
+   repository has already shipped twice: a second hand-written list of pages,
+   which drifts from the first one silently. */
+test('the reveal gate is derived from empower_page_styles, not from a second page list', () => {
+  const php = fs.readFileSync(path.join(process.cwd(), 'wp/empowerms-child/functions.php'), 'utf8');
+  const fn = php.match(/function empower_page_has_motion\(\)\s*\{([\s\S]*?)\n\}/);
+  assert.ok(fn, 'empower_page_has_motion() is gone from the child theme; the reveal gate has no source of truth');
+  assert.match(fn[1], /empower_page_styles\(\)/,
+    'empower_page_has_motion() no longer reads empower_page_styles(). Whatever it reads instead is a second '
+    + 'list of which pages carry the motion layer, and it will drift from the enqueue.');
+  assert.match(fn[1], /empower_style_key\(\)/,
+    'empower_page_has_motion() no longer keys off empower_style_key(), so it cannot be answering the same '
+    + 'question the stylesheet enqueue answers: pages are keyed by slug and other post types by post type');
+  assert.match(php, /add_filter\(\s*'language_attributes'/,
+    'the language_attributes filter is gone; the reveal start state is back to being set by deferred JavaScript '
+    + 'after first paint, which is the defect this whole block exists to prevent');
+});
+
+/* TWO PHOTOGRAPHS WENT MISSING FROM THE LIVE SITE on 2026-08-20, caused by the
+   reveal gate above, and this is the gate that names that failure directly.
+
+   THE DEADLOCK. css/motion.css:23 gives [data-reveal="clip"] a start state of
+   clip-path: inset(0 0 14% 0). With that present from the first frame, on
+   these pages, the image is never requested at all. (The tempting general
+   rule -- "Chromium will not fetch a lazy image inside a clipped element" --
+   is NOT true; two synthetic reproductions including one of this page's own
+   structure load fine. js/reveal.js's header records what is and is not
+   established.) Before the gate moved into the server markup the
+   start state applied only after first paint, so the fetch had already been
+   issued; after, the clip is present from the first frame and the request is
+   never made at all. It does not resolve on scroll and it does not resolve
+   when the element reveals: measured with is-revealed set, opacity 1,
+   transform none and clip-path inset(0px), the <figure> was still 0px tall
+   and the image still unrequested. js/reveal.js now eager-ises those images
+   as its first statement, and its own header carries the full account.
+
+   WHY IT IS NOT ENOUGH THAT layoutInvariants() CAUGHT IT. It did, as a
+   main-height difference, which is a true red with the wrong subject: it
+   points at layout, and it took a per-element diff plus a network log to get
+   from there to "a photograph is missing". It also cannot catch the same
+   defect on an image whose container is already sized by aspect-ratio or
+   which sits beside taller content, where the missing photograph costs the
+   page no height at all.
+
+   AT 390 AND NOT 1440, deliberately. The defect is a function of how far the
+   image sits below the fold, and at 1440 both of the affected images were
+   close enough to the viewport to be fetched anyway: the 1440 run was green
+   throughout while the site was visibly broken on a phone. One width, chosen
+   because it is the one that can fail. */
+test('no converted page is missing a photograph from inside the motion layer', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10,
+    `only ${pages.length} pages carry an exampleUrl; this test would be passing on almost nothing`);
+  const { unloadedRevealImages } = await import('./fidelity-browser.mjs');
+  const results = await unloadedRevealImages(pages.map((p) => p.exampleUrl));
+  const broken = results.filter((r) => r.missing.length > 0)
+    .map((r) => `${r.url}: ${r.missing.join(', ')}`);
+  assert.deepEqual(broken, [],
+    `${broken.length} converted pages render a [data-reveal] image that never loaded:\n${broken.join('\n')}\n`
+    + 'The usual cause is the clip start state suppressing a lazy fetch; js/reveal.js eager-ises those images '
+    + 'and its header explains why. A NEW start state that clips, masks or hides an element containing a lazy '
+    + 'image will reopen this, and it will be invisible at 1440.');
+});
+
+/* --- the motion layer's inventory ----------------------------------------
+   ASKED FOR BY PAOLO ON 2026-08-20, in these words: if we change text or an
+   image in Elementor, will it break the animations?
+
+   The answer is that editing a widget's CONTENT cannot, because data-reveal
+   lives on the widget's wrapper as a Custom Attribute, not in its content.
+   Three other editor actions can, and all three fail silently:
+
+     - deleting a widget or container and adding a replacement, which arrives
+       with an empty Attributes field
+     - editing an html() widget's raw markup, where roughly a quarter of these
+       attributes are baked into the markup rather than carried on the wrapper
+       (worst exposed: landing, education, work, safety)
+     - clearing the Attributes field itself
+
+   None of them produces an error, a layout change or a failing test. The page
+   simply animates one element less. Every other reveal instrument in this
+   suite asks whether the marked-up elements behave; this one asks whether the
+   right elements are still marked up at all.
+
+   THE EXPECTATION IS DERIVED FROM THE TREE THIS REPOSITORY DEPLOYS, not from
+   dist/ and not from a number typed here. dist/ is the wrong baseline for the
+   Loop Grid pages by construction (content-a serves 205 posts where its static
+   counterpart carries 23 authored cards), and a typed number is the failure
+   this repository has already shipped twice. page.mjs's own sections() is what
+   deployElements() writes to the install, so it is the only baseline that
+   cannot drift from what is deployed.
+
+   MEASURED BEFORE BEING BELIEVED: all seventeen pages match exactly on all
+   three counts today, with no exemption for any page, loop pages included. */
+for (const page of [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl)) {
+  test(`the converted ${page.name} page still carries every reveal attribute this repository deploys`, { concurrency: 1 }, async () => {
+    const { sections } = await import(`./elementor/pages/${page.name}/page.mjs`);
+    const { revealInventory, treeRevealInventory } = await import('./fidelity-browser.mjs');
+    const expected = treeRevealInventory(sections());
+    assert.ok(expected.reveal > 0,
+      `elementor/pages/${page.name}/page.mjs builds a tree with no data-reveal attributes at all; `
+      + 'either the page genuinely has no motion (in which case this test should not cover it) or '
+      + 'treeRevealInventory() has stopped matching the shape the factory emits');
+
+    const [live] = await revealInventory([page.exampleUrl]);
+    assert.deepEqual(
+      { reveal: live.reveal, group: live.group, entrance: live.entrance },
+      expected,
+      `${page.name}'s live motion inventory does not match the tree this repository deploys.\n`
+      + `  expected ${JSON.stringify(expected)}\n  live     ${JSON.stringify({ reveal: live.reveal, group: live.group, entrance: live.entrance })}\n`
+      + 'FEWER live than expected means attributes have been lost on the install, and the usual cause is an '
+      + 'edit made in the Elementor editor: a deleted-and-replaced widget arrives with an empty Attributes '
+      + 'field, and editing an html() widget\'s markup can drop an attribute baked into it. MORE live than '
+      + 'expected means the install has been edited to add motion the repository does not know about, which '
+      + 'the next deploy of this page will silently destroy, because deployElements() replaces _elementor_data '
+      + 'wholesale. Either way the install and this repository have diverged and one of them has to win.\n'
+      + '  `reveal` is the animation, `group` is the stagger, `entrance` is the above-the-fold choreography.');
+
+    /* The loop half, deliberately coarse. A Loop Grid renders one template N
+       times, so an exact number here would be a function of how many posts
+       the install happens to hold, which is not this test's business. What it
+       can say, and what matters, is that the template has not lost its
+       attributes altogether: every loop item template in this build carries
+       at least one, so zero reveals inside a rendered loop is always wrong. */
+    if (live.loops > 0) {
+      assert.ok(live.inLoop > 0,
+        `${page.name} renders ${live.loops} Loop Grid(s) but not one card inside them carries a data-reveal `
+        + 'attribute. Every loop item template in this build carries at least one, so the template has lost '
+        + 'them: check the elementor_library post for this page\'s loop item, which is deployed separately '
+        + 'from the page itself and so is not restored by redeploying the page.');
+    }
+  });
+}
+
+/* treeRevealInventory() is the expectation half of the test above, so a bug in
+   it weakens that gate silently in whichever direction it is wrong. It has
+   already had one: the first version counted the valued forms
+   (`data-reveal|rise`, `data-reveal="rise"`) and then SUBTRACTED the group and
+   entrance totals, on the assumption those had been swept up by the first
+   pattern. They had not, so every page came out short by exactly its group
+   count plus its entrance count, and the live comparison read as a real
+   divergence on all seventeen pages at once. Seventeen simultaneous failures
+   is the tell: it indicts the measurement, not the thing measured.
+
+   The four shapes below are the four this build actually emits, and the third
+   and fourth are the ones that broke. */
+test('treeRevealInventory counts every shape the factory emits, and tells the three attributes apart', async () => {
+  const { treeRevealInventory } = await import('./fidelity-browser.mjs');
+  const one = (settings) => [{ elType: 'widget', settings, elements: [] }];
+
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'data-reveal|rise' })),
+    { reveal: 1, group: 0, entrance: 0 }, 'valued attribute in an Elementor _attributes string');
+  assert.deepEqual(treeRevealInventory(one({ html: '<a class="tp-back" data-reveal="rise">x</a>' })),
+    { reveal: 1, group: 0, entrance: 0 }, 'valued attribute inside an html() widget\'s markup');
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'data-reveal-group|' })),
+    { reveal: 0, group: 1, entrance: 0 },
+    'a bare data-reveal-group in _attributes must count as a group and NOT also as a reveal');
+  assert.deepEqual(treeRevealInventory(one({ html: '<div class="gvc-hero__under" data-reveal-group>x</div>' })),
+    { reveal: 0, group: 1, entrance: 0 },
+    'a bare valueless data-reveal-group in raw markup must still be counted');
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'aria-labelledby|bio-title\ndata-reveal-entrance|' })),
+    { reveal: 0, group: 0, entrance: 1 }, 'entrance alongside an unrelated attribute in the same string');
+
+  /* Nesting, because the real trees are containers of containers and a walk
+     that only looked at top-level elements would pass every case above. */
+  const nested = [{ elType: 'container', settings: { _attributes: 'data-reveal-entrance|' }, elements: [
+    { elType: 'container', settings: { _attributes: 'data-reveal-group|' }, elements: [
+      { elType: 'widget', settings: { _attributes: 'data-reveal|rise' }, elements: [] },
+      { elType: 'widget', settings: { html: '<figure data-reveal="clip"><img></figure>' }, elements: [] },
+    ] },
+  ] }];
+  assert.deepEqual(treeRevealInventory(nested), { reveal: 2, group: 1, entrance: 1 },
+    'a nested tree must be counted at every depth');
+});
+
+/* --- Elementor's own entrance animations, tuned to this build ------------
+   FOR AFTER HAND-OFF, NOT FOR THIS CONVERSION. Paolo's plan, 2026-08-20:
+   once the site launches this repository stops being the source of truth and
+   Empower maintain the site in Elementor. A new section will be added through
+   the editor, and the only animation the editor OFFERS is Advanced -> Motion
+   Effects -> Entrance Animation. This build's own reveal layer is invisible
+   there: it rides on a custom attribute nobody will guess.
+
+   So the two have to agree, and untouched they do not. Elementor 4.2.2 ships
+   `@keyframes fadeInUp{from{transform:translate3d(0,100%,0)}...}` at
+   `.animated{animation-duration:1.25s}` on the browser's default easing. 100%
+   is the element's OWN height, so a 400px section slides 400px. The house
+   motion is 20px over 600ms on --ease-entrance. css/bridge.css redefines the
+   keyframes so that picking "Fade In Up" in the editor simply IS the house
+   animation, with nothing for anyone to remember.
+
+   WHY THE FIXTURE IS A REAL PAGE ON THE INSTALL. No page in this build uses a
+   native entrance animation, so there is nowhere else the cascade question
+   can be asked at all. elementor/theme-parts/native-animation-probe.mjs
+   carries the full reasoning, including why its containers are 400px tall.
+
+   THE TWO FAILURES THIS EXISTS TO CATCH, neither visible in either stylesheet
+   on its own:
+     - Elementor loads animation CSS on demand, one file per animation. Two
+       @keyframes of one name is last-one-wins with no specificity involved,
+       so if that file ever lands after bridge.css the override silently stops
+       working while every rule a grep would look for is still present.
+     - bridge.css sets a duration on `.animated` and loads last, so the
+       editor's own Animation Duration dropdown could stop having any effect.
+       The `.zzp-slow` container gates that OUTCOME. (It does not gate the
+       :not() exclusion in bridge.css, which measurement showed is defence in
+       depth rather than the thing protecting the dropdown: Elementor's rule
+       is `.animated.animated-slow` at (0,2,0) and wins on specificity
+       regardless. bridge.css's own comment records that correction.) */
+test('a natively-animated Elementor element lands on this build\'s motion values', { concurrency: 1 }, async () => {
+  const { PROBE_SLUG } = await import('./elementor/theme-parts/native-animation-probe.mjs');
+  const { nativeAnimation } = await import('./fidelity-browser.mjs');
+  const base = process.env.INSTALL_BASE_URL ?? 'https://empv2.wpenginepowered.com/';
+  const r = await nativeAnimation(new URL(`${PROBE_SLUG}/`, base).href);
+
+  assert.ok(r.frames > 30, `only ${r.frames} frames sampled; the probe page did not render and nothing below was measured`);
+  assert.ok(r.fadeInUp, 'the .zzp-fadeinup container is not on the probe page; redeploy elementor/theme-parts/native-animation-probe.mjs');
+
+  /* The cascade, named by sheet so a failure says WHICH file won rather than
+     just that a number is wrong. */
+  assert.equal(r.winningFadeInUp?.sheet, 'bridge.css',
+    `the effective @keyframes fadeInUp comes from ${r.winningFadeInUp?.sheet}, not bridge.css. Elementor's own `
+    + 'animation CSS is now loading after the bridge sheet, so every keyframe override in that block is inert '
+    + 'while still being present in the file. Nothing else will report this.');
+  assert.equal(r.winningZoomIn?.sheet, 'bridge.css',
+    `the effective @keyframes zoomIn comes from ${r.winningZoomIn?.sheet}, not bridge.css; see the assertion above`);
+
+  /* Behaviour, not declaration: 20px against 100% of a 400px element. */
+  assert.ok(r.travel.fadeInUp.height > 300,
+    `the fadeInUp probe is only ${r.travel.fadeInUp.height}px tall, so 20px and "100% of its height" are too `
+    + 'close to tell apart and the travel assertion below would prove little. The fixture is meant to be 400px.');
+  assert.ok(r.travel.fadeInUp.travel > 15 && r.travel.fadeInUp.travel < 30,
+    `a natively-animated element travelled ${r.travel.fadeInUp.travel}px, not the house 20px. If it is close to `
+    + `${r.travel.fadeInUp.height} it is running Elementor's own translate3d(0,100%,0) and the override has `
+    + 'stopped winning; a section added in the editor will now slide the full height of itself.');
+
+  assert.equal(r.fadeInUp.duration, '0.6s',
+    `native animation duration is ${r.fadeInUp.duration}, not the house --dur-reveal of 0.6s`);
+  assert.match(r.fadeInUp.easing, /cubic-bezier\(0\.16, 0\.84, 0\.44, 1\)/,
+    `native animation easing is ${r.fadeInUp.easing}, not the house --ease-entrance`);
+
+  /* zoomIn is the photo reveal, the one keyframe with no native counterpart:
+     Elementor's own is scale3d(0.3,0.3,0.3), this build's is a clip-path wipe. */
+  assert.match(r.winningZoomIn.from, /clip-path/,
+    `the effective zoomIn keyframe carries no clip-path (${r.winningZoomIn.from}). That is Elementor's own `
+    + 'scale-from-30% zoom, not this build\'s photograph reveal.');
+
+  /* And the editor's Duration control must still work. */
+  assert.equal(r.slow.duration, '2s',
+    `the Slow duration option produced ${r.slow.duration} instead of Elementor's 2s, so the editor's Animation `
+    + 'Duration dropdown no longer does anything. Something in bridge.css is now out-specifying Elementor\'s '
+    + '`.animated.animated-slow` (0,2,0) rule, or that rule has changed shape on an Elementor upgrade.');
 });

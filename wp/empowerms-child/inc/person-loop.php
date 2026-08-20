@@ -346,7 +346,28 @@ add_shortcode( 'empower_person_row_text', function () {
 		return '';
 	}
 
-	$out = '<span class="ta-ledger__name">' . esc_html( get_the_title( $post_id ) ) . '</span>';
+	/* THE NAME IS A LINK, AND ONLY THE NAME. Paolo's call, 2026-08-20, after an
+	 * audit found that the five contributing fellows had real bio pages that
+	 * nothing on the site linked to: the staff cards above carry a visible
+	 * "Read bio" and are clickable, and the ledger carried no affordance of any
+	 * kind, so those five singles were reachable only by typing the URL.
+	 *
+	 * WHY NOT THE WHOLE ROW, which is what the staff cards do. Two reasons, and
+	 * the second is the one that decided it. `.ta-ledger__row` IS the three
+	 * column grid (`grid-template-columns:auto minmax(0,1fr) auto`,
+	 * css/team-a.css:221-226) and every rule it has keys on that, so making the
+	 * row an anchor puts an element between `.ta-ledger` and its grid. And a row
+	 * that is silently clickable with no affordance is worse for a reader than
+	 * one that is not clickable at all: the name carrying the link is the thing
+	 * a screen reader announces as the destination, and it is visibly a link
+	 * rather than a surprise.
+	 *
+	 * The name is escaped exactly as before; only the wrapper is new. */
+	$name = '<span class="ta-ledger__name">' . esc_html( get_the_title( $post_id ) ) . '</span>';
+	$permalink = get_permalink( $post_id );
+	$out = $permalink
+		? '<a class="ta-ledger__link" href="' . esc_url( $permalink ) . '">' . $name . '</a>'
+		: $name;
 
 	$field = trim( (string) get_post_meta( $post_id, 'position_title', true ) );
 	if ( '' !== $field ) {

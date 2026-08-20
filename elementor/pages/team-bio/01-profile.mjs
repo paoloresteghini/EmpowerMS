@@ -239,7 +239,7 @@ const CONTACT = '<!-- 2026-08-05, Empower: Grant keeps email, LinkedIn and X. Ev
   + '      </a>\n'
   + '    </li>\n'
   + '    <li>\n'
-  + '      <a href="https://www.linkedin.com/company/empowerms">\n'
+  + '      <a href="https://www.linkedin.com/company/empower-mississippi">\n'
   + '        <span class="tp-contact__icon" aria-hidden="true">\n'
   + '          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H4.2V20h2.74V8.5ZM5.57 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2ZM20 13.9c0-3.1-1.66-4.55-3.87-4.55-1.79 0-2.59.99-3.03 1.68V8.5H9.36c.04 1 0 11.5 0 11.5h2.74v-6.42c0-.25.02-.5.09-.68.2-.5.65-1.01 1.42-1.01 1 0 1.4.77 1.4 1.9V20H20v-6.1Z"/></svg>\n'
   + '        </span>\n'

@@ -95,6 +95,357 @@ export async function checkFilter(url, { toggleSelector, itemSelector, attribute
    https://empv2.wpenginepowered.com/podcast-a/ before fixing it here:
    awaiting the value before returning is what makes close() run after the
    read completes rather than racing it. */
+/* THE HERO ENTRANCE INSTRUMENT, and the one measurement that would have
+   caught the defect repaired on 2026-08-20: every converted page's hero
+   entrance animation was dead, and nothing in this harness could see it.
+
+   WHY THE EXISTING INSTRUMENTS COULD NOT. settleReveal() and
+   checkVisibleWithJs() both answer "did everything end up visible?", and the
+   broken page answered yes: js/reveal.js ran, added .is-revealed to
+   everything, and left the page correct in its final state. What was wrong
+   was PURELY temporal. css/motion.css nests every start-state under
+   [data-reveal="on"], js/reveal.js set that attribute as its first statement,
+   and js/reveal.js is deferred, so on the live install the gate landed AFTER
+   first paint (measured: 392ms paint, 408ms gate on /person/kienna-horn/).
+   The start state never held for a frame anyone could see. An end-state
+   assertion cannot distinguish that from a working animation, so this
+   function asserts on the FRAMES INSTEAD OF THE OUTCOME.
+
+   WHY gateInMarkup IS READ OFF THE HTTP RESPONSE AND NOT OFF THE DOM. This
+   is the whole reason the function intercepts the document response at all.
+   js/reveal.js still sets data-reveal="on" itself, deliberately, so
+   document.documentElement carries it either way and a DOM read would pass
+   just as happily on the broken page as on the repaired one. Only the bytes
+   the server sent can tell the two apart. A gate keyed on the DOM would be
+   the probe-keying failure this repository has already shipped once.
+
+   The three readings together are what make it red-testable: remove the
+   server-side gate and gateInMarkup goes false AND hiddenAtFirstFrame goes
+   false; break css/motion.css and hiddenAtFirstFrame goes false; break
+   js/reveal.js and endsVisible goes false. */
+export async function entranceAnimation(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    /* Sampling starts before any page script has run: addInitScript is
+       evaluated on the fresh document, so the first rAF this schedules is
+       the first frame the document has, which is the frame the start state
+       either holds in or does not. A sampler installed any later would be
+       measuring after the thing it is trying to observe. */
+    await page.addInitScript(() => {
+      window.__entrance = [];
+      const poll = () => {
+        if (document.body) {
+          const els = [...document.body.querySelectorAll('[data-reveal]')].slice(0, 5);
+          if (els.length) window.__entrance.push(els.map(e => Number(getComputedStyle(e).opacity)));
+        }
+        if (performance.now() < 3000) requestAnimationFrame(poll);
+      };
+      requestAnimationFrame(poll);
+    });
+
+    let markup = '';
+    const response = await page.goto(url, { waitUntil: 'load' });
+    markup = await response.text();
+    /* Long enough for --dur-reveal (600ms) plus the stagger the last of the
+       five sampled elements can carry, plus the deferred script's own
+       arrival on a live install. 2200ms is measured headroom, not a guess:
+       the slowest of the eighteen converted pages settled by 1100ms. */
+    await page.waitForTimeout(2200);
+
+    const frames = await page.evaluate(() => window.__entrance ?? []);
+    const first = frames[0] ?? [];
+    const last = frames[frames.length - 1] ?? [];
+    return {
+      /* The <html ...> tag as the SERVER sent it. */
+      gateInMarkup: /<html[^>]*\sdata-reveal="on"/.test(markup),
+      noscriptFallback: /<noscript><style>\[data-reveal\]\{[^<]*opacity:1!important/.test(markup),
+      frames: frames.length,
+      hiddenAtFirstFrame: first.length > 0 && first.every(v => v < 0.01),
+      /* A frame caught part-way through the fade. Zero of these means the
+         element went from hidden to shown with no transition in between,
+         which is a snap, not an animation. */
+      fadeFrames: frames.filter(f => f.some(v => v > 0.001 && v < 0.999)).length,
+      endsVisible: last.length > 0 && last.some(v => v > 0.99),
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
+/* EVERY PHOTOGRAPH INSIDE THE MOTION LAYER ACTUALLY ARRIVED, asserted
+   directly rather than inferred from a height.
+
+   WHY THIS EXISTS SEPARATELY FROM layoutInvariants(). On 2026-08-20 two
+   photographs went missing from the live site (/epic/ and /newsletter/ at
+   390px) and layoutInvariants() did catch it -- as a main-height difference
+   of 256.5px and 456px. That is a true red with the wrong subject: it says
+   "this page is the wrong height", and a person reading it starts looking at
+   layout. It took a per-element diff and a network log to turn that into "a
+   photograph is missing". A missing photograph is user-visible on its own
+   terms and deserves a failure that says so.
+
+   It also covers what a height check structurally cannot: an image that fails
+   to load inside a container that is already sized by aspect-ratio, or beside
+   content taller than itself, costs the page no height at all and is
+   invisible to every box comparison in this harness.
+
+   ONE BROWSER FOR THE WHOLE SET, page per url: this is called with the full
+   converted-page list, and launching Chromium seventeen times to ask one
+   question per page is most of the runtime for none of the value.
+
+   THE SCROLL IS NOT OPTIONAL. These are loading="lazy" images below the fold;
+   a page that is never scrolled has a legitimate reason not to have fetched
+   them, and asserting on an unscrolled page would fail on correct pages. */
+export async function unloadedRevealImages(urls, { width = 390, height = 844 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const out = [];
+    for (const url of urls) {
+      const page = await browser.newPage({ viewport: { width, height } });
+      try {
+        await page.goto(url, { waitUntil: 'load' });
+        await page.evaluate(async () => {
+          const step = window.innerHeight;
+          for (let y = 0; y < document.body.scrollHeight; y += step) {
+            window.scrollTo(0, y);
+            await new Promise((r) => requestAnimationFrame(r));
+          }
+          window.scrollTo(0, document.body.scrollHeight);
+          await new Promise((r) => setTimeout(r, 250));
+        });
+        /* After the scroll, not during it: a lazy fetch started at the bottom
+           of the loop needs time to come back over the network, and this is
+           run against a live install rather than a local file. */
+        await page.waitForTimeout(1500);
+        const missing = await page.$$eval('[data-reveal] img', (imgs) => imgs
+          /* AN IMAGE THAT IS NOT RENDERED CANNOT BE A MISSING PHOTOGRAPH, and
+             leaving this out made the gate's first run red on the homepage
+             for a correct page: css/option-a.css:446 sets
+             .fp-hero__aside{display:none} at the narrow breakpoint, by design
+             ("an inset photo over a full-width picture just covers the
+             subject's face"), so the browser rightly never fetches it.
+
+             checkVisibility() and not a zero-area test, and the distinction
+             is the whole point: the epic-a defect this gate exists for
+             presents as an image that IS rendered, with a real 342x257 box
+             from its aspect-ratio, and no pixels in it. A zero-area filter
+             would have skipped exactly the case being caught. Opacity is
+             deliberately not passed as an option: every element here is
+             mid-reveal by nature and opacity 0 is its normal resting state
+             before it is scrolled to. */
+          .filter((i) => i.checkVisibility())
+          /* naturalWidth, not .complete: a decode that failed reports
+             complete true with naturalWidth 0, which is the same missing
+             photograph to a visitor. */
+          .filter((i) => !(i.complete && i.naturalWidth > 0))
+          .map((i) => (i.getAttribute('src') || '(no src)').split('/').pop().split('?')[0]));
+        out.push({ url, missing });
+      } finally {
+        await page.close();
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+/* THE MOTION LAYER'S INVENTORY, counted off the live page so it can be
+   compared against what this repository actually deploys.
+
+   WHY IT EXISTS. Every other reveal instrument here asks whether the elements
+   that ARE marked up animate correctly. None of them notices an element that
+   has quietly stopped being marked up at all. That is not hypothetical: 331 of
+   these attributes live on Elementor wrappers as Custom Attributes (Advanced ->
+   Attributes) and the rest are baked inside html() widgets' raw markup, so
+   deleting a widget and adding a replacement, or editing an HTML widget's
+   markup in the editor, silently drops the attribute. The page keeps working,
+   the suite stays green, and one element stops animating. Asked for by Paolo
+   on 2026-08-20 after exactly that question.
+
+   SCOPED TO <main>, because the header and footer are site-wide theme parts
+   rendered outside it (header.php opens <main> after the header location,
+   footer.php closes it before the footer location). Their reveals belong to
+   the theme parts' own gates, not to any one page's inventory.
+
+   LOOP DESCENDANTS COUNTED SEPARATELY, and this is what removes the need for
+   any hand-written exemption. A Loop Grid renders one template N times, so
+   content-a carries 205 in-loop reveals against 23 authored cards in its
+   static counterpart, which is precisely why that page is in EXCLUDED_PAGES
+   for every other comparison. Splitting on .elementor-loop-container lets the
+   authored part of every page, loop pages included, be compared exactly,
+   while the loop part gets the coarse non-zero check its N-fold repetition
+   can support.
+
+   THREE COUNTS AND NOT ONE. They fail differently and the difference is the
+   diagnosis: `reveal` is the animation itself, `group` is the stagger (lose it
+   and a row fires all at once instead of in sequence), `entrance` is the
+   above-the-fold choreography (lose it and the hero reveals off the scroll
+   observer instead of on load). */
+export async function revealInventory(urls, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const out = [];
+    for (const url of urls) {
+      const page = await browser.newPage({ viewport: { width, height } });
+      try {
+        await page.goto(url, { waitUntil: 'load' });
+        out.push({ url, ...await page.evaluate(() => {
+          const main = document.querySelector('main');
+          if (!main) return { reveal: null, group: null, entrance: null, inLoop: null, loops: null };
+          const inLoop = (el) => !!el.closest('.elementor-loop-container');
+          const all = [...main.querySelectorAll('[data-reveal]')];
+          return {
+            reveal: all.filter((el) => !inLoop(el)).length,
+            group: [...main.querySelectorAll('[data-reveal-group]')].filter((el) => !inLoop(el)).length,
+            entrance: [...main.querySelectorAll('[data-reveal-entrance]')].filter((el) => !inLoop(el)).length,
+            inLoop: all.filter(inLoop).length,
+            loops: main.querySelectorAll('.elementor-loop-container').length,
+          };
+        }) });
+      } finally {
+        await page.close();
+      }
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
+/* The same three counts, taken off an element tree this repository builds
+   rather than off a rendered page. Pure, so it is unit-tested directly.
+
+   COUNTED OFF JSON, WHICH IS SAFE HERE AND WOULD NOT BE OFF THE SOURCE FILE.
+   These modules carry long prose comments that mention data-reveal many times
+   over (js/reveal.js's contract, why an attribute sits where it does); a grep
+   of the .mjs would count the prose. JSON.stringify sees only the built
+   objects, so comments cannot reach it.
+
+   TWO SHAPES, ONE COUNT. The same attribute is written two ways depending on
+   where it lands: `data-reveal|rise` inside an Elementor _attributes string,
+   and `data-reveal="rise"` inside an html() widget's raw markup. Bare forms
+   with no value occur too (`data-reveal-group` in markup, `data-reveal-group|`
+   in _attributes). Matching the NAME and excluding a following name character
+   is what covers all four without four patterns, and the negative lookahead is
+   what stops `data-reveal` from also counting every `data-reveal-group`. An
+   earlier version counted the valued forms and then subtracted the group and
+   entrance totals, which double-corrected and undercounted every page. */
+export function treeRevealInventory(tree) {
+  const json = JSON.stringify(tree);
+  const count = (re) => (json.match(re) || []).length;
+  return {
+    reveal: count(/data-reveal(?![-\w])/g),
+    group: count(/data-reveal-group/g),
+    entrance: count(/data-reveal-entrance/g),
+  };
+}
+
+/* WHAT ELEMENTOR'S OWN ENTRANCE ANIMATIONS ACTUALLY DO on a rendered page,
+   measured rather than read off a stylesheet.
+
+   WHY THIS IS A LIVE MEASUREMENT AND NOT A STRING ASSERTION ON bridge.css.
+   The block at the end of css/bridge.css redefines the @keyframes Elementor
+   ships, so that a section Empower add through the editor after hand-off
+   animates like the rest of the site. Whether it WINS is a cascade question
+   with two ways to fail that a source assertion cannot see:
+
+     1. Elementor loads its animation CSS ON DEMAND, one file per animation
+        (fadeInUp.min.css, zoomIn.min.css), only when some element on the page
+        uses that animation. Two @keyframes of the same name is a
+        last-one-wins contest with no specificity involved, so if Elementor's
+        file ever landed after bridge.css the override would silently do
+        nothing and the stylesheet would still contain every rule a grep
+        would look for.
+     2. bridge.css also sets a duration on `.animated`, and because it loads
+        last, a bare selector there would beat Elementor's own
+        `.animated-slow`/`.animated-fast` and quietly disable the editor's
+        Animation Duration dropdown. Nothing about that is visible in either
+        stylesheet on its own; it only exists in the combination.
+
+   TRAVEL IS READ OFF THE MATRIX, NOT OFF THE KEYFRAME TEXT. The difference
+   this defends is between a flat 20px and 100% of the element's own height,
+   and the only honest way to know which one a browser is running is to
+   sample the transform while it runs. The fixture's containers are 400px
+   tall for exactly this reason; its own header records why. */
+export async function nativeAnimation(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.addInitScript(() => {
+      window.__na = [];
+      const poll = () => {
+        for (const el of document.querySelectorAll('[class*="zzp-"]')) {
+          const key = [...el.classList].find((c) => c.startsWith('zzp-'));
+          const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+          window.__na.push({ key, y: m.m42, h: el.getBoundingClientRect().height });
+        }
+        if (performance.now() < 12000) requestAnimationFrame(poll);
+      };
+      requestAnimationFrame(poll);
+    });
+    await page.goto(url, { waitUntil: 'load' });
+
+    /* EACH PROBE MUST BE SCROLLED TO, and this is not incidental setup.
+       Elementor's entrance animation is triggered on viewport entry: until
+       then the element carries `elementor-invisible` and no `.animated`
+       class at all, so its computed animation-duration reads 0s. The
+       fixture's three containers are 400px tall each, so the third is below
+       the fold on load. The first version of this function read the page
+       without scrolling and the Slow probe reported 0s, which the gate
+       correctly rejected -- as a bug in the measurement, not in bridge.css.
+       Sampling continues throughout, so each animation is caught while it
+       runs rather than after it has settled. */
+    for (const key of ['zzp-fadeinup', 'zzp-zoomin', 'zzp-slow']) {
+      await page.evaluate((k) => document.querySelector(`.${k}`)?.scrollIntoView({ block: 'center' }), key);
+      /* Longer than the slow probe's own 2s, so its duration is readable and
+         its travel has been sampled before the next scroll moves on. */
+      await page.waitForTimeout(2400);
+    }
+
+    const frames = await page.evaluate(() => window.__na ?? []);
+    const computed = await page.evaluate(() => {
+      const read = (sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const cs = getComputedStyle(el);
+        return { duration: cs.animationDuration, name: cs.animationName, easing: cs.animationTimingFunction };
+      };
+      /* The effective @keyframes for a name is the LAST one defined across
+         all sheets, which is precisely the thing at risk here, so the sheet
+         that supplied it is reported rather than just its content. */
+      const winner = (name) => {
+        let found = null;
+        for (const sheet of document.styleSheets) {
+          let rules;
+          try { rules = sheet.cssRules; } catch { continue; }
+          for (const rule of rules) {
+            if (rule.type === CSSRule.KEYFRAMES_RULE && rule.name === name) {
+              found = { sheet: (sheet.href || 'inline').split('/').pop().split('?')[0],
+                from: rule.cssRules[0]?.style.cssText ?? '' };
+            }
+          }
+        }
+        return found;
+      };
+      return {
+        fadeInUp: read('.zzp-fadeinup'), zoomIn: read('.zzp-zoomin'), slow: read('.zzp-slow'),
+        winningFadeInUp: winner('fadeInUp'), winningZoomIn: winner('zoomIn'),
+      };
+    });
+
+    const peak = (key) => {
+      const rows = frames.filter((f) => f.key === key);
+      return { travel: Math.round(Math.max(0, ...rows.map((f) => Math.abs(f.y))) * 10) / 10,
+        height: Math.round(Math.max(0, ...rows.map((f) => f.h))) };
+    };
+    return { ...computed, travel: { fadeInUp: peak('zzp-fadeinup'), slow: peak('zzp-slow') }, frames: frames.length };
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function checkVisibleWithoutJs(url, selector) {
   const browser = await chromium.launch();
   try {

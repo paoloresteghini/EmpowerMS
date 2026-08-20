@@ -7064,6 +7064,58 @@ body .wpautoterms-footer a:focus-visible{
   display:contents;
 }
 
+/* ---------- 64. the fellows ledger: give the bio link its underline back
+ *            ----------
+ * css/team-a.css's `.ta-ledger__link` is the anchor around a contributing
+ * fellow's name, added 2026-08-20 on Paolo's call after a link audit found
+ * that the five fellows' `person` singles existed and nothing on the site
+ * reached them. That file's own block carries the design reasoning; this one
+ * exists because the rule it wrote does not win.
+ *
+ * WHAT BEATS IT. Elementor's `frontend.min.css` (4.2.2 on this install)
+ * declares `.elementor a{box-shadow:none;text-decoration:none}`. That is
+ * 0,1,1 against `.ta-ledger__link`'s 0,1,0, so the underline is removed no
+ * matter what the page sheet says, and load order is irrelevant. Read off
+ * the live page rather than reasoned about: matching every rule in every
+ * stylesheet against the real element returned exactly three that touch
+ * text-decoration, and Elementor's is the only one that removes it.
+ *
+ * WHY THAT MATTERS MORE THAN IT LOOKS. The decision Paolo took was to link
+ * the NAME rather than the row, precisely so the link would be visible; a
+ * name that is clickable and looks like plain text is the silently-clickable
+ * outcome the row was rejected for, arrived at by accident. The screenshot
+ * after the first deploy showed exactly that: five names, no affordance.
+ *
+ * `.elementor a.ta-ledger__link` is 0,2,1 and wins on specificity. The
+ * `.elementor` ancestor is real here and was checked rather than assumed
+ * (`el.matches('.elementor a')` is true): the loop item's own wrapper
+ * carries it, `<div class="elementor elementor-20636 e-loop-item ...">`.
+ * Note this is the OPPOSITE of the situation inside the header, where block
+ * 63's display:contents means no `.elementor` ancestor survives and this
+ * pattern silently fails to match. In a loop item it survives, because
+ * nothing collapses the loop wrapper.
+ *
+ * EVERY LONGHAND THE SHORTHAND COVERS HAS TO MOVE HERE, not just the line.
+ * The first version of this block set `text-decoration-line` alone, on the
+ * reasoning that the page sheet's colour and thickness were uncontested.
+ * That was wrong, and the render said so: the underline came back at
+ * `text-decoration-color: rgb(255,255,255)` rather than the 45% mix
+ * css/team-a.css asks for. `text-decoration:none` is a SHORTHAND, so it sets
+ * line, colour, style and thickness together, and at 0,1,1 it outranks the
+ * page sheet on all four. A higher-specificity shorthand does not lose its
+ * longhands one at a time; it wins them all. So the three the design cares
+ * about are declared here, where they can win.
+ *
+ * `text-underline-offset` stays in css/team-a.css, and that is not an
+ * oversight: it is NOT part of the text-decoration shorthand, so Elementor's
+ * rule never touches it and the page sheet holds it uncontested. Colour,
+ * hover, focus ring and transition stay there too, for the same reason. */
+.elementor a.ta-ledger__link{
+  text-decoration-line:underline;
+  text-decoration-thickness:1px;
+  text-decoration-color:color-mix(in oklab,currentColor 45%,transparent);
+}
+
 /* ---------- 71. header search: the overlay panel, closed-by-default and
  *            the 400px override ----------
  * Block number 71, not the next free one. The plan reserved 61 for this
@@ -7421,4 +7473,110 @@ body .wpautoterms-footer a:focus-visible{
  * rule above (:6411). */
 .elementor .srs-card:hover .srs-card__title .elementor-heading-title > a{
   color:var(--em-orange-ink);
+}
+
+/* ==========================================================================
+   ELEMENTOR'S OWN ENTRANCE ANIMATIONS, TUNED TO THIS BUILD'S MOTION.
+   Added 2026-08-20, for the hand-off rather than for this conversion.
+
+   WHY THIS BLOCK EXISTS. After launch this repository stops being the source
+   of truth: Empower maintain the site in Elementor, and a new section is
+   added through the editor, not through elementor/pages/. The editor offers
+   Advanced -> Motion Effects -> Entrance Animation, which is what somebody
+   will reach for, and it is the ONLY animation mechanism visible in the UI.
+   This build's own reveal layer is not: it rides on a custom attribute
+   (`data-reveal|rise` in Advanced -> Attributes) that nothing in the
+   interface explains and nobody will guess.
+
+   So the two mechanisms have to agree, and out of the box they do not. Read
+   off the install (elementor 4.2.2, assets/lib/animations/animations.min.css):
+
+       @keyframes fadeInUp{from{opacity:0;transform:translate3d(0,100%,0)}...}
+       .animated{animation-duration:1.25s}
+
+   100% is the element's OWN HEIGHT, so a 400px section slides 400px, over
+   1.25s, on the browser default easing. The house motion is 20px over
+   --dur-reveal (600ms) on --ease-entrance. Left alone, the first section
+   Empower add would travel twenty times further than everything around it
+   and land on a different curve. Nobody would call that broken; it would
+   just look wrong, with no way back to a cause.
+
+   Redefining the keyframes rather than asking anyone to remember numbers:
+   after this, picking "Fade In Up" in the editor IS the house animation.
+   That is the whole point of doing it here instead of writing it down.
+
+   WHY css/bridge.css AND NOT css/motion.css. Three reasons, all of which
+   matter after hand-off:
+     - bridge.css is enqueued UNCONDITIONALLY on every page (functions.php),
+       while motion.css is per-slug from empower_page_styles(). A brand new
+       page Empower create is in neither that map nor this repository, so
+       motion.css will not load on it; bridge.css will.
+     - bridge.css is destination-only. css/ is the protected static build,
+       and this concerns a mechanism the static build does not have.
+     - it loads last, which is what lets a plain (0,1,0) selector here beat
+       Elementor's own identical-specificity rules.
+
+   NOT COVERED, DELIBERATELY:
+     - prefers-reduced-motion. Elementor already ships
+       `@media (prefers-reduced-motion:reduce){.animated{animation:none!important}}`
+       in the same file, so this needs nothing. Checked, not assumed.
+     - the *Big variants (fadeInUpBig and friends). Somebody choosing those
+       is asking for a large movement on purpose; overriding them would be
+       overriding an intention rather than a default.
+     - the stagger. This build's own reveal layer computes it per group at
+       runtime (js/reveal.js, --reveal-i * 70ms). Elementor exposes a manual
+       per-element Animation Delay instead, and no stylesheet can turn one
+       into the other. A row of new cards needs delays set by hand: 0, 70,
+       140, and so on. ========================================================== */
+
+/* The four the editor's Fading group offers that a section is likely to use.
+   Values are this build's own, from css/motion.css:18-23. */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes fadeInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:none}}
+@keyframes fadeInLeft{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes fadeInRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+
+/* fadeIn is opacity-only in both vocabularies, so this restates rather than
+   changes it. Kept explicit so the set reads as a whole and a future
+   Elementor release cannot quietly redefine one member of it. */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* zoomIn IS this build's photo reveal, and that is a mapping rather than a
+   translation. css/motion.css:23 gives [data-reveal="clip"] a clip-path wipe
+   plus scale(1.04), and it is used on photographs only. Elementor has no
+   clip-path entrance at all, and "Zoom In" is both the nearest thing in the
+   menu and an honest description of what this does. Somebody putting a
+   photograph in a new section and choosing Zoom In gets the same reveal the
+   photographs beside it already have. */
+@keyframes zoomIn{
+  from{opacity:0;clip-path:inset(0 0 14% 0);transform:scale(1.04)}
+  to{opacity:1;clip-path:inset(0 0 0 0);transform:none}
+}
+
+/* Duration and easing.
+
+   THE :not() PAIR IS DEFENCE IN DEPTH, NOT LOAD-BEARING, and this comment
+   said the opposite until it was measured. The claim was that Elementor's
+   Animation Duration control adds `.animated-slow` at (0,1,0), exactly as
+   specific as a bare `.animated` here, so that a bare selector loading later
+   would beat it and silently disable the dropdown. That came from a grep
+   whose match window cut the front off the real selector. Elementor's rule is
+   actually:
+
+       .animated.animated-slow{animation-duration:2s}
+
+   which is (0,2,0) and beats a bare `.animated` on specificity whatever the
+   load order. Verified by removing the :not() pair from the served stylesheet
+   in flight and re-measuring: the Slow probe still reported 2s.
+
+   Kept anyway, because it costs nothing and it is the difference between
+   relying on Elementor's selector staying (0,2,0) and not caring. If that
+   ever becomes `.animated-slow` on its own, this rule already does the right
+   thing. The gate covering it asserts the OUTCOME (the dropdown still
+   produces 2s), which is what matters and is true either way. */
+.animated:not(.animated-slow):not(.animated-fast){
+  animation-duration:var(--dur-reveal, 600ms);
+}
+.animated{
+  animation-timing-function:var(--ease-entrance, cubic-bezier(.16,.84,.44,1));
 }

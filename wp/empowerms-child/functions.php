@@ -511,6 +511,83 @@ function empower_module_script_handles() {
 }
 
 /**
+ * Whether this request loads css/motion.css.
+ *
+ * Derived from empower_page_styles(), never from a second list. The reveal
+ * gate below has to know the answer BEFORE wp_enqueue_scripts has run
+ * (language_attributes() is emitted in header.php on the line above <head>,
+ * and enqueues happen inside wp_head()), so wp_style_is() cannot be asked.
+ * Reading the same map the enqueue reads is what keeps the two from drifting:
+ * a page added to that map gets the gate for free, and a page removed from it
+ * loses the gate in the same edit.
+ *
+ * @return bool
+ */
+function empower_page_has_motion() {
+	return in_array( 'motion', empower_page_styles()[ empower_style_key() ] ?? array(), true );
+}
+
+/**
+ * THE REVEAL GATE, IN THE SERVER MARKUP RATHER THAN IN JAVASCRIPT, and this
+ * is the repair for a defect measured on the live install on 2026-08-20:
+ * NO CONVERTED PAGE'S HERO EVER ANIMATED.
+ *
+ * WHAT WAS BROKEN. css/motion.css nests every hidden start-state under
+ * [data-reveal="on"], and js/reveal.js set that attribute as its first
+ * statement. js/reveal.js is a deferred script, so on this install it ran
+ * AFTER first paint, every time:
+ *
+ *     /person/kienna-horn/   first paint 392ms   gate set 408ms
+ *     /            (home)    first paint 268ms   gate set 304ms
+ *
+ * So the page painted fully visible; only then did opacity:0 apply; and
+ * js/reveal.js adds .is-revealed two frames (~30ms) after that. The start
+ * state never held for a frame the user could see, and a frame-by-frame read
+ * of the hero's computed opacity is 1.00 for the whole load. Scroll reveals
+ * further down the page were unaffected, because by the time they intersect
+ * the start state has long since applied, which is why the symptom read as
+ * "some pages animate and some do not" rather than as a single broken thing.
+ *
+ * THE FIX IS ONE ATTRIBUTE, MOVED. Emitting data-reveal="on" on <html> puts
+ * the start state in the first paint, and leaves js/reveal.js doing exactly
+ * what it was written to do: assign the stagger indices and add .is-revealed.
+ * js/reveal.js still sets the attribute itself and that is deliberately left
+ * alone -- setting it twice to the same value is free, and the script stays
+ * correct on any page this filter does not cover.
+ *
+ * THE PROGRESSIVE-ENHANCEMENT CONTRACT IS PRESERVED, NOT TRADED AWAY.
+ * js/reveal.js's own header states the contract: if the script never loads,
+ * nothing is ever hidden. Hard-coding the gate would break exactly that, so
+ * the <noscript> block below restores it. It ships in the markup beside the
+ * gate rather than in css/motion.css because css/ is the protected static
+ * build, and because a rule inside <noscript> cannot be defeated by the load
+ * order of a stylesheet that is not there.
+ *
+ * WHAT IT COSTS. The hero is now genuinely invisible between first paint and
+ * js/reveal.js running -- about 20ms on the measurements above -- and then
+ * fades in over --dur-reveal. That is what an entrance animation is; the
+ * alternative is the animation not existing, which is the state being fixed.
+ */
+add_filter( 'language_attributes', function ( $output ) {
+	if ( ! empower_page_has_motion() ) {
+		return $output;
+	}
+	return $output . ' data-reveal="on"';
+} );
+
+add_action( 'wp_head', function () {
+	if ( ! empower_page_has_motion() ) {
+		return;
+	}
+	/* !important on every property, because css/motion.css's own start-states
+	   are the rules being overridden and they are equally specific. The
+	   selector deliberately does not mention .is-revealed: with no script
+	   there is no such class, and matching [data-reveal] alone is what makes
+	   the page render as though this layer had never been added. */
+	echo "<noscript><style>[data-reveal]{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}</style></noscript>\n";
+}, 1 );
+
+/**
  * The motion layer. Both files ship together or neither does: css/motion.css
  * hides every [data-reveal] element, and js/reveal.js is what reveals them.
  * Enqueueing the stylesheet without the script leaves the page blank below the

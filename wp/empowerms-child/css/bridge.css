@@ -2254,7 +2254,7 @@
  * this install, and the standing instruction is not to ship a page that
  * depends on it.
  *
- * podcast-a's repair (bridge.css:1297) moves the "last of several siblings"
+ * podcast-a's repair (bridge.css:1313) moves the "last of several siblings"
  * logic up to the WRAPPERS with `:not(:last-child)`, on the argument that
  * after conversion the widgets are the siblings the build's rule was written
  * about. That argument holds only while each widget contains exactly its own
@@ -2298,9 +2298,9 @@
  * same symptom (those two wrappers ARE the positioned box, so they already had
  * a definite height; their defect was class-on-wrapper and their repair targets
  * the <img>):
- *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:413-419
- *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:1999-2001
- *   `.ta-hero__media`                          team-a,      bridge.css:2181-2183
+ *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:429-435
+ *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2015-2017
+ *   `.ta-hero__media`                          team-a,      bridge.css:2197-2199
  *   (line ranges read off the file today; the repricing document cites the
  *   first two as 403-419 and 1999-2000, which are the comment start and the
  *   selector list without their declaration.)
@@ -2348,7 +2348,7 @@
  * WHY `height:100%` AND NOT `display:contents`, evaluated per selector and
  * decided by measurement rather than by which precedent was reached for first.
  * Two techniques are on record for this category: `display:contents` on the
- * wrapper (the homepage's, bridge.css:413-419) and `height:100%` on the
+ * wrapper (the homepage's, bridge.css:429-435) and `height:100%` on the
  * wrapper (solutions-b's and team-a's). BOTH WERE DEPLOYED AND MEASURED HERE.
  * Swapping this one declaration for `display:contents` gives census shared 30
  * diffs 0 and box sweep shared 64 diffs 0 at 1440 AND at 390, identical to
@@ -3315,7 +3315,7 @@
  * is 0,1,0 and the kit's `.elementor-kit-20547 button` is 0,1,1
  * (post-20547.css, 2698 bytes, fetched and read rather than assumed: its only
  * control rule covers button, input[type=button], input[type=submit] and
- * .elementor-button, and nothing else). bridge.css:814-844 restates .em-btn
+ * .elementor-button, and nothing else). bridge.css:830-860 restates .em-btn
  * base, --md, --lg and --inverse for native buttons, and says at :811-813 that
  * those were the only modifiers a native button used at the time. That was
  * true then. This page is the first native use of --primary, so nothing in
@@ -3324,7 +3324,7 @@
  * THE SIZE HALF IS PAOLO'S DECISION, taken 2026-08-18: restore 19px. It is a
  * THREE-way contest and the third party is ours. css/site.css:66
  * `.em-btn--primary.em-btn--lg{font-size:19px}` (0,2,0) is one of the
- * reversible WCAG overrides and beats the kit's 15px; bridge.css:836-839's
+ * reversible WCAG overrides and beats the kit's 15px; bridge.css:852-855's
  * `.elementor button.em-btn--lg{font-size:var(--fs-body)}` (0,2,1) then beats
  * BOTH and rendered 17px. So an accessibility decision was being undone by
  * this project's own bridge rather than by Elementor, which is why it needed

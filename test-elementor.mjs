@@ -2229,15 +2229,19 @@ test('deployThemePart refuses a location that is not header or footer', async ()
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
 });
 
-/* The search results template is the build's first theme part that is neither
-   header nor footer. 'archive' here is Elementor Pro's own render LOCATION,
-   which Search_Results inherits from Archive, and it is what
-   wp/empowerms-child/search.php already asks for at line 12. The document
-   TYPE is 'search-results' and the two are deliberately different strings;
-   see search-archive.mjs for which is written where. */
-test('deployThemePart accepts the archive location and still refuses an invented one', async () => {
-  assert.ok(THEME_PART_LOCATIONS.includes('archive'),
-    'THEME_PART_LOCATIONS does not include archive, so the search results part can never deploy');
+/* The search results template is the build's first theme part where the
+   Elementor document type and the Theme Builder render location are not
+   the same string (see the comment above THEME_PART_LOCATIONS for why
+   header and footer never exposed this). deployThemePart()'s `location`
+   parameter reaches deployElements() as the value written to
+   _elementor_template_type, so what belongs in THEME_PART_LOCATIONS is
+   Search_Results' document type, 'search-results', not the 'archive'
+   render location it inherits from Archive. wp/empowerms-child/search.php
+   still asks for the 'archive' location; that string is unaffected by this
+   array. search-archive.mjs writes the document type separately. */
+test('deployThemePart accepts the search-results document type and still refuses an invented one', async () => {
+  assert.ok(THEME_PART_LOCATIONS.includes('search-results'),
+    'THEME_PART_LOCATIONS does not include search-results, so the search results part can never deploy');
   await assert.rejects(
     () => deployThemePart(1, [], 'sidebar'),
     /location must be one of/,

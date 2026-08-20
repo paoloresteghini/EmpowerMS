@@ -2628,14 +2628,15 @@ test('the header carries the mobile nav and its toggle', () => {
   assert.match(json, /id=\\"mobile-nav\\"/);
 });
 
-test('the header takes exactly three html widgets, and they are the named three', () => {
-  /* The spec sanctions a fourth exception for the nav, the actions and the
+test('the header takes exactly four html widgets, and they are the named four', () => {
+  /* The spec sanctions four exceptions: the nav, the actions, the search
+     panel (added 2026-08-20, Task 2 of the header-search plan) and the
      mobile nav. A fifth html widget here is scope drift and should fail
      loudly rather than be noticed later by eye. */
   const json = JSON.stringify(headerPart());
   const htmlWidgets = json.match(/"widgetType":"html"/g) || [];
-  assert.equal(htmlWidgets.length, 3);
-  for (const marker of ['em-header__nav', 'em-header__actions', 'em-mobilenav']) {
+  assert.equal(htmlWidgets.length, 4);
+  for (const marker of ['em-header__nav', 'em-header__actions', 'em-search', 'em-mobilenav']) {
     assert.ok(json.includes(marker), `the header part is missing ${marker}`);
   }
 });
@@ -2654,6 +2655,70 @@ test('the header markup matches the static partial, string for string', () => {
     assert.ok(partial.includes(copy), `"${copy}" is not in src/_shared/header-2.html`);
     assert.ok(JSON.stringify(headerPart()).includes(copy), `"${copy}" is not in the header part`);
   }
+});
+
+/* The overlay exists ONLY in the Elementor build. src/_shared/header-2.html
+   still carries a decorative button with no form, because js/ and src/ are
+   the protected static build (functions.php:479). That divergence is the
+   whole reason this test is structural rather than a comparison against the
+   static partial: there is nothing on the static side to compare to, and a
+   fidelity-shaped test here would either fail forever or quietly stop
+   checking anything. */
+test('the header carries a search panel with a native GET form', () => {
+  const widgets = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'widget') widgets.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(headerPart());
+
+  const panel = widgets.find(w => w.widgetType === 'html' && /class="em-search"/.test(w.settings.html ?? ''));
+  assert.ok(panel, 'no html widget in the header carries .em-search');
+
+  const markup = panel.settings.html;
+  assert.match(markup, /<form[^>]+method="get"/, 'the search panel form is not a GET form');
+  assert.match(markup, /<form[^>]+action="\/"/, 'the search panel form does not post to the site root');
+  assert.match(markup, /<form[^>]+role="search"/, 'the search panel form has no role="search"');
+  assert.match(markup, /name="s"/, 'the search input is not named s, so WordPress will never see the query');
+  assert.match(markup, /id="site-search"/, 'the panel has no id for aria-controls to point at');
+  assert.match(markup, /<label[^>]+for="site-search-input"/, 'the search input has no label');
+  assert.match(markup, /type="submit"/, 'the form has no submit control, so it cannot be used without JavaScript');
+});
+
+/* SearchWP Live Ajax Search is active and enabled on the install
+   (searchwp_live_search_settings: enable-live-search true). Left alone it
+   binds itself to any input[name="s"] and injects its own results pane, its
+   own markup and its own stylesheet into our header. data-swplive="false"
+   is the plugin's own opt-out, read from its shipped JavaScript
+   (assets/javascript/dist/script.js) rather than from its documentation.
+   This assertion is what stops the opt-out being lost in a later edit
+   without anything reporting it: the failure mode is a third party's
+   dropdown appearing in the most-seen component on the site. */
+test('the header search input opts out of SearchWP Live Ajax Search', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the search input does not carry data-swplive="false"');
+});
+
+/* The button was <button type="button"> with an aria-label and nothing else
+   from Phase 2A until 2026-08-20. A control that toggles a panel needs to
+   say so, and the two attributes have to agree with the panel's real id or
+   the relationship exists only in the markup's intention.
+
+   aria-expanded="true", not "false": every other trigger in the header
+   ships expanded, with its panel in normal flow, and JS is what closes it
+   on load (see header.mjs's own comment on withSearchControl for the
+   header-2.html line numbers and js/nav.js:12-13). This is also what keeps
+   the search button inside 'the header part keeps the no-JavaScript
+   contract' below, rather than being the one trigger in the header that
+   is exempt from it. */
+test('the header search button is a real disclosure control', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /class=\\"em-header__search\\"[^>]*aria-expanded=\\"true\\"/,
+    'the search button has no aria-expanded, so it is still decoration');
+  assert.match(markup, /aria-controls=\\"site-search\\"/,
+    'the search button does not point at the panel it controls');
 });
 
 test('the converted page carries the chrome sections in order', () => {

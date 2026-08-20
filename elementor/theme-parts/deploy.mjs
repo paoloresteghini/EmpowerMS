@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* The committed way to redeploy the header, footer and search results Theme
- * Builder parts.
+ * Builder parts, and the loop item card the search results archive points
+ * its grid at.
  *
  * Before this file, README.md's own instruction ("A nav change means
  * editing that static partial and redeploying it through
@@ -32,10 +33,10 @@
  * from a previous run.
  *
  * Usage:
- *   node elementor/theme-parts/deploy.mjs                  # every part
- *   node elementor/theme-parts/deploy.mjs header            # header only
- *   node elementor/theme-parts/deploy.mjs footer            # footer only
- *   node elementor/theme-parts/deploy.mjs search-results     # search only
+ *   node elementor/theme-parts/deploy.mjs                 # every part
+ *   node elementor/theme-parts/deploy.mjs header           # header only
+ *   node elementor/theme-parts/deploy.mjs footer           # footer only
+ *   node elementor/theme-parts/deploy.mjs search-results   # card, then archive
  *
  * Reads install coordinates from the environment via wpe.mjs/install.mjs,
  * the same as every other script that talks to the install (see README.md,
@@ -44,7 +45,8 @@
 import { headerPart, HEADER_POST_ID } from './header.mjs';
 import { footerPart, FOOTER_POST_ID } from './footer.mjs';
 import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './search-archive.mjs';
-import { deployThemePart, setConditions } from '../deploy.mjs';
+import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './search-result-item.mjs';
+import { deployThemePart, deployLoopItem, setConditions } from '../deploy.mjs';
 import { flushPageCache } from '../../fidelity.mjs';
 
 /* Keyed by the exact document type string deployThemePart()'s third
@@ -58,7 +60,42 @@ const PARTS = {
   'search-results': { postId: SEARCH_ARCHIVE_POST_ID, build: searchArchivePart, conditions: SEARCH_ARCHIVE_CONDITIONS },
 };
 
+/* The archive's Loop Grid (search-archive.mjs) points at
+ * SEARCH_RESULT_ITEM_POST_ID by id, so deploying the archive without ever
+ * having written the card leaves a live grid pointing at an empty
+ * elementor_library post. Nothing in this file called deployLoopItem() for
+ * it before this fix: searchResultItem() had no caller outside
+ * test-elementor.mjs, which is exactly how the gap went unnoticed until a
+ * whole-branch review found it.
+ *
+ * deployLoopItem(), unlike deployThemePart(), writes the card straight
+ * through: a loop item's type is 'loop-item', not a Theme Builder location,
+ * so it never goes through deployThemePart() or setConditions(). That also
+ * means it is quieter than the other two deploys by nature: there is no
+ * condition to assign and no readback to confirm assignment, unlike
+ * setConditions() (below), which exit(1)s if a theme part comes back
+ * unassigned. Nothing here catches a card that silently failed to write,
+ * which is worth naming rather than leaving implicit.
+ *
+ * This is deliberately scoped to the search result card only. The build's
+ * other loop items (posts 20572 and 20589, content-a's four, team-a's) have
+ * no committed deploy path either, and this task is not fixing those: the
+ * asymmetry is scope, not an oversight the next person should have to
+ * rediscover. */
+async function redeployLoopItem() {
+  console.log(`Deploying search-result-item (post ${SEARCH_RESULT_ITEM_POST_ID})...`);
+  await deployLoopItem(SEARCH_RESULT_ITEM_POST_ID, searchResultItem());
+  console.log('search-result-item deployed.');
+}
+
 async function redeployPart(name) {
+  /* The card has to exist before the archive that references it, so a run
+   * that dies partway through never leaves a live grid pointing at an empty
+   * template. */
+  if (name === 'search-results') {
+    await redeployLoopItem();
+  }
+
   const { postId, build, conditions } = PARTS[name];
   console.log(`Deploying ${name} (post ${postId})...`);
   await deployThemePart(postId, build(), name);

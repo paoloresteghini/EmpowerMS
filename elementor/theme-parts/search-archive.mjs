@@ -101,6 +101,7 @@ export function searchArchivePart() {
             text: 'Add Your Heading Text Here',
             tag: 'h1',
             cssClass: 'srs-head__title',
+            _element_id: 'srs-head-title',
             __dynamic__: { title: dynamicTag('archive-title') },
           }),
           /* No dynamic tag reads $wp_query->found_posts (see

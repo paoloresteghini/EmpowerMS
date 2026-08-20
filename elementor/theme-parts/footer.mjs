@@ -77,6 +77,9 @@ export const footerPart = () => [
       container({ cssClass: 'em-footer__bottom', content_width: 'full' }, [
         text({ markup: '<p>© Empower Mississippi</p>', cssClass: 'em-footer__legal' }),
         text({ markup: '<p>741 Avignon Dr., Suite C &nbsp;|&nbsp; Ridgeland, MS 39157</p>' }),
+        /* The build credit, carrying the same class the static partial uses so
+           css/site.css styles it identically on the converted footer. */
+        text({ markup: '<p><a href="https://paor.co/thinktank">Created by PaoloR</a></p>', cssClass: 'em-footer__credit' }),
       ]),
     ]),
   ]),

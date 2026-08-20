@@ -381,9 +381,16 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `wp/empowerms-child/functions.php`
 - Test: `test-elementor.mjs`
 
+> **CORRECTED 2026-08-20, after Task 2 was implemented.** This task's script was
+> written assuming the panel ships closed (`hidden`, `aria-expanded="false"`). It does
+> not. `test-elementor.mjs:2576` enforces that every header panel ships expanded and
+> the script closes it at load, and Task 2 was implemented that way. The script below
+> has been corrected to close at load rather than to un-hide. It also now sets a second
+> root attribute, `data-search-open`, which is the state hook Task 4's CSS keys on.
+
 **Interfaces:**
-- Consumes: the DOM contract from Task 2: `.em-header__search` (the button), `#site-search` (the panel), `#site-search-input` (the input).
-- Produces: the script sets `[data-search="on"]` on `document.documentElement`, which is the gate `bridge.css` block 61 (Task 4) keys its closed-by-default styles off. Enqueued as handle `empower-search`.
+- Consumes: the DOM contract from Task 2: `.em-header__search` (the button, shipping `aria-expanded="true"`), `#site-search` (the panel, shipping open with no `hidden` attribute), `#site-search-input` (the input).
+- Produces: the script sets `[data-search="on"]` on `document.documentElement` at load, which is the gate `bridge.css` block 61 (Task 4) keys its closed-by-default styles off, and toggles `[data-search-open]` on the same element, which is the open-state hook. Two attributes, both on the root, so no selector in block 61 depends on where the panel sits in the box tree. Enqueued as handle `empower-search`.
 
 - [ ] **Step 1: Confirm `theme-js/` will actually reach the install**
 
@@ -499,17 +506,19 @@ const input = document.getElementById('site-search-input');
 if (button && panel && input) {
   doc.setAttribute('data-search', 'on');
 
-  // The markup ships the panel with `hidden` so that a no-JavaScript render
-  // is not a permanently-open panel... except that it must NOT stay hidden
-  // in that case. So `hidden` is removed here and the closed state becomes
-  // CSS's job from this point on. Removing it is safe precisely because we
-  // have just proved JavaScript runs.
-  panel.hidden = false;
+  // The panel ships OPEN in the markup, with no `hidden` attribute and with
+  // the button at aria-expanded="true", because that is this build's
+  // no-JavaScript contract and test-elementor.mjs:2576 enforces it. So the
+  // script's job at load is to CLOSE it, exactly as js/nav.js:12-13 does for
+  // the mobile nav. Setting the attribute here rather than in the markup is
+  // what keeps the panel reachable when this file fails to load.
+  button.setAttribute('aria-expanded', 'false');
 
   const isOpen = () => button.getAttribute('aria-expanded') === 'true';
 
   const open = () => {
     button.setAttribute('aria-expanded', 'true');
+    doc.setAttribute('data-search-open', '');
     // focus() after the attribute flip, not before: while the panel is still
     // closed it is display:none and focus() on a hidden element is a no-op
     // that reports no error.
@@ -518,6 +527,7 @@ if (button && panel && input) {
 
   const close = ({ restoreFocus = true } = {}) => {
     button.setAttribute('aria-expanded', 'false');
+    doc.removeAttribute('data-search-open');
     if (restoreFocus) button.focus();
   };
 
@@ -641,18 +651,42 @@ sed -n '225,245p' css/site.css
 
 - [ ] **Step 3: Write the block**
 
-Follow the file's own conventions exactly: a `/* ---------- N. TITLE ---------- */` header, prose explaining what was measured and why the selector is shaped as it is, and file:line citations that land on real lines. Do not use a child combinator or a `:last-child`-family selector to reach the panel: it is a widget inside a container, and any selector keyed on sibling position breaks when Elementor changes the box tree. (`>` is not banned outright, block 60 uses one deliberately; what is banned is depending on position.)
+Follow the file's own conventions exactly: a `/* ---------- N. TITLE ---------- */`
+header, prose explaining what was measured and why the selector is shaped as it is, and
+file:line citations that land on real lines.
 
-The block needs to cover: the panel closed by default once `[data-search="on"]` is set; the panel open when the button's `aria-expanded="true"`; the visually-hidden label; the input and submit sizing; and the 400px override that keeps the button reachable.
-
-Key the open state off the button's own attribute via the root, not off a class the script adds, so the accessible state and the visual state cannot disagree:
+**The state hooks are settled and are both on the root element**, decided when Task 2
+landed so that no selector here depends on where the panel sits in the Elementor box
+tree. `wp/empowerms-child/theme-js/search.js` sets `data-search="on"` on
+`document.documentElement` at load, and adds or removes `data-search-open` on the same
+element as the panel opens and closes. So:
 
 ```css
-:root[data-search="on"] .em-search{ display:none; }
-:root[data-search="on"] .em-header__search[aria-expanded="true"] ~ * .em-search{ /* wrong: position-dependent */ }
+:root[data-search="on"] .em-search{ /* closed */ }
+:root[data-search="on"][data-search-open] .em-search{ /* open */ }
 ```
 
-That second selector is shown as the shape to avoid. The panel is not a sibling of the button in the Elementor box tree and will not be. Use a root-level state attribute the script also sets, or key the panel's own attribute. Decide which when you can see the rendered box tree, and write the reason into the comment.
+Do NOT reach for the button's `aria-expanded` in a selector that has to travel from the
+button to the panel. They are not siblings in the Elementor box tree and will not
+become siblings. An earlier draft of this plan printed
+`.em-header__search[aria-expanded="true"] ~ * .em-search` as an example of what NOT to
+write; it is unusable and is recorded here only so nobody reinvents it.
+
+`>` is not banned: block 60 uses a child combinator deliberately. What is banned is
+depending on sibling POSITION, which is what breaks when a target is a widget rather
+than a container.
+
+The block needs to cover: the panel closed by default once `[data-search="on"]` is set;
+the panel open under `[data-search-open]`; the visually-hidden label; the input and
+submit sizing; and the 400px override that keeps the button reachable.
+
+**Note the flash, and say so in the comment.** Because the panel ships open for the
+no-JavaScript contract, there is a brief moment on every page load before the script
+sets `data-search="on"` where the panel is visible. That is the same cost
+`js/dropdown.js` and `js/nav.js` already pay, and it is the price of the contract that
+`test-elementor.mjs:2576` enforces. It is a known consequence, not a defect to design
+around by hiding the panel unconditionally, which would make it unreachable without
+JavaScript.
 
 - [ ] **Step 4: Verify the citations**
 

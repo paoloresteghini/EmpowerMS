@@ -88,7 +88,7 @@ export const PAGE_REGISTER = [
   {
     name: 'final',
     envVar: 'HOME_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/final/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/',
     staticFile: 'dist/final.html',
     minShared: 40,
     minBoxes: 50,
@@ -131,7 +131,7 @@ export const PAGE_REGISTER = [
   {
     name: 'what-we-do-a',
     envVar: 'WHAT_WE_DO_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/what-we-do-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/what-we-do/',
     staticFile: 'dist/what-we-do-a.html',
     minShared: 10,
     minBoxes: 40,
@@ -172,7 +172,7 @@ export const PAGE_REGISTER = [
   {
     name: 'solutions-b',
     envVar: 'SOLUTIONS_B_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/solutions-b/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/solutions/',
     staticFile: 'dist/solutions-b.html',
     minShared: 14,
     minBoxes: 39,
@@ -221,7 +221,7 @@ export const PAGE_REGISTER = [
   {
     name: 'capitol-a',
     envVar: 'CAPITOL_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/capitol-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/capitol-chat/',
     staticFile: 'dist/capitol-a.html',
     minShared: 9,
     minBoxes: 39,
@@ -288,7 +288,7 @@ export const PAGE_REGISTER = [
   {
     name: 'team-a',
     envVar: 'TEAM_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/team-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/team/',
     staticFile: 'dist/team-a.html',
     minShared: 13,
     minBoxes: 35,
@@ -364,7 +364,7 @@ export const PAGE_REGISTER = [
   {
     name: 'who-we-are-a',
     envVar: 'WHO_WE_ARE_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/who-we-are-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/who-we-are/',
     staticFile: 'dist/who-we-are-a.html',
     minShared: 16,
     minBoxes: 39,
@@ -425,7 +425,7 @@ export const PAGE_REGISTER = [
   {
     name: 'mail-a',
     envVar: 'MAIL_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/mail-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/newsletter/',
     staticFile: 'dist/mail-a.html',
     minShared: 11,
     minBoxes: 38,
@@ -487,7 +487,7 @@ export const PAGE_REGISTER = [
   {
     name: 'amb-a',
     envVar: 'AMB_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/amb-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/ambassadors/',
     staticFile: 'dist/amb-a.html',
     minShared: 12,
     minBoxes: 43,
@@ -560,7 +560,7 @@ export const PAGE_REGISTER = [
   {
     name: 'epic-a',
     envVar: 'EPIC_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/epic-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/epic/',
     staticFile: 'dist/epic-a.html',
     minShared: 17,
     minBoxes: 42,
@@ -640,7 +640,7 @@ export const PAGE_REGISTER = [
   {
     name: 'give-c',
     envVar: 'GIVE_C_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/give-c/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/donate/',
     staticFile: 'dist/give-c.html',
     minShared: 14,
     minBoxes: 41,
@@ -733,7 +733,7 @@ export const PAGE_REGISTER = [
   {
     name: 'team-bio',
     envVar: 'TEAM_BIO_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/team-bio/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/grant-callen/',
     staticFile: 'dist/team-bio.html',
     minShared: 9,
     minBoxes: 37,
@@ -826,7 +826,7 @@ export const PAGE_REGISTER = [
   {
     name: 'safety',
     envVar: 'SAFETY_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/safety/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/public-safety/',
     staticFile: 'dist/safety.html',
     minShared: 26,
     minBoxes: 39,
@@ -936,7 +936,7 @@ export const PAGE_REGISTER = [
   {
     name: 'work',
     envVar: 'WORK_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/work-2/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/meaningful-work/',
     staticFile: 'dist/work.html',
     minShared: 28,
     minBoxes: 39,
@@ -1036,7 +1036,7 @@ export const PAGE_REGISTER = [
   {
     name: 'education',
     envVar: 'EDUCATION_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/education/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/quality-education/',
     staticFile: 'dist/education.html',
     minShared: 29,
     minBoxes: 39,
@@ -1208,14 +1208,14 @@ export const PAGE_REGISTER = [
 export const EXCLUDED_PAGES = [
   {
     name: 'podcast-a',
-    exampleUrl: 'https://empv2.wpenginepowered.com/podcast-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/podcast/',
     reason: 'box sweep finds 9 permanent anchor-key differences (66 real episodes vs 9 placeholder '
       + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys. '
       + 'Gated behind the browser guest-facet test instead, as content-a is behind its filter test',
   },
   {
     name: 'content-a',
-    exampleUrl: 'https://empv2.wpenginepowered.com/content-a/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/all-content/',
     reason: 'four Loop Grids render 205 real posts where dist/content-a.html carries 23 authored '
       + 'cards, so census and box keys differ on 182 anchors and their images; a content mismatch, '
       + 'not an image finding, and gated behind the browser filter test instead',

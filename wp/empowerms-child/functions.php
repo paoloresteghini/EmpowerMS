@@ -138,7 +138,7 @@ function empower_asset_ver( $rel ) {
  */
 function empower_page_styles() {
 	return array(
-		'podcast-a'    => array( 'motion', 'podcast-a' ),
+		'podcast'      => array( 'motion', 'podcast-a' ),
 		/* what-we-do-a. Read off dist/what-we-do-a.html's own <head>, which
 		   loads (after the shared tokens/components cascade and the
 		   unconditional header sheet) the site stylesheet, the header sheet,
@@ -146,14 +146,14 @@ function empower_page_styles() {
 		   The site and header sheets are already enqueued unconditionally
 		   above, so only the two page-specific sheets beyond that shared
 		   cascade belong here, the same shape podcast-a's own entry takes. */
-		'what-we-do-a' => array( 'motion', 'what-we-do-a' ),
+		'what-we-do'   => array( 'motion', 'what-we-do-a' ),
 		/* solutions-b. Read off dist/solutions-b.html's own <head>, which loads
 		   (after the shared tokens/components cascade and the unconditional
 		   header sheet) the site stylesheet, the header sheet, the motion
 		   sheet, then its own solutions-b sheet, in that order. Same shape as
 		   what-we-do-a's entry above, for the same reason: the site and
 		   header sheets are already enqueued unconditionally. */
-		'solutions-b'  => array( 'motion', 'solutions-b' ),
+		'solutions'    => array( 'motion', 'solutions-b' ),
 		/* capitol-a. Read off dist/capitol-a.html's own <head>, which loads
 		   (after the shared tokens/components cascade and the unconditional
 		   header sheet) the site stylesheet, the header sheet, the motion
@@ -161,14 +161,14 @@ function empower_page_styles() {
 		   what-we-do-a's and solutions-b's own entries above, for the same
 		   reason: the site and header sheets are already enqueued
 		   unconditionally. */
-		'capitol-a'    => array( 'motion', 'capitol-a' ),
+		'capitol-chat' => array( 'motion', 'capitol-a' ),
 		/* team-a. Read off dist/team-a.html's own <head>, which loads (after
 		   the shared tokens/components cascade and the unconditional header
 		   sheet) the site stylesheet, the header sheet, the motion sheet,
 		   then its own team-a sheet, in that order. Same shape as every
 		   entry above, for the same reason: the site and header sheets are
 		   already enqueued unconditionally. */
-		'team-a'       => array( 'motion', 'team-a' ),
+		'team'         => array( 'motion', 'team-a' ),
 		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
 		   10-22), which loads the shared tokens cascade, components.css, then
 		   the site stylesheet, the header sheet, the motion sheet, and its own
@@ -176,7 +176,7 @@ function empower_page_styles() {
 		   enqueued unconditionally above, so only the two page-specific sheets
 		   beyond that shared cascade belong here: the same shape every entry
 		   above takes, for the same reason. */
-		'who-we-are-a' => array( 'motion', 'who-we-are-a' ),
+		'who-we-are'   => array( 'motion', 'who-we-are-a' ),
 		/* mail-a. Read off dist/mail-a.html's own <head> (lines 10-22), which
 		   loads the shared tokens cascade, components.css, then the site
 		   stylesheet, the header sheet, the motion sheet, and its own mail-a
@@ -184,7 +184,7 @@ function empower_page_styles() {
 		   unconditionally above, so only the two page-specific sheets beyond
 		   that shared cascade belong here: the same shape every entry above
 		   takes, for the same reason. */
-		'mail-a'       => array( 'motion', 'mail-a' ),
+		'newsletter'   => array( 'motion', 'mail-a' ),
 		/* amb-a. Read off dist/amb-a.html's own <head> (lines 10-22), which
 		   loads the shared tokens cascade, components.css, then the site
 		   stylesheet, the header sheet, the motion sheet, and its own amb-a
@@ -192,7 +192,7 @@ function empower_page_styles() {
 		   unconditionally above, so only the two page-specific sheets beyond
 		   that shared cascade belong here: the same shape every entry above
 		   takes, for the same reason. */
-		'amb-a'        => array( 'motion', 'amb-a' ),
+		'ambassadors'  => array( 'motion', 'amb-a' ),
 		/* epic-a. Read off dist/epic-a.html's own <head> (lines 10-22), which
 		   loads the shared tokens cascade, components.css, then the site
 		   stylesheet, the header sheet, the motion sheet, and its own epic-a
@@ -203,7 +203,7 @@ function empower_page_styles() {
 		   more than the shared reveal layer: css/epic-a.css's own rail fill is
 		   a scroll-driven animation and the build's first converted
 		   view-timeline. */
-		'epic-a'       => array( 'motion', 'epic-a' ),
+		'epic'         => array( 'motion', 'epic-a' ),
 		/* give-c. Read off dist/give-c.html's own <head> (lines 10-22), which
 		   loads the shared tokens cascade, components.css, then the site
 		   stylesheet, the header sheet, the motion sheet, and its own give-c
@@ -211,7 +211,7 @@ function empower_page_styles() {
 		   unconditionally above, so only the two page-specific sheets beyond
 		   that shared cascade belong here: the same shape every entry above
 		   takes, for the same reason. */
-		'give-c'       => array( 'motion', 'give-c' ),
+		'donate'       => array( 'motion', 'give-c' ),
 		/* team-bio. Read off dist/team-bio.html's own <head> (lines 10-22),
 		   which loads the shared tokens cascade, components.css, then the
 		   site stylesheet, the header sheet, the motion sheet, and its own
@@ -219,7 +219,7 @@ function empower_page_styles() {
 		   enqueued unconditionally above, so only the two page-specific
 		   sheets beyond that shared cascade belong here: the same shape
 		   every entry above takes, for the same reason. */
-		'team-bio'     => array( 'motion', 'team-bio' ),
+		'grant-callen' => array( 'motion', 'team-bio' ),
 		/* safety. Read off dist/safety.html's own <head> (lines 10-22), which
 		   loads the shared tokens cascade, components.css, then the site
 		   stylesheet, the header sheet, the motion sheet, and css/solution.css
@@ -236,7 +236,7 @@ function empower_page_styles() {
 		   slug and sheet were the same word would enqueue css/safety.css,
 		   which does not exist, and the page would render unstyled with
 		   nothing in the enqueue reporting it. */
-		'safety'       => array( 'motion', 'solution' ),
+		'public-safety'=> array( 'motion', 'solution' ),
 		/* work. Read off dist/work.html's own <head> (lines 10-22), which is the
 		   same cascade safety's row records and ends in css/solution.css, the
 		   template sheet all three solution pages share.
@@ -252,7 +252,7 @@ function empower_page_styles() {
 		   neither the motion sheet nor css/solution.css, and it would render
 		   unstyled with nothing in the enqueue reporting it.
 		   elementor/pages/work/page.mjs records the collision in full. */
-		'work-2'       => array( 'motion', 'solution' ),
+		'meaningful-work' => array( 'motion', 'solution' ),
 		/* education. Read off dist/education.html's own <head> (lines 10-22),
 		   which is the same cascade safety's and work's rows record and ends in
 		   css/solution.css, the template sheet all three solution pages share.
@@ -267,7 +267,7 @@ function empower_page_styles() {
 		   post 18537 under `education-3`, with `education-2` (post 11509) and
 		   `education-old` (post 35) also taken; the unsuffixed slug had already
 		   been vacated. elementor/pages/education/page.mjs records the check. */
-		'education'    => array( 'motion', 'solution' ),
+		'quality-education' => array( 'motion', 'solution' ),
 		/* landing, the campaign TEMPLATE. Read off dist/landing.html's own
 		   <head> (lines 10-22), which is the same shared cascade every row
 		   above records and ends in this page's own css/landing.css.
@@ -301,7 +301,7 @@ function empower_page_styles() {
 		   with `wp post list --post_type=any --post_status=any
 		   --name=content-a`, and read back as `content-a` with no suffix
 		   afterwards. elementor/pages/content-a/page.mjs records both checks. */
-		'content-a'    => array( 'motion', 'content-a' ),
+		'all-content'  => array( 'motion', 'content-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole
@@ -309,7 +309,7 @@ function empower_page_styles() {
 		   consolidating these into one sheet as cleanup that has not been
 		   done, so the list stays exactly as the static page loads it until
 		   that happens. */
-		'final'        => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
+		'homepage'     => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
 	);
 }
 

@@ -31,7 +31,7 @@ import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
-import { remapLinks } from './elementor/links.mjs';
+import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
 import {
   isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
   validateContentExemption, explainLayoutHeights, CONTENT_HEIGHT_EXEMPTIONS, MEASURED_WIDTHS,
@@ -2591,8 +2591,15 @@ test('the Our Solutions item stays a link plus a disclosure button', () => {
      separate test because it is the same requirement, and splitting it would
      let one half pass while the half a visitor experiences fails. */
   const shipped = JSON.stringify(remapLinks(headerPart()));
-  assert.match(shipped, /href=\\"\/solutions-b\/\\"/,
-    'the Our Solutions link no longer resolves to the converted Solutions page after the remap');
+  /* The expected path is DERIVED from the register rather than written here.
+     It was a literal `/solutions-b/` for about an hour, and the slug rename of
+     2026-08-20 broke it immediately: a test that hard-codes a slug fails the
+     next time anyone renames a page, which is precisely the drift the register
+     exists to absorb. */
+  const solutionsPath = convertedPagePaths().get('solutions-b');
+  assert.ok(solutionsPath, 'solutions-b has no exampleUrl in the register');
+  assert.ok(shipped.includes(`href=\\"${solutionsPath}\\"`),
+    `the Our Solutions link no longer resolves to the converted Solutions page (${solutionsPath}) after the remap`);
 });
 
 test('the header carries the mobile nav and its toggle', () => {
@@ -4077,4 +4084,49 @@ test('the podcast-a guest facets actually filter, and un-filter', { concurrency:
   assert.equal(cleared.visible, start.visible,
     `clearing every facet left ${cleared.visible} episodes visible against ${start.visible} at the start`);
   assert.deepEqual(cleared.byGuest, start.byGuest, 'clearing every facet did not restore the unfiltered library');
+});
+
+/* Every converted page's slug has a row in functions.php's stylesheet map.
+
+   WRITTEN AFTER IT FAILED IN PRODUCTION, 2026-08-20. empower_page_styles() is
+   keyed by page SLUG, and the slug rename that morning orphaned all sixteen
+   rows at once: the pages still rendered, still carried every class, and every
+   one of them lost its stylesheet. The suite caught it as 46 failures spread
+   across census, computed-style and filter tests, which is a slow way to learn
+   that one map went stale.
+
+   The map is hand-maintained and cannot be derived, because the KEY is an
+   install slug and the VALUE is a stylesheet filename and the two genuinely
+   differ (`/solutions/` loads css/solutions-b.css, and the three solution pages
+   share css/solution.css). What CAN be derived is the key set: every page in
+   PAGE_REGISTER and EXCLUDED_PAGES must appear, because every converted page
+   has at least css/motion.css. That is the half that goes stale. */
+test('every converted page slug still has a stylesheet row in functions.php', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const map = php.slice(php.indexOf('function empower_page_styles'));
+  const keys = new Set([...map.matchAll(/^\s*'([a-z0-9-]+)'\s*=>\s*array\(/gm)].map((m) => m[1]));
+
+  assert.ok(keys.size >= 15,
+    `only ${keys.size} rows were found in empower_page_styles(); the parse has stopped working `
+    + 'and this test would pass while checking nothing');
+
+  const missing = [];
+  for (const page of [...PAGE_REGISTER, ...EXCLUDED_PAGES]) {
+    if (!page.exampleUrl) continue;
+    const slug = new URL(page.exampleUrl).pathname.replace(/^\/|\/$/g, '');
+    /* The front page's path is '/', so its slug is not in the URL. Read it from
+       the map's own homepage row instead of hard-coding, and assert only that
+       SOME row claims the homepage stylesheet. */
+    if (slug === '') {
+      assert.ok([...map.matchAll(/^\s*'([a-z0-9-]+)'\s*=>\s*array\([^)]*'homepage'/gm)].length === 1,
+        'no single row in empower_page_styles() loads css/homepage.css, so the front page ships unstyled');
+      continue;
+    }
+    if (!keys.has(slug)) missing.push(`${page.name} lives at /${slug}/ but no row keys that slug`);
+  }
+
+  assert.deepEqual(missing, [],
+    `${missing.length} converted page(s) would render with no page stylesheet at all:\n  `
+    + missing.join('\n  ')
+    + '\nempower_page_styles() is keyed by install slug; renaming a page means renaming its key.');
 });

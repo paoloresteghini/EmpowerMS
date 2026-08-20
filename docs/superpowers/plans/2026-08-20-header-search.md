@@ -26,7 +26,7 @@
 
 | File | Status | Responsibility |
 |---|---|---|
-| `elementor/deploy.mjs` | Modify (line 128) | Add `'archive'` to `THEME_PART_LOCATIONS` so `deployThemePart()` will accept the new document type |
+| `elementor/deploy.mjs` | Modify (line 128) | Add `'search-results'` to `THEME_PART_LOCATIONS` so `deployThemePart()` will accept the new document type |
 | `elementor/theme-parts/header.mjs` | Modify | Add the overlay panel widget; record the static-build divergence in its comment |
 | `elementor/theme-parts/search-archive.mjs` | Create | The search results tree, its post id and its condition |
 | `elementor/theme-parts/search-result-item.mjs` | Create | The Loop Item template for one result card, and its post id |
@@ -43,13 +43,25 @@
 
 `deployThemePart()` refuses any location outside `THEME_PART_LOCATIONS`, which today is `['header', 'footer']`. Nothing else in this plan can deploy until it accepts the search results document type.
 
+> **CORRECTED 2026-08-20, after this task was first implemented.** The steps below as
+> originally written said `'archive'`, and that was wrong. `deployElements()` writes its
+> third argument verbatim into `_elementor_template_type`, so that argument is the
+> Elementor DOCUMENT TYPE, not the render location, despite `deployThemePart()` naming
+> its parameter `location`. Header and footer hide the distinction because their type
+> and their location are the same string. Search results is the first case where they
+> differ: `Search_Results::get_type()` is `search-results` and it inherits Archive's
+> `archive` render location. **The value is `'search-results'`.** The condition
+> (`include/archive/search`) and the render location (`archive`) never changed and were
+> always right. The literal step text below is left as first written, so the record
+> shows what was specified as well as what was corrected.
+
 **Files:**
 - Modify: `elementor/deploy.mjs:128`
 - Test: `test-elementor.mjs`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `deployThemePart(postId, elements, 'archive')` no longer throws on its location check. `THEME_PART_LOCATIONS` becomes `['header', 'footer', 'archive']`.
+- Produces: `deployThemePart(postId, elements, 'search-results')` no longer throws on its type check. `THEME_PART_LOCATIONS` becomes `['header', 'footer', 'search-results']`.
 
 - [ ] **Step 1: Read the seam before touching it**
 
@@ -60,7 +72,7 @@ sed -n '118,150p' elementor/deploy.mjs
 git diff elementor/deploy.mjs
 ```
 
-If `THEME_PART_LOCATIONS` already contains entries beyond `header` and `footer`, add `'archive'` to what is there. Do not replace the array.
+If `THEME_PART_LOCATIONS` already contains entries beyond `header` and `footer`, add `'search-results'` to what is there. Do not replace the array.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -682,7 +694,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Modify: `wp/empowerms-child/css/bridge.css` (block 62)
 
 **Interfaces:**
-- Consumes: `deployThemePart(postId, elements, 'archive')` from Task 1; `container`, `text`, `html` from `../factory.mjs`.
+- Consumes: `deployThemePart(postId, elements, 'search-results')` from Task 1; `container`, `text`, `html` from `../factory.mjs`.
 - Produces: `searchArchivePart()` returning the tree; `SEARCH_ARCHIVE_POST_ID` (integer); `SEARCH_ARCHIVE_CONDITIONS = ['include/archive/search']`; `searchResultItem()` and `SEARCH_RESULT_ITEM_POST_ID`.
 
 - [ ] **Step 1: Create the two library posts on the install**

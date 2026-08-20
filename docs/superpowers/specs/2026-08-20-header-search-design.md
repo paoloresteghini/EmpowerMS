@@ -177,9 +177,19 @@ all, which also suits a results list.
 
 `elementor/deploy.mjs:128` declares `THEME_PART_LOCATIONS = ['header',
 'footer']` and `deployThemePart()` rejects anything else. It gains
-`'archive'`, and the comment above it, which explains that the value is the
-Elementor template type rather than a label, is extended rather than
+`'search-results'`, and the comment above it, which explains that the value
+is the Elementor template type rather than a label, is extended rather than
 replaced.
+
+CORRECTED 2026-08-20. This paragraph first said the array gains `'archive'`,
+which contradicted its own next clause: the value IS the template type, and
+`archive` is the render location. `deployElements()` writes the argument
+verbatim into `_elementor_template_type`, so passing `archive` would have
+built Elementor's generic Archive document while the library term said
+`search-results`, and the two would have disagreed with nothing reporting it.
+Header and footer hide the distinction because their type and location are
+the same string; search results is the first part in this build where they
+are not. The condition and the render location are unaffected.
 
 The Theme Builder condition is read from Elementor Pro's own registry on the
 install, never guessed. Conditions resolve at render time from a cached

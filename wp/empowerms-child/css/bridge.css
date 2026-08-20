@@ -7219,6 +7219,40 @@ body .wpautoterms-footer a:focus-visible{
   transition:border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out); /* components.css:107 */
 }
 
+/* THE 390px DONATE REGRESSION, found live by the parallel session and fixed
+ * here 2026-08-20, same day it shipped.
+ *
+ * Restoring the search button below 400px (above) put a 38px square back into
+ * `.em-header__actions`, and the row could not absorb it. What gave was the
+ * Donate label, which broke MID-WORD: "DON" over "ATE", 74x64 instead of
+ * 98x43, on every converted page at 390. Measured on /quality-education/ in a
+ * 390px frame, not inferred.
+ *
+ * THE CAUSE IS NOT THE WIDTH, IT IS `white-space`. At 390 the Donate button
+ * computes `white-space:normal`, so the label is breakable and flex resolves
+ * the overflow by breaking the word rather than by wrapping the row. The
+ * row-wrap that css/site.css:241 already provides (`flex-wrap:wrap` on
+ * `.em-header__bar`, added for the SC 1.4.4 200% case) never gets the chance,
+ * because a breakable label makes the button narrow enough to fit.
+ *
+ * So the repair is to make the label unbreakable and let the existing wrap do
+ * what its own comment says it does: drop the actions group to its own line
+ * rather than push the page sideways. Measured after, at three widths, in the
+ * same frame: 320, 360 and 390 all give Donate 98x43 on one line, the actions
+ * row back to 43px tall, and `documentElement.scrollWidth` under the viewport
+ * at all three, so nothing overflows.
+ *
+ * 98x43 is also exactly the static build's own Donate box, so this restores
+ * box parity on that element rather than inventing a new size for it.
+ *
+ * Scoped through `.em-header` so it cannot reach the `.em-btn` instances in
+ * the search panel or anywhere else on the page. */
+@media (max-width:400px){
+  .em-header .em-header__actions .em-btn{
+    white-space:nowrap;
+  }
+}
+
 /* The panel's own close control, added 2026-08-20, restyled the same day on
  * Paolo's "it can just be an outlined X".
  *

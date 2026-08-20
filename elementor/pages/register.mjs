@@ -1156,9 +1156,23 @@ export const PAGE_REGISTER = [
    keys (a|<episode title>), not image keys, so DEFERRED_IMAGES cannot be
    used to hide them: the recipe restricts deferral to image keys precisely
    so a content mismatch like this cannot be swept under the same mechanism
-   as a wrong crop. If podcast-a is ever to be gated, it needs a key that
+   as a wrong crop. Gating it by census or boxes would need a key that
    identifies a card slot independently of which episode landed in it,
    which nobody has designed yet.
+
+   GATED BEHAVIOURALLY INSTEAD, 2026-08-20, the same substitute content-a
+   has. `the podcast-a guest facets actually filter, and un-filter` in
+   test-elementor.mjs drives the real page: it checks a guest box, asserts
+   the other two types disappear and the untagged episodes do not, checks a
+   second box to prove the combination is OR rather than AND, then clears
+   both and asserts the library comes back exactly as it started. That
+   covers the two things here that can fail silently, both with precedent:
+   inc/loop-attributes.php not stamping data-guest (or stamping one
+   episode's value onto every card, which is what happens without
+   `_element_cache: 'yes'`), and a facet id drifting away from the literal
+   #pa-g-* selectors css/podcast-a.css:248-251 names. Both were injected
+   against a copy of the live page and both went red before the test was
+   believed.
 
    content-a: the same mismatch, four times over and larger. Its four bands
    are Loop Grids over Empower News (141 posts today), Community Stories
@@ -1196,7 +1210,8 @@ export const EXCLUDED_PAGES = [
     name: 'podcast-a',
     exampleUrl: 'https://empv2.wpenginepowered.com/podcast-a/',
     reason: 'box sweep finds 9 permanent anchor-key differences (66 real episodes vs 9 placeholder '
-      + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys',
+      + 'cards); a content mismatch, not an image finding, and not fixable by deferring image keys. '
+      + 'Gated behind the browser guest-facet test instead, as content-a is behind its filter test',
   },
   {
     name: 'content-a',

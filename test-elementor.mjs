@@ -4009,3 +4009,72 @@ test('the deploy path rewrites links rather than only the map being able to', as
     `deployElements() serialises ${serialise[1]}, which does not pass the tree through remapLinks(). `
     + 'Every converted page would ship the static build\'s routes, which 404 or leave the build.');
 });
+
+/* --- podcast-a's guest filter -------------------------------------------
+
+   podcast-a stays in EXCLUDED_PAGES: its library is a Loop Grid over 66 real
+   episodes where dist/podcast-a.html carries 9 placeholder cards, so census and
+   box keys compare different CONTENT and no key exists that identifies a card
+   slot independently of which episode landed in it.
+
+   This is the same substitute content-a got: a behavioural gate on the one thing
+   that CAN silently fail. Two things can, and both have precedent in this
+   repository. inc/loop-attributes.php stamps data-guest onto each card, and
+   without `_element_cache: 'yes'` on the container it fires once per page load
+   and every card inherits one episode's value. The facet ids are the other half:
+   css/podcast-a.css:248-251 names #pa-g-leader, #pa-g-lawmaker and #pa-g-expert
+   literally, so an id that drifts leaves three checkboxes that do nothing. Both
+   were injected against a copy of the live page before this test was trusted;
+   the first read 66 visible where 60 was correct, the second threw.
+
+   EXPECTATIONS ARE DERIVED FROM THE START ROW, not typed. Empower have tagged 9
+   of 66 episodes so far (guest_type exists; the untagged 57 are theirs to fix),
+   and hard-coding today's counts would turn their progress into a failure. */
+test('the podcast-a guest facets actually filter, and un-filter', { concurrency: 1 }, async () => {
+  const { checkGuestFilter } = await import('./fidelity-browser.mjs');
+  const rows = await checkGuestFilter(requireSpikeUrl(), {
+    cardSelector: '.pca-ep',
+    facetSelector: '.pca-guest',
+    steps: [
+      { name: 'leader on', toggle: ['pa-g-leader'] },
+      { name: 'lawmaker also on', toggle: ['pa-g-lawmaker'] },
+      { name: 'both off', toggle: ['pa-g-leader', 'pa-g-lawmaker'] },
+    ],
+  });
+  const [start, leader, both, cleared] = rows;
+
+  assert.equal(start.facets, 3, `expected three guest checkboxes, found ${start.facets}`);
+  assert.deepEqual(start.checked, [], 'the library did not start unfiltered');
+
+  const tagged = Object.keys(start.byGuest).filter((g) => g !== '(untagged)').sort();
+  assert.deepEqual(tagged, ['expert', 'lawmaker', 'leader'],
+    `expected all three guest types on the unfiltered page, found ${tagged.join(', ')}. `
+    + 'If Empower have retired a term this needs updating; if data-guest has stopped being '
+    + 'emitted, inc/loop-attributes.php or its _element_cache setting is the cause.');
+
+  const untagged = start.byGuest['(untagged)'] ?? 0;
+
+  /* Checking one box leaves that type and hides the other two. Untagged cards
+     are matched by none of the three selectors and stay, which is the filter's
+     real behaviour rather than a defect: see checkGuestFilter's own note. */
+  assert.deepEqual(Object.keys(leader.byGuest).sort(), ['(untagged)', 'leader'].sort(),
+    `checking Leader left ${JSON.stringify(leader.byGuest)} visible; the other two tagged types should be hidden`);
+  assert.equal(leader.byGuest.leader, start.byGuest.leader, 'checking Leader hid some Leader episodes');
+  assert.equal(leader.byGuest['(untagged)'] ?? 0, untagged, 'checking Leader changed how many untagged episodes show');
+  assert.ok(leader.visible < start.visible,
+    `checking Leader hid nothing: ${leader.visible} visible against ${start.visible} before. `
+    + 'The likeliest cause is data-guest missing from the cards, which makes every selector in '
+    + 'css/podcast-a.css:248-251 match nothing.');
+
+  /* Two boxes is OR, not AND, which is the trade css/podcast-a.css records. */
+  assert.deepEqual(Object.keys(both.byGuest).sort(), ['(untagged)', 'lawmaker', 'leader'].sort(),
+    `checking Leader and Lawmaker left ${JSON.stringify(both.byGuest)}; both types should show and expert should not`);
+  assert.ok(both.visible > leader.visible, 'adding a second facet did not widen the result, so the filter is AND rather than OR');
+
+  /* Un-checking is half of what a checkbox filter promises, and it is the half a
+     radio group cannot even express. */
+  assert.deepEqual(cleared.checked, [], 'the facets did not clear');
+  assert.equal(cleared.visible, start.visible,
+    `clearing every facet left ${cleared.visible} episodes visible against ${start.visible} at the start`);
+  assert.deepEqual(cleared.byGuest, start.byGuest, 'clearing every facet did not restore the unfiltered library');
+});

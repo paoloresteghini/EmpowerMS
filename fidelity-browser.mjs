@@ -225,6 +225,73 @@ export async function checkRadioFilter(url, { steps, bandSelector, cardSelector,
   }
 }
 
+/* podcast-a's guest filter, which is checkboxes rather than content-a's radios
+   and needs a different reading.
+
+   WHY NOT checkRadioFilter(). That helper reads bands, data-topic and an empty
+   state, none of which podcast-a has, and it treats every step as additive
+   because a radio group cannot be un-picked. A checkbox can, and un-checking is
+   half of what this filter promises, so a step here TOGGLES and records the
+   state it produced.
+
+   WHAT THE FILTER ACTUALLY DOES, read off css/podcast-a.css:248-251 rather than
+   assumed. The rules hide `.pca-ep[data-guest="x"]` only when SOME guest box is
+   checked and x's own box is not. A card carrying no data-guest at all is
+   matched by none of the three selectors, so it stays visible under every
+   combination. That is why untagged cards are counted separately here instead of
+   being folded into the total: on this install 57 of 66 episodes are untagged,
+   and a check that expected them to disappear would report Empower's tagging gap
+   as a conversion defect.
+
+   force: true on the click, for the reason checkRadioFilter uses it: the install
+   serves a Mailchimp popup that covers the viewport seconds after load and
+   intercepts pointer events. */
+export async function checkGuestFilter(url, { steps, cardSelector, facetSelector }) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url, { waitUntil: 'load' });
+
+    const read = () => page.evaluate(({ card, facet }) => {
+      const cards = [...document.querySelectorAll(card)];
+      /* offsetParent, not display, for the reason checkRadioFilter records: a
+         card inside a hidden ancestor keeps its own display value. */
+      const visible = cards.filter((e) => e.offsetParent !== null);
+      const byGuest = {};
+      for (const e of visible) {
+        const g = e.getAttribute('data-guest') || '(untagged)';
+        byGuest[g] = (byGuest[g] || 0) + 1;
+      }
+      return {
+        total: cards.length,
+        visible: visible.length,
+        byGuest,
+        facets: document.querySelectorAll(facet).length,
+        checked: [...document.querySelectorAll(facet)].filter((e) => e.checked).map((e) => e.id).sort(),
+      };
+    }, { card: cardSelector, facet: facetSelector });
+
+    const out = [{ name: 'start', ...await read() }];
+    for (const step of steps) {
+      for (const id of step.toggle) {
+        const before = await page.$eval(`#${id}`, (el) => el.checked);
+        await page.click(`label[for="${id}"]`, { force: true });
+        const after = await page.$eval(`#${id}`, (el) => el.checked);
+        if (after === before) {
+          throw new Error(
+            `checkGuestFilter: clicking label[for="${id}"] left #${id} at checked=${after}, `
+            + 'so the state under test was never entered',
+          );
+        }
+      }
+      out.push({ name: step.name, ...await read() });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 /* Check 5 of the spec's harness. Catches the two silent infrastructure
    failures: a stylesheet that never enqueued, and Elementor's Theme Style or
    UiCore's own globals winning over css/site.css. Compared against the same

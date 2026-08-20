@@ -1375,6 +1375,59 @@ test('the theme registers its Elementor locations so later parts can be assigned
     'the theme never registers its Elementor locations');
 });
 
+/* theme-js/ is a DESTINATION-ONLY directory, the same shape as
+   wp/empowerms-child/css/bridge.css: it exists under wp/empowerms-child/ and
+   has no counterpart at the repository root. That is deliberate. The root
+   js/ directory is synced into the theme by wp/sync.mjs and is the protected
+   static build (functions.php:479 records what editing it cost last time);
+   an Elementor-only script placed there would ship inside a static hand-off
+   it is not part of, and would join the three-way fight over a top-level
+   `const root` that this file's own comments describe.
+
+   This test exists because the sync is the silent part. syncTheme() reports
+   nothing on failure, and a script that never reaches the install produces a
+   header whose panel is simply always open: wrong-looking, not broken, and
+   therefore easy to miss. */
+test('theme-js is not excluded from the theme sync', () => {
+  assert.ok(!FROM_ROOT.includes('theme-js'),
+    'theme-js is in FROM_ROOT, so the wp/empowerms-child pass will exclude it and nothing will ever upload it');
+  assert.ok(fs.existsSync('wp/empowerms-child/theme-js/search.js'),
+    'wp/empowerms-child/theme-js/search.js does not exist');
+});
+
+/* An ES module loaded as a classic script shares one global scope with every
+   other classic script on the page, and the second file to declare an
+   identifier the first already claimed throws a SyntaxError and never runs.
+   That is not hypothetical here: it took down every desktop dropdown on the
+   site once, and functions.php's own comment at :446 is the post-mortem.
+   wp_script_add_data($handle,'type','module') looks like the fix and is not
+   one; the script_loader_tag filter is, and it reads its handle list from
+   empower_module_script_handles(). A handle missing from that list loads
+   classic. */
+test('the search script is enqueued and loads as a module', () => {
+  const fn = themeFile('functions.php');
+  assert.match(fn, /wp_enqueue_script\(\s*'empower-search',\s*\$dir \. '\/theme-js\/search\.js'/,
+    'empower-search is not enqueued from theme-js/search.js');
+  assert.match(fn, /empower_asset_ver\(\s*'theme-js\/search\.js'\s*\)/,
+    'the search script is enqueued without a content-derived version, so a change will not bust the cache');
+  assert.match(fn, /\$handles = array\([^)]*'empower-search'/,
+    'empower-search is missing from empower_module_script_handles(), so it will load as a classic script and collide');
+});
+
+/* The panel ships open in the markup by design (Task 2's comment says why),
+   and this attribute is what lets CSS close it. If the script never runs the
+   attribute is never set, the closed-by-default rules never apply, and the
+   form stays visible and usable. That is the intended degraded state and it
+   is worth asserting the gate exists, because a script that closes the panel
+   with inline styles instead would break the no-JavaScript contract silently. */
+test('the search script gates its CSS on a root attribute rather than inline styles', () => {
+  const js = fs.readFileSync('wp/empowerms-child/theme-js/search.js', 'utf8');
+  assert.match(js, /setAttribute\(\s*['"]data-search['"]\s*,\s*['"]on['"]\s*\)/,
+    'search.js never sets [data-search="on"], so bridge.css block 61 has no gate to key on');
+  assert.doesNotMatch(js, /\.style\.(display|visibility|opacity)\s*=/,
+    'search.js closes the panel with inline styles, which breaks the JavaScript-off contract');
+});
+
 /* --- elementor/pages/final/ (the homepage) ------------------------------ */
 
 test('the homepage hero mapping carries the section class and its copy', () => {

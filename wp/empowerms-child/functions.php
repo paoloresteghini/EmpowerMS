@@ -398,7 +398,7 @@ function empower_page_scripts() {
 }
 
 /**
- * Every script handle that must load with type="module": the three
+ * Every script handle that must load with type="module": the four
  * site-wide scripts enqueued unconditionally above, plus every handle
  * empower_page_scripts() can emit for any page slug. Built from the same
  * function the per-page enqueue loop below reads, not a second list typed
@@ -406,13 +406,13 @@ function empower_page_scripts() {
  * fails to recognise. That is what actually broke here once already:
  * empower_page_scripts() emits handles shaped 'empower-script-<name>'
  * (see the enqueue loop below), and a filter matching only
- * 'empower-nav' / 'empower-reveal' / 'empower-dropdown' by name would let
- * any future entry in empower_page_scripts() load as a classic script,
- * which is the exact condition that produced this branch's site-wide
- * dropdown regression.
+ * 'empower-nav' / 'empower-reveal' / 'empower-dropdown' / 'empower-search'
+ * by name would let any future entry in empower_page_scripts() load as a
+ * classic script, which is the exact condition that produced this branch's
+ * site-wide dropdown regression.
  */
 function empower_module_script_handles() {
-	$handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown' );
+	$handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown', 'empower-search' );
 	foreach ( empower_page_scripts() as $scripts ) {
 		foreach ( $scripts as $script ) {
 			$handles[] = 'empower-script-' . $script;
@@ -434,6 +434,12 @@ add_action( 'wp_enqueue_scripts', function () {
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close. */
 	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), empower_asset_ver( 'js/dropdown.js' ), array( 'strategy' => 'defer' ) );
+	/* The header search overlay. Destination-only, under theme-js/ rather
+	   than js/, because js/ is the protected static build and this script
+	   has no static counterpart: the static build's search button is
+	   decoration. See elementor/theme-parts/header.mjs for the divergence
+	   and why it was chosen. */
+	wp_enqueue_script( 'empower-search', $dir . '/theme-js/search.js', array(), empower_asset_ver( 'theme-js/search.js' ), array( 'strategy' => 'defer' ) );
 
 	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {

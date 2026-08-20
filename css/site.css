@@ -167,6 +167,15 @@ body{overflow-wrap:break-word}
   max-width:40ch;margin:0 0 var(--space-6)}
 .em-footer__bottom p{margin:0}
 
+/* The build credit sits in the bottom bar beside the legal line and the
+   address. It is a standalone link rather than one inside a sentence, so
+   SC 2.5.8 applies and it carries the same 24px target the footer list
+   links were given above. Colour and hover match .em-footer__links a so the
+   bottom bar reads as the same footer, not a bolted-on line. */
+.em-footer__credit a{color:var(--white);text-decoration:none;display:inline-flex;
+  align-items:center;min-height:24px;min-width:24px;transition:color var(--dur) var(--ease-out)}
+.em-footer__credit a:hover{color:var(--orange-300)}
+
 /* ---------- Responsive ---------- */
 /* The header bar (logo + six nav links + search + Donate) never wraps and
    has an intrinsic min-content width of ~940px — measured, not assumed —

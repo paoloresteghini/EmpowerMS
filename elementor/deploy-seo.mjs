@@ -87,13 +87,31 @@ export async function deploySeo() {
   }));
 
   const written = await writeMeta(rows);
-  return { count: rows.length, written };
+
+  /* FLUSHING IS PART OF THE DEPLOY, not an afterthought. The write lands in
+     the database immediately and the page keeps serving the old <title> and
+     no description, because WP Engine's page cache is in front of it. On the
+     first real run of this script, 2026-08-21, that looked exactly like a
+     failed write: 28 of 29 URLs rendered the new copy and /capitol-chat/ did
+     not, purely because that one page happened to be cached. Reading it back
+     through the plugin's model said the value was there, and appending a
+     query string (?cb=..., NOT ?s= or ?w=, which are reserved and return a
+     200-shaped 404 on this install) served it correctly.
+
+     So: a deploy that does not flush is a deploy whose result cannot be
+     verified against the URLs anybody will actually visit, and the confusing
+     part is that it fails for a SUBSET, which reads as a data bug rather than
+     a cache. Both caches, because the CDN holds its own copy. */
+  const flushed = await wpe('wp page-cache flush && wp cdn-cache flush');
+
+  return { count: rows.length, written, flushed };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   deploySeo()
-    .then(({ count, written }) => {
+    .then(({ count, written, flushed }) => {
       console.log(written);
+      console.log(flushed);
       console.log(`wrote title + description for ${count} URLs`);
     })
     .catch((err) => {

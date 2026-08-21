@@ -5661,3 +5661,149 @@ test('the top bar drops its email on a phone and keeps it on a desktop', { concu
   assert.ok(bar[390].height <= 50,
     `the top bar is ${bar[390].height}px at 390px. It was 73px before this fix and should now be one line.`);
 });
+
+/* --- the search listing copy --------------------------------------------
+   elementor/seo.mjs carries 34 titles and descriptions and NOTHING CHECKED
+   ANY OF IT. Written by a session that ended before committing; committed on
+   Paolo's instruction as 61f76bc after a hand check, and a hand check is not
+   a gate. Its own docblock states targets precise enough to test, which is
+   the whole reason these exist: the file tells you what correct means, so
+   correctness should not depend on whoever edits it next remembering.
+
+   WHY THE BANDS ARE THE FILE'S OWN NUMBERS AND NOT THE USUAL ADVICE. The
+   title band is 45-60 rather than the commonly quoted 50-60 because a bio
+   title is "<name>, <role>" and the longest names leave no room for a role;
+   the file argues that case and these assertions enforce the argument it
+   made, not a number from a blog post.
+
+   NOT TESTABLE AND DELIBERATELY NOT FAKED: that the copy is drawn from the
+   page's own approved text and invents no figure. That is Empower's rule and
+   a human reading; asserting a proxy for it would be worse than admitting the
+   gap. */
+test('every search listing holds the targets seo.mjs sets for itself', async () => {
+  const { PAGE_SEO, PERSON_SEO, ALL_SEO, BRAND_SUFFIX, fullTitle } = await import('./elementor/seo.mjs');
+
+  assert.equal(Object.keys(PAGE_SEO).length, 16, 'expected 16 converted-page listings');
+  assert.equal(Object.keys(PERSON_SEO).length, 18, 'expected 18 person listings');
+  assert.equal(Object.keys(ALL_SEO).length, 34, 'ALL_SEO should merge to 34; a key collides between the two');
+  assert.equal(BRAND_SUFFIX.length, 22, `the brand suffix is ${BRAND_SUFFIX.length} characters, and the title band is calculated around 22`);
+
+  const long = [], short = [], badDesc = [];
+  for (const path of Object.keys(ALL_SEO)) {
+    const title = fullTitle(path);
+    const desc = ALL_SEO[path].description;
+    if (title.length > 60) long.push(`${path} (${title.length}): ${title}`);
+    if (title.length < 45) short.push(`${path} (${title.length}): ${title}`);
+    if (desc.length < 140 || desc.length > 160) badDesc.push(`${path} (${desc.length})`);
+  }
+  assert.deepEqual(long, [], `${long.length} title(s) over 60 characters, which Google truncates:\n${long.join('\n')}`);
+  assert.deepEqual(short, [],
+    `${short.length} title(s) under 45 characters, wasting result width:\n${short.join('\n')}`);
+  assert.deepEqual(badDesc, [],
+    `${badDesc.length} description(s) outside 140-160 characters:\n${badDesc.join('\n')}\n`
+    + 'Under 140 wastes the snippet; over 160 is cut mid-sentence.');
+
+  /* Duplicate descriptions are always wrong: two pages claiming the same
+     thing is the signal Google uses to decide one of them is not worth
+     indexing separately. */
+  const byDesc = new Map();
+  for (const [path, entry] of Object.entries(ALL_SEO)) {
+    byDesc.set(entry.description, [...(byDesc.get(entry.description) ?? []), path]);
+  }
+  const dupDesc = [...byDesc.values()].filter((paths) => paths.length > 1);
+  assert.deepEqual(dupDesc, [], `duplicate descriptions:\n${dupDesc.map((p) => p.join(' + ')).join('\n')}`);
+
+  /* Duplicate TITLES are asserted as an exact set rather than forbidden,
+     because exactly one is legitimate and known: Grant Callen has both the
+     converted template page and his CPT bio, which is the duplicate the
+     canonical filter in the child theme resolves. Forbidding duplicates
+     outright would fail on a state the build has deliberately chosen;
+     allowing any would let a real collision through. */
+  const byTitle = new Map();
+  for (const path of Object.keys(ALL_SEO)) {
+    byTitle.set(fullTitle(path), [...(byTitle.get(fullTitle(path)) ?? []), path]);
+  }
+  const dupTitle = [...byTitle.values()].filter((paths) => paths.length > 1).map((paths) => paths.sort());
+  assert.deepEqual(dupTitle, [['/grant-callen/', '/person/grant-callen/']],
+    'the only legitimate duplicate title is the Grant Callen pair, which the aioseo_canonical_url filter in '
+    + `the child theme resolves. Got:\n${JSON.stringify(dupTitle)}`);
+
+  assert.equal(fullTitle('/not-a-page/'), null, 'fullTitle() should return null for a path it does not carry');
+});
+
+/* COVERAGE, DERIVED FROM THE REGISTER AND FROM THE THEME'S OWN HIDDEN LIST,
+   so that adding an eighteenth converted page goes red here rather than
+   shipping without a description. A hand-written exemption for /landing/ was
+   the obvious way to write this and is exactly the failure this repository
+   has shipped twice: the exclusion is read out of empower_hidden_slugs() in
+   functions.php instead, so a page that stops being hidden immediately starts
+   demanding copy. */
+test('every converted page has a search listing, unless the theme hides it', async () => {
+  const { PAGE_SEO } = await import('./elementor/seo.mjs');
+  const php = fs.readFileSync(path.join(process.cwd(), 'wp/empowerms-child/functions.php'), 'utf8');
+  const block = php.match(/function empower_hidden_slugs\(\)\s*\{[\s\S]*?return array\(([^)]*)\)/);
+  assert.ok(block, 'empower_hidden_slugs() is gone from the child theme; this test cannot derive its exclusions');
+  const hidden = [...block[1].matchAll(/'([^']+)'/g)].map((m) => `/${m[1]}/`);
+  assert.ok(hidden.length > 0, 'empower_hidden_slugs() parsed to an empty list');
+
+  const converted = [...PAGE_REGISTER, ...EXCLUDED_PAGES]
+    .filter((p) => p.exampleUrl)
+    .map((p) => new URL(p.exampleUrl).pathname);
+  assert.ok(converted.length > 10, `only ${converted.length} converted pages found; the register did not load`);
+
+  const missing = converted.filter((p) => !PAGE_SEO[p] && !hidden.includes(p));
+  const extra = Object.keys(PAGE_SEO).filter((p) => !converted.includes(p));
+
+  assert.deepEqual(missing, [],
+    `${missing.length} converted page(s) have no search listing and are not hidden by the theme:\n  `
+    + `${missing.join('\n  ')}\nAdd an entry to PAGE_SEO in elementor/seo.mjs, or add the slug to `
+    + 'empower_hidden_slugs() if the page should not be found at all.');
+  assert.deepEqual(extra, [],
+    `${extra.length} PAGE_SEO entr(ies) point at a path that is not a converted page:\n  ${extra.join('\n  ')}`);
+});
+
+/* THE LIVE HALF, and it is the one the pure tests structurally cannot do: a
+   path resolving to a real post is not knowable from a file. deploy-seo.mjs
+   throws on an unresolved path, but only when somebody runs it, and it has
+   never been run: the copy is committed and deliberately undeployed until
+   Empower approve the wording. So the day a slug moves, nothing would say so
+   until a deploy that might be weeks away, and the error would arrive with
+   the copy half written to the install.
+
+   PERSON COVERAGE IS DERIVED FROM THE INSTALL, not from a count typed here.
+   The eighteen bios are CPT entries; there is no page directory to walk and
+   no register row, so the only honest source for "who exists" is the install
+   itself. Publish a nineteenth person and this goes red naming them. */
+test('every search listing points at a real post, and no published person is missing one', { concurrency: 1 }, async () => {
+  const { ALL_SEO, PERSON_SEO } = await import('./elementor/seo.mjs');
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const origin = new URL(process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/').origin;
+
+  /* One wp eval for every path, and the ids read back on the node side. Never
+     captured into a remote shell variable: wpe.mjs documents at length how a
+     WP-CLI value glued to a PHP deprecation notice becomes the next command's
+     argument, and this repository has lost time to it twice. */
+  const paths = Object.keys(ALL_SEO);
+  const php = paths.map((p) => `echo url_to_postid("${origin}${p}"), "\\n";`).join('');
+  const ids = stripNotices(await wpe(`wp eval '${php}'`))
+    .split('\n').map((line) => parseInt(line.trim(), 10));
+
+  assert.equal(ids.length, paths.length,
+    `asked for ${paths.length} ids and got ${ids.length} lines back; the wp eval output did not parse`);
+  const unresolved = paths.filter((p, i) => !Number.isInteger(ids[i]) || ids[i] === 0);
+  assert.deepEqual(unresolved, [],
+    `${unresolved.length} search listing(s) point at a path with no post on the install:\n  `
+    + `${unresolved.join('\n  ')}\nA slug has moved, and deploy-seo.mjs would refuse to run.`);
+
+  /* The inverse: a person who exists and has no listing would simply never be
+     noticed, because nothing else enumerates them. */
+  const slugs = stripNotices(await wpe('wp post list --post_type=person --post_status=publish --field=name --format=csv'))
+    .split('\n').map((s) => s.trim()).filter((s) => s && s !== 'name');
+  assert.ok(slugs.length > 10, `only ${slugs.length} published people found on the install; the query did not work`);
+
+  const uncovered = slugs.map((s) => `/person/${s}/`).filter((p) => !PERSON_SEO[p]);
+  assert.deepEqual(uncovered, [],
+    `${uncovered.length} published person page(s) have no search listing:\n  ${uncovered.join('\n  ')}\n`
+    + 'Add them to PERSON_SEO in elementor/seo.mjs. Their bios do carry an auto-generated description, but it '
+    + 'is the opening 350-420 characters of the biography, which Google cuts mid-sentence.');
+});

@@ -4871,9 +4871,9 @@ test('every converted page slug still has a stylesheet row in functions.php', ()
    asserted usefully.
 
    THE LEDGER IS ASSERTED SEPARATELY from the total, and that is the whole
-   point. A single "the roster links at least 18 people" check goes green the
-   moment the thirteen staff cards are joined by five more staff, which is the
-   shape the bug had. Asserting the fellows section on its own is what fails if
+   point. A single "the roster links at least everybody" check goes green the
+   moment the staff cards are joined by as many more staff as there are
+   fellows, which is the shape the bug had. Asserting the fellows section on its own is what fails if
    the ledger ever loses its links again. */
 test('every person the roster lists is linked to their bio', { concurrency: 1 }, async (t) => {
   const url = requirePageUrl(
@@ -4882,23 +4882,55 @@ test('every person the roster lists is linked to their bio', { concurrency: 1 },
   );
   if (!url) return;
 
+  /* BOTH COUNTS ARE READ OFF THE INSTALL, not typed here. They were typed here
+     ("18 published people on 2026-08-20: 13 staff, 5 fellows") and went red on
+     2026-08-21 the moment Empower's staff change drafted five of them, which
+     is the same defect this repository has now shipped three times: a number
+     copied out of live data ages into a false assertion, and the failure
+     accuses the page of a bug the page does not have. The install is the only
+     honest source for who exists, exactly as the search-listing coverage gate
+     argues at greater length.
+
+     The fellow split uses person-loop.php's own rule, a position_title
+     beginning with the whole word "Fellow", so the test cannot disagree with
+     the template about who belongs in the ledger.
+
+     ONE wp eval, NOT a shell loop over `wp post meta get`. The obvious
+     spelling of this reads the ids with one command and the titles with one
+     command per id, which needs the id in a remote shell variable, which is
+     the trap wpe.mjs documents at length: every WP-CLI call on this install
+     glues a PHP deprecation notice onto its value, and a value captured by
+     the REMOTE shell never passes through stripNotices(). Written that way
+     first, it reported 17 published people where there are 13, and took eight
+     minutes doing it, because each of those calls bootstraps WordPress. */
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const rows = stripNotices(await wpe(
+    `wp eval 'foreach (get_posts(["post_type"=>"person","post_status"=>"publish","numberposts"=>-1]) as $p) `
+    + `{ echo $p->post_name, "|", get_post_meta($p->ID, "position_title", true), "\n"; }'`,
+  )).split('\n').map((line) => line.trim()).filter((line) => line.includes('|'));
+  const published = rows.length;
+  const fellows = rows.filter((line) => /^fellow\b/i.test(line.split('|')[1] ?? '')).length;
+
+  assert.ok(published > 5, `only ${published} published people came back from the install; the query did not work`);
+  assert.ok(fellows > 0, 'no published person has a position_title starting "Fellow", so the ledger split cannot be checked');
+
   const html = await (await fetch(url)).text();
   const hrefs = [...html.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]);
   const distinct = [...new Set(hrefs)];
 
-  /* 18 published people on 2026-08-20: 13 staff, 5 fellows. A floor rather than
-     an equality, because Empower adding a nineteenth is not a defect. */
-  assert.ok(distinct.length >= 18,
-    `/team/ links only ${distinct.length} distinct person page(s), and there were 18 published people `
-    + 'on 2026-08-20. Someone in the roster is rendering without a link to their bio.');
+  /* A floor rather than an equality, because a link to someone not in the
+     roster is a different question from the roster failing to link someone. */
+  assert.ok(distinct.length >= published,
+    `/team/ links only ${distinct.length} distinct person page(s), and the install publishes ${published} `
+    + 'people. Someone in the roster is rendering without a link to their bio.');
 
   /* The fellows ledger, on its own. It carried ZERO links until 2026-08-20. */
   const ledgerAt = html.indexOf('ta-ledger');
   assert.ok(ledgerAt > 0, 'no .ta-ledger on /team/, so the fellows section is not rendering at all');
   const ledger = html.slice(ledgerAt);
   const ledgerLinks = [...new Set([...ledger.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]))];
-  assert.ok(ledgerLinks.length >= 5,
-    `the fellows ledger links ${ledgerLinks.length} bio(s) and there are 5 contributing fellows. The `
+  assert.ok(ledgerLinks.length >= fellows,
+    `the fellows ledger links ${ledgerLinks.length} bio(s) and the install publishes ${fellows} contributing fellows. The `
     + 'ledger rows carry no "read bio" affordance, so a fellow whose name is not a link is a bio page '
     + 'nothing on the site reaches.');
 

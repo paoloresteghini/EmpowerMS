@@ -588,6 +588,121 @@ add_action( 'wp_head', function () {
 }, 1 );
 
 /**
+ * A DEFAULT SOCIAL SHARE IMAGE, because every page had none.
+ *
+ * Measured across the eighteen converted pages on 2026-08-21: og:title and
+ * twitter:card were present on all of them and og:image on none. Worse than
+ * merely absent, twitter:card is set to "summary_large_image", a card format
+ * whose entire purpose is to promise a large image. Every link posted to
+ * LinkedIn, Facebook or Slack rendered as a bare grey box.
+ *
+ * THE CARD IS BUILT FROM THE BUILD'S OWN ASSETS, not chosen from the
+ * photography. Which photograph represents the whole organisation is Empower's
+ * decision and not one to make silently, so assets/share-card.png is the
+ * primary wordmark on white, marked from above by the 56x4 orange rule this
+ * build uses as its motif, at the 1200x630 both Facebook and X document as the
+ * size they want. It is a neutral default that is right for every page rather
+ * than a guess that is right for one.
+ *
+ * PRIORITY 20, AFTER AIOSEO. All in One SEO owns the rest of the Open Graph
+ * block and currently emits no image at all. If it is ever configured to, this
+ * would become a second og:image on the page, and duplicates are not harmless:
+ * the scrapers pick one and nobody can predict which. The gate in
+ * test-elementor.mjs asserts exactly ONE og:image per page, which is what turns
+ * that from an invisible regression into a red test.
+ *
+ * og:description IS DELIBERATELY NOT SET HERE. It should mirror the meta
+ * description, seventeen of eighteen pages do not have one, and writing them is
+ * Empower's copy decision rather than a mechanical fix. Flagged in the audit,
+ * left alone here.
+ */
+add_action( 'wp_head', function () {
+	$url = get_stylesheet_directory_uri() . '/assets/share-card.png';
+	printf(
+		"<meta property=\"og:image\" content=\"%s\" />\n"
+		. "<meta property=\"og:image:width\" content=\"1200\" />\n"
+		. "<meta property=\"og:image:height\" content=\"630\" />\n"
+		. "<meta property=\"og:image:alt\" content=\"%s\" />\n"
+		. "<meta name=\"twitter:image\" content=\"%s\" />\n",
+		esc_url( $url ),
+		esc_attr__( 'Empower Mississippi', 'empowerms' ),
+		esc_url( $url )
+	);
+}, 20 );
+
+/**
+ * Pages that exist on this install but should never be found in a search
+ * result, keyed by slug because that is what survives a database rebuild.
+ *
+ * `zz-native-animation-probe` is the fixture the native-animation gate needs
+ * (elementor/theme-parts/native-animation-probe.mjs) and it has to stay
+ * PUBLISHED for that test to fetch it, so it cannot simply be drafted.
+ * `zz-spike-markup` is a dead measurement spike. `landing` is the campaign
+ * template: a real signed-off deliverable, but a template carrying placeholder
+ * copy, meant to be duplicated rather than visited.
+ *
+ * All three were in the public page sitemap when the SEO audit ran.
+ *
+ * ONE LIST, TWO EFFECTS, because the two are separate switches and shipping one
+ * without the other is the classic mistake: excluding a page from a sitemap
+ * does not stop it being indexed if anything links to it, and noindexing it
+ * does not stop it advertising itself in the sitemap. Both, from the same
+ * source of truth, so they cannot drift.
+ *
+ * At launch these pages should be DELETED rather than hidden. This is the
+ * safety net, not the plan.
+ */
+function empower_hidden_slugs() {
+	return array( 'zz-native-animation-probe', 'zz-spike-markup', 'landing' );
+}
+
+/* Whether the page being rendered is one of the hidden set. */
+function empower_is_hidden_page() {
+	return is_singular()
+		&& in_array( get_post_field( 'post_name', get_queried_object_id() ), empower_hidden_slugs(), true );
+}
+
+/* AIOSEO's filter, NOT core's `wp_robots`, and the difference was measured
+   rather than assumed. A `wp_robots` filter was written here first and had no
+   effect at all: All in One SEO replaces WordPress's robots tag with one it
+   builds itself, so core's filter never reaches the output and the three pages
+   still rendered `max-image-preview:large` with no noindex. The plugin's own
+   `aioseo_robots_meta` filter is the only hook that touches the tag that
+   actually ships. Verified against the live pages after the change, which is
+   the only way this kind of plugin-ownership question can be settled. */
+add_filter( 'aioseo_robots_meta', function ( $meta ) {
+	if ( ! empower_is_hidden_page() ) {
+		return $meta;
+	}
+	$meta = is_array( $meta ) ? $meta : array();
+	/* Both, and index/follow dropped: AIOSEO assembles the tag from this list,
+	   so leaving a stale "index" beside "noindex" would emit a tag that
+	   contradicts itself. */
+	$meta = array_values( array_diff( $meta, array( 'index', 'follow' ) ) );
+	foreach ( array( 'noindex', 'nofollow' ) as $directive ) {
+		if ( ! in_array( $directive, $meta, true ) ) {
+			$meta[] = $directive;
+		}
+	}
+	return $meta;
+} );
+
+/* AIOSEO builds its own sitemap and consults none of WordPress's robots
+   filters, so the same list has to be handed to it separately. The filter
+   takes an array of post IDs and is resolved from slugs at request time rather
+   than hard-coding ids, for the reason the page style map already records: an
+   id typed into a file is wrong the first time a post is recreated. */
+add_filter( 'aioseo_sitemap_exclude_posts', function ( $ids ) {
+	foreach ( empower_hidden_slugs() as $slug ) {
+		$page = get_page_by_path( $slug );
+		if ( $page ) {
+			$ids[] = (int) $page->ID;
+		}
+	}
+	return $ids;
+} );
+
+/**
  * THE HEADER'S OWN VERSION OF THE DEFERRED-GATE DEFECT, and it is the same
  * shape as the reveal gate above with a different set of scripts.
  *

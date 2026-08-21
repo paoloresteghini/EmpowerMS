@@ -5520,3 +5520,104 @@ test('the header never renders its panels open before its scripts close them', {
     `the header peaked at ${r.maxHeight}px against a resting ${r.restHeight}px. That is the visible jump this `
     + 'gate exists to prevent.');
 });
+
+/* --- what a shared link looks like ---------------------------------------
+   EVERY CONVERTED PAGE SHARED AS A BARE GREY BOX, found by the SEO audit on
+   2026-08-21. All 18 carried og:title and twitter:card and none carried
+   og:image, and twitter:card was set to "summary_large_image" -- a format
+   whose whole purpose is to promise an image that was not there.
+
+   EXACTLY ONE, NOT AT LEAST ONE, and that is the assertion that matters.
+   All in One SEO owns the rest of the Open Graph block and today emits no
+   image; the child theme adds one at wp_head priority 20. If AIOSEO is ever
+   configured with a default image, the page silently gains a SECOND og:image,
+   the scrapers pick one of the two and nobody can predict which. A
+   greater-than-zero check would sail straight past that. */
+test('every converted page offers exactly one share image, and it resolves', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10, `only ${pages.length} pages carry an exampleUrl`);
+  const stamp = Date.now();
+  const wrong = [];
+  const seen = new Set();
+
+  for (const [i, page] of pages.entries()) {
+    const url = new URL(page.exampleUrl);
+    url.searchParams.set('empower_cb', `og-${stamp}-${i}`);
+    const html = await fetchConverted(url.href);
+    const images = [...html.matchAll(/<meta\s+property="og:image"\s+content="([^"]*)"/g)].map((m) => m[1]);
+    if (images.length !== 1) {
+      wrong.push(`${page.name}: ${images.length} og:image tags`);
+      continue;
+    }
+    seen.add(images[0]);
+    /* twitter:image too: the card format is summary_large_image on every page,
+       and X reads twitter:image in preference to og:image when both exist. */
+    if (!/<meta\s+name="twitter:image"\s+content="/.test(html)) wrong.push(`${page.name}: no twitter:image`);
+  }
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} page(s) have the wrong number of share images:\n${wrong.join('\n')}\n`
+    + 'Two og:image tags usually means AIOSEO has been given a default image of its own and the theme\'s '
+    + 'wp_head block in functions.php should be removed; zero means that block has stopped running.');
+
+  assert.equal(seen.size, 1, `expected one shared default image across all pages, saw ${seen.size}: ${[...seen].join(', ')}`);
+  /* The tag can be perfectly formed and point at a 404, which is the same
+     grey box to anyone sharing the link. */
+  const res = await fetch([...seen][0], { redirect: 'follow' });
+  assert.equal(res.status, 200, `the share image ${[...seen][0]} returns ${res.status}`);
+  const bytes = Number(res.headers.get('content-length') ?? 0);
+  assert.ok(bytes > 5000, `the share image is only ${bytes} bytes, which is not a 1200x630 card`);
+});
+
+/* --- pages that must never be found --------------------------------------
+   THREE INTERNAL PAGES WERE IN THE PUBLIC SITEMAP when the SEO audit ran:
+   the native-animation test fixture, a dead measurement spike, and the
+   campaign landing template. The fixture has to stay PUBLISHED for its own
+   gate to fetch it, so drafting it is not available.
+
+   BOTH SWITCHES, because shipping one without the other is the classic
+   mistake: a sitemap exclusion does not stop a page being indexed if anything
+   links to it, and a noindex does not stop the page advertising itself in the
+   sitemap. functions.php drives both from one list, empower_hidden_slugs().
+
+   THE NOINDEX HALF NEEDED AIOSEO'S OWN FILTER. A core `wp_robots` filter was
+   written first and did nothing at all: AIOSEO replaces WordPress's robots tag
+   with one it builds itself, so the three pages still shipped
+   `max-image-preview:large` with no noindex in it. Only measuring the live tag
+   caught that, which is why this test reads the tag rather than the setting. */
+test('the internal pages are noindexed and out of the sitemap, and the real ones are not', { concurrency: 1 }, async () => {
+  const base = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const origin = new URL(base).origin;
+  const hidden = ['zz-native-animation-probe', 'zz-spike-markup', 'landing'];
+  const stamp = Date.now();
+  const wrong = [];
+
+  const robotsOf = async (slug, i) => {
+    const res = await fetch(`${origin}/${slug}/?empower_cb=nx-${stamp}-${i}`);
+    const html = await res.text();
+    return (html.match(/<meta name="robots" content="([^"]*)"/) ?? [, ''])[1];
+  };
+
+  for (const [i, slug] of hidden.entries()) {
+    const robots = await robotsOf(slug, i);
+    if (!/\bnoindex\b/.test(robots)) wrong.push(`/${slug}/ is not noindexed (robots: "${robots}")`);
+  }
+  /* The other half of the assertion, and the half that stops this passing by
+     noindexing the whole site: a real page must NOT be caught by the list. */
+  for (const [i, slug] of ['quality-education', 'who-we-are'].entries()) {
+    const robots = await robotsOf(slug, 100 + i);
+    if (/\bnoindex\b/.test(robots)) wrong.push(`/${slug}/ IS noindexed and must not be (robots: "${robots}")`);
+  }
+
+  const sitemap = await (await fetch(`${origin}/page-sitemap.xml?empower_cb=sm-${stamp}`)).text();
+  const listed = [...sitemap.matchAll(/<loc><!\[CDATA\[([^\]]*)/g)].map((m) => m[1]);
+  assert.ok(listed.length > 30, `the page sitemap lists only ${listed.length} URLs; it did not render properly`);
+  for (const slug of hidden) {
+    if (listed.some((u) => new URL(u).pathname === `/${slug}/`)) wrong.push(`/${slug}/ is still in page-sitemap.xml`);
+  }
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} problem(s) with the hidden-page set:\n${wrong.join('\n')}\n`
+    + 'Both effects come from empower_hidden_slugs() in the child theme: aioseo_robots_meta for the tag, '
+    + 'aioseo_sitemap_exclude_posts for the sitemap.');
+});

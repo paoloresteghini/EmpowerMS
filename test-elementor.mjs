@@ -5684,24 +5684,54 @@ test('every search listing holds the targets seo.mjs sets for itself', async () 
   const { PAGE_SEO, PERSON_SEO, ALL_SEO, BRAND_SUFFIX, fullTitle } = await import('./elementor/seo.mjs');
 
   assert.equal(Object.keys(PAGE_SEO).length, 16, 'expected 16 converted-page listings');
-  assert.equal(Object.keys(PERSON_SEO).length, 18, 'expected 18 person listings');
-  assert.equal(Object.keys(ALL_SEO).length, 34, 'ALL_SEO should merge to 34; a key collides between the two');
+  assert.equal(Object.keys(PERSON_SEO).length, 13, 'expected 13 person listings');
+  assert.equal(Object.keys(ALL_SEO).length, 29, 'ALL_SEO should merge to 29; a key collides between the two');
   assert.equal(BRAND_SUFFIX.length, 22, `the brand suffix is ${BRAND_SUFFIX.length} characters, and the title band is calculated around 22`);
+
+  /* THE BANDS ARE ASSERTED AS AN EXACT SET, NOT AS AN EMPTY ONE, because
+     three entries are deliberately outside them. Empower returned the
+     approval sheet on 2026-08-21 with edits that do not fit, and Paolo's
+     decision was that the returned document wins: their wording ships and
+     the band records the exception. Writing that as a skip-list would let
+     the band go quiet; writing it as an exact set means a FOURTH violation
+     goes red, and so does an exemption that stops being needed, which is
+     the failure this repository has already shipped twice with hand-written
+     page lists.
+
+     What each one costs, so the list can be argued with rather than merely
+     obeyed:
+       gina-metzger 64 and patrick-miller-2 66 truncate inside the brand
+       suffix, i.e. " - Empower Missi...". Name and role, the two halves
+       someone actually searched for, are both intact.
+       patrick-miller-2's 164-character description is the one with a real
+       cost: Google cuts it a few characters before the full stop. Dropping
+       the redundant "Dr. Patrick Miller is " opener would bring it to 142,
+       and that remains the fix if Empower would rather not be clipped.
+       capitol-chat at 137 is three characters of wasted snippet width and
+       nothing else. It is short because Empower took Wil Ervin's name out
+       of it. */
+  const OVER_LONG_TITLES = ['/person/gina-metzger/ (64)', '/person/patrick-miller-2/ (66)'];
+  const OUT_OF_BAND_DESCS = ['/capitol-chat/ (137)', '/person/patrick-miller-2/ (164)'];
 
   const long = [], short = [], badDesc = [];
   for (const path of Object.keys(ALL_SEO)) {
     const title = fullTitle(path);
     const desc = ALL_SEO[path].description;
-    if (title.length > 60) long.push(`${path} (${title.length}): ${title}`);
+    if (title.length > 60) long.push(`${path} (${title.length})`);
     if (title.length < 45) short.push(`${path} (${title.length}): ${title}`);
     if (desc.length < 140 || desc.length > 160) badDesc.push(`${path} (${desc.length})`);
   }
-  assert.deepEqual(long, [], `${long.length} title(s) over 60 characters, which Google truncates:\n${long.join('\n')}`);
+  assert.deepEqual(long.sort(), [...OVER_LONG_TITLES].sort(),
+    `the set of titles over 60 characters is not the approved set.\nGot:      ${long.join(', ')}\n`
+    + `Expected: ${OVER_LONG_TITLES.join(', ')}\n`
+    + 'A new entry here truncates in a search result. An entry that has DISAPPEARED means the copy now '
+    + 'fits and the exemption above should be deleted with it.');
   assert.deepEqual(short, [],
     `${short.length} title(s) under 45 characters, wasting result width:\n${short.join('\n')}`);
-  assert.deepEqual(badDesc, [],
-    `${badDesc.length} description(s) outside 140-160 characters:\n${badDesc.join('\n')}\n`
-    + 'Under 140 wastes the snippet; over 160 is cut mid-sentence.');
+  assert.deepEqual(badDesc.sort(), [...OUT_OF_BAND_DESCS].sort(),
+    `the set of descriptions outside 140-160 characters is not the approved set.\nGot:      ${badDesc.join(', ')}\n`
+    + `Expected: ${OUT_OF_BAND_DESCS.join(', ')}\n`
+    + 'Under 140 wastes the snippet; over 160 is cut mid-sentence. Both are exempted by path, not by band.');
 
   /* Duplicate descriptions are always wrong: two pages claiming the same
      thing is the signal Google uses to decide one of them is not worth
@@ -5771,9 +5801,19 @@ test('every converted page has a search listing, unless the theme hides it', asy
    the copy half written to the install.
 
    PERSON COVERAGE IS DERIVED FROM THE INSTALL, not from a count typed here.
-   The eighteen bios are CPT entries; there is no page directory to walk and
-   no register row, so the only honest source for "who exists" is the install
-   itself. Publish a nineteenth person and this goes red naming them. */
+   The bios are CPT entries; there is no page directory to walk and no
+   register row, so the only honest source for "who exists" is the install
+   itself. Publish one more person and this goes red naming them.
+
+   THAT DERIVATION IS WHAT MAKES THE 2026-08-21 REMOVAL SAFE. Empower
+   returned the approval sheet with five rows emptied (Wil Ervin, Brett
+   Kittredge, Steven Randle, Katie Elliott, Christopher Koopman), Paolo's
+   decision was to drop their listings AND set their posts to draft, and this
+   assertion is the thing that keeps the two halves in step: it reads who is
+   published rather than trusting a number, so if any of the five is
+   republished without their listing coming back, this goes red naming them.
+   The reverse case, a listing with no published post, is caught by the
+   url_to_postid pass above. */
 test('every search listing points at a real post, and no published person is missing one', { concurrency: 1 }, async () => {
   const { ALL_SEO, PERSON_SEO } = await import('./elementor/seo.mjs');
   const { wpe, stripNotices } = await import('./wpe.mjs');

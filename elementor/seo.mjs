@@ -13,10 +13,22 @@
    the conversion pipeline put one back.
 
    The same mechanism has the opposite effect on the `person` CPT: those
-   posts DO have post_content, so all eighteen bios have a description, and
-   every one of them is 359-416 characters, i.e. more than twice what Google
-   will show. They are not missing, they are unusable, which is a different
-   defect with the same fix: write one.
+   posts DO have post_content, so every bio has a description, and every one
+   of them is 359-416 characters, i.e. more than twice what Google will show.
+   They are not missing, they are unusable, which is a different defect with
+   the same fix: write one.
+
+   WHO IS IN HERE CHANGED ON 2026-08-21. The sheet went to Empower with
+   eighteen bios and came back with five rows emptied: Wil Ervin, Brett
+   Kittredge, Steven Randle, Katie Elliott and Christopher Koopman. That
+   reads as a staff change rather than an edit, and the rest of the returned
+   document agrees with it - Wil Ervin's name was taken out of the Capitol
+   Chat description in the same pass, and Kienna Horn now carries the
+   Communications title Brett Kittredge held. On Paolo's decision the five
+   listings were deleted here and the five posts set to draft on the install,
+   so the thirteen below are exactly the thirteen published `person` entries.
+   test-elementor.mjs asserts that correspondence against the install rather
+   than against this count.
 
    TARGETS (checked by test-elementor.mjs, not by eye):
      title       45-60 characters INCLUDING the " - Empower Mississippi"
@@ -73,8 +85,8 @@ export const PAGE_SEO = {
   '/capitol-chat/': {
     title: 'Capitol Chat: Legislative Updates',
     description:
-      "Empower Mississippi's weekly insider update on the State Capitol. Wil "
-      + "Ervin breaks down the session's biggest developments in under five "
+      "Empower Mississippi's weekly insider update on the State Capitol. We "
+      + "break down the session's biggest developments in under five "
       + 'minutes.',
   },
   '/who-we-are/': {
@@ -171,7 +183,7 @@ export const PAGE_SEO = {
   },
 };
 
-/* The eighteen `person` CPT bios. Titles carry the role where the name is
+/* The thirteen published `person` CPT bios. Titles carry the role where the name is
    short enough for the pair to fit under 60 characters with the suffix, and
    the name alone where it is not; role in a title is worth having (it is
    what someone searching a name is trying to confirm) but not worth
@@ -185,33 +197,31 @@ export const PERSON_SEO = {
       + 'generation Mississippian from Laurel, previously at Mississippi '
       + 'Center for Public Policy.',
   },
-  '/person/wil-ervin-3/': {
-    title: 'Wil Ervin, Senior Vice President',
-    description:
-      'Senior Vice President at Empower Mississippi, leading strategy, the '
-      + 'public policy team and government affairs. Nearly a decade at the '
-      + 'Division of Medicaid.',
-  },
   '/person/gina-metzger/': {
-    title: 'Gina Metzger, Executive Vice President',
+    /* 64 with the suffix, over the 60 the band asks for. Empower's own
+       wording, kept verbatim on Paolo's 2026-08-21 decision that the returned
+       document wins over the band: what truncates is the tail of the brand
+       suffix, and the name and the role both survive intact. Exempted by path
+       in test-elementor.mjs, not by widening the band for everybody. */
+    title: 'Gina Metzger, Chief Administrative Officer',
     description:
       'Executive Vice President at Empower Mississippi, overseeing day-to-day '
       + 'operations and every Empower event. A University of Mississippi '
       + 'graduate.',
   },
-  '/person/brett-kittredge/': {
-    title: 'Brett Kittredge, VP Marketing',
-    description:
-      'Vice President of Marketing and Communications at Empower Mississippi, '
-      + "covering education, work and justice. Empower's Director of "
-      + 'Communications 2015-2018.',
-  },
   '/person/patrick-miller-2/': {
-    title: 'Dr. Patrick Miller, VP Development',
+    /* Promoted between the sheet going out and coming back: he was VP
+       Development, he is Executive Vice President, and the description is
+       Empower's replacement rather than an edit of ours. 66 with the suffix
+       and 164 characters of description, both over, both kept verbatim for
+       the same reason as Gina Metzger above. The description is the one
+       exemption with a visible cost: Google clips it around four characters
+       short of the full stop. */
+    title: 'Dr. Patrick Miller, Executive Vice President',
     description:
-      'Vice President of Development at Empower Mississippi, leading '
-      + 'fundraising and stewardship. His career spans institutional '
-      + 'advancement and education leadership.',
+      'Dr. Patrick Miller is Executive Vice President at Empower Mississippi, '
+      + 'leading organizational execution, team alignment, fundraising, and '
+      + 'institutional advancement.',
   },
   '/person/dr-kristin-vance-richards/': {
     title: 'Dr. Kristin Vance Richards',
@@ -234,13 +244,6 @@ export const PERSON_SEO = {
       + 'most affected by policy in education, work and criminal justice, '
       + 'elevating their voices.',
   },
-  '/person/steven-randle/': {
-    title: 'Steven Randle, Justice and Work',
-    description:
-      'Director of Justice and Work at Empower Mississippi, shaping criminal '
-      + 'justice and employability policy. Previously at Tougaloo College and '
-      + 'in legislative work.',
-  },
   '/person/forest-thigpen/': {
     title: 'Forest Thigpen, Senior Advisor',
     description:
@@ -261,13 +264,6 @@ export const PERSON_SEO = {
       'Director of Embark, helping education entrepreneurs open high-quality '
       + 'charter and private schools in Mississippi. She helped launch Atlanta '
       + 'Classical Academy.',
-  },
-  '/person/katieelliott/': {
-    title: 'Katie Elliott, Embark Operations',
-    description:
-      "Operations Manager of Embark, building the project's administrative "
-      + 'systems and communications, after teaching Developmental English at '
-      + 'community college level.',
   },
   '/person/donald-nielsen/': {
     title: 'Donald Nielsen, Empower Fellow',
@@ -296,13 +292,6 @@ export const PERSON_SEO = {
       'Empower Mississippi fellow. Research analyst with the Knee Center for '
       + 'the Study of Occupational Regulation, studying how licensing affects '
       + 'work and enterprise.',
-  },
-  '/person/christopher-koopman/': {
-    title: 'Christopher Koopman, Fellow',
-    description:
-      'Empower Mississippi fellow. Executive Director of the Center for Growth '
-      + 'and Opportunity at Utah State University, on regulation, competition '
-      + 'and innovation.',
   },
 };
 

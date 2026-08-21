@@ -5879,3 +5879,120 @@ test('every search listing points at a real post, and no published person is mis
     + 'Add them to PERSON_SEO in elementor/seo.mjs. Their bios do carry an auto-generated description, but it '
     + 'is the opening 350-420 characters of the biography, which Google cuts mid-sentence.');
 });
+
+/* --- the legacy duplicates that competed with the converted pages --------
+
+   THE PROBLEM THESE REDIRECTS SOLVE was invisible to every gate in this file
+   until 2026-08-21, because it is not a defect in any page. Sixteen converted
+   pages got approved titles and descriptions, and twelve legacy pages sat
+   beside them answering the same queries: all indexable, all SELF-canonical,
+   all in page-sitemap.xml, several on older and better-established URLs. Each
+   page was individually correct. The site was competing with itself.
+
+   THREE OF THE TWELVE ARE DELIBERATELY STILL THERE and this test asserts they
+   still return 200, which is the unusual half. /become-an-ambassador/ serves
+   live Gravity Form 37 and /become-an-advocate-for-change/ serves form 41,
+   while the converted /ambassadors/ carries no form at all: a 301 from the
+   working signup onto the form-shaped design would end ambassador signups and
+   report success doing it. /learn-more/ is the target of five campaign rules,
+   one of them a printed QR code. A future tidy-up that "finishes the job" by
+   redirecting those three is the expensive mistake here, so the assertion is
+   written to stop it rather than to leave it to a comment.
+
+   ONE HOP, NOT JUST A 301. Four existing rules landed on pages that this work
+   then redirected again, and a chain passes any check that only asks "does it
+   redirect". The hop count is the assertion. */
+test('the legacy duplicates redirect in one hop, and the pages with forms do not', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+  const { REDIRECTS, REPOINT, MUST_STAY_DISABLED, DELIBERATELY_NOT_REDIRECTED } =
+    await import('./elementor/redirects.mjs');
+
+  /* Sources and their repointed rules together: both must land in one hop. */
+  const hops = [...REDIRECTS, ...REPOINT.map((r) => ({ from: r.from, to: r.to }))];
+  const wrong = [];
+  for (const { from, to } of hops) {
+    const res = await fetch(origin + from, { redirect: 'manual' });
+    const loc = res.headers.get('location');
+    const landed = loc ? new URL(loc, origin).pathname : null;
+    if (res.status !== 301 || landed !== to) {
+      wrong.push(`${from} -> ${res.status} ${landed ?? '(no location)'}, expected 301 ${to}`);
+      continue;
+    }
+    /* The destination must be the END of the chain, not another rule. */
+    const onward = await fetch(origin + to, { redirect: 'manual' });
+    if (onward.status !== 200) {
+      wrong.push(`${from} -> ${to} -> ${onward.status}: the destination is not final, this is a chain`);
+    }
+  }
+  assert.deepEqual(wrong, [],
+    `${wrong.length} legacy redirect(s) wrong:\n  ${wrong.join('\n  ')}\n`
+    + 'Run node elementor/deploy-redirects.mjs, or fix elementor/redirects.mjs.');
+
+  /* The three that must NOT be redirected, and why is in redirects.mjs. */
+  const broken = [];
+  for (const { path, why } of DELIBERATELY_NOT_REDIRECTED) {
+    const res = await fetch(origin + path, { redirect: 'manual' });
+    if (res.status !== 200) broken.push(`${path} now returns ${res.status}, and it must stay 200: ${why}`);
+  }
+  assert.deepEqual(broken, [],
+    `${broken.length} page(s) that must NOT be redirected have been:\n  ${broken.join('\n  ')}`);
+
+  /* The loaded guns: three existing rules are the exact reverse of three of
+     the redirects above, and enabling any of them makes both pages
+     unreachable. They read as harmless in the plugin's own list screen. */
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const ids = MUST_STAY_DISABLED.map((r) => r.id).join(',');
+  const live = stripNotices(await wpe(
+    `wp eval 'global $wpdb; foreach ( $wpdb->get_results( "SELECT id, status FROM {$wpdb->prefix}redirection_items `
+    + `WHERE id IN (${ids})" ) as $r ) { echo $r->id, "=", $r->status, "\\n"; }'`,
+  )).split('\n').map((l) => l.trim()).filter(Boolean);
+  const armed = live.filter((l) => !l.endsWith('=disabled'));
+  assert.deepEqual(armed, [],
+    `${armed.length} reverse redirect rule(s) are no longer disabled: ${armed.join(', ')}\n`
+    + MUST_STAY_DISABLED.map((r) => `  id ${r.id}: ${r.rule} loops with ${r.loopsWith}`).join('\n')
+    + '\nEnabling one of these makes both pages unreachable.');
+});
+
+/* AIOSEO CANNOT SEE THE REDIRECTION PLUGIN, so the nine redirected pages stayed
+   in page-sitemap.xml after the redirects went live: still `publish`, still
+   advertised, every one of them an instruction to crawl a URL that bounces.
+   empower_redirected_slugs() in the child theme hands them to AIOSEO's own
+   exclude filter.
+
+   THE PHP LIST AND THE JS LIST ARE THE SAME NINE STRINGS in two files, which is
+   the drift this repository keeps getting bitten by, so the first assertion
+   reads the PHP function's source and compares it to redirects.mjs. Adding a
+   tenth redirect without adding it to the theme goes red here rather than
+   quietly leaving it in the sitemap. */
+test('the redirected pages leave the sitemap', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+  const { REDIRECTS } = await import('./elementor/redirects.mjs');
+  const { readFile } = await import('node:fs/promises');
+
+  const php = await readFile('./wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.match(/function empower_redirected_slugs\(\)\s*\{\s*return array\(([\s\S]*?)\);/);
+  assert.ok(fn, 'empower_redirected_slugs() not found in the child theme; the sitemap exclusion is gone');
+  const phpSlugs = [...fn[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
+  const jsSlugs = REDIRECTS.map((r) => r.from.replace(/^\/|\/$/g, '')).sort();
+  assert.deepEqual(phpSlugs, jsSlugs,
+    'empower_redirected_slugs() in functions.php disagrees with REDIRECTS in elementor/redirects.mjs.\n'
+    + `  php: ${phpSlugs.join(', ')}\n  js : ${jsSlugs.join(', ')}\n`
+    + 'Two files holding one list; a redirect missing from the PHP stays in the sitemap.');
+
+  const xml = await (await fetch(`${origin}/page-sitemap.xml`)).text();
+  const listed = REDIRECTS.map((r) => r.from).filter((p) => xml.includes(p));
+  assert.deepEqual(listed, [],
+    `${listed.length} redirected page(s) are still in page-sitemap.xml:\n  ${listed.join('\n  ')}\n`
+    + 'The sitemap is telling Google to crawl URLs that immediately redirect. Deploy the theme, then flush '
+    + '(wp page-cache flush && wp cdn-cache flush): AIOSEO caches the sitemap.');
+});

@@ -687,13 +687,58 @@ add_filter( 'aioseo_robots_meta', function ( $meta ) {
 	return $meta;
 } );
 
+/**
+ * PAGES THAT NOW 301 SOMEWHERE ELSE, and must stop advertising themselves.
+ *
+ * Nine legacy pages were duplicates of converted ones: indexable, SELF-
+ * canonical, and competing with the very pages that got approved search
+ * listings on 2026-08-21. The Redirection plugin now sends each to its
+ * replacement. That is the visitor half; this is the crawler half.
+ *
+ * AIOSEO CANNOT SEE REDIRECTION'S RULES. The posts are still `publish`, so the
+ * sitemap kept listing all nine after the redirects went live, which tells
+ * Google to go and fetch nine URLs that immediately bounce it somewhere else.
+ * Measured after deploying, not assumed: 67 urls before, 67 after, all nine
+ * still there.
+ *
+ * SEPARATE FROM empower_hidden_slugs() ON PURPOSE. A hidden page renders and
+ * needs a noindex tag; these never render at all, so the robots filter above
+ * would never fire for them and pretending otherwise would be a comment that
+ * lies. All they need is to leave the sitemap, so they share that filter and
+ * nothing else.
+ *
+ * THE LIST IS DUPLICATED FROM elementor/redirects.mjs, which is a PHP file and
+ * a JS file holding the same nine strings, i.e. exactly the drift this
+ * repository keeps getting bitten by. It is gated: `the redirected pages leave
+ * the sitemap` in test-elementor.mjs reads this function's source and asserts
+ * it equals REDIRECTS, so adding a tenth redirect without adding it here goes
+ * red.
+ *
+ * At launch these pages should be DELETED and the redirects kept. This is the
+ * interim state, not the plan.
+ */
+function empower_redirected_slugs() {
+	return array(
+		'home',
+		'team-old',
+		'board',
+		'donate-old',
+		'about',
+		'work',
+		'justice',
+		'education-3',
+		'the-empower-podcast',
+	);
+}
+
 /* AIOSEO builds its own sitemap and consults none of WordPress's robots
    filters, so the same list has to be handed to it separately. The filter
    takes an array of post IDs and is resolved from slugs at request time rather
    than hard-coding ids, for the reason the page style map already records: an
    id typed into a file is wrong the first time a post is recreated. */
 add_filter( 'aioseo_sitemap_exclude_posts', function ( $ids ) {
-	foreach ( empower_hidden_slugs() as $slug ) {
+	$slugs = array_merge( empower_hidden_slugs(), empower_redirected_slugs() );
+	foreach ( $slugs as $slug ) {
 		$page = get_page_by_path( $slug );
 		if ( $page ) {
 			$ids[] = (int) $page->ID;

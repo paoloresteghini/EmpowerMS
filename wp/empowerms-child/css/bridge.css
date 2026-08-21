@@ -7580,3 +7580,37 @@ body .wpautoterms-footer a:focus-visible{
 .animated{
   animation-timing-function:var(--ease-entrance, cubic-bezier(.16,.84,.44,1));
 }
+
+/* ==========================================================================
+   THE HEADER'S CLOSED STATE, BEFORE ITS SCRIPTS ARRIVE.
+   Added 2026-08-20. The other half of the inline head script in
+   functions.php, whose docblock carries the full account and the numbers.
+
+   In short: the dropdown panels and the search panel ship OPEN in the markup,
+   on purpose, so that the navigation survives its scripts not loading. Both
+   scripts are deferred, so on this install both ran after first paint and
+   every visitor saw the header render 727px tall with five panels and a
+   search bar laid out, then collapse to 137px. These two rules are what the
+   header looks like in the window between paint and those scripts running.
+
+   "pending" AND NOT A THIRD ATTRIBUTE, which is what keeps this to two rules
+   and no JavaScript changes. js/dropdown.js and theme-js/search.js already
+   write "on" into these same two attributes as they run, so their own
+   existing calls overwrite "pending" and these selectors stop matching. There
+   is nothing to remember to clean up, and no state that can be left behind by
+   a script that got half way.
+
+   display:none, NOT visibility or opacity: the defect is a 590px LAYOUT jump,
+   and only taking the panels out of flow fixes that. The value is `none`
+   against a <div>'s own `block`, which is what the no-JS gate in
+   test-elementor.mjs ("the five desktop dropdown panels ship open without
+   JavaScript and close with it") checks from the other side -- it loads the
+   page with JavaScript disabled, where the inline script never runs, neither
+   attribute is ever set, and these rules therefore never apply.
+
+   IN bridge.css AND NOT css/header-2.css because both attributes are emitted
+   by the WordPress theme and exist nowhere in the static build. In dist/ the
+   selectors would simply never match, so the rules would be dead weight in a
+   protected file. ========================================================== */
+[data-dropdown="pending"] .em-header__menu{display:none}
+[data-search="pending"] #site-search{display:none}

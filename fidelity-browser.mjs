@@ -446,6 +446,60 @@ export async function nativeAnimation(url, { width = 1440, height = 900 } = {}) 
   }
 }
 
+/* DOES THE HEADER EVER RENDER AT THE WRONG SIZE, sampled frame by frame from
+   before the document has run anything of its own.
+
+   WHY AN END-STATE READING CANNOT ANSWER THIS. The header settles correctly
+   either way: the panels close, the search bar closes, and every existing
+   header assertion in this suite passes on the broken page. What was wrong
+   was a WINDOW -- between first paint and two deferred scripts running, the
+   header laid out at 727px with five dropdown panels and the search bar open,
+   then collapsed to 137px. Same class of defect as the dead entrance
+   animation, same reason nothing caught it, and the same answer: sample the
+   frames instead of the outcome.
+
+   maxHeight IS THE ASSERTION AND panelFrames IS THE DIAGNOSIS. A header that
+   is briefly enormous is the defect a visitor sees; the panel count says
+   which of the two scripts was responsible. Both are reported so a failure
+   does not need a second run to interpret. */
+export async function headerSettle(url, { width = 1440, height = 900 } = {}) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.addInitScript(() => {
+      window.__hs = [];
+      const poll = () => {
+        const header = document.querySelector('.em-header');
+        if (header) {
+          window.__hs.push({
+            h: header.getBoundingClientRect().height,
+            panels: [...document.querySelectorAll('.em-header__menu')]
+              .filter((el) => el.getBoundingClientRect().height > 0).length,
+            search: (document.getElementById('site-search')?.getBoundingClientRect().height ?? 0) > 0,
+          });
+        }
+        if (performance.now() < 4000) requestAnimationFrame(poll);
+      };
+      requestAnimationFrame(poll);
+    });
+    await page.goto(url, { waitUntil: 'load' });
+    await page.waitForTimeout(2500);
+    const frames = await page.evaluate(() => window.__hs ?? []);
+    const heights = frames.map((f) => f.h);
+    return {
+      frames: frames.length,
+      maxHeight: Math.round(Math.max(0, ...heights)),
+      /* The last sampled frame, which is the header at rest and the number
+         every other reading is judged against. */
+      restHeight: Math.round(frames.length ? frames[frames.length - 1].h : 0),
+      panelFrames: frames.filter((f) => f.panels > 0).length,
+      searchFrames: frames.filter((f) => f.search).length,
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function checkVisibleWithoutJs(url, selector) {
   const browser = await chromium.launch();
   try {

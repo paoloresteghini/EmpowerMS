@@ -588,6 +588,62 @@ add_action( 'wp_head', function () {
 }, 1 );
 
 /**
+ * THE HEADER'S OWN VERSION OF THE DEFERRED-GATE DEFECT, and it is the same
+ * shape as the reveal gate above with a different set of scripts.
+ *
+ * WHAT A VISITOR SEES. src/_shared/header-2.html ships the five dropdown
+ * panels and the search panel OPEN, in normal flow, by design: that is
+ * js/dropdown.js's and theme-js/search.js's progressive-enhancement contract,
+ * and it is what keeps every nav destination reachable when those scripts do
+ * not load. Each script closes its own panels and sets its gate
+ * (data-dropdown="on", data-search="on") as it runs. Both are deferred, so on
+ * this install both ran AFTER first paint, every time. Measured on the
+ * homepage 2026-08-20: first paint 1336ms, gates set 1397ms, and in between
+ * the header is 727px tall with all five panels laid out and the search bar
+ * open. It then collapses to 137px. A 590px jump on every page load.
+ *
+ * WHY AN INLINE HEAD SCRIPT RATHER THAN THE language_attributes FILTER THE
+ * REVEAL GATE USES. Both would remove the jump, but they fail differently
+ * when a script is missing, and here the content at stake is the navigation.
+ *
+ *   - Hard-coding the closed state in the server markup needs a <noscript>
+ *     block to stay honest, and <noscript> only covers JavaScript being
+ *     DISABLED. It does nothing when JS is on and the script 404s or is
+ *     blocked, and in that case the panels would stay hidden with no way
+ *     back: the whole desktop nav, gone, silently.
+ *   - Setting the attribute from an inline script inverts both failures.
+ *     JavaScript off means this never runs, so nothing is ever hidden and the
+ *     contract holds with no <noscript> needed at all. JavaScript on but the
+ *     external script missing is caught by the timeout below.
+ *
+ * INLINE AND BLOCKING, IN THE HEAD, ON PURPOSE. It has to have run before the
+ * first paint or it has not fixed anything; that is the entire defect. It is
+ * ~300 bytes and sets two attributes.
+ *
+ * NEITHER SCRIPT NEEDS TO CHANGE. js/dropdown.js already does
+ * `root.setAttribute('data-dropdown', 'on')` and theme-js/search.js already
+ * does `doc.setAttribute('data-search', 'on')`. Writing "pending" into the
+ * same attributes means their own existing calls OVERWRITE it, so the
+ * pending rules in css/bridge.css stop matching the moment either script
+ * runs, with nothing added to either file to make that happen.
+ *
+ * THE TIMEOUT IS THE CONTRACT'S LAST RESORT, not a timing tweak. If a script
+ * never arrives, nothing else will ever clear "pending" and the panels stay
+ * display:none. Four seconds is well past any load this install produces
+ * (the gates landed at 1397ms on the slowest page measured) and well short of
+ * a visitor deciding the navigation is broken. In the normal case it fires
+ * against attributes that already read "on" and removes nothing.
+ */
+add_action( 'wp_head', function () {
+	echo "<script>(function(){var r=document.documentElement;"
+		. "r.setAttribute('data-dropdown','pending');r.setAttribute('data-search','pending');"
+		. "setTimeout(function(){"
+		. "if(r.getAttribute('data-dropdown')==='pending')r.removeAttribute('data-dropdown');"
+		. "if(r.getAttribute('data-search')==='pending')r.removeAttribute('data-search');"
+		. "},4000);})();</script>\n";
+}, 1 );
+
+/**
  * The motion layer. Both files ship together or neither does: css/motion.css
  * hides every [data-reveal] element, and js/reveal.js is what reveals them.
  * Enqueueing the stylesheet without the script leaves the page blank below the

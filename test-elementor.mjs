@@ -5467,3 +5467,56 @@ test('a natively-animated Elementor element lands on this build\'s motion values
     + 'Duration dropdown no longer does anything. Something in bridge.css is now out-specifying Elementor\'s '
     + '`.animated.animated-slow` (0,2,0) rule, or that rule has changed shape on an Elementor upgrade.');
 });
+
+/* THE HEADER RENDERED 727px TALL ON EVERY PAGE LOAD AND THEN COLLAPSED TO
+   137px, and the suite was green throughout. Reported by Paolo 2026-08-20 as
+   "the menu appears fully expanded before closing", with a screenshot.
+
+   src/_shared/header-2.html ships the five dropdown panels and the search
+   panel OPEN, in normal flow, by design: that is js/dropdown.js's and
+   theme-js/search.js's progressive-enhancement contract, and it is what keeps
+   the navigation reachable when those scripts do not load. Each script closes
+   its own panels as it runs. Both are deferred, so both ran AFTER first paint
+   (measured on the homepage: paint 1336ms, gates 1397ms), and in between
+   every visitor saw the whole mega menu laid out down the page.
+
+   WHY NOTHING CAUGHT IT. Every header assertion here reads the settled page,
+   and the settled page was always right. "the five desktop dropdown panels
+   ship open without JavaScript and close with it" is the closest existing
+   test and it passes identically on the broken and the fixed page: 5 without
+   JS, 0 with. The defect was purely a window, and a suite with no temporal
+   instrument cannot have an opinion about one. This is the third time that
+   sentence has been written today.
+
+   THE FIX IS AN INLINE HEAD SCRIPT, not a hard-coded closed state, and the
+   docblock in the child theme's functions.php records why: <noscript> only
+   covers JavaScript being disabled, and the content at stake here is the
+   navigation, so the failure that mattered was a script 404ing with JS ON.
+   An inline script inverts both failure modes and a 4s timeout catches the
+   404 case. Verified against all three paths before this gate was written:
+   JS disabled leaves 5 panels and 14 nav links reachable, aborting both
+   scripts restores the panels after the timeout, and a normal load still
+   opens one panel on hover and the search panel on click. */
+test('the header never renders its panels open before its scripts close them', { concurrency: 1 }, async () => {
+  const { headerSettle } = await import('./fidelity-browser.mjs');
+  const url = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const r = await headerSettle(url);
+
+  assert.ok(r.frames > 30, `only ${r.frames} frames sampled; .em-header was never found and nothing below was measured`);
+  assert.ok(r.restHeight > 60 && r.restHeight < 300,
+    `the header settled at ${r.restHeight}px, which is not a plausible resting height; the comparison below `
+    + 'would be measuring against a broken page');
+  assert.equal(r.panelFrames, 0,
+    `the dropdown panels were laid out on ${r.panelFrames} frames before js/dropdown.js closed them. The inline `
+    + 'head script in functions.php sets data-dropdown="pending", and css/bridge.css hides the panels while that '
+    + 'value is present; one of the two is missing, or the script has stopped running before first paint.');
+  assert.equal(r.searchFrames, 0,
+    `the search panel was laid out on ${r.searchFrames} frames before theme-js/search.js closed it; see above, `
+    + 'the same inline script sets data-search="pending"');
+  /* The number a visitor actually experiences. Generous multiplier on
+     purpose: this is meant to catch a 5x jump, not police a few pixels of
+     font-loading reflow. */
+  assert.ok(r.maxHeight < r.restHeight * 1.5,
+    `the header peaked at ${r.maxHeight}px against a resting ${r.restHeight}px. That is the visible jump this `
+    + 'gate exists to prevent.');
+});

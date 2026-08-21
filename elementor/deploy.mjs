@@ -1,4 +1,5 @@
 import { wpe } from '../wpe.mjs';
+import { remapLinks } from './links.mjs';
 
 /* The version Task 2 actually captured on empv2: core moved to 4.2.2 by the
    time Pro was installed, so this is the re-pinned value, not the plan's
@@ -59,7 +60,15 @@ function deployElements(postId, elements, templateType) {
     throw new Error(`deployElements: postId must be an integer, got ${JSON.stringify(postId)}`);
   }
 
-  const json = JSON.stringify(elements);
+  /* THE LINK REMAP, applied here and nowhere else. The static build's routes do
+     not exist on this install, so every tree on its way to the install is
+     rewritten to point at the converted pages. This is the only place all three
+     producers meet (the 17 page modules, the header and footer extracted
+     verbatim from the frozen src/_shared/*.html, and content-a's loop item), so
+     it is the only place where a page converted later cannot miss the remap.
+     elementor/links.mjs carries the map and the reasoning; it returns a new tree
+     and never mutates this one. */
+  const json = JSON.stringify(remapLinks(elements));
   const suffix = uniqueSuffix();
   const heredoc = `ELEMENTOR_DATA_${suffix}`;
   const tmpFile = `/tmp/elementor-data-${postId}-${suffix}.json`;
@@ -115,8 +124,48 @@ export async function deployLoopItem(postId, elements) {
    returns 'header' from get_type(), footer.php returns 'footer'. Any other
    value here would be a real template type belonging to a different deploy
    path (wp-page, loop-item), written onto a library post that Elementor
-   then never renders in a location, with nothing reporting it. */
-const THEME_PART_LOCATIONS = ['header', 'footer'];
+   then never renders in a location, with nothing reporting it.
+
+   This array, despite deployThemePart()'s parameter below being named
+   `location`, holds DOCUMENT TYPES, not render locations: deployElements()
+   writes its third argument verbatim into _elementor_template_type
+   (line 93, `wp post meta update ${postId} _elementor_template_type
+   ${templateType}`), and deployThemePart() passes `location` straight
+   through as that argument. `location` is a known misnomer, kept rather
+   than renamed because a parallel workstream is building against this
+   same parameter while this comment is being written.
+
+   header and footer hid the type/location distinction because, for those
+   two, the document type and the render location happen to be the same
+   string (Header::get_type() is 'header' and it renders at the 'header'
+   location). 'archive' was added here on 2026-08-20 on that false
+   premise and then corrected the same day: Elementor Pro's Search_Results
+   document (modules/theme-builder/documents/search-results.php) is the
+   first theme part in this build where the two diverge. Its get_type()
+   returns 'search-results', its get_sub_type() returns 'search', and it
+   extends Archive and inherits Archive's render location. The render
+   location is unaffected by this array and stays 'archive': that is what
+   wp/empowerms-child/search.php:12 asks for and what the Theme Builder
+   condition (include/archive/search) targets. Only the document type
+   written by this function needed to change, from 'archive' to
+   'search-results'. */
+
+/* Extended on 2026-08-20 with the third Theme Builder document this build
+   deploys. 'single-post' is Single_Post::get_type() (wp-content/plugins/
+   elementor-pro/modules/theme-builder/documents/single-post.php on empv2), the
+   document type behind every single-post-shaped template Elementor Pro offers,
+   and it is what elementor/theme-parts/person-single.mjs writes: one bio design
+   conditioned on `include/singular/person`, serving every entry in the `person`
+   post type.
+
+   It is in the SAME list as header and footer rather than in a list of its own
+   because this function's check is about what it is safe to write into a
+   document's `_elementor_template_type`, and all three are real Theme Builder
+   types belonging to this same write path. The thing the check exists to catch
+   is a page type ('wp-page') or a loop type ('loop-item') arriving here, which
+   would leave a library post claiming to be something Elementor never renders
+   in a location. */
+export const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post', 'search-results'];
 
 /* deployElements() overwrites _elementor_data and _elementor_template_type
    wholesale, with no check of its own that postId names a document of the

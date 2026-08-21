@@ -14,6 +14,9 @@ const EMPOWER_TOKENS = array(
 
 require_once get_stylesheet_directory() . '/inc/guest-taxonomy.php';
 require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
+require_once get_stylesheet_directory() . '/inc/content-loop.php';
+require_once get_stylesheet_directory() . '/inc/person-loop.php';
+require_once get_stylesheet_directory() . '/inc/search-loop.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -93,6 +96,36 @@ add_action( 'elementor/theme/register_locations', function ( $manager ) {
 const EMPOWER_STYLES_PRIORITY = 60;
 
 /**
+ * The cache-busting version for one theme asset, derived from that file's own
+ * modification time.
+ *
+ * Every asset this theme enqueues is served by WP Engine with
+ * `cache-control: public, max-age=31536000`, so the query string on the URL is
+ * the only thing that can retire a visitor's cached copy. Versioning them all
+ * with the theme's `Version:` header, which this build has kept at 2.0.0
+ * through the entire conversion, made that query string a constant: a browser
+ * that fetched css/bridge.css once held it for a year and saw none of the
+ * repairs written into it afterwards.
+ *
+ * That cost a real morning. On 2026-08-17 the converted homepage's header
+ * looked wrong in Paolo's browser (a 15px wordmark, an over-wide nav, a
+ * borderless search control) and correct in a cold-cache browser at the same
+ * moment, because his copy of bridge.css predated the 2026-08-15 repair to its
+ * `.elementor button.em-header__*` block and nothing in the URL had changed to
+ * tell him so.
+ *
+ * $rel is relative to the stylesheet directory. The theme version is the
+ * fallback when the file cannot be stat'ed, deliberately, rather than an empty
+ * string: an empty version emits a bare URL with no query at all, which is
+ * MORE cacheable than the constant this replaces, not less.
+ */
+function empower_asset_ver( $rel ) {
+	$path = get_stylesheet_directory() . '/' . ltrim( $rel, '/' );
+	$mtime = file_exists( $path ) ? filemtime( $path ) : false;
+	return $mtime ? (string) $mtime : wp_get_theme()->get( 'Version' );
+}
+
+/**
  * Page stylesheets beyond the shared cascade and global header, keyed by page slug.
  *
  * Taken from the "Per page" table in README.md. Confirm each against the page's
@@ -107,7 +140,194 @@ const EMPOWER_STYLES_PRIORITY = 60;
  */
 function empower_page_styles() {
 	return array(
-		'podcast-a' => array( 'motion', 'podcast-a' ),
+		'podcast'      => array( 'motion', 'podcast-a' ),
+		/* what-we-do-a. Read off dist/what-we-do-a.html's own <head>, which
+		   loads (after the shared tokens/components cascade and the
+		   unconditional header sheet) the site stylesheet, the header sheet,
+		   the motion sheet, then its own what-we-do-a sheet, in that order.
+		   The site and header sheets are already enqueued unconditionally
+		   above, so only the two page-specific sheets beyond that shared
+		   cascade belong here, the same shape podcast-a's own entry takes. */
+		'what-we-do'   => array( 'motion', 'what-we-do-a' ),
+		/* solutions-b. Read off dist/solutions-b.html's own <head>, which loads
+		   (after the shared tokens/components cascade and the unconditional
+		   header sheet) the site stylesheet, the header sheet, the motion
+		   sheet, then its own solutions-b sheet, in that order. Same shape as
+		   what-we-do-a's entry above, for the same reason: the site and
+		   header sheets are already enqueued unconditionally. */
+		'solutions'    => array( 'motion', 'solutions-b' ),
+		/* capitol-a. Read off dist/capitol-a.html's own <head>, which loads
+		   (after the shared tokens/components cascade and the unconditional
+		   header sheet) the site stylesheet, the header sheet, the motion
+		   sheet, then its own capitol-a sheet, in that order. Same shape as
+		   what-we-do-a's and solutions-b's own entries above, for the same
+		   reason: the site and header sheets are already enqueued
+		   unconditionally. */
+		'capitol-chat' => array( 'motion', 'capitol-a' ),
+		/* team-a. Read off dist/team-a.html's own <head>, which loads (after
+		   the shared tokens/components cascade and the unconditional header
+		   sheet) the site stylesheet, the header sheet, the motion sheet,
+		   then its own team-a sheet, in that order. Same shape as every
+		   entry above, for the same reason: the site and header sheets are
+		   already enqueued unconditionally. */
+		'team'         => array( 'motion', 'team-a' ),
+		/* THE `person` POST TYPE, NOT A PAGE SLUG, and empower_style_key()'s
+		   docblock carries why the two are looked up differently. Every single
+		   in this post type is rendered by the Elementor Single template in
+		   elementor/theme-parts/person-single.mjs, which is
+		   dist/team-bio.html's design serving all eighteen published people
+		   instead of the one page it was hand-filled for. So the sheets are
+		   that page's own, read off dist/team-bio.html's <head>: the shared
+		   tokens/components cascade, the site sheet and the header sheet are
+		   already enqueued unconditionally, leaving the motion sheet and
+		   css/team-bio.css, in that order. Same shape as every entry above.
+
+		   The converted page at /grant-callen/ (page 20607) keeps its own
+		   `grant-callen` row below and is unaffected: it is a page, so it is
+		   still keyed by slug. */
+		'person'       => array( 'motion', 'team-bio' ),
+		/* THE `post` POST TYPE, AND IT IS NOT A CONVERSION. All 490 posts still
+		   render through the Beaver Themer layout "Post Singular"; this sheet
+		   dresses ONE part of that legacy page, the closing "More" grid, in the
+		   All Content card design, per Paolo's 2026-08-20 instruction.
+		   css/post-single.css's own header carries the full account, including
+		   why it loads on singles only and why motion.css is deliberately not
+		   beside it: the markup it styles carries no reveal attributes, so the
+		   motion sheet would have nothing to bind to. */
+		'post'         => array( 'post-single' ),
+		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
+		   10-22), which loads the shared tokens cascade, components.css, then
+		   the site stylesheet, the header sheet, the motion sheet, and its own
+		   who-we-are-a sheet last. The site and header sheets are already
+		   enqueued unconditionally above, so only the two page-specific sheets
+		   beyond that shared cascade belong here: the same shape every entry
+		   above takes, for the same reason. */
+		'who-we-are'   => array( 'motion', 'who-we-are-a' ),
+		/* mail-a. Read off dist/mail-a.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own mail-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason. */
+		'newsletter'   => array( 'motion', 'mail-a' ),
+		/* amb-a. Read off dist/amb-a.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own amb-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason. */
+		'ambassadors'  => array( 'motion', 'amb-a' ),
+		/* epic-a. Read off dist/epic-a.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own epic-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason. This page needs the motion sheet for
+		   more than the shared reveal layer: css/epic-a.css's own rail fill is
+		   a scroll-driven animation and the build's first converted
+		   view-timeline. */
+		'epic'         => array( 'motion', 'epic-a' ),
+		/* give-c. Read off dist/give-c.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own give-c
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason. */
+		'donate'       => array( 'motion', 'give-c' ),
+		/* team-bio. Read off dist/team-bio.html's own <head> (lines 10-22),
+		   which loads the shared tokens cascade, components.css, then the
+		   site stylesheet, the header sheet, the motion sheet, and its own
+		   team-bio sheet last. The site and header sheets are already
+		   enqueued unconditionally above, so only the two page-specific
+		   sheets beyond that shared cascade belong here: the same shape
+		   every entry above takes, for the same reason. */
+		'grant-callen' => array( 'motion', 'team-bio' ),
+		/* safety. Read off dist/safety.html's own <head> (lines 10-22), which
+		   loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and css/solution.css
+		   last. The site and header sheets are already enqueued unconditionally
+		   above, so only the two page-specific sheets beyond that shared
+		   cascade belong here: the same shape every entry above takes, for the
+		   same reason.
+
+		   THE SHEET IS NAMED FOR THE TEMPLATE, NOT FOR THE PAGE, and this is
+		   the first row where those differ. css/solution.css is "The
+		   Streetlight", shared by all three solution pages, and its own header
+		   says so; `work` and `education` will be two more slugs pointing at
+		   this same sheet rather than at one of their own. A row that assumed
+		   slug and sheet were the same word would enqueue css/safety.css,
+		   which does not exist, and the page would render unstyled with
+		   nothing in the enqueue reporting it. */
+		'public-safety'=> array( 'motion', 'solution' ),
+		/* work. Read off dist/work.html's own <head> (lines 10-22), which is the
+		   same cascade safety's row records and ends in css/solution.css, the
+		   template sheet all three solution pages share.
+
+		   THE KEY IS `work-2` AND NOT `work`, and that is install state rather
+		   than a naming choice. This map is keyed by the page's SLUG (see the
+		   lookup below, which reads get_post_field( 'post_name' )), and the
+		   slug `work` was already held by post 18512, Empower's own live Work
+		   page. `wp post create ... --post_name=work` returned post 20609 and
+		   WordPress assigned it `work-2`; the slug was read back off the
+		   install rather than assumed, which is the trap safety's own page.mjs
+		   names. A row keyed 'work' would match no page, this page would load
+		   neither the motion sheet nor css/solution.css, and it would render
+		   unstyled with nothing in the enqueue reporting it.
+		   elementor/pages/work/page.mjs records the collision in full. */
+		'meaningful-work' => array( 'motion', 'solution' ),
+		/* education. Read off dist/education.html's own <head> (lines 10-22),
+		   which is the same cascade safety's and work's rows record and ends in
+		   css/solution.css, the template sheet all three solution pages share.
+		   This is the third and last row of the solution unit, and the point
+		   safety's row anticipated: three slugs, one stylesheet.
+
+		   THE KEY IS `education`, WITH NO SUFFIX, and that was read back off
+		   the install rather than assumed, for exactly the reason work's row
+		   above records. `wp post create ... --post_name=education` returned
+		   post 20611 and `wp post get 20611 --field=post_name` returns
+		   `education`. It was free because Empower's own live Education page is
+		   post 18537 under `education-3`, with `education-2` (post 11509) and
+		   `education-old` (post 35) also taken; the unsuffixed slug had already
+		   been vacated. elementor/pages/education/page.mjs records the check. */
+		'quality-education' => array( 'motion', 'solution' ),
+		/* landing, the campaign TEMPLATE. Read off dist/landing.html's own
+		   <head> (lines 10-22), which is the same shared cascade every row
+		   above records and ends in this page's own css/landing.css.
+
+		   THE KEY IS `landing`, WITH NO SUFFIX, and that was read back off the
+		   install rather than assumed, for the reason work's row above records.
+		   `wp post create ... --post_name=landing` returned post 20612 and
+		   `wp post get 20612 --field=post_name` returns `landing`. It was free
+		   because no post of any type on this install held that slug:
+		   `wp post list --post_type=any --post_status=any --name=landing`
+		   returned an empty result set before the page was created.
+		   elementor/pages/landing/page.mjs records the check.
+
+		   THIS ROW SURVIVES THE TEMPLATE BEING DUPLICATED, and that is worth
+		   saying because this page is meant to be duplicated. The map is keyed
+		   by SLUG, so a campaign page copied from this one gets its own slug
+		   and picks up NO row, which means it loads the shared cascade and not
+		   css/landing.css. Whoever duplicates it adds a row here for the new
+		   slug, or the copy renders unstyled. That is a hand-off step and it is
+		   in the task-20 report. */
+		'landing'      => array( 'motion', 'landing' ),
+		/* content-a. Read off dist/content-a.html's own <head> (lines 10-22),
+		   which loads the shared tokens cascade, components.css, then the site
+		   stylesheet, the header sheet, the motion sheet, and its own content-a
+		   sheet last. The site and header sheets are already enqueued
+		   unconditionally above, so only the two page-specific sheets beyond
+		   that shared cascade belong here: the same shape every entry above
+		   takes, for the same reason.
+
+		   The slug `content-a` was free before the page was created, checked
+		   with `wp post list --post_type=any --post_status=any
+		   --name=content-a`, and read back as `content-a` with no suffix
+		   afterwards. elementor/pages/content-a/page.mjs records both checks. */
+		'all-content'  => array( 'motion', 'content-a' ),
 		/* The homepage. Read off dist/final.html's own <head>, in its order,
 		   not from the README row: final.html composes from four other pages'
 		   stylesheets plus its own, and the order between them is the whole
@@ -115,22 +335,21 @@ function empower_page_styles() {
 		   consolidating these into one sheet as cleanup that has not been
 		   done, so the list stays exactly as the static page loads it until
 		   that happens. */
-		'final'     => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
+		'homepage'     => array( 'homepage', 'motion', 'option-a', 'option-d', 'current-2', 'final' ),
 	);
 }
 
 add_action( 'wp_enqueue_scripts', function () {
 	$dir = get_stylesheet_directory_uri();
-	$ver = wp_get_theme()->get( 'Version' );
 	$prev = null;
 
 	foreach ( EMPOWER_TOKENS as $token ) {
 		$handle = 'empower-token-' . $token;
-		wp_enqueue_style( $handle, $dir . '/tokens/' . $token . '.css', $prev ? array( $prev ) : array(), $ver );
+		wp_enqueue_style( $handle, $dir . '/tokens/' . $token . '.css', $prev ? array( $prev ) : array(), empower_asset_ver( 'tokens/' . $token . '.css' ) );
 		$prev = $handle;
 	}
 
-	wp_enqueue_style( 'empower-components', $dir . '/components/components.css', array( $prev ), $ver );
+	wp_enqueue_style( 'empower-components', $dir . '/components/components.css', array( $prev ), empower_asset_ver( 'components/components.css' ) );
 
 	/*
 	 * site.css must win over UiCore's global stylesheet. Declaring
@@ -146,18 +365,18 @@ add_action( 'wp_enqueue_scripts', function () {
 	if ( wp_style_is( 'uicore_global', 'registered' ) ) {
 		$site_deps[] = 'uicore_global';
 	}
-	wp_enqueue_style( 'empower-site', $dir . '/css/site.css', $site_deps, $ver );
+	wp_enqueue_style( 'empower-site', $dir . '/css/site.css', $site_deps, empower_asset_ver( 'css/site.css' ) );
 
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close; both move from
 	   the per-slug map to this unconditional block. */
-	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), $ver );
+	wp_enqueue_style( 'empower-header-2', $dir . '/css/header-2.css', array( 'empower-site' ), empower_asset_ver( 'css/header-2.css' ) );
 
-	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
+	$slug = empower_style_key();
 	$prev = 'empower-header-2';
 	foreach ( empower_page_styles()[ $slug ] ?? array() as $sheet ) {
 		$handle = 'empower-page-' . $sheet;
-		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), $ver );
+		wp_enqueue_style( $handle, $dir . '/css/' . $sheet . '.css', array( $prev ), empower_asset_ver( 'css/' . $sheet . '.css' ) );
 		$prev = $handle;
 	}
 
@@ -168,8 +387,71 @@ add_action( 'wp_enqueue_scripts', function () {
 	 * loop above left it at, empower-header-2 on a page with no per-page
 	 * sheets of its own.
 	 */
-	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), $ver );
+	wp_enqueue_style( 'empower-bridge', $dir . '/css/bridge.css', array( $prev ), empower_asset_ver( 'css/bridge.css' ) );
 }, EMPOWER_STYLES_PRIORITY );
+
+/**
+ * The key empower_page_styles() is looked up by, for the current request.
+ *
+ * A PAGE'S KEY IS ITS SLUG; A SINGULAR OF ANY OTHER POST TYPE IS KEYED BY ITS
+ * POST TYPE. That distinction is not cosmetic, and it was added on 2026-08-20
+ * because the version without it was already wrong on the live install in two
+ * directions at once.
+ *
+ * WHAT WAS BROKEN. The lookup used to be
+ * `get_post_field( 'post_name', get_queried_object_id() )` for every singular,
+ * of every post type. That is fine while pages are the only Elementor-rendered
+ * singulars, and it stopped being true the moment the `person` post type got a
+ * Single template of its own (elementor/theme-parts/person-single.mjs), which
+ * renders dist/team-bio.html's design and therefore needs css/team-bio.css.
+ * Eighteen person singles rendered that design with no page stylesheet at all.
+ *
+ * AND ONE OF THEM DID NOT, WHICH IS THE HALF WORTH READING. The `person` post
+ * for Grant Callen has post_name `grant-callen`, and so does the converted page
+ * at /grant-callen/ (the hand-filled bio, page 20607). So `/person/grant-callen/`
+ * matched the PAGE's row by coincidence of slug and loaded exactly the right
+ * two sheets, while the other seventeen loaded none. A bug that is correct on
+ * the one example anybody would check first is the kind this file should not be
+ * able to have: without this function, adding a Person whose slug happened to
+ * equal a converted page's slug would silently give that person that page's
+ * stylesheet.
+ *
+ * The `person` row therefore keys the POST TYPE, and Grant's own single now
+ * resolves through it like everybody else's rather than through a collision.
+ * The two rows still name the same sheets, which is why the symptom was
+ * invisible on his page.
+ *
+ * Pages keep the slug because their rows genuinely differ per page, which is
+ * the whole reason the map exists. If a second custom post type is ever given a
+ * design of its own, it gets a row keyed by its post type here, not eighteen
+ * rows keyed by its posts' slugs.
+ *
+ * A COLLISION IS STILL POSSIBLE IN PRINCIPLE, between a post type name and a
+ * page slug, and it is not guarded here because it cannot happen quietly: a
+ * page slugged `person` would have to be created by hand, and it would show up
+ * immediately as a page wearing the bio stylesheet. The failure this function
+ * exists to remove is the one that produced NO symptom on the page anybody
+ * would look at.
+ *
+ * @return string The map key, or '' when nothing should be looked up.
+ */
+function empower_style_key() {
+	if ( ! is_singular() ) {
+		return '';
+	}
+
+	$post_id = get_queried_object_id();
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$post_type = get_post_type( $post_id );
+	if ( 'page' !== $post_type ) {
+		return (string) $post_type;
+	}
+
+	return (string) get_post_field( 'post_name', $post_id );
+}
 
 /**
  * Scripts have no equivalent to the styles priority problem: nothing else on
@@ -205,7 +487,7 @@ function empower_page_scripts() {
 }
 
 /**
- * Every script handle that must load with type="module": the three
+ * Every script handle that must load with type="module": the four
  * site-wide scripts enqueued unconditionally above, plus every handle
  * empower_page_scripts() can emit for any page slug. Built from the same
  * function the per-page enqueue loop below reads, not a second list typed
@@ -213,13 +495,13 @@ function empower_page_scripts() {
  * fails to recognise. That is what actually broke here once already:
  * empower_page_scripts() emits handles shaped 'empower-script-<name>'
  * (see the enqueue loop below), and a filter matching only
- * 'empower-nav' / 'empower-reveal' / 'empower-dropdown' by name would let
- * any future entry in empower_page_scripts() load as a classic script,
- * which is the exact condition that produced this branch's site-wide
- * dropdown regression.
+ * 'empower-nav' / 'empower-reveal' / 'empower-dropdown' / 'empower-search'
+ * by name would let any future entry in empower_page_scripts() load as a
+ * classic script, which is the exact condition that produced this branch's
+ * site-wide dropdown regression.
  */
 function empower_module_script_handles() {
-	$handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown' );
+	$handles = array( 'empower-nav', 'empower-reveal', 'empower-dropdown', 'empower-search' );
 	foreach ( empower_page_scripts() as $scripts ) {
 		foreach ( $scripts as $script ) {
 			$handles[] = 'empower-script-' . $script;
@@ -229,6 +511,307 @@ function empower_module_script_handles() {
 }
 
 /**
+ * Whether this request loads css/motion.css.
+ *
+ * Derived from empower_page_styles(), never from a second list. The reveal
+ * gate below has to know the answer BEFORE wp_enqueue_scripts has run
+ * (language_attributes() is emitted in header.php on the line above <head>,
+ * and enqueues happen inside wp_head()), so wp_style_is() cannot be asked.
+ * Reading the same map the enqueue reads is what keeps the two from drifting:
+ * a page added to that map gets the gate for free, and a page removed from it
+ * loses the gate in the same edit.
+ *
+ * @return bool
+ */
+function empower_page_has_motion() {
+	return in_array( 'motion', empower_page_styles()[ empower_style_key() ] ?? array(), true );
+}
+
+/**
+ * THE REVEAL GATE, IN THE SERVER MARKUP RATHER THAN IN JAVASCRIPT, and this
+ * is the repair for a defect measured on the live install on 2026-08-20:
+ * NO CONVERTED PAGE'S HERO EVER ANIMATED.
+ *
+ * WHAT WAS BROKEN. css/motion.css nests every hidden start-state under
+ * [data-reveal="on"], and js/reveal.js set that attribute as its first
+ * statement. js/reveal.js is a deferred script, so on this install it ran
+ * AFTER first paint, every time:
+ *
+ *     /person/kienna-horn/   first paint 392ms   gate set 408ms
+ *     /            (home)    first paint 268ms   gate set 304ms
+ *
+ * So the page painted fully visible; only then did opacity:0 apply; and
+ * js/reveal.js adds .is-revealed two frames (~30ms) after that. The start
+ * state never held for a frame the user could see, and a frame-by-frame read
+ * of the hero's computed opacity is 1.00 for the whole load. Scroll reveals
+ * further down the page were unaffected, because by the time they intersect
+ * the start state has long since applied, which is why the symptom read as
+ * "some pages animate and some do not" rather than as a single broken thing.
+ *
+ * THE FIX IS ONE ATTRIBUTE, MOVED. Emitting data-reveal="on" on <html> puts
+ * the start state in the first paint, and leaves js/reveal.js doing exactly
+ * what it was written to do: assign the stagger indices and add .is-revealed.
+ * js/reveal.js still sets the attribute itself and that is deliberately left
+ * alone -- setting it twice to the same value is free, and the script stays
+ * correct on any page this filter does not cover.
+ *
+ * THE PROGRESSIVE-ENHANCEMENT CONTRACT IS PRESERVED, NOT TRADED AWAY.
+ * js/reveal.js's own header states the contract: if the script never loads,
+ * nothing is ever hidden. Hard-coding the gate would break exactly that, so
+ * the <noscript> block below restores it. It ships in the markup beside the
+ * gate rather than in css/motion.css because css/ is the protected static
+ * build, and because a rule inside <noscript> cannot be defeated by the load
+ * order of a stylesheet that is not there.
+ *
+ * WHAT IT COSTS. The hero is now genuinely invisible between first paint and
+ * js/reveal.js running -- about 20ms on the measurements above -- and then
+ * fades in over --dur-reveal. That is what an entrance animation is; the
+ * alternative is the animation not existing, which is the state being fixed.
+ */
+add_filter( 'language_attributes', function ( $output ) {
+	if ( ! empower_page_has_motion() ) {
+		return $output;
+	}
+	return $output . ' data-reveal="on"';
+} );
+
+add_action( 'wp_head', function () {
+	if ( ! empower_page_has_motion() ) {
+		return;
+	}
+	/* !important on every property, because css/motion.css's own start-states
+	   are the rules being overridden and they are equally specific. The
+	   selector deliberately does not mention .is-revealed: with no script
+	   there is no such class, and matching [data-reveal] alone is what makes
+	   the page render as though this layer had never been added. */
+	echo "<noscript><style>[data-reveal]{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}</style></noscript>\n";
+}, 1 );
+
+/**
+ * A DEFAULT SOCIAL SHARE IMAGE, because every page had none.
+ *
+ * Measured across the eighteen converted pages on 2026-08-21: og:title and
+ * twitter:card were present on all of them and og:image on none. Worse than
+ * merely absent, twitter:card is set to "summary_large_image", a card format
+ * whose entire purpose is to promise a large image. Every link posted to
+ * LinkedIn, Facebook or Slack rendered as a bare grey box.
+ *
+ * THE CARD IS BUILT FROM THE BUILD'S OWN ASSETS, not chosen from the
+ * photography. Which photograph represents the whole organisation is Empower's
+ * decision and not one to make silently, so assets/share-card.png is the
+ * primary wordmark on white, marked from above by the 56x4 orange rule this
+ * build uses as its motif, at the 1200x630 both Facebook and X document as the
+ * size they want. It is a neutral default that is right for every page rather
+ * than a guess that is right for one.
+ *
+ * PRIORITY 20, AFTER AIOSEO. All in One SEO owns the rest of the Open Graph
+ * block and currently emits no image at all. If it is ever configured to, this
+ * would become a second og:image on the page, and duplicates are not harmless:
+ * the scrapers pick one and nobody can predict which. The gate in
+ * test-elementor.mjs asserts exactly ONE og:image per page, which is what turns
+ * that from an invisible regression into a red test.
+ *
+ * og:description IS DELIBERATELY NOT SET HERE. It should mirror the meta
+ * description, seventeen of eighteen pages do not have one, and writing them is
+ * Empower's copy decision rather than a mechanical fix. Flagged in the audit,
+ * left alone here.
+ */
+add_action( 'wp_head', function () {
+	$url = get_stylesheet_directory_uri() . '/assets/share-card.png';
+	printf(
+		"<meta property=\"og:image\" content=\"%s\" />\n"
+		. "<meta property=\"og:image:width\" content=\"1200\" />\n"
+		. "<meta property=\"og:image:height\" content=\"630\" />\n"
+		. "<meta property=\"og:image:alt\" content=\"%s\" />\n"
+		. "<meta name=\"twitter:image\" content=\"%s\" />\n",
+		esc_url( $url ),
+		esc_attr__( 'Empower Mississippi', 'empowerms' ),
+		esc_url( $url )
+	);
+}, 20 );
+
+/**
+ * Pages that exist on this install but should never be found in a search
+ * result, keyed by slug because that is what survives a database rebuild.
+ *
+ * `zz-native-animation-probe` is the fixture the native-animation gate needs
+ * (elementor/theme-parts/native-animation-probe.mjs) and it has to stay
+ * PUBLISHED for that test to fetch it, so it cannot simply be drafted.
+ * `zz-spike-markup` is a dead measurement spike. `landing` is the campaign
+ * template: a real signed-off deliverable, but a template carrying placeholder
+ * copy, meant to be duplicated rather than visited.
+ *
+ * All three were in the public page sitemap when the SEO audit ran.
+ *
+ * ONE LIST, TWO EFFECTS, because the two are separate switches and shipping one
+ * without the other is the classic mistake: excluding a page from a sitemap
+ * does not stop it being indexed if anything links to it, and noindexing it
+ * does not stop it advertising itself in the sitemap. Both, from the same
+ * source of truth, so they cannot drift.
+ *
+ * At launch these pages should be DELETED rather than hidden. This is the
+ * safety net, not the plan.
+ */
+function empower_hidden_slugs() {
+	return array( 'zz-native-animation-probe', 'zz-spike-markup', 'landing' );
+}
+
+/* Whether the page being rendered is one of the hidden set. */
+function empower_is_hidden_page() {
+	return is_singular()
+		&& in_array( get_post_field( 'post_name', get_queried_object_id() ), empower_hidden_slugs(), true );
+}
+
+/* AIOSEO's filter, NOT core's `wp_robots`, and the difference was measured
+   rather than assumed. A `wp_robots` filter was written here first and had no
+   effect at all: All in One SEO replaces WordPress's robots tag with one it
+   builds itself, so core's filter never reaches the output and the three pages
+   still rendered `max-image-preview:large` with no noindex. The plugin's own
+   `aioseo_robots_meta` filter is the only hook that touches the tag that
+   actually ships. Verified against the live pages after the change, which is
+   the only way this kind of plugin-ownership question can be settled. */
+add_filter( 'aioseo_robots_meta', function ( $meta ) {
+	if ( ! empower_is_hidden_page() ) {
+		return $meta;
+	}
+	$meta = is_array( $meta ) ? $meta : array();
+	/* Both, and index/follow dropped: AIOSEO assembles the tag from this list,
+	   so leaving a stale "index" beside "noindex" would emit a tag that
+	   contradicts itself. */
+	$meta = array_values( array_diff( $meta, array( 'index', 'follow' ) ) );
+	foreach ( array( 'noindex', 'nofollow' ) as $directive ) {
+		if ( ! in_array( $directive, $meta, true ) ) {
+			$meta[] = $directive;
+		}
+	}
+	return $meta;
+} );
+
+/* AIOSEO builds its own sitemap and consults none of WordPress's robots
+   filters, so the same list has to be handed to it separately. The filter
+   takes an array of post IDs and is resolved from slugs at request time rather
+   than hard-coding ids, for the reason the page style map already records: an
+   id typed into a file is wrong the first time a post is recreated. */
+add_filter( 'aioseo_sitemap_exclude_posts', function ( $ids ) {
+	foreach ( empower_hidden_slugs() as $slug ) {
+		$page = get_page_by_path( $slug );
+		if ( $page ) {
+			$ids[] = (int) $page->ID;
+		}
+	}
+	return $ids;
+} );
+
+/**
+ * TWO URLS, ONE PERSON, and only one of them can be the bio.
+ *
+ * /grant-callen/ is the converted team-bio TEMPLATE, filled with Grant so the
+ * design could be reviewed. /person/grant-callen/ is the same person out of
+ * the `person` CPT, which is what drives /team/ and every other bio. Both
+ * return 200, both are titled "Grant Callen - Empower Mississippi", both carry
+ * the same biography, and before this filter each declared itself canonical.
+ * That is the textbook duplicate: two URLs competing for one person's name,
+ * with Google left to pick, and no way to predict which.
+ *
+ * Paolo chose consolidation over hiding on 2026-08-21: the template page stays
+ * reachable and reviewable, and points its canonical at the CPT bio, so any
+ * signal the template URL earns is credited to the page that is actually the
+ * bio. The alternative considered was adding it to empower_hidden_slugs(),
+ * which would have noindexed it instead.
+ *
+ * KEYED BY SLUG, resolved at request time, for the reason the sitemap filter
+ * above already records: an id typed into a file is wrong the first time a
+ * post is recreated. The target is built with home_url() rather than written
+ * out, so this does not have to be edited when the install moves off
+ * empv2.wpenginepowered.com onto the real domain.
+ */
+function empower_canonical_overrides() {
+	return array(
+		/* page slug => the path it should credit instead */
+		'grant-callen' => '/person/grant-callen/',
+	);
+}
+
+add_filter( 'aioseo_canonical_url', function ( $url ) {
+	if ( ! is_singular() ) {
+		return $url;
+	}
+	$slug      = get_post_field( 'post_name', get_queried_object_id() );
+	$overrides = empower_canonical_overrides();
+	if ( ! isset( $overrides[ $slug ] ) ) {
+		return $url;
+	}
+	/* Only if the target actually exists. A canonical pointing at a 404 is
+	   worse than the duplicate it was meant to fix, and the CPT bio is
+	   Empower's content, so it can be renamed or unpublished without this
+	   file hearing about it. */
+	/* basename, not the whole path: `person` is not hierarchical, so its
+	   post_name is "grant-callen" and get_page_by_path() would find nothing
+	   if handed "person/grant-callen". */
+	$target = get_page_by_path( basename( trim( $overrides[ $slug ], '/' ) ), OBJECT, 'person' );
+	if ( ! $target || 'publish' !== get_post_status( $target ) ) {
+		return $url;
+	}
+	return home_url( $overrides[ $slug ] );
+} );
+
+/**
+ * THE HEADER'S OWN VERSION OF THE DEFERRED-GATE DEFECT, and it is the same
+ * shape as the reveal gate above with a different set of scripts.
+ *
+ * WHAT A VISITOR SEES. src/_shared/header-2.html ships the five dropdown
+ * panels and the search panel OPEN, in normal flow, by design: that is
+ * js/dropdown.js's and theme-js/search.js's progressive-enhancement contract,
+ * and it is what keeps every nav destination reachable when those scripts do
+ * not load. Each script closes its own panels and sets its gate
+ * (data-dropdown="on", data-search="on") as it runs. Both are deferred, so on
+ * this install both ran AFTER first paint, every time. Measured on the
+ * homepage 2026-08-20: first paint 1336ms, gates set 1397ms, and in between
+ * the header is 727px tall with all five panels laid out and the search bar
+ * open. It then collapses to 137px. A 590px jump on every page load.
+ *
+ * WHY AN INLINE HEAD SCRIPT RATHER THAN THE language_attributes FILTER THE
+ * REVEAL GATE USES. Both would remove the jump, but they fail differently
+ * when a script is missing, and here the content at stake is the navigation.
+ *
+ *   - Hard-coding the closed state in the server markup needs a <noscript>
+ *     block to stay honest, and <noscript> only covers JavaScript being
+ *     DISABLED. It does nothing when JS is on and the script 404s or is
+ *     blocked, and in that case the panels would stay hidden with no way
+ *     back: the whole desktop nav, gone, silently.
+ *   - Setting the attribute from an inline script inverts both failures.
+ *     JavaScript off means this never runs, so nothing is ever hidden and the
+ *     contract holds with no <noscript> needed at all. JavaScript on but the
+ *     external script missing is caught by the timeout below.
+ *
+ * INLINE AND BLOCKING, IN THE HEAD, ON PURPOSE. It has to have run before the
+ * first paint or it has not fixed anything; that is the entire defect. It is
+ * ~300 bytes and sets two attributes.
+ *
+ * NEITHER SCRIPT NEEDS TO CHANGE. js/dropdown.js already does
+ * `root.setAttribute('data-dropdown', 'on')` and theme-js/search.js already
+ * does `doc.setAttribute('data-search', 'on')`. Writing "pending" into the
+ * same attributes means their own existing calls OVERWRITE it, so the
+ * pending rules in css/bridge.css stop matching the moment either script
+ * runs, with nothing added to either file to make that happen.
+ *
+ * THE TIMEOUT IS THE CONTRACT'S LAST RESORT, not a timing tweak. If a script
+ * never arrives, nothing else will ever clear "pending" and the panels stay
+ * display:none. Four seconds is well past any load this install produces
+ * (the gates landed at 1397ms on the slowest page measured) and well short of
+ * a visitor deciding the navigation is broken. In the normal case it fires
+ * against attributes that already read "on" and removes nothing.
+ */
+add_action( 'wp_head', function () {
+	echo "<script>(function(){var r=document.documentElement;"
+		. "r.setAttribute('data-dropdown','pending');r.setAttribute('data-search','pending');"
+		. "setTimeout(function(){"
+		. "if(r.getAttribute('data-dropdown')==='pending')r.removeAttribute('data-dropdown');"
+		. "if(r.getAttribute('data-search')==='pending')r.removeAttribute('data-search');"
+		. "},4000);})();</script>\n";
+}, 1 );
+
+/**
  * The motion layer. Both files ship together or neither does: css/motion.css
  * hides every [data-reveal] element, and js/reveal.js is what reveals them.
  * Enqueueing the stylesheet without the script leaves the page blank below the
@@ -236,17 +819,22 @@ function empower_module_script_handles() {
  */
 add_action( 'wp_enqueue_scripts', function () {
 	$dir = get_stylesheet_directory_uri();
-	$ver = wp_get_theme()->get( 'Version' );
-	wp_enqueue_script( 'empower-nav', $dir . '/js/nav.js', array(), $ver, array( 'strategy' => 'defer' ) );
-	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), $ver, array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-nav', $dir . '/js/nav.js', array(), empower_asset_ver( 'js/nav.js' ), array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-reveal', $dir . '/js/reveal.js', array(), empower_asset_ver( 'js/reveal.js' ), array( 'strategy' => 'defer' ) );
 	/* The header is a site-wide theme part now. css/header-2.css and
 	   js/dropdown.js ship together or the panels never close. */
-	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), $ver, array( 'strategy' => 'defer' ) );
+	wp_enqueue_script( 'empower-dropdown', $dir . '/js/dropdown.js', array(), empower_asset_ver( 'js/dropdown.js' ), array( 'strategy' => 'defer' ) );
+	/* The header search overlay. Destination-only, under theme-js/ rather
+	   than js/, because js/ is the protected static build and this script
+	   has no static counterpart: the static build's search button is
+	   decoration. See elementor/theme-parts/header.mjs for the divergence
+	   and why it was chosen. */
+	wp_enqueue_script( 'empower-search', $dir . '/theme-js/search.js', array(), empower_asset_ver( 'theme-js/search.js' ), array( 'strategy' => 'defer' ) );
 
-	$slug = is_singular() ? get_post_field( 'post_name', get_queried_object_id() ) : '';
+	$slug = empower_style_key();
 	foreach ( empower_page_scripts()[ $slug ] ?? array() as $script ) {
 		$handle = 'empower-script-' . $script;
-		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), $ver, array( 'strategy' => 'defer' ) );
+		wp_enqueue_script( $handle, $dir . '/js/' . $script . '.js', array(), empower_asset_ver( 'js/' . $script . '.js' ), array( 'strategy' => 'defer' ) );
 	}
 }, EMPOWER_SCRIPTS_PRIORITY );
 

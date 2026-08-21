@@ -1,4 +1,4 @@
-import { container, heading, text } from '../../factory.mjs';
+import { container, text } from '../../factory.mjs';
 
 /* Source of truth: src/podcast-a/sections/02-about.html. Every class, string
    and attribute below is read from that partial, not typed from memory.
@@ -68,15 +68,15 @@ import { container, heading, text } from '../../factory.mjs';
       route map as: destination exists and is live; styled template still
       to be built.
 
-   6. _element_id: 'about-title' lands on the heading widget's WRAPPER div,
-      not on the <h2> itself, the same wrapper-class placement 01-hero.mjs's
-      own note 5 documents for its <h1>. So aria-labelledby="about-title" on
-      the outer container (note 2 above) resolves to that div, not to the
-      heading element. Recorded here rather than left to be inferred from
-      the sibling module, per the accessibility read 01-hero.mjs already
-      gives: the accessible name computed from the id still walks the div's
-      full text content, so the announced label is unaffected; what is lost
-      is that the id no longer points at the semantic heading itself. */
+   6. THE HEADING IS A text() WIDGET CARRYING A BARE <h2>, not a heading()
+      widget with _element_id. Class-in-markup migration (2026-08-17): the
+      id moves off the widget's wrapper div and onto the <h2> itself, the
+      same move 01-hero.mjs's own note 5 records for its <h1>, so
+      aria-labelledby="about-title" on the outer container (note 2 above)
+      now resolves to the heading element itself rather than to a div that
+      merely contains it. The same move also removes Elementor's own
+      heading widget from this section, so its frontend.min.css
+      line-height:1 default needs no repair here. */
 
 export function section() {
   return container(
@@ -91,16 +91,13 @@ export function section() {
         container(
           { cssClass: 'pca-about__grid', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
-            heading({
-              text: 'Go Beyond the Headlines.',
-              tag: 'h2',
-              _element_id: 'about-title',
+            text({
+              markup: '<h2 id="about-title">Go Beyond the Headlines.</h2>',
               _attributes: 'data-reveal|rise',
             }),
             container({ cssClass: 'pca-about__copy', content_width: 'full' }, [
               text({
-                markup: '<p>Hosted by Empower Mississippi Founder and CEO <a href="/person/grant-callen/">Grant Callen</a>, The Empower Podcast brings together lawmakers, policy experts, and community leaders to explore Mississippi’s biggest challenges and brightest opportunities.</p>',
-                cssClass: 'pca-lede',
+                markup: '<p class="pca-lede">Hosted by Empower Mississippi Founder and CEO <a href="/person/grant-callen/">Grant Callen</a>, The Empower Podcast brings together lawmakers, policy experts, and community leaders to explore Mississippi’s biggest challenges and brightest opportunities.</p>',
                 _attributes: 'data-reveal|rise',
               }),
               text({
@@ -108,8 +105,7 @@ export function section() {
                 _attributes: 'data-reveal|rise',
               }),
               text({
-                markup: '<p>Watch on YouTube or listen wherever you get your podcasts.</p>',
-                cssClass: 'pca-about__where',
+                markup: '<p class="pca-about__where">Watch on YouTube or listen wherever you get your podcasts.</p>',
                 _attributes: 'data-reveal|rise',
               }),
             ]),

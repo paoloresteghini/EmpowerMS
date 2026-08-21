@@ -1,4 +1,4 @@
-import { container, heading, text, html } from '../../factory.mjs';
+import { container, text, html } from '../../factory.mjs';
 
 /* Source of truth: src/option-d/sections/02-solutions.html. The homepage is a
    per-section combination, so this section comes from option-d's directory
@@ -79,22 +79,18 @@ export function section() {
         container(
           { cssClass: 'tl-change__head', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
-            heading({
-              text: HEADLINE,
-              tag: 'h2',
-              _element_id: 'change-title',
+            text({
+              markup: `<h2 id="change-title">${HEADLINE}</h2>`,
               _attributes: 'data-reveal|rise',
             }),
             text({
-              markup: `<p>${LEDE}</p>`,
-              cssClass: 'tl-lede',
+              markup: `<p class="tl-lede">${LEDE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
           ],
         ),
         text({
-          markup: `<p>${LABEL}</p>`,
-          cssClass: 'tl-label',
+          markup: `<p class="tl-label">${LABEL}</p>`,
           _attributes: 'data-reveal|rise',
         }),
         html({

@@ -1,4 +1,4 @@
-import { container, heading, text, image, html } from '../../factory.mjs';
+import { container, text, image, html } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/current-2/sections/03-foundations.html. Third source
@@ -26,15 +26,18 @@ import { photo } from './media.mjs';
       div.elementor-widget.elementor-widget-html with the markup as its direct
       children, with no .elementor-widget-container level for this widget type.
 
-   2. THE PANEL HEADING IS A HEADING WIDGET WITH A LINK, NOT AN html() WIDGET.
-      Source is `<h3><a href="/quality-education">Quality Education</a></h3>`.
-      Elementor's heading widget has a link control and renders the anchor
-      inside the tag, which is the same document either way. Kept native
-      deliberately: these three links are the homepage's route into the three
-      solution pages, and a link Empower can retarget in the editor is worth
-      more than byte-identical markup. The hero already proved the heading
-      widget passes inline HTML through unescaped, so nothing here depends on
-      that behaviour anyway.
+   2. THE PANEL HEADING IS A text() WIDGET CARRYING <h3><a>…</a></h3>, not a
+      heading() widget with a link control. Source is
+      `<h3><a href="/quality-education">Quality Education</a></h3>`; text()'s
+      markup passes an anchor through exactly as authored, so nothing here
+      needs Elementor's heading widget or its separate link control. Class-
+      in-markup migration (2026-08-17) converts every heading() on this page
+      to text(), which is what removes Elementor's own heading widget from
+      these three cards and, with it, the frontend.min.css line-height:1
+      default the bridge stylesheet used to repair for this element. The
+      link itself is unaffected: it is still a real, retargetable
+      <a href> in the markup, only no longer routed through a widget
+      control that Empower would open the editor to find.
 
    3. THE BACKGROUND PHOTOGRAPHS ARE DECORATIVE AND MUST STAY THAT WAY, and one
       of them is the awkward case media.mjs warns about. In source all three
@@ -99,8 +102,8 @@ const panel = (p) =>
         _attributes: 'aria-hidden|true',
       }),
       container({ cssClass: 'c2-panel__body', content_width: 'full' }, [
-        heading({ text: p.title, tag: 'h3', link: { url: p.href } }),
-        text({ markup: `<p>${p.promise}</p>`, cssClass: 'c2-panel__promise' }),
+        text({ markup: `<h3><a href="${p.href}">${p.title}</a></h3>` }),
+        text({ markup: `<p class="c2-panel__promise">${p.promise}</p>` }),
         html({
           cssClass: 'c2-panel__more',
           markup: `<p><b>Real Solution:</b> ${p.solution}</p>
@@ -126,15 +129,12 @@ export function section() {
           _attributes: 'data-reveal-group|',
         },
         [
-          heading({
-            text: HEADLINE,
-            tag: 'h2',
-            _element_id: 'foundations-title',
+          text({
+            markup: `<h2 id="foundations-title">${HEADLINE}</h2>`,
             _attributes: 'data-reveal|rise',
           }),
           text({
-            markup: `<p>${LEDE}</p>`,
-            cssClass: 'c2-foundations__lede',
+            markup: `<p class="c2-foundations__lede">${LEDE}</p>`,
             _attributes: 'data-reveal|rise',
           }),
         ],

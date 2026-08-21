@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { container, heading, text, image, html } from '../factory.mjs';
+import { container, text, image, html } from '../factory.mjs';
 import { extractBlock } from './extract.mjs';
 
 /* The footer's post id on empv2, created in Task 3. Exported so the
@@ -46,11 +46,11 @@ export const footerPart = () => [
           container({ cssClass: 'em-footer__logo', content_width: 'full' }, [
             image({ ...LOGO }),
           ]),
-          text({ markup: '<p>Empower Mississippi works to Educate, Engage, and Elect Mississippians dedicated to removing barriers to opportunity.</p>', cssClass: 'em-footer__mission' }),
+          text({ markup: '<p class="em-footer__mission">Empower Mississippi works to Educate, Engage, and Elect Mississippians dedicated to removing barriers to opportunity.</p>' }),
           html({ markup: socialMarkup() }),
         ]),
         container({ content_width: 'full', _attributes: 'data-reveal|fade' }, [
-          heading({ text: 'Follow', tag: 'h3' }),
+          text({ markup: '<h3>Follow</h3>' }),
           text({
             markup: [
               '<ul class="em-footer__links">',
@@ -63,7 +63,7 @@ export const footerPart = () => [
           }),
         ]),
         container({ content_width: 'full', _attributes: 'data-reveal|fade' }, [
-          heading({ text: 'More', tag: 'h3' }),
+          text({ markup: '<h3>More</h3>' }),
           text({
             markup: [
               '<ul class="em-footer__links">',
@@ -75,7 +75,7 @@ export const footerPart = () => [
         ]),
       ]),
       container({ cssClass: 'em-footer__bottom', content_width: 'full' }, [
-        text({ markup: '<p>© Empower Mississippi</p>', cssClass: 'em-footer__legal' }),
+        text({ markup: '<p class="em-footer__legal">© Empower Mississippi</p>' }),
         text({ markup: '<p>741 Avignon Dr., Suite C &nbsp;|&nbsp; Ridgeland, MS 39157</p>' }),
         /* The build credit, carrying the same class the static partial uses so
            css/site.css styles it identically on the converted footer. */

@@ -500,6 +500,45 @@ export async function headerSettle(url, { width = 1440, height = 900 } = {}) {
   }
 }
 
+/* The utility bar at a given width: how tall, how many flex items it still
+   has, and whether the email is rendered.
+
+   THREE READINGS BECAUSE THE FIX HAS TWO HALVES AND THEY LIVE IN DIFFERENT
+   FILES. css/header-2.css hides the anchor, which is the whole fix in the
+   static build. On the install the flex child is an Elementor text-editor
+   wrapper, not the anchor, so hiding the anchor alone leaves a zero-width item
+   still contributing the row's gap; css/bridge.css hides that wrapper.
+   `emailShown` catches the first half regressing, `items` catches the second,
+   and `height` is what a visitor actually experiences. Asserting only on the
+   email would pass on a bar still carrying a phantom column. */
+export async function utilityBar(url, widths = [1440, 390]) {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'load' });
+    const out = {};
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
+      /* A settle beat: the change is a media query, so layout has to be
+         recomputed before any of this is meaningful. */
+      await page.waitForTimeout(180);
+      out[width] = await page.evaluate(() => {
+        const bar = document.querySelector('.em-utility__bar');
+        const link = document.querySelector('.em-utility__link');
+        if (!bar) return null;
+        return {
+          height: Math.round(bar.getBoundingClientRect().height),
+          emailShown: !!link && getComputedStyle(link).display !== 'none',
+          items: [...bar.children].filter((c) => getComputedStyle(c).display !== 'none').length,
+        };
+      });
+    }
+    return out;
+  } finally {
+    await browser.close();
+  }
+}
+
 export async function checkVisibleWithoutJs(url, selector) {
   const browser = await chromium.launch();
   try {

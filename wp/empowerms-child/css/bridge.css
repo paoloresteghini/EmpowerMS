@@ -7614,3 +7614,30 @@ body .wpautoterms-footer a:focus-visible{
    protected file. ========================================================== */
 [data-dropdown="pending"] .em-header__menu{display:none}
 [data-search="pending"] #site-search{display:none}
+
+/* ==========================================================================
+   THE UTILITY BAR'S HIDDEN EMAIL STILL TOOK UP SPACE ON THE INSTALL.
+   The destination half of the 600px rule in css/header-2.css, which drops the
+   email address from the top bar on a phone.
+
+   In the static build `.em-utility__link` IS the flex child, so hiding it
+   removes the item and the strapline centres. Here it is not: the header is a
+   Theme Builder part, so each half of the bar is wrapped in an Elementor
+   text-editor widget div, and THAT is the flex child. Hiding the anchor left
+   its wrapper behind as a zero-width flex item, still contributing the row's
+   24px gap, which pushed the strapline 12px left of centre. Measured, not
+   inferred: the bar spans 24-476 at a 500px viewport and the strapline sat at
+   68-408 rather than the 80-420 that centring should give.
+
+   This is the class-on-wrapper divergence this build meets on every page,
+   in its smallest possible form.
+
+   :has() AND NOT A HARD-CODED nth-child, because which half of the bar is
+   which is not something a position should be trusted to state; the selector
+   asks for the wrapper that actually contains the link. Where :has() is
+   missing the rule simply does not apply, and the degradation is the 12px
+   offset rather than a reappearing email: header-2.css has already hidden the
+   anchor itself by then. ========================================================== */
+@media (max-width:600px){
+  .em-utility__bar > .elementor-widget:has(.em-utility__link){display:none}
+}

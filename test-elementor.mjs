@@ -5621,3 +5621,43 @@ test('the internal pages are noindexed and out of the sitemap, and the real ones
     + 'Both effects come from empower_hidden_slugs() in the child theme: aioseo_robots_meta for the tag, '
     + 'aioseo_sitemap_exclude_posts for the sitemap.');
 });
+
+/* THE TOP BAR ATE 73px OF A PHONE SCREEN. Reported by Paolo 2026-08-21 from a
+   390px screenshot: the strapline and the email address are a flex row with
+   flex-wrap, so below the width where they stop fitting side by side they
+   became two stacked lines at the very top of every page.
+
+   600px, AND THE NUMBER IS MEASURED. Stepping the viewport down in 5px
+   increments, the bar holds one line at 585px and wraps at 580px. 600 is the
+   first breakpoint the build already uses above that point.
+
+   THE EMAIL WAS THE ONLY mailto ON THE PAGE, checked before removing it: the
+   footer carries none. It does carry a "Contact Us" link, so a phone visitor
+   still has a route. That is the fact that makes this safe, and it is why the
+   assertion below is about the bar rather than about contact being reachable.
+
+   BOTH HALVES ARE ASSERTED. css/header-2.css hides the anchor; on the install
+   the flex child is an Elementor wrapper, so css/bridge.css has to hide that
+   too or a zero-width column keeps the row's 24px gap and pushes the strapline
+   12px off centre. `items` is what catches the second half. */
+test('the top bar drops its email on a phone and keeps it on a desktop', { concurrency: 1 }, async () => {
+  const { utilityBar } = await import('./fidelity-browser.mjs');
+  const url = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const bar = await utilityBar(url, [1440, 601, 600, 390]);
+
+  assert.ok(bar[1440], '.em-utility__bar is not on the page at all');
+  assert.equal(bar[1440].emailShown, true, 'the email has gone from the desktop top bar, where it belongs');
+  assert.equal(bar[1440].items, 2, `the desktop bar should carry both halves; it has ${bar[1440].items}`);
+
+  /* Either side of the boundary, so the rule cannot drift to a width that
+     leaves the wrap it exists to prevent. */
+  assert.equal(bar[601].emailShown, true, 'the email is hidden at 601px, one pixel wider than the rule should reach');
+  assert.equal(bar[600].emailShown, false, 'the email is still shown at 600px, so the breakpoint has moved');
+
+  assert.equal(bar[390].emailShown, false, 'the email is back on a phone');
+  assert.equal(bar[390].items, 1,
+    `the phone bar still has ${bar[390].items} flex items. The anchor is hidden but its Elementor wrapper is `
+    + 'not, so the row keeps a zero-width column and its gap; that is the :has() rule in css/bridge.css.');
+  assert.ok(bar[390].height <= 50,
+    `the top bar is ${bar[390].height}px at 390px. It was 73px before this fix and should now be one line.`);
+});

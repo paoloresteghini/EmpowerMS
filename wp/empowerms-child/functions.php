@@ -703,6 +703,59 @@ add_filter( 'aioseo_sitemap_exclude_posts', function ( $ids ) {
 } );
 
 /**
+ * TWO URLS, ONE PERSON, and only one of them can be the bio.
+ *
+ * /grant-callen/ is the converted team-bio TEMPLATE, filled with Grant so the
+ * design could be reviewed. /person/grant-callen/ is the same person out of
+ * the `person` CPT, which is what drives /team/ and every other bio. Both
+ * return 200, both are titled "Grant Callen - Empower Mississippi", both carry
+ * the same biography, and before this filter each declared itself canonical.
+ * That is the textbook duplicate: two URLs competing for one person's name,
+ * with Google left to pick, and no way to predict which.
+ *
+ * Paolo chose consolidation over hiding on 2026-08-21: the template page stays
+ * reachable and reviewable, and points its canonical at the CPT bio, so any
+ * signal the template URL earns is credited to the page that is actually the
+ * bio. The alternative considered was adding it to empower_hidden_slugs(),
+ * which would have noindexed it instead.
+ *
+ * KEYED BY SLUG, resolved at request time, for the reason the sitemap filter
+ * above already records: an id typed into a file is wrong the first time a
+ * post is recreated. The target is built with home_url() rather than written
+ * out, so this does not have to be edited when the install moves off
+ * empv2.wpenginepowered.com onto the real domain.
+ */
+function empower_canonical_overrides() {
+	return array(
+		/* page slug => the path it should credit instead */
+		'grant-callen' => '/person/grant-callen/',
+	);
+}
+
+add_filter( 'aioseo_canonical_url', function ( $url ) {
+	if ( ! is_singular() ) {
+		return $url;
+	}
+	$slug      = get_post_field( 'post_name', get_queried_object_id() );
+	$overrides = empower_canonical_overrides();
+	if ( ! isset( $overrides[ $slug ] ) ) {
+		return $url;
+	}
+	/* Only if the target actually exists. A canonical pointing at a 404 is
+	   worse than the duplicate it was meant to fix, and the CPT bio is
+	   Empower's content, so it can be renamed or unpublished without this
+	   file hearing about it. */
+	/* basename, not the whole path: `person` is not hierarchical, so its
+	   post_name is "grant-callen" and get_page_by_path() would find nothing
+	   if handed "person/grant-callen". */
+	$target = get_page_by_path( basename( trim( $overrides[ $slug ], '/' ) ), OBJECT, 'person' );
+	if ( ! $target || 'publish' !== get_post_status( $target ) ) {
+		return $url;
+	}
+	return home_url( $overrides[ $slug ] );
+} );
+
+/**
  * THE HEADER'S OWN VERSION OF THE DEFERRED-GATE DEFECT, and it is the same
  * shape as the reveal gate above with a different set of scripts.
  *

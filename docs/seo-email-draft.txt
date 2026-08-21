@@ -1,0 +1,223 @@
+Subject: Search listings for empowerms.org, ready for your approval
+
+Hi [name],
+
+Before the new site goes live we need to settle one piece of copy that is easy
+to overlook: the short text that appears under each page's name in Google.
+
+Right now none of the sixteen main pages has one. Google fills the gap with
+whatever text it can scrape off the page, which for these pages is usually the
+navigation. The eighteen staff and fellow biographies do have one, but each is
+the opening 350 to 420 characters of the biography, so Google cuts it off
+mid-sentence.
+
+Below are the proposed replacements: a title and a one-line description for
+each of the 34 addresses. Every line is drawn from the page's own approved
+copy, or from the person's own biography. Nothing is invented, and no figure
+appears that is not already on the page it describes.
+
+There is also a visual version showing each one exactly as a Google result
+renders it, including what a phone cuts off: [paste artifact link]
+
+Please reply with any wording you want changed. Anything you do not mention, we
+will take as approved.
+
+
+===========================================================
+PART ONE: THE SIXTEEN SITE PAGES
+===========================================================
+
+Titles here are a little longer than the current ones. The current titles are
+short enough that Google leaves part of the result space unused.
+
+Home   empowerms.org/
+   Title: Expanding Opportunity in Mississippi - Empower Mississippi
+   Description: Empower Mississippi works to expand opportunity so every Mississippian can build a good life at home: quality education, meaningful work and safer communities.
+   Today: no description at all
+
+What We Do   empowerms.org/what-we-do/
+   Title: What We Do: Research Into Solutions - Empower Mississippi
+   Description: How Empower Mississippi turns research into practical policy across quality education, meaningful work and public safety. Read our latest annual reports.
+   Today: no description at all
+
+Solutions   empowerms.org/solutions/
+   Title: Practical Solutions for Mississippi - Empower Mississippi
+   Description: Three areas where practical solutions expand opportunity: quality education, meaningful work and safer communities. See how research becomes lasting change.
+   Today: no description at all
+
+Capitol Chat   empowerms.org/capitol-chat/
+   Title: Capitol Chat: Legislative Updates - Empower Mississippi
+   Description: Empower Mississippi's weekly insider update on the State Capitol. Wil Ervin breaks down the session's biggest developments in under five minutes.
+   Today: no description at all
+
+Who We Are   empowerms.org/who-we-are/
+   Title: Who We Are: Our Mission and Team - Empower Mississippi
+   Description: Empower Mississippi exists so every Mississippian can achieve the American Dream here at home. Meet the team and read the story behind the work.
+   Today: no description at all
+
+Email Sign Up   empowerms.org/newsletter/
+   Title: Email Sign Up: Stay Connected - Empower Mississippi
+   Description: Get the latest from Empower Mississippi by email: one update a month, plus news from the Capitol while the session runs. Five minutes or less.
+   Today: no description at all
+
+Ambassador Program   empowerms.org/ambassadors/
+   Title: Become an Empower Ambassador - Empower Mississippi
+   Description: Join a network of parents, educators, business owners and community leaders advancing practical solutions for Mississippi. Your voice matters here.
+   Today: no description at all
+
+EPIC   empowerms.org/epic/
+   Title: EPIC: Mississippi Policy Research - Empower Mississippi
+   Description: The Empower Policy & Innovation Center produces Mississippi-specific research on education, work and public safety, built with the people policy affects.
+   Today: no description at all
+
+Donate   empowerms.org/donate/
+   Title: Donate to Expand Opportunity - Empower Mississippi
+   Description: Your gift advances practical solutions that expand educational opportunity, strengthen the workforce and build safer communities. Empower is a 501(c)(3).
+   Today: no description at all
+
+Public Safety   empowerms.org/public-safety/
+   Title: Public Safety in Mississippi - Empower Mississippi
+   Description: Safer communities start with preventing crime, supporting effective law enforcement, strengthening families and a justice system that is both safe and fair.
+   Today: no description at all
+
+Meaningful Work   empowerms.org/meaningful-work/
+   Title: Meaningful Work in Mississippi - Empower Mississippi
+   Description: Too many Mississippians are disconnected from work. We work to remove barriers so more people can reach good careers, provide for a family and earn success.
+   Today: no description at all
+
+Quality Education   empowerms.org/quality-education/
+   Title: Quality Education in Mississippi - Empower Mississippi
+   Description: Every child learns differently. We work to empower parents, give educators freedom and create more pathways for Mississippi students to learn and succeed.
+   Today: no description at all
+
+The Empower Podcast   empowerms.org/podcast/
+   Title: The Empower Podcast, with Grant Callen - Empower Mississippi
+   Description: Grant Callen talks with lawmakers, policy experts and community leaders about Mississippi's biggest challenges and the solutions that help Mississippi rise.
+   Today: no description at all
+
+All Content   empowerms.org/all-content/
+   Title: All Content: Articles and Research - Empower Mississippi
+   Description: Everything Empower Mississippi publishes, in one place: articles, community stories, research and reports, and press releases. Filter by topic or by type.
+   Today: no description at all
+
+Team, Board and Fellows   empowerms.org/team/
+   Title: Meet Our Team, Board and Fellows - Empower Mississippi
+   Description: Meet the staff, board members and fellows behind Empower Mississippi, working to create a path to generational prosperity for the state's families.
+   Today: no description at all
+
+Grant Callen (bio template page)   empowerms.org/grant-callen/
+   Title: Grant Callen, Founder and CEO - Empower Mississippi
+   Description: Grant Callen founded Empower Mississippi in 2014 as a solution center for the state's biggest challenges. A sixth generation Mississippian from Laurel.
+   Today: no description at all
+
+
+===========================================================
+PART TWO: THE EIGHTEEN BIOGRAPHIES
+===========================================================
+
+Each of these replaces a 350 to 420 character extract that Google truncates.
+The replacement leads with the person's role, then one line of background,
+taken from their own biography. Full biographies on the pages are unchanged.
+
+Grant Callen   empowerms.org/person/grant-callen/
+   Title: Grant Callen, Founder and CEO - Empower Mississippi
+   Description: Founder and CEO of Empower Mississippi, started in 2014. A sixth generation Mississippian from Laurel, previously at Mississippi Center for Public Policy.
+
+Wil Ervin   empowerms.org/person/wil-ervin-3/
+   Title: Wil Ervin, Senior Vice President - Empower Mississippi
+   Description: Senior Vice President at Empower Mississippi, leading strategy, the public policy team and government affairs. Nearly a decade at the Division of Medicaid.
+
+Gina Metzger   empowerms.org/person/gina-metzger/
+   Title: Gina Metzger, Executive Vice President - Empower Mississippi
+   Description: Executive Vice President at Empower Mississippi, overseeing day-to-day operations and every Empower event. A University of Mississippi graduate.
+
+Brett Kittredge   empowerms.org/person/brett-kittredge/
+   Title: Brett Kittredge, VP Marketing - Empower Mississippi
+   Description: Vice President of Marketing and Communications at Empower Mississippi, covering education, work and justice. Empower's Director of Communications 2015-2018.
+
+Dr. Patrick Miller   empowerms.org/person/patrick-miller-2/
+   Title: Dr. Patrick Miller, VP Development - Empower Mississippi
+   Description: Vice President of Development at Empower Mississippi, leading fundraising and stewardship. His career spans institutional advancement and education leadership.
+
+Dr. Kristin Vance Richards   empowerms.org/person/dr-kristin-vance-richards/
+   Title: Dr. Kristin Vance Richards - Empower Mississippi
+   Description: Director of Research at Empower Mississippi, leading the research that shapes data-driven strategy across education, work and criminal justice.
+
+Kienna Horn   empowerms.org/person/kienna-horn/
+   Title: Kienna Horn, Communications - Empower Mississippi
+   Description: Director of Communications at Empower Mississippi, leading media relations, issue campaigns and content. Journalism graduate of Mississippi College.
+
+Ashley Green   empowerms.org/person/ashley-green/
+   Title: Ashley Green, Director of Outreach - Empower Mississippi
+   Description: Director of Outreach at Empower Mississippi, connecting with the people most affected by policy in education, work and criminal justice, elevating their voices.
+
+Steven Randle   empowerms.org/person/steven-randle/
+   Title: Steven Randle, Justice and Work - Empower Mississippi
+   Description: Director of Justice and Work at Empower Mississippi, shaping criminal justice and employability policy. Previously at Tougaloo College and in legislative work.
+
+Forest Thigpen   empowerms.org/person/forest-thigpen/
+   Title: Forest Thigpen, Senior Advisor - Empower Mississippi
+   Description: Senior Advisor at Empower Mississippi, with nearly three decades at the State Capitol. He founded the Mississippi Center for Public Policy in 1993.
+
+Joanna Polk   empowerms.org/person/joanna-polk-2/
+   Title: Joanna Polk, Development Manager - Empower Mississippi
+   Description: Executive Assistant and Development Manager at Empower Mississippi, supporting the CEO, the strategic fundraising plan and new donor relationships.
+
+Elyse Marcellino   empowerms.org/person/elyse-marcellino/
+   Title: Elyse Marcellino, Embark Director - Empower Mississippi
+   Description: Director of Embark, helping education entrepreneurs open high-quality charter and private schools in Mississippi. She helped launch Atlanta Classical Academy.
+
+Katie Elliott   empowerms.org/person/katieelliott/
+   Title: Katie Elliott, Embark Operations - Empower Mississippi
+   Description: Operations Manager of Embark, building the project's administrative systems and communications, after teaching Developmental English at community college level.
+
+Donald Nielsen   empowerms.org/person/donald-nielsen/
+   Title: Donald Nielsen, Empower Fellow - Empower Mississippi
+   Description: Empower Mississippi fellow. Senior Fellow of Discovery Institute, chair of its public education reform program, and Chairman of Lumenal Lighting.
+
+Joe Bishop-Henchman   empowerms.org/person/joe-bishop-henchman/
+   Title: Joe Bishop-Henchman, Fellow - Empower Mississippi
+   Description: Empower Mississippi fellow. Vice President of Policy and Litigation at National Taxpayers Union Foundation, leading NTUF's Taxpayer Defense Center.
+
+Dr. Matthew Ladner   empowerms.org/person/matt-ladner/
+   Title: Dr. Matthew Ladner, Fellow - Empower Mississippi
+   Description: Empower Mississippi fellow. Director of the Arizona Center for Student Opportunity and Executive Editor of RedefinED, previously at the Goldwater Institute.
+
+Conor Norris   empowerms.org/person/conor-norris/
+   Title: Conor Norris, Empower Fellow - Empower Mississippi
+   Description: Empower Mississippi fellow. Research analyst with the Knee Center for the Study of Occupational Regulation, studying how licensing affects work and enterprise.
+
+Christopher Koopman   empowerms.org/person/christopher-koopman/
+   Title: Christopher Koopman, Fellow - Empower Mississippi
+   Description: Empower Mississippi fellow. Executive Director of the Center for Growth and Opportunity at Utah State University, on regulation, competition and innovation.
+
+
+===========================================================
+TWO DECISIONS TO CONFIRM ALONGSIDE THE WORDING
+===========================================================
+
+1. The home page is currently titled "Homepage (Elementor conversion)". That is
+   a label from the build process, and it is what a browser tab and a Google
+   result both say today. The title above replaces it. Please confirm you are
+   happy with the replacement wording.
+
+2. Grant Callen's biography currently exists at two web addresses:
+   empowerms.org/grant-callen/ and empowerms.org/person/grant-callen/
+   Both work, both are titled "Grant Callen", and Google has no way to tell
+   which is the real one, so the two compete with each other. We propose
+   treating empowerms.org/person/grant-callen/ as the real one, which is the address
+   the staff page already links to. The other stays reachable and simply points
+   Google at it. No content is deleted either way.
+
+
+===========================================================
+NOT INCLUDED, AND WHY
+===========================================================
+
+Blog posts and the older pages are not in this list. They already carry
+descriptions, and while most are longer than Google will show, they are far
+better handled in one bulk pass than written out one by one. Happy to quote
+that separately if you want it done before launch.
+
+Best,
+[your name]

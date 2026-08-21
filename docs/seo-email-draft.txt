@@ -7,12 +7,12 @@ to overlook: the short text that appears under each page's name in Google.
 
 Right now none of the sixteen main pages has one. Google fills the gap with
 whatever text it can scrape off the page, which for these pages is usually the
-navigation. The eighteen staff and fellow biographies do have one, but each is
+navigation. The thirteen staff and fellow biographies do have one, but each is
 the opening 350 to 420 characters of the biography, so Google cuts it off
 mid-sentence.
 
 Below are the proposed replacements: a title and a one-line description for
-each of the 34 addresses. Every line is drawn from the page's own approved
+each of the 29 addresses. Every line is drawn from the page's own approved
 copy, or from the person's own biography. Nothing is invented, and no figure
 appears that is not already on the page it describes.
 
@@ -47,7 +47,7 @@ Solutions   empowerms.org/solutions/
 
 Capitol Chat   empowerms.org/capitol-chat/
    Title: Capitol Chat: Legislative Updates - Empower Mississippi
-   Description: Empower Mississippi's weekly insider update on the State Capitol. Wil Ervin breaks down the session's biggest developments in under five minutes.
+   Description: Empower Mississippi's weekly insider update on the State Capitol. We break down the session's biggest developments in under five minutes.
    Today: no description at all
 
 Who We Are   empowerms.org/who-we-are/
@@ -112,7 +112,7 @@ Grant Callen (bio template page)   empowerms.org/grant-callen/
 
 
 ===========================================================
-PART TWO: THE EIGHTEEN BIOGRAPHIES
+PART TWO: THE THIRTEEN BIOGRAPHIES
 ===========================================================
 
 Each of these replaces a 350 to 420 character extract that Google truncates.
@@ -123,21 +123,13 @@ Grant Callen   empowerms.org/person/grant-callen/
    Title: Grant Callen, Founder and CEO - Empower Mississippi
    Description: Founder and CEO of Empower Mississippi, started in 2014. A sixth generation Mississippian from Laurel, previously at Mississippi Center for Public Policy.
 
-Wil Ervin   empowerms.org/person/wil-ervin-3/
-   Title: Wil Ervin, Senior Vice President - Empower Mississippi
-   Description: Senior Vice President at Empower Mississippi, leading strategy, the public policy team and government affairs. Nearly a decade at the Division of Medicaid.
-
 Gina Metzger   empowerms.org/person/gina-metzger/
-   Title: Gina Metzger, Executive Vice President - Empower Mississippi
+   Title: Gina Metzger, Chief Administrative Officer - Empower Mississippi
    Description: Executive Vice President at Empower Mississippi, overseeing day-to-day operations and every Empower event. A University of Mississippi graduate.
 
-Brett Kittredge   empowerms.org/person/brett-kittredge/
-   Title: Brett Kittredge, VP Marketing - Empower Mississippi
-   Description: Vice President of Marketing and Communications at Empower Mississippi, covering education, work and justice. Empower's Director of Communications 2015-2018.
-
 Dr. Patrick Miller   empowerms.org/person/patrick-miller-2/
-   Title: Dr. Patrick Miller, VP Development - Empower Mississippi
-   Description: Vice President of Development at Empower Mississippi, leading fundraising and stewardship. His career spans institutional advancement and education leadership.
+   Title: Dr. Patrick Miller, Executive Vice President - Empower Mississippi
+   Description: Dr. Patrick Miller is Executive Vice President at Empower Mississippi, leading organizational execution, team alignment, fundraising, and institutional advancement.
 
 Dr. Kristin Vance Richards   empowerms.org/person/dr-kristin-vance-richards/
    Title: Dr. Kristin Vance Richards - Empower Mississippi
@@ -151,10 +143,6 @@ Ashley Green   empowerms.org/person/ashley-green/
    Title: Ashley Green, Director of Outreach - Empower Mississippi
    Description: Director of Outreach at Empower Mississippi, connecting with the people most affected by policy in education, work and criminal justice, elevating their voices.
 
-Steven Randle   empowerms.org/person/steven-randle/
-   Title: Steven Randle, Justice and Work - Empower Mississippi
-   Description: Director of Justice and Work at Empower Mississippi, shaping criminal justice and employability policy. Previously at Tougaloo College and in legislative work.
-
 Forest Thigpen   empowerms.org/person/forest-thigpen/
    Title: Forest Thigpen, Senior Advisor - Empower Mississippi
    Description: Senior Advisor at Empower Mississippi, with nearly three decades at the State Capitol. He founded the Mississippi Center for Public Policy in 1993.
@@ -166,10 +154,6 @@ Joanna Polk   empowerms.org/person/joanna-polk-2/
 Elyse Marcellino   empowerms.org/person/elyse-marcellino/
    Title: Elyse Marcellino, Embark Director - Empower Mississippi
    Description: Director of Embark, helping education entrepreneurs open high-quality charter and private schools in Mississippi. She helped launch Atlanta Classical Academy.
-
-Katie Elliott   empowerms.org/person/katieelliott/
-   Title: Katie Elliott, Embark Operations - Empower Mississippi
-   Description: Operations Manager of Embark, building the project's administrative systems and communications, after teaching Developmental English at community college level.
 
 Donald Nielsen   empowerms.org/person/donald-nielsen/
    Title: Donald Nielsen, Empower Fellow - Empower Mississippi
@@ -186,10 +170,6 @@ Dr. Matthew Ladner   empowerms.org/person/matt-ladner/
 Conor Norris   empowerms.org/person/conor-norris/
    Title: Conor Norris, Empower Fellow - Empower Mississippi
    Description: Empower Mississippi fellow. Research analyst with the Knee Center for the Study of Occupational Regulation, studying how licensing affects work and enterprise.
-
-Christopher Koopman   empowerms.org/person/christopher-koopman/
-   Title: Christopher Koopman, Fellow - Empower Mississippi
-   Description: Empower Mississippi fellow. Executive Director of the Center for Growth and Opportunity at Utah State University, on regulation, competition and innovation.
 
 
 ===========================================================

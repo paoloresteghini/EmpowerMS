@@ -7681,3 +7681,36 @@ body:has(#ca-p-safety:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data
 body:has(#ca-p-bills:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data-topic~="bills"])){
   display:none;
 }
+
+/* ---------- 74. podcast-a: a filtered-out episode must release its cell ------
+ *
+ * THE SAME DEFECT AS BLOCK 73, on the page it was found by sweeping for after
+ * content-a's was fixed. css/podcast-a.css:248-251 hides `.pca-ep`, which is
+ * the grid item on the static build and is NOT one on a converted page: the
+ * episode sits inside Elementor's `.e-loop-item`, and `.pca-catalogue` is a
+ * real two-column grid (240px 864px, measured live), so a hidden episode
+ * empties its cell without releasing it.
+ *
+ * Measured on the live page before this block existed, with one guest facet
+ * ticked: 6 episodes hidden, 6 `.e-loop-item` wrappers still laid out, between
+ * 205px and 253px tall each. Six band-height holes down the catalogue.
+ *
+ * THE CONDITION IS POSITIVE HERE, NOT NEGATIVE, and that is the one real
+ * difference from block 73. content-a's filter hides cards that do NOT carry
+ * the chosen topic, so its wrapper rule is `:not(:has(> .cad-card[...]))`.
+ * podcast-a's facets are additive checkboxes: they hide episodes that DO carry
+ * a guest value nobody ticked, so the wrapper rule is `:has(> .pca-ep[...])`.
+ * Copying block 73's shape without reading this would hide exactly the wrong
+ * episodes, which is a defect that looks like a working filter.
+ *
+ * `> .pca-ep`, a direct child: read off the live page, where
+ * `eps[0].parentElement` matches `.e-loop-item` exactly.
+ *
+ * Same duplication hazard and the same guard: the guest set is restated here
+ * because CSS cannot ask whether a child is currently display:none, and
+ * test.mjs asserts this list matches css/podcast-a.css's. */
+body:has(.pca-guest:checked):not(:has(#pa-g-lawmaker:checked)) .pca-catalogue .e-loop-item:has(> .pca-ep[data-guest="lawmaker"]),
+body:has(.pca-guest:checked):not(:has(#pa-g-expert:checked)) .pca-catalogue .e-loop-item:has(> .pca-ep[data-guest="expert"]),
+body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-loop-item:has(> .pca-ep[data-guest="leader"]){
+  display:none;
+}

@@ -4262,6 +4262,28 @@ test('the topic filter hides the card and its grid cell, for the same set of top
     + 'cells occupied on every converted page');
 });
 
+/* THE SAME PAIR, ON PODCAST-A. bridge.css block 74 restates podcast-a's guest
+   set for the same reason block 73 restates content-a's topics, and carries the
+   same hazard: add a guest facet to css/podcast-a.css and the catalogue filters
+   correctly on the static build while leaving holes on the converted page. */
+test('the guest filter hides the episode and its grid cell, for the same set of guests', () => {
+  const page = readFileSync('css/podcast-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const guests = (css) => [...new Set(
+    [...css.matchAll(/data-guest="([a-z]+)"/g)].map((m) => m[1]),
+  )].sort();
+
+  const onEpisodes = guests(page);
+  const onCells = guests(bridge);
+
+  assert.ok(onEpisodes.length >= 3, `only ${onEpisodes.length} guest rules in podcast-a.css; the filter has shrunk`);
+  assert.deepEqual(onCells, onEpisodes,
+    `css/podcast-a.css filters on [${onEpisodes.join(', ')}] but bridge.css releases cells for `
+    + `[${onCells.join(', ')}]; the difference is a guest whose episodes hide and leave their grid `
+    + 'cells occupied on the converted page');
+});
+
 test('content-a’s control labels are the short forms the one-line bar depends on', () => {
   const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
   const labels = (cls) => [...html.matchAll(new RegExp(`<label class="${cls}"[^>]*>([^<]*)</label>`, 'g'))]

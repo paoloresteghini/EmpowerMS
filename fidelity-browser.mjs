@@ -726,6 +726,19 @@ export async function checkGuestFilter(url, { steps, cardSelector, facetSelector
         byGuest,
         facets: document.querySelectorAll(facet).length,
         checked: [...document.querySelectorAll(facet)].filter((e) => e.checked).map((e) => e.id).sort(),
+        /* THE HOLE THE COUNTS CANNOT SEE, the same reading checkRadioFilter
+           carries and for the same reason: on a converted page the grid item is
+           Elementor's `.e-loop-item` wrapper, not the element the filter hides
+           inside it, so a hidden episode empties its cell without releasing it
+           and the survivors keep their original positions. Every count above
+           stays correct while the catalogue renders with holes. Zero on the
+           static build, where the episode IS the grid item. */
+        orphanCells: [...document.querySelectorAll(card)]
+          .filter((c) => getComputedStyle(c).display === 'none')
+          .map((c) => c.parentElement)
+          .filter((w) => w && w.matches('.e-loop-item')
+            && getComputedStyle(w).display !== 'none'
+            && w.getBoundingClientRect().width > 0).length,
       };
     }, { card: cardSelector, facet: facetSelector });
 

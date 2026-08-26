@@ -5005,6 +5005,19 @@ test('the podcast-a guest facets actually filter, and un-filter', { concurrency:
   assert.equal(start.facets, 3, `expected three guest checkboxes, found ${start.facets}`);
   assert.deepEqual(start.checked, [], 'the library did not start unfiltered');
 
+  /* AND THE SURVIVORS MUST CLOSE UP. Every other assertion in this test counts
+     what is shown, and all of them passed while the catalogue rendered with
+     holes: `.pca-ep` sits inside Elementor's `.e-loop-item`, which is the real
+     grid item on a converted page, so hiding the episode empties its cell
+     without releasing it. Measured live before the repair, with one facet
+     ticked: 6 episodes hidden, 6 wrappers still laid out, 205-253px tall each.
+     Identical defect to content-a's, found by sweeping after fixing that one. */
+  for (const row of rows) {
+    assert.equal(row.orphanCells, 0,
+      `after "${row.name}", ${row.orphanCells} hidden episodes left their .e-loop-item wrapper holding a `
+      + 'grid cell, so the catalogue renders with holes rather than closing up');
+  }
+
   const tagged = Object.keys(start.byGuest).filter((g) => g !== '(untagged)').sort();
   assert.deepEqual(tagged, ['expert', 'lawmaker', 'leader'],
     `expected all three guest types on the unfiltered page, found ${tagged.join(', ')}. `

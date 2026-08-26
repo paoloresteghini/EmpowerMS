@@ -42,6 +42,19 @@ import { LOOP_ITEM_POST_IDS } from '../pages/content-a/loop-item.mjs';
  *
  * A sub_id would pin this to one term (`include/archive/category/9`). This
  * template serves all of them, so there is none. */
+/* The elementor_library post that holds this template. Created on empv2 on
+ * 2026-08-26 with, over SSH like everything else on this install:
+ *
+ *   wp post create --post_type=elementor_library --post_status=publish \
+ *     --post_title='Category archive' --porcelain
+ *
+ * elementor/deploy-archive.mjs writes its `_elementor_template_type` as
+ * 'archive'; the condition is set separately by setConditions(), because a
+ * template with correct data and no location is resolved from a CACHED option
+ * at render time and simply never appears.
+ * docs/elementor/theme-part-mechanism.md records the hour that cost. */
+export const CATEGORY_ARCHIVE_POST_ID = 20644;
+
 export const CATEGORY_ARCHIVE_CONDITIONS = ['include/archive/category'];
 
 /* HOW MANY POSTS PER PAGE, and why a number rather than the site default.

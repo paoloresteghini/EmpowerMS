@@ -2420,6 +2420,32 @@ test('deployThemePart accepts archive as a document type', async () => {
   );
 });
 
+/* THE LIBRARY POST THIS TEMPLATE LIVES IN, recorded the same way every other
+   theme part records its own. The id is not decoration: deployThemePart()
+   overwrites _elementor_data wholesale, so a wrong one silently destroys
+   another document's tree, and the check it makes on the install only proves
+   the target is SOME elementor_library post. Asserting the ids are distinct
+   here is what stops two theme parts pointing at one post in the first place. */
+test('the category archive names its own library post, distinct from the other parts', async () => {
+  const { CATEGORY_ARCHIVE_POST_ID } = await import('./elementor/theme-parts/category-archive.mjs');
+  const { POST_SINGLE_POST_ID } = await import('./elementor/theme-parts/post-single.mjs');
+
+  assert.ok(Number.isInteger(CATEGORY_ARCHIVE_POST_ID) && CATEGORY_ARCHIVE_POST_ID > 0,
+    'CATEGORY_ARCHIVE_POST_ID is not a positive integer post id');
+
+  const others = {
+    POST_SINGLE_POST_ID,
+    SEARCH_ARCHIVE_POST_ID,
+    SEARCH_RESULT_ITEM_POST_ID,
+    HEADER_POST_ID,
+    FOOTER_POST_ID,
+  };
+  for (const [name, id] of Object.entries(others)) {
+    assert.notEqual(CATEGORY_ARCHIVE_POST_ID, id,
+      `the category archive and ${name} name the same post; deploying either would overwrite the other`);
+  }
+});
+
 test('the category archive has an empty state', async () => {
   const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
   const markup = JSON.stringify(categoryArchive());

@@ -33,6 +33,7 @@ import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { personSingle } from './elementor/theme-parts/person-single.mjs';
 import { postSingle } from './elementor/theme-parts/post-single.mjs';
 import { sections as probeSections } from './elementor/theme-parts/native-animation-probe.mjs';
+import { categoryArchive } from './elementor/theme-parts/category-archive.mjs';
 import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './elementor/theme-parts/search-result-item.mjs';
 import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './elementor/theme-parts/search-archive.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
@@ -1945,7 +1946,7 @@ test('every container in every podcast-a mapping module and every theme part set
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
     headerPart(), footerPart(), personSingle(),
     searchArchivePart(), searchResultItem(), postSingle(),
-    probeSections(),
+    probeSections(), categoryArchive(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -2034,6 +2035,382 @@ test('the search results part is a real archive document with a search condition
     'SEARCH_RESULT_ITEM_POST_ID is not an integer post id');
   assert.notEqual(SEARCH_ARCHIVE_POST_ID, SEARCH_RESULT_ITEM_POST_ID,
     'the archive template and its loop item point at the same post');
+});
+
+/* --- elementor/theme-parts/category-archive.mjs --------------------------- */
+
+/* THE CONDITION IS TWO LEVELS, AND THE THREE-LEVEL FORM IS THE TRAP.
+   Elementor Pro registers Taxonomy as a sub-condition of Post_Type_Archive,
+   which reads as a nesting and is not one. Conditions_Manager::parse_condition()
+   is `list($type,$name,$sub_name,$sub_id) = array_pad(explode('/',$condition),4,'')`
+   and the match is FLAT: get_condition($name)->check([]), then, only if that
+   passed, get_condition($sub_name)->check(['id'=>$sub_id]).
+
+   So `include/archive/post_archive/category` parses as name=archive,
+   sub_name=post_archive, sub_id=category, and runs
+   Post_Type_Archive::check() = `is_post_type_archive('post') || is_home()`,
+   which is FALSE on a category archive. Taxonomy::check() never runs. The
+   template deploys, looks right in the editor, and never appears on a page.
+
+   `include/archive/category` runs Archive::check() = is_archive() (true), then
+   Taxonomy::check() with `$id = (int) '' = 0`, and is_category(0) is true for
+   any category archive. Same two-level shape as include/archive/search and
+   include/singular/post, which is the corroboration.
+
+   This test re-implements parse_condition rather than asserting the literal,
+   because the literal is what a future edit would change and the parse is what
+   makes it wrong. */
+test('the category archive condition parses flat, into archive + category', async () => {
+  const { CATEGORY_ARCHIVE_CONDITIONS } = await import('./elementor/theme-parts/category-archive.mjs');
+  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 1, 'expected exactly one condition');
+
+  const parseCondition = (condition) => {
+    const [type, name, subName, subId] = [...condition.split('/'), '', '', ''].slice(0, 4);
+    return { type, name, subName, subId };
+  };
+  const parsed = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[0]);
+
+  assert.equal(parsed.type, 'include');
+  assert.equal(parsed.name, 'archive',
+    `the first level is "${parsed.name}"; it must be a condition whose check() is true on a category `
+    + 'archive, and Archive::check() (is_archive()) is the only one that is');
+  assert.equal(parsed.subName, 'category',
+    `the second level is "${parsed.subName}"; parse_condition() looks conditions up FLAT by name, so `
+    + 'this must be the Taxonomy condition\'s own name (the taxonomy slug), never an intermediate '
+    + 'like post_archive, whose check() is is_post_type_archive(\'post\') and false here');
+  assert.equal(parsed.subId, '',
+    'a sub_id pins the template to ONE term; this template serves every category');
+});
+
+/* THE CARD IS content-a's, BY POST ID, NOT BY COPY. Every listing surface in
+   this build that has grown its own card has cost a second design to keep in
+   step: post-single.mjs's More grid reuses LOOP_ITEM_POST_IDS.article for the
+   same reason, and its note gives it. `article` specifically, out of the four
+   deployed Loop Items, because it is the only one that carries a photograph, a
+   topic and a date without assuming the post is about a named person, and a
+   category archive holds whatever the category holds.
+
+   Asserting the ID rather than the markup is the point: a copied tree would
+   satisfy any structural assertion and still be a second design. */
+test('the category archive grid points at content-a\'s article Loop Item, not a card of its own', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const { LOOP_ITEM_POST_IDS } = await import('./elementor/pages/content-a/loop-item.mjs');
+
+  const grids = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.widgetType === 'loop-grid') grids.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(categoryArchive());
+
+  assert.equal(grids.length, 1, `expected one Loop Grid on the archive, found ${grids.length}`);
+  assert.equal(grids[0].settings.template_id, LOOP_ITEM_POST_IDS.article,
+    'the archive grid does not point at content-a\'s article Loop Item, so this page has grown a '
+    + 'second card design that has to be kept in step with the signed-off one by hand');
+});
+
+/* NOTHING ABOUT THE TERM IS WRITTEN INTO THE TREE. One template serves ten
+   terms, so a term name or a post count in the tree is wrong on nine of them
+   the moment it is written, and wrong on all ten the moment Empower add a post.
+   This build has been bitten by both halves already: `1b886a4` took typed
+   counts out of the approval generators, and the "Our north star" line is the
+   standing example of invented copy that reads as approved copy.
+
+   The list below is every category name on the install, read with
+   `wp term list category` on 2026-08-26 rather than typed from the roadmap.
+   Their post counts are the reason pagination is not optional: education 147,
+   work 126, empower news 78, justice 78, bill-summaries 74, podcast 66, press
+   releases 33, capitol-chat 28, community-stories 27, uncategorized 0. */
+test('the category archive writes no term name and no count into its own tree', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+
+  const TERM_NAMES = [
+    'Bill Summaries', 'Capitol Chat', 'Community Stories', 'Education',
+    'Empower News', 'Justice', 'Podcast', 'Press Releases', 'Work',
+  ];
+  for (const name of TERM_NAMES) {
+    assert.ok(!markup.includes(name),
+      `"${name}" is written into the archive tree, which serves all ten terms; the term has to come `
+      + 'from the query, not from this file');
+  }
+
+  /* Any run of digits that is not part of a post id, a column count, a
+     breakpoint or a per-page setting. A count belongs to the query. */
+  const prose = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      const t = n.settings?.title ?? n.settings?.editor ?? n.settings?.html ?? '';
+      if (typeof t === 'string' && t) prose.push(t);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(categoryArchive());
+  for (const line of prose) {
+    assert.ok(!/\b\d+\b/.test(line.replace(/\[[^\]]*\]/g, '')),
+      `the archive head states the number "${line.trim().slice(0, 60)}"; every number on this page is `
+      + 'a property of the query and must be rendered from it');
+  }
+});
+
+/* THE HEAD IS TWO SHORTCODES, and each is here because no Elementor control
+   can produce it. Same division of labour as inc/post-single.php.
+
+   1. THE HEADING NEEDS A REAL id, because the section is labelled
+      aria-labelledby. Elementor's Heading widget writes its own wrapper and
+      offers no id control on the heading element itself. Its Archive Title
+      dynamic tag also prefixes "Category: " on this install, which is
+      WordPress's own get_the_archive_title() default and not a label anybody
+      approved.
+   2. THERE IS NO COUNT CONTROL OR TAG AT ALL. The number is
+      $wp_query->found_posts, which only PHP can reach.
+
+   Both render nothing rather than something wrong for the term with no posts
+   (uncategorized, 0), which is the rule inc/post-single.php's figure already
+   follows for the 95 posts with no featured image. */
+test('the category archive head is rendered by shortcodes, not by widgets that cannot do the job', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+
+  assert.match(markup, /\[empower_archive_title\]/,
+    'the archive head does not render [empower_archive_title], so its h1 carries no id for '
+    + 'aria-labelledby and inherits WordPress\'s "Category: " prefix');
+  assert.match(markup, /\[empower_archive_count\]/,
+    'the archive head does not render [empower_archive_count], so the page cannot say how many posts '
+    + 'the term holds without typing a number');
+
+  const php = fs.readFileSync('wp/empowerms-child/inc/archive.php', 'utf8');
+  for (const tag of ['empower_archive_title', 'empower_archive_count']) {
+    assert.match(php, new RegExp(`add_shortcode\\(\\s*'${tag}'`),
+      `inc/archive.php does not register [${tag}], so the archive renders the literal shortcode text`);
+  }
+  assert.match(php, /found_posts/,
+    'the count shortcode does not read $wp_query->found_posts, so it is counting something other than '
+    + 'what the archive actually resolved');
+
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.match(fn, /require_once get_stylesheet_directory\(\) \. '\/inc\/archive\.php'/,
+    'functions.php does not require inc/archive.php, so neither shortcode is registered');
+});
+
+/* THE STYLE KEY GAINS A THIRD CASE, AND THE OTHER TWO MUST SURVIVE IT.
+   empower_style_key() has answered two questions since 2026-08-20: a PAGE is
+   keyed by its slug, a SINGULAR OF ANY OTHER POST TYPE by its post type. Both
+   are inside an `is_singular()` guard that returns '' for everything else, so
+   an archive gets tokens, components, site.css, header-2.css and bridge.css and
+   nothing more. That is why the archive needs a case at all: its cards are
+   `.cad-card`, which lives in css/content-a.css, and the reveal gate
+   (empower_page_has_motion()) derives from the SAME map, so without a key the
+   archive would also ship with no animation while carrying reveal attributes.
+
+   This asserts the shape of the branch rather than its result, which a source
+   read can honestly do; the live gate below asserts the result. */
+test('empower_style_key answers archives without disturbing pages or singulars', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_style_key()'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  assert.match(body, /is_category\(\)|is_archive\(\)/,
+    'empower_style_key() has no archive case, so a category archive still resolves to the empty key '
+    + 'and loads neither content-a.css nor motion.css');
+  assert.match(body, /return \(string\) 'archive';|return 'archive';/,
+    "the archive case does not return the 'archive' key that empower_page_styles() is looked up by");
+
+  /* The two older cases, in the order their own docblock argues for: the
+     is_singular() guard must still come first, or a `person` archive-shaped
+     request would take the archive branch. */
+  assert.ok(body.indexOf('is_singular()') < body.indexOf("'archive'"),
+    'the archive case is evaluated before the is_singular() guard, so singulars can fall into it');
+  assert.match(body, /get_post_field\( 'post_name'/,
+    'the page-keyed-by-slug case is gone');
+  assert.match(body, /\(string\) \$post_type/,
+    'the singular-keyed-by-post-type case is gone');
+
+  const styles = php.slice(php.indexOf('function empower_page_styles()'));
+  assert.match(styles.slice(0, styles.indexOf('\n}')), /'archive'\s*=>\s*array\(([^)]*)\)/,
+    'empower_page_styles() has no archive row, so the key resolves to nothing');
+  const row = styles.match(/'archive'\s*=>\s*array\(([^)]*)\)/)[1];
+  for (const sheet of ['motion', 'content-a', 'archive']) {
+    assert.ok(row.includes(`'${sheet}'`),
+      `the archive row does not load ${sheet}.css`);
+  }
+});
+
+const CATEGORY_ARCHIVE_PAGE = {
+  name: 'category archive',
+  envVar: 'CATEGORY_ARCHIVE_URL',
+  exampleUrl: 'https://empv2.wpenginepowered.com/category/community-stories/',
+};
+
+/* The result the source test above cannot prove: that a real category archive
+   request reaches the Elementor template and carries the sheets its cards and
+   its animation need. Beaver's own archive layout is the thing being replaced,
+   so its marker class is the clearest negative. */
+test('the live category archive renders the Elementor template with its stylesheets', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(CATEGORY_ARCHIVE_PAGE, t);
+  if (!url) return;
+
+  /* fetchConverted(), not a bare fetch: it refuses an explicit x-cache HIT, so
+     this gate cannot pass or fail on a page WP Engine cached before the
+     template was deployed. */
+  const html = await fetchConverted(url);
+
+  assert.ok(!/fl-theme-builder-archive/.test(html),
+    'the archive still carries Beaver Themer\'s archive body class, so the Elementor template is not '
+    + 'winning: check the condition is include/archive/category (two levels, not three) and that '
+    + 'setConditions() regenerated the conditions cache');
+  assert.match(html, /elementor-location-archive/,
+    'no Elementor archive location rendered, so archive.php fell through to its plain-list fallback');
+  assert.match(html, /id="archive-title"/,
+    'the head shortcode did not render, so nothing carries the id the section is labelled by');
+  for (const sheet of ['content-a.css', 'motion.css', 'archive.css']) {
+    assert.ok(html.includes(sheet),
+      `${sheet} is not enqueued on the archive, so empower_style_key() is not returning 'archive'`);
+  }
+  assert.ok(!/Category:/.test(html),
+    'the archive title carries WordPress\'s "Category: " prefix, so it is rendering '
+    + 'get_the_archive_title() rather than single_term_title()');
+});
+
+/* THREE OF THE TEN TERMS ARE TOPICS, NOT TYPES, AND THEY COMPETE WITH PAGES
+   THAT ARE ALREADY CONVERTED AND SIGNED OFF.
+
+   The category taxonomy on this install holds both kinds of term at one level
+   (which is also why inc/post-single.php has to code a precedence for the
+   eyebrow). Six describe what a post IS; three describe what it is ABOUT, and
+   those three are the biggest terms on the install: education 147, work 126,
+   justice 78. Each has a converted page saying the same thing to the same
+   reader, and the 2026-08-21 SEO audit found twelve existing instances of
+   exactly this shape, all of them self-canonical and therefore competing
+   rather than consolidating.
+
+   Paolo chose canonical over redirect or noindex on 2026-08-26: the archives
+   stay reachable, keep working as a way to browse a topic, and credit their
+   signal to the page that is the destination. Same instrument and the same
+   file as the Grant Callen pair, which is the precedent for consolidation
+   over hiding.
+
+   THE MAP IS ASSERTED WHOLE. Three entries, exactly: a fourth would be a topic
+   term nobody has decided about, and a missing one is a term left competing. */
+test('the three topic archives credit their converted page, and only those three', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_term_canonical_overrides()'));
+  assert.ok(fn, 'empower_term_canonical_overrides() does not exist');
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  const pairs = [...body.matchAll(/'([a-z0-9-]+)'\s*=>\s*'([^']+)'/g)].map(m => [m[1], m[2]]);
+  assert.deepEqual(pairs.sort(), [
+    ['education', '/quality-education/'],
+    ['justice', '/public-safety/'],
+    ['work', '/meaningful-work/'],
+  ], 'the topic-to-page map is not the three terms and destinations that were agreed');
+
+  /* One filter, two maps. A second add_filter on the same hook would put the
+     answer to "what is canonical here" in two places, which is how the pair
+     that this filter exists to fix came about. */
+  assert.equal((php.match(/add_filter\( 'aioseo_canonical_url'/g) ?? []).length, 1,
+    'there is more than one aioseo_canonical_url filter, so canonicals are decided in two places');
+
+  const filter = php.slice(php.indexOf("add_filter( 'aioseo_canonical_url'"));
+  const filterBody = filter.slice(0, filter.indexOf('\n} );'));
+  assert.match(filterBody, /is_category\(\)/,
+    'the canonical filter has no category branch, so the topic archives still declare themselves '
+    + 'canonical and go on competing with their converted pages');
+  assert.match(filterBody, /'publish' !== get_post_status/,
+    'the term branch does not check the destination is published; a canonical pointing at a 404 or a '
+    + 'draft is worse than the duplicate it replaces');
+});
+
+/* The result, on the term with the most posts. */
+/* AN EMPTY-STATE MESSAGE THAT IS NOT SWITCHED ON IS NOT AN EMPTY STATE.
+   Elementor Pro's Loop Grid gates the whole block on a SWITCHER:
+
+     if ( isset( $settings['enable_nothing_found_message'] )
+          && 'yes' === $settings['enable_nothing_found_message'] ) { ... }
+
+   and `enable_nothing_found_message` is registered with NO `default`, so it is
+   '' unless something sets it. `nothing_found_message_text` is itself
+   conditioned on that switch being 'yes'. Writing the text alone therefore
+   produces exactly nothing on the page.
+
+   This was found on 2026-08-26 while building the category archive, and it had
+   already shipped: theme-parts/search-archive.mjs set the text and not the
+   switch, so the search results page has never had the empty state it was
+   written to have. The gate covering it asserted the string was present in the
+   TREE, which stayed true the whole time. A source assertion about a setting
+   cannot see a second setting that suppresses it, which is why this one is an
+   invariant over every grid rather than a check on one. */
+test('every loop grid that writes an empty state also switches it on', async () => {
+  const trees = {
+    'search-archive': searchArchivePart(),
+    'post-single': postSingle(),
+    'category-archive': categoryArchive(),
+  };
+
+  let checked = 0;
+  for (const [name, tree] of Object.entries(trees)) {
+    (function walk(nodes) {
+      for (const n of nodes) {
+        if (n.widgetType === 'loop-grid' && n.settings?.nothing_found_message_text) {
+          checked += 1;
+          assert.equal(n.settings.enable_nothing_found_message, 'yes',
+            `${name} sets nothing_found_message_text without enable_nothing_found_message:'yes', so `
+            + 'Elementor renders no empty state at all and the copy is dead');
+        }
+        if (n.elements?.length) walk(n.elements);
+      }
+    })(tree);
+  }
+  assert.ok(checked > 0, 'no loop grid with an empty state was found; the walk itself is broken');
+});
+
+/* The archive's own empty state. A category can empty out at any time: these
+   are Empower's terms and Empower's posts, and `uncategorized` sits at 0 posts
+   today. An archive that renders a heading, a count of nothing and a blank
+   band is the page failing silently. */
+/* THE DOCUMENT TYPE FOR A CATEGORY ARCHIVE IS 'archive'. deployThemePart()'s
+   third argument is written to `_elementor_template_type`, and it validates
+   against a fixed list that predates this template: header, footer,
+   single-post, search-results. Elementor Pro's own Archive document returns
+   'archive' from get_type(), and Search_Results EXTENDS Archive, which is why
+   the narrower type was already on the list and the base one was not.
+
+   Tested through the function's own rejection rather than by reading the
+   constant: the constant is what a future edit changes, and the rejection is
+   what actually stops a deploy. A non-integer postId is used so the assertion
+   is reached with no network call at all -- if 'archive' were still refused,
+   the error would name the location instead. */
+test('deployThemePart accepts archive as a document type', async () => {
+  const { deployThemePart } = await import('./elementor/deploy.mjs');
+  await assert.rejects(
+    () => deployThemePart('not-an-id', [], 'archive'),
+    /postId must be an integer/,
+    "deployThemePart refuses the 'archive' document type, so the category archive template cannot be "
+    + 'deployed at all',
+  );
+});
+
+test('the category archive has an empty state', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+  assert.match(markup, /nothing_found_message_text/,
+    'the archive grid has no empty state, so an emptied category renders a heading above a blank band');
+});
+
+test('the live education archive credits /quality-education/', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl({
+    name: 'education category archive',
+    envVar: 'TOPIC_ARCHIVE_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/category/education/',
+  }, t);
+  if (!url) return;
+
+  const html = await fetchConverted(url);
+  const canonical = html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)?.[0] ?? '';
+  assert.ok(canonical, 'the education archive emits no canonical at all');
+  assert.match(canonical, /\/quality-education\//,
+    `the education archive still credits itself (${canonical.slice(0, 120)}), so it competes with the `
+    + 'converted page rather than consolidating into it');
 });
 
 /* The page has to say what was searched for and it has to have an empty
@@ -3423,11 +3800,35 @@ test('no stylesheet outside the bridge carries an Elementor selector', () => {
   assert.ok(checked > 20, `only ${checked} stylesheets were checked; the install-only exemption has grown too wide`);
 });
 
-/* The exemption's own arithmetic, asserted rather than assumed: it is
-   supposed to name post-single.css and nothing else today. A second sheet
-   arriving in it is a decision somebody should have to make on purpose. */
-test('the install-only stylesheet exemption covers post-single.css alone', () => {
-  assert.deepEqual([...installOnlySheets()].sort(), ['post-single']);
+/* The exemption's own arithmetic, asserted rather than assumed. A sheet
+   arriving in this set is a decision somebody should have to make on purpose,
+   and on 2026-08-26 this test did exactly that job: css/archive.css was written
+   the same morning the exemption was, and this assertion is what surfaced it
+   rather than letting the set widen quietly.
+
+   BEING IN THE SET IS NOT THE SAME AS RELYING ON IT. Membership is derived
+   (no dist page loads it, and empower_page_styles() serves it), so an
+   install-only sheet lands here whether or not it carries an Elementor
+   selector. Only post-single.css actually needs the exemption; archive.css is
+   in the set and would pass the guard on its own, because its cards are
+   content-a's and it never has to out-specify an Elementor default. If that
+   changes, it changes here, deliberately. */
+test('the install-only stylesheet exemption names exactly the sheets it is meant to', () => {
+  assert.deepEqual([...installOnlySheets()].sort(), ['archive', 'post-single']);
+});
+
+/* The half of the arithmetic above that is easy to lose: the exemption is only
+   worth anything while the sheets in it are genuinely unreachable from the
+   static build. This asserts the derivation from the other end, so a sheet
+   cannot join the set by being quietly dropped from build.mjs. */
+test('no exempt stylesheet is loaded by any page in dist', () => {
+  const pages = fs.readdirSync('dist').filter(f => f.endsWith('.html'));
+  for (const name of installOnlySheets()) {
+    const loaders = pages.filter(f => fs.readFileSync(`dist/${f}`, 'utf8').includes(`${name}.css`));
+    assert.deepEqual(loaders, [],
+      `css/${name}.css is exempt from the Elementor-selector guard AND loaded by ${loaders.join(', ')}; `
+      + 'it cannot be both install-only and part of the static build');
+  }
 });
 
 /* Ruling E, made before Task 5 ran: factory.mjs's link() emits

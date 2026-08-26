@@ -165,7 +165,11 @@ export async function deployLoopItem(postId, elements) {
    is a page type ('wp-page') or a loop type ('loop-item') arriving here, which
    would leave a library post claiming to be something Elementor never renders
    in a location. */
-export const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post', 'search-results'];
+/* 'archive' joined on 2026-08-26 with the category archive template. Elementor
+   Pro's Archive document returns 'archive' from get_type(), and Search_Results
+   EXTENDS Archive, which is why the narrower type was on this list before the
+   base one was: the search page was built first. */
+export const THEME_PART_LOCATIONS = ['header', 'footer', 'single-post', 'search-results', 'archive'];
 
 /* deployElements() overwrites _elementor_data and _elementor_template_type
    wholesale, with no check of its own that postId names a document of the

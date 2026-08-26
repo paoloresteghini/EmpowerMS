@@ -193,6 +193,15 @@ export function searchArchivePart() {
             cssClass: 'srs-grid',
             columns: 1,
             post_query_post_type: 'current_query',
+            /* THE SWITCH, NOT JUST THE TEXT. Added 2026-08-26: Elementor Pro
+               gates the whole empty-state block on
+               `'yes' === $settings['enable_nothing_found_message']`
+               (loop-builder/skins/skin-loop-base.php), and that control is
+               registered with NO default, so the message below rendered
+               nowhere from the day it was written until this line existed.
+               `nothing_found_message_text` is itself conditioned on this
+               switch. Found while building the category archive. */
+            enable_nothing_found_message: 'yes',
             nothing_found_message_text: 'No results found. Try different search terms, or use the search box above.',
             _attributes: 'data-reveal-group|',
           }),

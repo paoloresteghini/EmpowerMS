@@ -18,6 +18,7 @@ require_once get_stylesheet_directory() . '/inc/content-loop.php';
 require_once get_stylesheet_directory() . '/inc/person-loop.php';
 require_once get_stylesheet_directory() . '/inc/search-loop.php';
 require_once get_stylesheet_directory() . '/inc/post-single.php';
+require_once get_stylesheet_directory() . '/inc/archive.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -205,6 +206,15 @@ function empower_page_styles() {
 		   and those ids exist on the All Content page alone, so `:has()`
 		   cannot match here. */
 		'post'         => array( 'motion', 'content-a', 'post-single' ),
+		/* THE CATEGORY ARCHIVE, and the only key here that is not a post type
+		   or a page slug. content-a.css is in the list for the same reason it
+		   is in the `post` row above: the cards on this page ARE `.cad-card`,
+		   because the Loop Grid points at content-a's own article Loop Item
+		   rather than at a second card design. motion.css matters more here
+		   than anywhere: empower_page_has_motion() derives from THIS map, so
+		   an archive without a key would ship the reveal attributes the
+		   template authors and nothing to act on them. */
+		'archive'      => array( 'motion', 'content-a', 'archive' ),
 		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
 		   10-22), which loads the shared tokens cascade, components.css, then
 		   the site stylesheet, the header sheet, the motion sheet, and its own
@@ -447,6 +457,23 @@ add_action( 'wp_enqueue_scripts', function () {
  */
 function empower_style_key() {
 	if ( ! is_singular() ) {
+		/* THE ONE NON-SINGULAR KEY, ADDED 2026-08-26 with the category archive
+		   template (elementor/theme-parts/category-archive.mjs). It sits INSIDE
+		   the is_singular() guard rather than before it so the two older cases
+		   keep their precedence exactly: a singular is still answered by slug
+		   or by post type, and only a request that is not singular at all can
+		   reach this.
+
+		   `is_category()` and not `is_archive()`, though the template's
+		   condition is an archive one. is_archive() is also true on tag, author
+		   and date archives, which are NOT converted and are meant to keep
+		   archive.php's plain-list fallback; keying them 'archive' would hand
+		   them css/archive.css and motion.css for markup that has neither the
+		   classes nor the reveal attributes to use them. */
+		if ( is_category() ) {
+			return 'archive';
+		}
+
 		return '';
 	}
 
@@ -787,7 +814,60 @@ function empower_canonical_overrides() {
 	);
 }
 
+/**
+ * THREE CATEGORY TERMS THAT DESCRIBE A SUBJECT, EACH WITH A PAGE THAT SAYS THE
+ * SAME THING BETTER.
+ *
+ * The category taxonomy on this install carries two unrelated kinds of term at
+ * one level: what a post IS (Podcast, Bill Summaries, Press Releases...) and
+ * what it is ABOUT (Education, Work, Justice). inc/post-single.php has to code
+ * a precedence between them for the article eyebrow; this is the other half of
+ * the same problem. The three subject terms are the largest on the install
+ * (education 147 posts, work 126, justice 78) and each one duplicates a
+ * converted, signed-off page for the same reader.
+ *
+ * Left alone they are self-canonical, which means competing rather than
+ * consolidating: exactly the shape the 2026-08-21 SEO audit found twelve
+ * existing instances of. Canonical rather than redirect or noindex, on Paolo's
+ * 2026-08-26 call and for the same reason as the Grant Callen pair above: the
+ * archive stays reachable and useful as a way to browse a subject, and the
+ * signal it earns is credited to the page that is the destination.
+ *
+ * KEYED BY TERM SLUG, resolved at request time, never by term id, for the
+ * reason the sitemap and page-slug maps already record.
+ */
+function empower_term_canonical_overrides() {
+	return array(
+		/* category term slug => the converted page it should credit instead */
+		'education' => '/quality-education/',
+		'work'      => '/meaningful-work/',
+		'justice'   => '/public-safety/',
+	);
+}
+
 add_filter( 'aioseo_canonical_url', function ( $url ) {
+	/* THE TERM BRANCH COMES FIRST BECAUSE IT IS THE NON-SINGULAR CASE, and the
+	   singular guard below would otherwise return before it could run. Two maps
+	   in one filter deliberately: canonicals are decided in one place, which is
+	   the discipline whose absence produced the pair this filter was written
+	   for. */
+	if ( is_category() ) {
+		$term      = get_queried_object();
+		$overrides = empower_term_canonical_overrides();
+		if ( ! $term || ! isset( $overrides[ $term->slug ] ) ) {
+			return $url;
+		}
+		/* Only if the destination actually exists and is published. A canonical
+		   pointing at a 404 or a draft is worse than the duplicate it replaces,
+		   and these three pages are content that can be renamed without this
+		   file hearing about it. */
+		$target = get_page_by_path( trim( $overrides[ $term->slug ], '/' ), OBJECT, 'page' );
+		if ( ! $target || 'publish' !== get_post_status( $target ) ) {
+			return $url;
+		}
+		return home_url( $overrides[ $term->slug ] );
+	}
+
 	if ( ! is_singular() ) {
 		return $url;
 	}

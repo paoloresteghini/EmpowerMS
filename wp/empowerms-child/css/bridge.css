@@ -7126,7 +7126,7 @@ body .wpautoterms-footer a:focus-visible{
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
  * search.js:15), along with the assertion whose message carries the same
- * stale number (test-elementor.mjs:1484), so the reference and its target
+ * stale number (test-elementor.mjs:1486), so the reference and its target
  * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
@@ -7150,7 +7150,7 @@ body .wpautoterms-footer a:focus-visible{
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:2760 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:2772 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the

@@ -268,3 +268,285 @@
   .pcw-post-cards .pcw-post-card-title{transition:none}
   .pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-image{transform:none}
 }
+
+/* ==========================================================================
+   PART 2 — THE CONVERTED TEMPLATE (2026-08-23)
+   ==========================================================================
+
+   Everything above this line dresses Beaver's markup. Everything below is the
+   Elementor Theme Builder single template that REPLACES it
+   (elementor/theme-parts/post-single.mjs).
+
+   WHY BOTH HALVES STILL SHIP. Part 1 is not dead code yet. Drafting the
+   "Post Singular" Themer layout takes Beaver off the 490 single posts and
+   nothing else: the same Beaver post-grid module still runs on the Posts
+   Archive and the category archives, which are not converted, and the `.pcw-`
+   classes above are what makes those grids look like the rest of the build.
+   Part 1 goes when the archives do, and its header already says so.
+
+   The design is the build's own language rather than a reproduction of the
+   Beaver page, on Paolo's 2026-08-23 call. The roadmap asks for an "Article
+   Template" under Templates to Build and specifies nothing about it, so this
+   is a proposal to be signed off, not a transcription of a signed-off design.
+
+   THE MEASURE IS THE WHOLE POINT. Beaver's version centres the body in a
+   column that runs the full container width, so a 25,362-character post (the
+   longest on this install) sets lines far past the point where the eye loses
+   its place returning to the left edge. Everything here is left-aligned and
+   held to a reading measure, which is the same decision css/team-bio.css:112
+   already makes for bio copy at `max-width:68ch`.
+   ========================================================================== */
+
+.ps-article{padding-block:clamp(var(--space-9),5vw,var(--space-12)) 0}
+
+/* One column, not a grid. The figure is allowed to break out wider than the
+   text; nothing else is. */
+.ps-article__inner{display:flex;flex-direction:column;
+  gap:clamp(var(--space-6),2.5vw,var(--space-8))}
+
+/* ------------------------------ 1 · Head -------------------------------- */
+
+/* CENTRED, on Paolo's 2026-08-23 call after seeing it live: "the title being
+   centered and slightly wider container. More like the original". The Beaver
+   page centred its title, and that is the one thing about it worth keeping.
+
+   ONLY THE HEAD AND THE FIGURE CENTRE. The body copy stays left-aligned below,
+   and that is not an oversight: the median post here is 2,811 characters and
+   the longest is 25,362, and centred running text gives every line a different
+   starting x, so the eye has to hunt for the next line on every return. A
+   centred masthead over left-aligned copy is the normal arrangement for a
+   long-form article, and it is what the original did too.
+
+   NO max-width IN ch ON THIS BOX. It carried `max-width:24ch` for about an
+   hour and clamped the whole head to 203px, breaking "Kyle Jackson: A Father's
+   Footsteps" to one word a line and splitting "Footsteps" across two. The unit
+   is the trap: `ch` is the advance width of "0", roughly HALF an em, and this
+   container inherits the 16px body size, so 24ch is ~203px rather than the
+   ~24-characters-of-headline it reads as. The measure belongs on .ps-title,
+   where the font-size is the headline's own. */
+.ps-head{max-width:100%;text-align:center}
+
+/* Marked from above: 56 x 4, the build's motif, exactly as
+   css/content-a.css:196 sets it. The mark sits on the EYEBROW rather than on
+   the headline because the eyebrow is the first thing in the section; putting
+   it on the <h1> would leave the category line floating above the mark. */
+.ps-eyebrow{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;
+  gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow,.8125rem);letter-spacing:.08em;text-transform:uppercase}
+/* The mark centres with the line it marks. Everywhere else in the build it
+   sits at the left edge because everything under it is left-aligned; here the
+   whole head is centred, and a mark stranded at the far left would read as a
+   stray rule rather than as the motif. */
+.ps-eyebrow::before{content:"";position:absolute;left:50%;top:0;
+  transform:translateX(-50%);
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* --em-orange-ink, never --em-orange: this is normal-size text, and the brand
+   orange measures 3.59:1 on white. css/site.css:28 carries the whole account. */
+.ps-eyebrow__cat{color:var(--em-orange-ink);text-decoration-line:underline;
+  text-decoration-thickness:1px;
+  text-decoration-color:color-mix(in oklab,currentColor 40%,transparent);
+  text-underline-offset:3px}
+.ps-eyebrow__cat:hover{text-decoration-color:currentColor}
+.ps-eyebrow__date{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.ps-eyebrow__sep{color:var(--border-default)}
+
+/* The headline is the page's one piece of display type. Same treatment as the
+   bio page's name (css/team-bio.css:99-100), which is the only other detail
+   screen in the build. */
+/* 26ch of the HEADLINE's own font, not the body's, which is what makes this
+   ~810px rather than the 203px the first attempt produced. Centred by the
+   head's text-align; margin-inline:auto centres the box itself once the
+   measure bites. text-wrap:balance matters more here than anywhere else in
+   the build: a centred two-line headline with one word on the second line is
+   the classic ragged-centre failure. */
+.ps-title{margin:0 auto;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-h1);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue);text-wrap:balance;max-width:26ch}
+
+/* --------------------------- 2 · Photograph ----------------------------- */
+
+/* Wider than the measure, narrower than the container: the photograph is the
+   one element allowed to break the reading column, and it stops well short of
+   full bleed so the page still reads as a document rather than a landing page.
+   95 of the 490 posts have no featured image and render no .ps-figure at all
+   (wp/empowerms-child/inc/post-single.php), so nothing here may assume one. */
+/* CENTRED, on Paolo's 2026-08-23 ask, and the selector is long for the same
+   reason .ps-body's is. Elementor ships
+
+       .elementor .elementor-widget:not(.elementor-widget-text-editor)
+         :not(.elementor-widget-theme-post-content) figure{margin:0}
+
+   at 0,4,1 - each :not() counts its argument - so a plain `.ps-figure` at
+   0,1,0 set max-width perfectly well while its `margin:0 auto` was silently
+   reset to 0 by that rule, and the photograph sat hard left under a centred
+   headline. Diagnosed by reading the computed margin (0px) against the
+   computed max-width (659.052px, which is this rule's own 78ch): one
+   declaration applying and the other not is the signature of being outranked
+   on a single property rather than of a sheet failing to load.
+
+   Worth knowing for the next figure: the two :not()s exempt Text Editor and
+   Post Content widgets, so figures INSIDE Empower's own post content keep
+   their margins and are not affected by any of this. */
+.elementor.elementor .e-con .elementor-widget figure.ps-figure{
+  margin-block:0;margin-inline:auto;max-width:var(--ps-figure, min(100%,960px))}
+.ps-figure__img{display:block;width:100%;height:auto;
+  border-radius:var(--radius-card);background:var(--surface-subtle)}
+.ps-figure__cap{margin:var(--space-3) 0 0;font-size:var(--fs-small,.875rem);
+  line-height:1.5;color:var(--text-muted);max-width:60ch}
+
+/* ------------------------------ 3 · Body -------------------------------- */
+
+/* The class lands on Elementor's theme-post-content WRAPPER, so every rule
+   that reaches the real elements is a descendant selector. Same arrangement,
+   and same reason, as `.tp-bio` on the bio template. */
+/* .elementor AND .elementor-widget, not a bare `.ps-body`. The class lands on
+   the widget's own wrapper, and Elementor gives that wrapper `max-width:100%`
+   at two classes; a single-class rule here loses and the body ran the full
+   1200px container. Measured, not assumed: `.ps-body` computed max-width:100%
+   on the live page while every other rule in this block applied. */
+/* CENTRED COLUMN, LEFT-ALIGNED TEXT, and slightly wider than the 68ch the
+   bio pages use: these are articles rather than biographies, and Paolo asked
+   for a wider container, then on 2026-08-23 called the result still too narrow
+   at 74ch (699px measured live at a 1440 viewport). 880px now, which the
+   1200px container's 1152px content box caps at wide viewports.
+
+   IN PX, NOT ch, BECAUSE ch LIES ABOUT THIS FACE. The body face is condensed,
+   so its `0` is far narrower than its average lowercase letter: 74ch rendered
+   699px, and that line already held about 103 characters, not 74. Measured on
+   the live page with a canvas measureText over the actual computed font, not
+   assumed. Anything written in ch here reads as a character count and is not
+   one, so the widths below say what they mean.
+
+   THE MEASURE IS LONG AND THAT IS THE TRADE. 880px runs past the 45-85
+   characters usually quoted for continuous prose. Two things pay for it: the
+   1.75 line-height on `.ps-body p` below, which is what carries the eye back
+   to the left edge, and the body size bumped up with the width (see the rule
+   below) so the column is not simply more small type per line. If it reads
+   long on a real article rather than in a screenshot, the number to change is
+   this one, alone.
+
+   THE SELECTOR IS THIS LONG BECAUSE ELEMENTOR'S IS. The class lands on the
+   widget's own wrapper, and elementor/assets/css/frontend.min.css ships
+
+       .elementor.elementor .e-con>.elementor-widget{max-width:100%}
+
+   which is 0,4,0: they DOUBLE `.elementor` on purpose to win exactly this kind
+   of fight. Two earlier attempts here lost to it and looked, from the rendered
+   page, like the stylesheet had not loaded at all - `.ps-body` at 0,1,0 and
+   then `.elementor .elementor-widget.ps-body` at 0,3,0, both of them parsed,
+   both matching the element, both silently outranked. The rule below mirrors
+   their shape and adds the class, so it is 0,5,0 and wins on specificity
+   rather than on source order, which is the only thing a child theme can rely
+   on when the plugin is free to reorder its own enqueues. */
+.elementor.elementor .e-con > .elementor-widget.ps-body{max-width:min(100%,880px);margin-inline:auto}
+.ps-body p,.ps-body ul,.ps-body ol,.ps-body blockquote,.ps-body figure{
+  margin:0 0 var(--space-6)}
+.ps-body > :last-child{margin-bottom:0}
+/* One step above --fs-body (16px computed). The token stays untouched: it
+   sets card and UI copy everywhere else in the build, and this is the only
+   place running an 880px column of continuous prose. */
+.ps-body p,.ps-body li{font-size:clamp(1.0625rem,1rem + .3vw,1.1875rem);
+  line-height:1.75;color:var(--text-body)}
+.ps-body ul,.ps-body ol{padding-left:var(--space-6)}
+.ps-body li{margin-bottom:var(--space-3)}
+
+/* The opening paragraph is the one a visitor reads if they read one. Lifted
+   from css/team-bio.css:116, which makes the same call for bio copy. */
+/* Raised with the body size above so the opening paragraph stays a step
+   ahead of the rest rather than matching it. */
+.ps-body > p:first-child{font-size:clamp(1.1875rem,1.1rem + .4vw,1.3125rem);
+  color:var(--text-strong)}
+
+.ps-body h2,.ps-body h3,.ps-body h4{font-family:var(--font-display);
+  color:var(--em-blue);line-height:var(--lh-heading);letter-spacing:var(--ls-heading);
+  margin:clamp(var(--space-7),3vw,var(--space-9)) 0 var(--space-4)}
+.ps-body h2{font-size:var(--fs-h3)}
+.ps-body h3{font-size:var(--fs-h4)}
+
+.ps-body a{color:var(--em-orange-ink);text-decoration-line:underline;
+  text-decoration-thickness:1px;
+  text-decoration-color:color-mix(in oklab,currentColor 45%,transparent);
+  text-underline-offset:2px}
+.ps-body a:hover{text-decoration-color:currentColor}
+
+/* Images inside post content are Empower's own, at whatever size the editor
+   inserted them. Constraining rather than cropping: some are charts where a
+   crop would cut an axis label off. */
+.ps-body img{max-width:100%;height:auto;border-radius:var(--radius-card)}
+
+.ps-body blockquote{margin-left:0;padding-left:var(--space-6);
+  border-left:4px solid var(--em-orange);font-size:var(--fs-lead);
+  line-height:1.6;color:var(--text-strong)}
+.ps-body blockquote p:last-child{margin-bottom:0}
+
+/* Embedded video, which 66 podcast posts and a good many others carry. */
+.ps-body iframe{max-width:100%;border-radius:var(--radius-card)}
+
+/* ------------------------------- 4 · More ------------------------------- */
+
+.ps-more{padding-block:clamp(var(--space-9),5vw,var(--space-12));
+  margin-top:clamp(var(--space-9),5vw,var(--space-12));
+  border-top:1px solid var(--border-subtle);background:var(--surface-page)}
+.ps-more__head{max-width:62ch;margin-bottom:clamp(var(--space-6),3vw,var(--space-8))}
+.ps-more__title{position:relative;margin:0;padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-strong)}
+.ps-more__title::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* NOTHING IS DECLARED FOR THE GRID OR ITS CARDS. The Loop Grid carries
+   content-a's own `.cad-cards` class and renders content-a's own card Loop
+   Item template, and functions.php enqueues css/content-a.css on this post
+   type for exactly that reason. A second copy of the card design here is the
+   thing most likely to drift out of step with the signed-off page. */
+
+/* ---------------------- 5 · No lead card in this grid --------------------
+
+   OPTING OUT OF A DELIBERATE RULE, so it is argued rather than just written.
+
+   bridge.css block 49 gives the first item of any `.cad-cards` grid the lead
+   treatment: full width, photograph left, headline right, larger title. That
+   is right on All Content, where each band is a long grid and the lead is the
+   entry point into it. It is wrong here. This grid holds exactly THREE cards
+   in three columns, so a full-width lead leaves two narrow cards on a second
+   row and the block reads as one feature plus an afterthought, rather than as
+   three equal suggestions. Measured on the first render: 1152, 363, 363.
+
+   SCOPED BY `.ps-more`, WHICH COSTS NO REDEPLOY. bridge.css block 49 is
+   `.cad-cards .elementor-loop-container > .e-loop-item:first-of-type` at
+   0,4,0, and bridge.css is enqueued AFTER this sheet, so an equal-specificity
+   override would lose the tie. Prefixing `.ps-more` makes it 0,5,0 and wins on
+   specificity rather than order. The alternative was a second class on the
+   Loop Grid widget, which would have meant rebuilding and redeploying the
+   template for a purely presentational change.
+
+   Every value below is content-a.css's own non-lead value, cited per line, so
+   this is a return to the default rather than a third card design. */
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type{
+  grid-column:auto;
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type > .cad-card{
+  display:flex;                      /* css/content-a.css:214 */
+  flex-direction:column;             /* css/content-a.css:214 */
+  grid-template-columns:none;
+  align-items:stretch;
+  padding:0;
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__body{
+  padding:var(--space-6);            /* css/content-a.css:219 */
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__photo{
+  aspect-ratio:3/2;                  /* css/content-a.css:262 */
+  height:auto;                       /* css/content-a.css:262 */
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__title{
+  font-size:var(--fs-h5);            /* css/content-a.css:283 */
+}
+
+/* The heading sits under a sticky header when a reader jumps to this section,
+   so it needs the same allowance the rest of the build gives an anchor target.
+   `.em-header`'s rendered height plus a little air. */
+.ps-more{scroll-margin-top:100px}

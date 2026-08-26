@@ -17,6 +17,7 @@ require_once get_stylesheet_directory() . '/inc/loop-attributes.php';
 require_once get_stylesheet_directory() . '/inc/content-loop.php';
 require_once get_stylesheet_directory() . '/inc/person-loop.php';
 require_once get_stylesheet_directory() . '/inc/search-loop.php';
+require_once get_stylesheet_directory() . '/inc/post-single.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -186,15 +187,24 @@ function empower_page_styles() {
 		   `grant-callen` row below and is unaffected: it is a page, so it is
 		   still keyed by slug. */
 		'person'       => array( 'motion', 'team-bio' ),
-		/* THE `post` POST TYPE, AND IT IS NOT A CONVERSION. All 490 posts still
-		   render through the Beaver Themer layout "Post Singular"; this sheet
-		   dresses ONE part of that legacy page, the closing "More" grid, in the
-		   All Content card design, per Paolo's 2026-08-20 instruction.
-		   css/post-single.css's own header carries the full account, including
-		   why it loads on singles only and why motion.css is deliberately not
-		   beside it: the markup it styles carries no reveal attributes, so the
-		   motion sheet would have nothing to bind to. */
-		'post'         => array( 'post-single' ),
+		/* THE `post` POST TYPE, AND IT IS A CONVERSION AS OF 2026-08-23. All
+		   490 posts now render through the Elementor Theme Builder single
+		   template built by elementor/theme-parts/post-single.mjs, which
+		   replaced the Beaver Themer layout "Post Singular" (11272, set to
+		   draft). motion.css IS here now, unlike in the Beaver arrangement
+		   this replaces: that markup carried no reveal attributes for the
+		   motion sheet to bind to, and this template authors them.
+		   css/post-single.css carries both halves and says which is which. */
+		/* content-a IS in this list, and it is not a mistake. The closing
+		   "More on this" grid reuses content-a's own card Loop Item templates,
+		   so its cards ARE `.cad-card` and the design lives in that sheet.
+		   Loading it is 20KB against duplicating a signed-off design into a
+		   second file that would then have to be kept in step. Checked for
+		   collisions before adding: the only rules in it that are not scoped
+		   to a `.cad-` class are four `body:has(#ca-…:checked)` filter rules,
+		   and those ids exist on the All Content page alone, so `:has()`
+		   cannot match here. */
+		'post'         => array( 'motion', 'content-a', 'post-single' ),
 		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
 		   10-22), which loads the shared tokens cascade, components.css, then
 		   the site stylesheet, the header sheet, the motion sheet, and its own

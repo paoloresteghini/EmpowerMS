@@ -31,6 +31,8 @@ import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
 import { personSingle } from './elementor/theme-parts/person-single.mjs';
+import { postSingle } from './elementor/theme-parts/post-single.mjs';
+import { sections as probeSections } from './elementor/theme-parts/native-animation-probe.mjs';
 import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './elementor/theme-parts/search-result-item.mjs';
 import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './elementor/theme-parts/search-archive.mjs';
 import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
@@ -1929,11 +1931,21 @@ test('every container in every podcast-a mapping module and every theme part set
      elementor/theme-parts/person-single.mjs existed, naming 6 walked trees
      against 7 that exist. That is the check doing exactly the job its own
      comment describes, on the first new theme part added since it was
-     written. */
+     written.
+
+     postSingle() joined on 2026-08-23 the same way. Adding it did NOT make
+     the count agree, which is the more useful half of the story: it read 10
+     walked against 11, and the eleventh was native-animation-probe.mjs,
+     which had been uncovered since the day it was written. Nobody had
+     noticed, because the check reports one number and a human reads it as
+     one omission. Its three containers were already 'full' and now they are
+     checked rather than assumed. Two theme parts and one probe, three red
+     counts, no human deciding any of them: that is what the check is for. */
   const trees = [
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
     headerPart(), footerPart(), personSingle(),
-    searchArchivePart(), searchResultItem(),
+    searchArchivePart(), searchResultItem(), postSingle(),
+    probeSections(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -3350,14 +3362,72 @@ test('the bridge stylesheet carries the two values Site Settings cannot hold', (
    just -widget and -button by name, which is what "and the like" actually
    commits to; the directory list now matches every directory test.mjs
    protects. */
+/* THE EXEMPTION IS DERIVED FROM TWO POSITIVE FACTS, NOT FROM A FILENAME LIST.
+   css/post-single.css broke this test on 2026-08-23 by carrying six
+   Elementor selectors deliberately, and moving them to bridge.css was the
+   wrong repair: they are not global Elementor fixes, they are one page's
+   design fighting two Elementor defaults (`.e-con > .elementor-widget
+   {max-width:100%}` and the widget figure margin reset) plus four rules
+   opting its loop grid out of content-a's lead-card treatment. Split across
+   two files, that design stops being readable in one place.
+
+   What actually changed is the CATEGORY of sheet, which the test predates.
+   Every sheet it was written to protect dresses markup that the static build
+   emits, so an Elementor selector in one is proof the static page can no
+   longer stand on its own. An INSTALL-ONLY sheet dresses markup that exists
+   only on WordPress: there are 490 single posts and no dist/post-single.html
+   for them to diverge from, so the premise of the guard is simply absent.
+
+   Install-only is decided by the repository, never by a list here, because a
+   hand-written exemption list is the coverage bug this file has already been
+   bitten by twice (the trees array above, and the roster count in e0b661f).
+   A sheet is exempt only when BOTH are true, and both are read off files:
+   no page in dist/ loads it, AND empower_page_styles() in the child theme
+   serves it. Absence alone would exempt any sheet somebody forgot to wire
+   into build.mjs; the second fact is what makes it a deliberate arrangement
+   rather than an oversight. The day a dist page loads post-single.css, the
+   exemption evaporates on its own and this test goes red again. */
+function installOnlySheets() {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const from = fn.indexOf('function empower_page_styles()');
+  assert.ok(from !== -1, 'empower_page_styles() is gone from functions.php; this exemption cannot be derived');
+  const body = fn.slice(from, fn.indexOf('\n}', from));
+  /* The array VALUES only. The keys of that map are page slugs, and a slug
+     can collide with a stylesheet name (`work-a` is both), which would
+     exempt a sheet nothing actually serves. */
+  const served = new Set();
+  for (const [, list] of body.matchAll(/array\(([^)]*)\)/g)) {
+    for (const [, name] of list.matchAll(/'([a-z0-9-]+)'/g)) served.add(name);
+  }
+  const pages = fs.readdirSync('dist').filter(f => f.endsWith('.html'))
+    .map(f => fs.readFileSync(`dist/${f}`, 'utf8'));
+  return new Set([...served].filter(name => fs.existsSync(`css/${name}.css`)
+    && !pages.some(html => html.includes(`${name}.css`))));
+}
+
 test('no stylesheet outside the bridge carries an Elementor selector', () => {
   const ELEMENTOR_SELECTOR = /\.e-con\b|\.elementor-[\w-]+/;
+  const exempt = installOnlySheets();
+  let checked = 0;
   for (const dir of ['css', 'components', 'tokens']) {
     for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.css'))) {
+      if (dir === 'css' && exempt.has(file.replace(/\.css$/, ''))) continue;
       const css = fs.readFileSync(`${dir}/${file}`, 'utf8');
       assert.doesNotMatch(css, ELEMENTOR_SELECTOR, `${dir}/${file} carries an Elementor selector`);
+      checked += 1;
     }
   }
+  /* The exemption is narrow by construction, and this is what keeps it so:
+     if it ever grows to swallow the protected build, the walk itself has
+     stopped proving anything. */
+  assert.ok(checked > 20, `only ${checked} stylesheets were checked; the install-only exemption has grown too wide`);
+});
+
+/* The exemption's own arithmetic, asserted rather than assumed: it is
+   supposed to name post-single.css and nothing else today. A second sheet
+   arriving in it is a decision somebody should have to make on purpose. */
+test('the install-only stylesheet exemption covers post-single.css alone', () => {
+  assert.deepEqual([...installOnlySheets()].sort(), ['post-single']);
 });
 
 /* Ruling E, made before Task 5 ran: factory.mjs's link() emits

@@ -2424,6 +2424,23 @@ test('every loop grid that writes an empty state also switches it on', async () 
    explain and write nothing: deployPage() overwrites _elementor_data wholesale,
    so a script that deploys on a bare invocation is one stray shell history entry
    away from overwriting a page nobody meant to touch. */
+/* THE THIRD DEPLOY SCRIPT, SAME GUARD. This one drafts a Beaver Themer layout
+   as well as writing a template, so a bare invocation would hand the search
+   page over on a stray shell-history entry. */
+test('the search deploy script writes nothing without an explicit flag', async () => {
+  const { parseArgs } = await import('./elementor/deploy-search.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'a bare invocation does something other than explain itself');
+  assert.deepEqual(parseArgs(['--deploy']), { mode: 'deploy' },
+    '--deploy is not recognised, so the script cannot deploy at all');
+
+  for (const argv of [['deploy'], ['-d'], ['--deploy', 'extra'], ['20639'], ['--yes'], ['--force']]) {
+    assert.notEqual(parseArgs(argv).mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only the exact --deploy flag may`);
+  }
+});
+
 test('the content-a deploy script writes nothing without an explicit flag', async () => {
   const { parseArgs } = await import('./elementor/deploy-content-a.mjs');
 

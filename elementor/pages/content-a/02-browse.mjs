@@ -204,15 +204,15 @@ const CONTROLS_FORM = `<form class="cad-controls">
         <legend class="cad-group__label" id="cad-type-label">Browse</legend>
         <div class="cad-tabs">
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-all" checked>
-          <label class="cad-tab" for="ca-t-all">Everything</label>
+          <label class="cad-tab" for="ca-t-all">All</label>
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-article">
           <label class="cad-tab" for="ca-t-article">Articles</label>
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-story">
-          <label class="cad-tab" for="ca-t-story">Community Stories</label>
+          <label class="cad-tab" for="ca-t-story">Stories</label>
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-research">
-          <label class="cad-tab" for="ca-t-research">Research &amp; Reports</label>
+          <label class="cad-tab" for="ca-t-research">Research</label>
           <input class="cad-radio cad-type" type="radio" name="cad-type" id="ca-t-press">
-          <label class="cad-tab" for="ca-t-press">Press Releases</label>
+          <label class="cad-tab" for="ca-t-press">Press</label>
         </div>
       </fieldset>
 
@@ -220,15 +220,15 @@ const CONTROLS_FORM = `<form class="cad-controls">
         <legend class="cad-group__label" id="cad-topic-label">Filter by Topic:</legend>
         <div class="cad-chips">
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-all" checked>
-          <label class="cad-chip" for="ca-p-all">All</label>
+          <label class="cad-chip" for="ca-p-all">All topics</label>
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-education">
-          <label class="cad-chip" for="ca-p-education">Quality Education</label>
+          <label class="cad-chip" for="ca-p-education">Education</label>
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-work">
-          <label class="cad-chip" for="ca-p-work">Meaningful Work</label>
+          <label class="cad-chip" for="ca-p-work">Work</label>
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-safety">
-          <label class="cad-chip" for="ca-p-safety">Public Safety</label>
+          <label class="cad-chip" for="ca-p-safety">Safety</label>
           <input class="cad-radio cad-topic" type="radio" name="cad-topic" id="ca-p-bills">
-          <label class="cad-chip" for="ca-p-bills">Bill Summaries</label>
+          <label class="cad-chip" for="ca-p-bills">Bills</label>
         </div>
       </fieldset>
     </div>

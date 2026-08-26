@@ -4183,39 +4183,96 @@ test('content-b filters on one facet, so it needs no rule ordering', () => {
     'content-b has grown a topic facet — topic is this reading’s STRUCTURE, and two facets need the ordered shape');
 });
 
-test('content-a’s filter bar stacks its two facets against one label gutter', () => {
-  /* The two facets were set side by side, and they do not fit: the five topic
-     pills need about 590px of line and the container had 453 to give them beside
-     the five type tabs, so they wrapped to a ragged second row in a column that
-     was itself pushed to the right edge. Stacked, each facet holds one line and
-     both control rows start at the same x, which is what the shared label track
-     buys, and it only exists because display:contents dissolves the fieldsets.
-     A fieldset that is itself a grid leaves its legend outside that grid, so the
-     alignment cannot be done from inside one; putting the columns back on the
-     fieldsets is the reflex this test is here to catch. */
+test('content-a’s filter bar is one line, and its labels are hidden rather than deleted', () => {
+  /* SUPERSEDES "stacks its two facets against one label gutter" (2026-08-26).
+     That test defended a two-row bar built around a shared label track, and the
+     reasoning it recorded is still true as far as it goes: at full label length
+     the five type tabs need 656px and the five topic pills 688px, which is
+     1376px against a 1200px container, so the two facets CANNOT share a line
+     while the labels read "Community Stories" and "Quality Education".
+
+     What changed is the input, not the arithmetic. The bar was 133px tall and
+     stuck under a 113px header, so 246px of a 900px viewport — 27% — was gone
+     before a single card. Shortening the control labels (the band headings
+     below still carry Empower's full wording) brings the two facets to
+     343 + 492 + 48 = 883px, and one line fits with room to spare. Measured in
+     the browser at 1400px, not predicted.
+
+     THE LEGENDS ARE HIDDEN, NOT REMOVED, and that is the half worth guarding.
+     "Browse" and "Filter by Topic:" stop being drawn, because a one-line bar
+     has no gutter to put them in and the two control shapes (underlined tabs
+     against outlined pills, split by a rule) carry the distinction visually.
+     They must still be in the markup and still name their group: the fieldsets
+     carry role="group" and aria-labelledby precisely because display:contents
+     dropped implicit semantics, and hiding a legend with display:none would
+     take the accessible name with it. */
   const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const inner = css.match(/\.cad-controls__inner\{[^}]*\}/)[0];
-  assert.match(inner, /grid-template-columns:auto minmax\(0,1fr\)/,
-    'content-a’s filter bar is no longer a label gutter and one full-width control column');
-  assert.match(inner, /align-items:baseline/,
-    'content-a’s legends no longer sit on the baseline of the row they label');
-  assert.match(css, /\.cad-group\{[^}]*display:contents/,
-    'content-a’s control groups are boxes again, so their two legends can no longer share a column track');
 
-  /* The other half of the same decision. Dissolving a fieldset costs its
-     implicit grouping in shipped browsers, so the role and the name are stated
-     rather than inherited, and every group has to carry both. */
-  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
-  const groups = [...html.matchAll(/<fieldset class="cad-group[^"]*"([^>]*)>/g)].map(m => m[1]);
-  assert.equal(groups.length, 2, `content-a has ${groups.length} control groups in its filter bar, expected 2`);
-  for (const attrs of groups) {
-    assert.match(attrs, /role="group"/,
-      'a display:contents fieldset on content-a has no explicit role, so its grouping can be dropped');
-    const id = attrs.match(/aria-labelledby="([^"]+)"/);
-    assert.ok(id, 'a display:contents fieldset on content-a has no explicit accessible name');
-    assert.ok(html.includes(`class="cad-group__label" id="${id[1]}"`),
-      `content-a names a control group with #${id[1]}, which is not the id of its legend`);
+  assert.match(inner, /display:flex/,
+    'content-a’s filter bar is not a flex row, so it cannot be one line');
+  assert.match(inner, /flex-wrap:nowrap/,
+    'the filter bar may wrap at full width, which is the ragged second row this design exists to remove');
+
+  const label = css.match(/\.cad-group__label\{[^}]*\}/)[0];
+  assert.ok(!/display:none/.test(label),
+    'the legends are display:none, which removes the accessible name the fieldsets’ '
+    + 'aria-labelledby points at; clip them instead');
+  assert.match(label, /clip-path:inset\(50%\)|clip:rect/,
+    'the legends are not visually hidden, so the one-line bar still draws a label gutter it has no room for');
+
+  /* The markup must still carry both legends and both names. */
+  const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
+  for (const [id, text] of [['cad-type-label', 'Browse'], ['cad-topic-label', 'Filter by Topic:']]) {
+    assert.match(html, new RegExp(`<legend class="cad-group__label" id="${id}">${text}</legend>`),
+      `the ${id} legend is gone from the markup, so its group has no accessible name`);
+    assert.match(html, new RegExp(`aria-labelledby="${id}"`),
+      `nothing points at ${id} any more`);
   }
+});
+
+/* THE LABELS THAT MAKE ONE LINE POSSIBLE, asserted as an exact set. The design
+   only fits because these are short, so a well-meaning edit restoring
+   "Community Stories" here silently puts the bar back to two rows at 1400px and
+   nothing else would say so. The band headings below the bar are deliberately
+   NOT in this list: they keep Empower's full wording. */
+test('content-a’s control labels are the short forms the one-line bar depends on', () => {
+  const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
+  const labels = (cls) => [...html.matchAll(new RegExp(`<label class="${cls}"[^>]*>([^<]*)</label>`, 'g'))]
+    .map(m => m[1].trim());
+
+  assert.deepEqual(labels('cad-tab'), ['All', 'Articles', 'Stories', 'Research', 'Press'],
+    'the type tabs are not the short forms; at full length they need 656px and the bar returns to two rows');
+  assert.deepEqual(labels('cad-chip'), ['All topics', 'Education', 'Work', 'Safety', 'Bills'],
+    'the topic pills are not the short forms; at full length they need 688px and will not share a line');
+
+  /* The full wording still has to appear on the page, in the band headings, so
+     nothing Empower wrote is lost — only abbreviated in the control. */
+  for (const full of ['Community Stories', 'Research &amp; Reports', 'Press Releases']) {
+    assert.ok(html.includes(`>${full}</h2>`) || html.includes(full),
+      `${full} has disappeared from the page entirely, not just from the filter`);
+  }
+});
+
+/* A PRE-EXISTING BUG THIS CHANGE MAKES WRONG BY A DIFFERENT AMOUNT.
+   css/content-a.css sets no scroll-margin-top at all, so following #band-press
+   lands the heading underneath the sticky header and bar; every other page in
+   the build that has an in-page anchor sets 100-110px. The offset has to clear
+   the header plus the bar, and the bar's height is exactly what this design
+   changed, so the number moves with it. */
+test('content-a’s band headings clear the sticky bar when linked to', () => {
+  const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /* ON THE TITLE, because the id is on the <h2>. The scroll target is the
+     element the fragment names, so scroll-margin-top on the section that
+     CONTAINS it does nothing; that exact mistake was made first and measured
+     (the heading still landed 44px above the viewport top). */
+  const band = css.match(/\.cad-band__title\{[^}]*scroll-margin-top:(\d+)px/);
+  assert.ok(band, 'no scroll-margin-top on .cad-band__title, which is the element #band-press names, '
+    + 'so following that link lands the heading under the sticky bar');
+
+  const top = parseInt(css.match(/\.cad-controls\{[^}]*top:(\d+)px/)[1], 10);
+  assert.ok(Number(band[1]) >= top,
+    `scroll-margin-top is ${band[1]}px but the bar alone sticks at ${top}px, so a linked heading still lands under it`);
 });
 
 test('every card on content-a carries the photograph of the post it links to', () => {

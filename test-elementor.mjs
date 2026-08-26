@@ -2060,6 +2060,32 @@ test('the search results part is a real archive document with a search condition
    This test re-implements parse_condition rather than asserting the literal,
    because the literal is what a future edit would change and the parse is what
    makes it wrong. */
+/* THE CONTROL LABELS EXIST TWICE, AND THE ONE-LINE BAR DEPENDS ON BOTH.
+   src/content-a/sections/02-browse.html is the static build; the same markup is
+   embedded as a string in elementor/pages/content-a/02-browse.mjs for the
+   converted page. They were shortened by hand on 2026-08-26 to make the filter
+   bar fit one line (343 + 492 + 48 = 883px against a 1200px container), and
+   either copy drifting back to the full wording puts that page's bar silently
+   back to two rows while the other stays right.
+
+   The fidelity gates compare the LIVE page against the static build, so they
+   would catch this too -- but only after a deploy, and only with the env var
+   set. This catches it at HEAD. */
+test('content-a’s filter labels are identical in the static build and the Elementor module', () => {
+  const labels = (file) => {
+    const src = fs.readFileSync(file, 'utf8');
+    return [...src.matchAll(/<label class="(cad-tab|cad-chip)"[^>]*for="([^"]+)"[^>]*>([^<]*)<\/label>/g)]
+      .map(m => `${m[2]}=${m[3].trim()}`);
+  };
+  const staticLabels = labels('src/content-a/sections/02-browse.html');
+  const moduleLabels = labels('elementor/pages/content-a/02-browse.mjs');
+
+  assert.equal(staticLabels.length, 10, `expected 10 control labels in the static build, found ${staticLabels.length}`);
+  assert.deepEqual(moduleLabels, staticLabels,
+    'the Elementor module and the static build disagree about the filter labels, so one of the two '
+    + 'pages has a bar that no longer fits on one line');
+});
+
 test('the category archive condition parses flat, into archive + category', async () => {
   const { CATEGORY_ARCHIVE_CONDITIONS } = await import('./elementor/theme-parts/category-archive.mjs');
   assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 1, 'expected exactly one condition');

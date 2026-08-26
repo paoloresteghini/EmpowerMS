@@ -2380,6 +2380,36 @@ test('every loop grid that writes an empty state also switches it on', async () 
    what actually stops a deploy. A non-integer postId is used so the assertion
    is reached with no network call at all -- if 'archive' were still refused,
    the error would name the location instead. */
+/* THE DEPLOY SCRIPT'S ARGUMENTS DECIDE WHETHER A LIVE WRITE HAPPENS, so they
+   are worth more than a glance. Three modes, and the two that are not a deploy
+   must not become one by accident:
+
+     (no args)   explain, write nothing, exit non-zero
+     --create    create the elementor_library post, print its id, STOP
+     <id>        deploy into that id
+
+   `--create` deliberately does not chain into the deploy. Creating the post is
+   a write to Empower's install and deploying is another; keeping them apart is
+   what makes the id a thing somebody has read before it is written to. */
+test('the archive deploy script never deploys without an explicit post id', async () => {
+  const { parseArgs } = await import('./elementor/deploy-archive.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'no arguments does something other than explain itself');
+  assert.deepEqual(parseArgs(['--create']), { mode: 'create' },
+    '--create is not recognised, so the post cannot be created over SSH');
+  assert.deepEqual(parseArgs(['20699']), { mode: 'deploy', postId: 20699 },
+    'a bare id does not select the deploy');
+
+  /* The shapes that must NOT reach a deploy. '<id>' is the literal placeholder
+     from the instructions, and it is the one that actually got typed. */
+  for (const argv of [['<id>'], ['--create', '20699'], ['abc'], ['0'], ['-1'], ['20699.5']]) {
+    const parsed = parseArgs(argv);
+    assert.notEqual(parsed.mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only a positive integer id may`);
+  }
+});
+
 test('deployThemePart accepts archive as a document type', async () => {
   const { deployThemePart } = await import('./elementor/deploy.mjs');
   await assert.rejects(

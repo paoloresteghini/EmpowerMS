@@ -45,39 +45,86 @@ import { deployThemePart, setConditions } from './deploy.mjs';
 import { categoryArchive, CATEGORY_ARCHIVE_CONDITIONS } from './theme-parts/category-archive.mjs';
 import { syncTheme } from '../wp/sync.mjs';
 import { wpe } from '../wpe.mjs';
-
-/* Set this once, from step 0 above. */
-const ARCHIVE_POST_ID = Number(process.argv[2]) || null;
+import { pathToFileURL } from 'node:url';
 
 /* Beaver Themer's "Posts Category Archive", read off the install with
    `wp post list --post_type=fl-theme-layout` rather than typed from memory. */
 const BEAVER_CATEGORY_ARCHIVE_ID = 11276;
 
-if (!Number.isInteger(ARCHIVE_POST_ID)) {
-  console.error(
-    'No elementor_library post id. Create it first:\n'
-    + "  wp post create --post_type=elementor_library --post_status=publish --post_title='Category archive' --porcelain\n"
-    + 'then: node elementor/deploy-archive.mjs <id>',
-  );
-  process.exit(1);
+const CREATE_COMMAND =
+  "wp post create --post_type=elementor_library --post_status=publish "
+  + "--post_title='Category archive' --porcelain";
+
+/* THREE MODES, AND ONLY ONE OF THEM DEPLOYS.
+ *
+ * Exported, and pure, because this is the function that decides whether a live
+ * write happens and it is the only part of this file a test can reach. The
+ * shape it must refuse is not hypothetical: `<id>` is the literal placeholder
+ * from the instructions this script shipped with, and it is what got typed.
+ *
+ * `--create` deliberately does not chain into the deploy. Creating the post is
+ * one write to Empower's install and deploying into it is another; keeping
+ * them apart is what makes the id something a human has read before anything
+ * is written to it. */
+export function parseArgs(argv) {
+  const [first, ...rest] = argv;
+  if (!first) return { mode: 'explain' };
+  if (first === '--create') return rest.length ? { mode: 'explain' } : { mode: 'create' };
+
+  /* A positive integer and nothing else. Number() alone would accept '20699.5',
+     ' 20699' and '0x50', none of which is a post id. */
+  if (!/^[1-9]\d*$/.test(first) || rest.length) return { mode: 'explain' };
+  return { mode: 'deploy', postId: Number(first) };
 }
 
-console.log('1/5 syncing theme files (css/archive.css is new)...');
-await syncTheme();
+export async function main(argv = process.argv.slice(2)) {
+  const parsed = parseArgs(argv);
 
-console.log(`2/5 writing the tree to ${ARCHIVE_POST_ID} as document type 'archive'...`);
-await deployThemePart(ARCHIVE_POST_ID, categoryArchive(), 'archive');
+  if (parsed.mode === 'explain') {
+    console.error(
+      'Usage, with the install credentials loaded first:\n\n'
+      + '  set -a; . ./.env; set +a\n'
+      + '  node elementor/deploy-archive.mjs --create      # creates the post, prints its id\n'
+      + '  node elementor/deploy-archive.mjs <that id>     # deploys into it\n\n'
+      + 'wp is not a local command; both steps run over SSH through wpe().',
+    );
+    return 1;
+  }
 
-console.log(`3/5 setting conditions ${JSON.stringify(CATEGORY_ARCHIVE_CONDITIONS)}...`);
-await setConditions(ARCHIVE_POST_ID, CATEGORY_ARCHIVE_CONDITIONS);
+  if (parsed.mode === 'create') {
+    const id = (await wpe(CREATE_COMMAND)).trim();
+    console.log(id);
+    console.error(`\nCreated. Now: node elementor/deploy-archive.mjs ${id}`);
+    return 0;
+  }
 
-console.log(`4/5 drafting Beaver layout ${BEAVER_CATEGORY_ARCHIVE_ID} ("Posts Category Archive")...`);
-await wpe(`wp post update ${BEAVER_CATEGORY_ARCHIVE_ID} --post_status=draft`);
+  const { postId } = parsed;
 
-console.log('5/5 flushing...');
-await wpe('wp elementor flush_css && wp cache flush && wp page-cache flush');
+  console.error('1/5 syncing theme files (css/archive.css is new)...');
+  await syncTheme();
 
-console.log('\nDone. Verify with:');
-console.log('  CATEGORY_ARCHIVE_URL=https://empv2.wpenginepowered.com/category/community-stories/ \\');
-console.log('  TOPIC_ARCHIVE_URL=https://empv2.wpenginepowered.com/category/education/ \\');
-console.log('  node --test test-elementor.mjs');
+  console.error(`2/5 writing the tree to ${postId} as document type 'archive'...`);
+  await deployThemePart(postId, categoryArchive(), 'archive');
+
+  console.error(`3/5 setting conditions ${JSON.stringify(CATEGORY_ARCHIVE_CONDITIONS)}...`);
+  await setConditions(postId, CATEGORY_ARCHIVE_CONDITIONS);
+
+  console.error(`4/5 drafting Beaver layout ${BEAVER_CATEGORY_ARCHIVE_ID} ("Posts Category Archive")...`);
+  await wpe(`wp post update ${BEAVER_CATEGORY_ARCHIVE_ID} --post_status=draft`);
+
+  console.error('5/5 flushing...');
+  await wpe('wp elementor flush_css && wp cache flush && wp page-cache flush');
+
+  console.error('\nDone. Verify with:');
+  console.error('  CATEGORY_ARCHIVE_URL=https://empv2.wpenginepowered.com/category/community-stories/ \\');
+  console.error('  TOPIC_ARCHIVE_URL=https://empv2.wpenginepowered.com/category/education/ \\');
+  console.error('  node --test test-elementor.mjs');
+  return 0;
+}
+
+/* IMPORTING THIS FILE MUST DO NOTHING. It used to run on import and exit the
+   process, which took the whole test suite down with it the first time a test
+   imported it. Only direct execution runs main(). */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exit(await main());
+}

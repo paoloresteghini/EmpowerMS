@@ -2417,6 +2417,27 @@ test('every loop grid that writes an empty state also switches it on', async () 
    `--create` deliberately does not chain into the deploy. Creating the post is
    a write to Empower's install and deploying is another; keeping them apart is
    what makes the id a thing somebody has read before it is written to. */
+/* THE SAME GUARD, ON THE SECOND DEPLOY SCRIPT. content-a's script takes no post
+   id -- the id lives in elementor/pages/content-a/page.mjs, where the register
+   can see it -- so "no arguments" cannot mean "nothing to deploy into" here the
+   way it does for the archive. It has to mean something else, and it means
+   explain and write nothing: deployPage() overwrites _elementor_data wholesale,
+   so a script that deploys on a bare invocation is one stray shell history entry
+   away from overwriting a page nobody meant to touch. */
+test('the content-a deploy script writes nothing without an explicit flag', async () => {
+  const { parseArgs } = await import('./elementor/deploy-content-a.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'a bare invocation does something other than explain itself');
+  assert.deepEqual(parseArgs(['--deploy']), { mode: 'deploy' },
+    '--deploy is not recognised, so the script cannot deploy at all');
+
+  for (const argv of [['deploy'], ['-d'], ['--deploy', 'extra'], ['20613'], ['--yes']]) {
+    assert.notEqual(parseArgs(argv).mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only the exact --deploy flag may`);
+  }
+});
+
 test('the archive deploy script never deploys without an explicit post id', async () => {
   const { parseArgs } = await import('./elementor/deploy-archive.mjs');
 

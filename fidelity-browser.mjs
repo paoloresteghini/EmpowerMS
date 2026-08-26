@@ -649,6 +649,20 @@ export async function checkRadioFilter(url, { steps, bandSelector, cardSelector,
         cardsWithoutTopic: cards.filter((e) => e.offsetParent !== null && !e.getAttribute('data-topic')).length,
         emptyTotal: emptyEls.length,
         emptyShown: [...emptyEls].filter((e) => getComputedStyle(e).display !== 'none').length,
+        /* THE HOLE THE COUNTS CANNOT SEE. On a converted page the grid item is
+           Elementor's `.e-loop-item` wrapper, not the card inside it: bridge.css
+           puts display:contents on the two wrappers above it precisely so the
+           loop items become items of the build's own grid. Hiding the CARD
+           therefore empties a cell without releasing it, and the survivors keep
+           their original positions with gaps between them. Every count above
+           stays correct while the page looks broken, which is exactly what
+           happened. Zero on the static build, where the card IS the grid item. */
+        orphanCells: [...document.querySelectorAll(card)]
+          .filter((c) => getComputedStyle(c).display === 'none')
+          .map((c) => c.parentElement)
+          .filter((w) => w && w.matches('.e-loop-item')
+            && getComputedStyle(w).display !== 'none'
+            && w.getBoundingClientRect().width > 0).length,
       };
     }, { band: bandSelector, card: cardSelector, empty: emptySelector });
 

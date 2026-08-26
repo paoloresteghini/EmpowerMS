@@ -4236,6 +4236,32 @@ test('content-a’s filter bar is one line, and its labels are hidden rather tha
    "Community Stories" here silently puts the bar back to two rows at 1400px and
    nothing else would say so. The band headings below the bar are deliberately
    NOT in this list: they keep Empower's full wording. */
+/* THE FILTER'S TOPIC SET EXISTS TWICE, AND CSS CANNOT DERIVE THE SECOND FROM
+   THE FIRST. css/content-a.css hides the CARD; bridge.css block 73 hides the
+   `.e-loop-item` wrapper that is the real grid item on a converted page, and it
+   has to restate the same condition because CSS cannot ask whether an element's
+   child is currently display:none. Add a topic to one and the other is wrong
+   and silent: the new topic would filter correctly on the static build and
+   leave holes on the live page, which is precisely the defect this pair was
+   written to fix. */
+test('the topic filter hides the card and its grid cell, for the same set of topics', () => {
+  const page = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const topics = (css) => [...new Set(
+    [...css.matchAll(/#ca-p-([a-z]+):checked/g)].map((m) => m[1]),
+  )].filter((t) => t !== 'all').sort();
+
+  const onCards = topics(page);
+  const onCells = topics(bridge);
+
+  assert.ok(onCards.length >= 4, `only ${onCards.length} topic rules in content-a.css; the filter has shrunk`);
+  assert.deepEqual(onCells, onCards,
+    `css/content-a.css filters on [${onCards.join(', ')}] but bridge.css releases cells for `
+    + `[${onCells.join(', ')}]; the difference is a topic that hides its cards and leaves their grid `
+    + 'cells occupied on every converted page');
+});
+
 test('content-a’s control labels are the short forms the one-line bar depends on', () => {
   const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
   const labels = (cls) => [...html.matchAll(new RegExp(`<label class="${cls}"[^>]*>([^<]*)</label>`, 'g'))]

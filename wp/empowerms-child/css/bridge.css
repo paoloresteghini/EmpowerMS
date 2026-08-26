@@ -7641,3 +7641,43 @@ body .wpautoterms-footer a:focus-visible{
 @media (max-width:600px){
   .em-utility__bar > .elementor-widget:has(.em-utility__link){display:none}
 }
+
+/* ---------- 73. all content: a filtered-out card must release its cell -------
+ *
+ * WHAT WAS WRONG, seen on the deployed page rather than deduced: choosing a
+ * topic hid the right cards and left holes where they had been. The survivors
+ * kept their original grid positions with gaps between them, so "Safety" drew
+ * one card in column three of row one and the next in column one of row three.
+ *
+ * WHY. css/content-a.css:319-322 hides `.cad-card`, and on the STATIC build the
+ * card is the `<li>` and therefore the grid item, so hiding it releases its
+ * cell. On a converted page the grid item is Elementor's `.e-loop-item`
+ * wrapper: block 53 above puts `display:contents` on the two wrappers between
+ * `.cad-cards` and the loop items precisely so the loop items become items of
+ * the build's own grid, which is what makes the lead card's `grid-column:1/-1`
+ * possible. So the card hides INSIDE a box that keeps its cell, and the cell
+ * stays reserved and empty.
+ *
+ * Measured on the live page before this block existed: with Quality Education
+ * chosen, 175 cards hidden and 175 `.e-loop-item` wrappers still laid out.
+ *
+ * WHY THE MAPPING IS REPEATED HERE rather than derived. CSS cannot ask whether
+ * an element's child is currently `display:none`, so the wrapper cannot be
+ * keyed off the card's computed state; the only way to hide the right wrappers
+ * is to restate the condition that hides the cards. That duplication is a real
+ * maintenance hazard -- add a topic to the filter and this block is wrong and
+ * silent -- so test.mjs asserts the topic set here matches the one in
+ * css/content-a.css, and goes red if either grows without the other.
+ *
+ * `> .cad-card` and not a descendant match: the wrapper holds exactly one card,
+ * and a descendant selector would also match a card nested in some future
+ * inner loop and hide the wrong box.
+ *
+ * The type facet needs no companion. It hides whole `.cad-band` sections, which
+ * are the build's own markup on both sides and are not loop items at all. */
+body:has(#ca-p-education:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data-topic~="education"])),
+body:has(#ca-p-work:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data-topic~="work"])),
+body:has(#ca-p-safety:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data-topic~="safety"])),
+body:has(#ca-p-bills:checked) .cad-cards .e-loop-item:not(:has(> .cad-card[data-topic~="bills"])){
+  display:none;
+}

@@ -3675,6 +3675,17 @@ test('the content-a type and topic filters actually filter', { concurrency: 1 },
      missing from the loop item it shows 0. Measured both, red first. */
   assert.equal(education.bands, all.bands, 'choosing a topic hid a whole band; only Bill Summaries is supposed to do that');
   assert.ok(education.cards > 0, 'choosing Quality Education hid every card: the loop is not emitting data-topic');
+
+  /* AND THE SURVIVORS MUST CLOSE UP. The assertions above count what is shown
+     and would all pass on a page full of holes, which is what shipped: hiding
+     `.cad-card` leaves Elementor's `.e-loop-item` wrapper -- the real grid item
+     on a converted page -- occupying its cell. Measured live before the fix:
+     175 cards hidden, 175 wrappers still laid out. */
+  for (const step of [all, education, story, deadEnd, restored]) {
+    assert.equal(step.orphanCells, 0,
+      `after "${step.name}", ${step.orphanCells} hidden cards left their .e-loop-item wrapper occupying a `
+      + 'grid cell, so the remaining cards do not close up and the grid renders with holes');
+  }
   assert.ok(education.cards < all.cards, 'choosing Quality Education hid nothing: the filter CSS is not reaching the cards');
   for (const t of education.cardTopics) {
     assert.match(t ?? '', /(^|\s)education(\s|$)/,

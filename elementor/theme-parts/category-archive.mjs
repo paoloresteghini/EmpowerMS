@@ -122,6 +122,18 @@ export function categoryArchive() {
              switcher registered with no default, and the text control is
              conditioned on it, so text alone renders nothing. That is not a
              hypothetical; it is what search-archive.mjs shipped. */
+          /* PAGINATION IS A SETTING, NOT A BEHAVIOUR YOU GET. Elementor's
+             pagination trait is `! empty( $settings['pagination_type'] )`, no
+             default, so a grid that omits this key renders its first page and
+             silently drops the rest. /category/education/ holds 147 posts; at
+             12 a missing key hides 135 of them.
+
+             PAGE RELOAD, NOT AJAX. Page two gets a real URL
+             (/category/education/page/2/) that can be linked and indexed, and
+             the listing keeps working with JavaScript off, which is the same
+             reason this build's filters are CSS. */
+          pagination_type: 'numbers_and_prev_next',
+          pagination_load_type: 'page_reload',
           enable_nothing_found_message: 'yes',
           nothing_found_message_text: 'Nothing in this category yet.',
           /* No post_query_* overrides. An archive template renders the query

@@ -2446,6 +2446,78 @@ test('the category archive names its own library post, distinct from the other p
   }
 });
 
+/* PAGINATION IS NOT AUTOMATIC EITHER, AND THIS IS THE SECOND TIME THE SAME
+   SHAPE HAS BITTEN. Elementor Pro's pagination trait is
+
+     private function widget_has_pagination( $element ) {
+       return ! empty( $element['settings']['pagination_type'] );
+     }
+
+   No default, gated on presence, exactly like enable_nothing_found_message.
+   theme-parts/search-archive.mjs's own comment says pagination "is not a
+   separate element in this tree: it is the Loop Grid widget's own built-in
+   behaviour", which is true of the MARKUP and false of the BEHAVIOUR, and that
+   sentence was copied forward into the category archive. Result: /category/
+   education/ shipped 147 posts with 12 on screen and no way to reach the other
+   135. Caught by looking at the deployed page, not by any gate.
+
+   SO THE KEY MUST BE PRESENT ON EVERY LOOP GRID, and an empty string is a
+   legitimate value meaning "this grid does not paginate" — post-single's More
+   grid is a fixed teaser of three and should not. What is not legitimate is
+   leaving it out, because absent and "deliberately none" then look identical
+   in the source and only one of them is a decision. */
+test('every loop grid declares whether it paginates', async () => {
+  const trees = {
+    'search-archive': searchArchivePart(),
+    'post-single': postSingle(),
+    'category-archive': categoryArchive(),
+  };
+  const VALID = ['', 'numbers', 'prev_next', 'numbers_and_prev_next',
+    'load_more_on_click', 'load_more_infinite_scroll'];
+
+  let checked = 0;
+  for (const [name, tree] of Object.entries(trees)) {
+    (function walk(nodes) {
+      for (const n of nodes) {
+        if (n.widgetType === 'loop-grid') {
+          checked += 1;
+          assert.ok(Object.hasOwn(n.settings, 'pagination_type'),
+            `${name}'s loop grid does not declare pagination_type. Elementor gates pagination on that `
+            + 'key being non-empty, so leaving it out silently truncates the listing to one page; if '
+            + "this grid genuinely should not paginate, say so with pagination_type: ''");
+          assert.ok(VALID.includes(n.settings.pagination_type),
+            `${name}'s loop grid sets pagination_type: ${JSON.stringify(n.settings.pagination_type)}, `
+            + `which is not one of ${VALID.filter(Boolean).join(', ')} or ''`);
+        }
+        if (n.elements?.length) walk(n.elements);
+      }
+    })(tree);
+  }
+  assert.ok(checked >= 3, `only ${checked} loop grids were walked; the walk itself is broken`);
+});
+
+/* The archive paginates by PAGE RELOAD, not by loading more in place, and the
+   reason is the same one that makes this build's filters CSS: a listing that
+   needs JavaScript to reach its second page has 135 of its 147 posts behind a
+   script. Page reload also gives every page a real URL for indexing. */
+test('the category archive paginates on real URLs rather than behind a script', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const grid = JSON.parse(JSON.stringify(categoryArchive()));
+  const found = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.widgetType === 'loop-grid') found.push(n.settings);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(grid);
+
+  assert.equal(found[0].pagination_type, 'numbers_and_prev_next',
+    'the archive does not paginate with numbers, so a visitor cannot jump into the middle of a term '
+    + 'that holds 147 posts');
+  assert.equal(found[0].pagination_load_type, 'page_reload',
+    'the archive paginates by AJAX, so page two has no URL of its own and needs JavaScript to exist');
+});
+
 test('the category archive has an empty state', async () => {
   const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
   const markup = JSON.stringify(categoryArchive());

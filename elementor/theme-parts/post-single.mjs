@@ -186,6 +186,12 @@ export function postSingle() {
             columns_tablet: 2,
             columns_mobile: 1,
             posts_per_page: RELATED_COUNT,
+            /* DELIBERATELY NONE. This is a fixed teaser of three at the foot of
+               an article, not a listing, so there is no second page to reach.
+               Written rather than omitted because absent and "none on purpose"
+               look identical in the source and only one of them is a decision;
+               the gate requires the key on every loop grid for that reason. */
+            pagination_type: '',
             post_query_post_type: 'post',
             post_query_query_id: RELATED_QUERY_ID,
             _attributes: 'data-cms|loop\ndata-cms-item-attrs|data-topic\n'

@@ -201,6 +201,15 @@ export function searchArchivePart() {
                nowhere from the day it was written until this line existed.
                `nothing_found_message_text` is itself conditioned on this
                switch. Found while building the category archive. */
+            /* THE SECOND HALF OF THE SAME DEFECT, fixed 2026-08-26. The
+               comment above says pagination "is the Loop Grid widget's own
+               built-in behaviour", which is true of the markup and false of
+               the behaviour: the pagination trait is
+               `! empty( $settings['pagination_type'] )` with no default, so
+               this grid has been showing one page of results and no way to
+               reach the rest. */
+            pagination_type: 'numbers_and_prev_next',
+            pagination_load_type: 'page_reload',
             enable_nothing_found_message: 'yes',
             nothing_found_message_text: 'No results found. Try different search terms, or use the search box above.',
             _attributes: 'data-reveal-group|',

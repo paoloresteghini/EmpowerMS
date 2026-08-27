@@ -6883,3 +6883,113 @@ test('every shipped stylesheet parses to the same rules after stripping, read ba
     await browser.close();
   }
 });
+
+/* --- the header's closed state / the two gaps the 2026-08-20 gate left ----- */
+
+/* Measured cold on 2026-08-27 (mobile 412x823, Slow 4G, 4x CPU) against the
+   deployed homepage, and both of these are the SAME defect the gate above was
+   written for, still costing CLS after it:
+
+   1. #mobile-nav was never gated. The dropdown and search panels are, because
+      js/dropdown.js and theme-js/search.js write "on" into their own root
+      attributes as they run. js/nav.js writes nothing: it only does
+      `panel.hidden = true`. So the mobile panel keeps shipping open until a
+      deferred script runs, and it is ~927px tall. Instrumented: .fp-hero sat
+      at y=1064 until nav.js landed, then jumped to y=137. That single shift
+      scored 0.8335.
+
+   2. The four-second timeout fires BEFORE the scripts arrive on a real slow
+      connection, which is the one case it exists for. The inline script ran
+      at 698ms, the timeout fired at 4,698ms and removed both attributes, and
+      dropdown.js and search.js set them to "on" at 4,975ms. The header went
+      137px -> 266px -> 137px in a 277ms window, scoring 0.1307 twice. The
+      docblock's "four seconds is well past any load this install produces"
+      rests on a 1,397ms measurement that was not made on a cold cache.
+
+   Together: CLS 1.02. With #mobile-nav gated and the clear moved to
+   DOMContentLoaded, measured against the live page through an injected
+   equivalent of both changes: CLS 0.000.
+
+   DOMContentLoaded rather than a longer timeout, because it is not a guess.
+   Deferred scripts run to completion before it fires, so by then every script
+   has either written "on" or failed, and no arithmetic about how slow a
+   connection might be has to be right. */
+
+/* Exported shape, so the browser test below runs the gate this file actually
+   emits rather than a copy of it that can drift. */
+function headerGateScript() {
+  const src = themeFile('functions.php');
+  /* Keyed on the gate's own content, not on its position: functions.php
+     registers three wp_head callbacks, and matching the first one that parses
+     read a different hook entirely and reported the gate as broken. */
+  const block = [...src.matchAll(/add_action\(\s*'wp_head',\s*function \(\) \{[\s\S]*?\}\s*,\s*\d+\s*\);/g)]
+    .map((m) => m[0])
+    .find((b) => b.includes("'pending'"));
+  assert.ok(block, 'no wp_head callback in functions.php emits a pending gate, so the tests below are reading nothing');
+  const parts = [...block.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  assert.ok(parts.length > 0, 'the wp_head gate emitted no string literal, so this extraction has drifted from the code');
+  return parts.join('').replace(/\\n/g, '\n');
+}
+
+test('the header gate marks the mobile nav panel pending, not only the dropdown and search panels', () => {
+  const gate = headerGateScript();
+  assert.match(gate, /setAttribute\(\s*'data-nav'\s*,\s*'pending'\s*\)/,
+    'the mobile nav panel is not gated, so it ships open until js/nav.js runs and takes ~927px of the page with it');
+});
+
+test('the header gate clears its pending attributes on DOMContentLoaded, not on a fixed timer', () => {
+  const gate = headerGateScript();
+  assert.match(gate, /DOMContentLoaded/,
+    'the gate does not clear on DOMContentLoaded, so how long it waits is a guess about connection speed');
+  assert.doesNotMatch(gate, /setTimeout/,
+    'the gate still clears on a timer: on a cold Slow 4G load the timer fired 277ms before the scripts arrived and cost 0.26 CLS');
+});
+
+test('bridge.css takes the mobile nav panel out of flow while the nav gate is pending', () => {
+  const css = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  assert.match(css, /\[data-nav="pending"\]\s*#mobile-nav\s*\{[^}]*display\s*:\s*none/,
+    'no rule closes #mobile-nav while its gate is pending, so the gate attribute is set and nothing keys on it');
+});
+
+/* The contract the gate exists to protect, exercised rather than described:
+   JavaScript is ON and the script that would close the panel never arrives.
+   The panel must be closed while the page is parsing and OPEN once parsing
+   finishes, because a visitor whose nav script 404s must still have a nav.
+   A gate that closed the panel and never reopened it would pass all three
+   assertions above and silently delete the navigation. */
+test('a nav script that never arrives leaves the mobile panel open, and the gate closes it until then', async () => {
+  const gate = headerGateScript().replace(/^<script>|<\/script>\s*$/g, '');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'navgate-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'page.html'), `<!doctype html><html><head>
+<style>[data-nav="pending"] #mobile-nav{display:none}</style>
+<script>${gate}</script>
+<script defer src="./this-script-never-arrives.js"></script>
+</head><body>
+<div id="mobile-nav" style="height:900px">the navigation</div>
+<script>
+  window.__duringParse = getComputedStyle(document.getElementById('mobile-nav')).display;
+  document.addEventListener('DOMContentLoaded', () => {
+    window.__afterParse = getComputedStyle(document.getElementById('mobile-nav')).display;
+  });
+</script>
+</body></html>`);
+
+    const { chromium } = await import('playwright');
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage();
+      await page.goto(`file://${path.join(dir, 'page.html')}`, { waitUntil: 'load' });
+      const during = await page.evaluate(() => window.__duringParse);
+      const after = await page.evaluate(() => window.__afterParse);
+      assert.equal(during, 'none',
+        'the panel was in flow while the page was still parsing, which is the 927px jump this gate exists to remove');
+      assert.equal(after, 'block',
+        'the panel stayed closed after parsing finished even though no script ever ran: a visitor whose nav script fails now has no navigation at all');
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

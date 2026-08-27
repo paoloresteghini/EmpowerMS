@@ -7608,12 +7608,25 @@ body .wpautoterms-footer a:focus-visible{
    page with JavaScript disabled, where the inline script never runs, neither
    attribute is ever set, and these rules therefore never apply.
 
-   IN bridge.css AND NOT css/header-2.css because both attributes are emitted
-   by the WordPress theme and exist nowhere in the static build. In dist/ the
-   selectors would simply never match, so the rules would be dead weight in a
-   protected file. ========================================================== */
+   IN bridge.css AND NOT css/header-2.css because all three attributes are
+   emitted by the WordPress theme and exist nowhere in the static build. In
+   dist/ the selectors would simply never match, so the rules would be dead
+   weight in a protected file.
+
+   THE THIRD RULE ARRIVED 2026-08-27, and the first two had been carrying the
+   smaller half of the defect on their own until then. #mobile-nav is the
+   mobile panel, and js/nav.js closes it with `panel.hidden = true` rather
+   than by writing a root attribute, so no "pending" selector could reach it
+   and it kept shipping open until a deferred script ran. Measured cold on the
+   deployed homepage (mobile 412x823, Slow 4G, 4x CPU): the panel is ~927px,
+   .fp-hero sat at y=1064 until nav.js landed and then jumped to y=137, and
+   that one shift scored 0.8335 of a 1.02 CLS. Its gate is cleared by the
+   inline script itself on DOMContentLoaded, not by nav.js, because js/ is the
+   protected static build; functions.php's docblock carries the rest.
+   ========================================================================== */
 [data-dropdown="pending"] .em-header__menu{display:none}
 [data-search="pending"] #site-search{display:none}
+[data-nav="pending"] #mobile-nav{display:none}
 
 /* ==========================================================================
    THE UTILITY BAR'S HIDDEN EMAIL STILL TOOK UP SPACE ON THE INSTALL.

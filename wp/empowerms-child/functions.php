@@ -949,20 +949,43 @@ add_filter( 'aioseo_canonical_url', function ( $url ) {
  * pending rules in css/bridge.css stop matching the moment either script
  * runs, with nothing added to either file to make that happen.
  *
- * THE TIMEOUT IS THE CONTRACT'S LAST RESORT, not a timing tweak. If a script
- * never arrives, nothing else will ever clear "pending" and the panels stay
- * display:none. Four seconds is well past any load this install produces
- * (the gates landed at 1397ms on the slowest page measured) and well short of
- * a visitor deciding the navigation is broken. In the normal case it fires
- * against attributes that already read "on" and removes nothing.
+ * data-nav IS A THIRD ATTRIBUTE, AND HAS TO BE. Added 2026-08-27, when a cold
+ * measurement showed #mobile-nav was never covered by any of this. The two
+ * attributes above work because their scripts write "on" themselves;
+ * js/nav.js writes nothing, it only does `panel.hidden = true`. So the mobile
+ * panel kept shipping open until a deferred script ran, and it is ~927px
+ * tall: instrumented on the deployed homepage, .fp-hero sat at y=1064 until
+ * nav.js landed and then jumped to y=137, one shift scoring 0.8335. js/nav.js
+ * is not where the fix goes -- js/ and src/ are the protected static build --
+ * so this script clears data-nav itself, below, and css/bridge.css keys on it.
+ *
+ * DOMContentLoaded IS THE CONTRACT'S LAST RESORT, and it replaced a four
+ * second timeout on 2026-08-27. If a script never arrives, nothing else will
+ * ever clear "pending" and the panels stay display:none, so something has to
+ * clear it; the question is only when. The timeout answered that with a guess
+ * about connection speed, and the guess was wrong in exactly the case it
+ * existed for. Measured cold (mobile 412x823, Slow 4G, 4x CPU): this script
+ * ran at 698ms, the timeout fired at 4,698ms and removed both attributes, and
+ * dropdown.js and search.js wrote "on" at 4,975ms. The header went 137px to
+ * 266px and back to 137px inside 277ms, scoring 0.1307 twice. The "well past
+ * any load this install produces" that justified four seconds rested on a
+ * 1,397ms reading taken on a warm cache.
+ *
+ * DOMContentLoaded needs no such arithmetic. Deferred scripts run to
+ * completion before it fires, so by the time it does, every script has either
+ * written "on" or failed, and there is no window in which neither is true. In
+ * the normal case it fires against attributes that already read "on" and
+ * removes nothing. The three changes together took the homepage from CLS 1.02
+ * to 0.000.
  */
 add_action( 'wp_head', function () {
 	echo "<script>(function(){var r=document.documentElement;"
+		. "r.setAttribute('data-nav','pending');"
 		. "r.setAttribute('data-dropdown','pending');r.setAttribute('data-search','pending');"
-		. "setTimeout(function(){"
-		. "if(r.getAttribute('data-dropdown')==='pending')r.removeAttribute('data-dropdown');"
-		. "if(r.getAttribute('data-search')==='pending')r.removeAttribute('data-search');"
-		. "},4000);})();</script>\n";
+		. "document.addEventListener('DOMContentLoaded',function(){"
+		. "['data-nav','data-dropdown','data-search'].forEach(function(a){"
+		. "if(r.getAttribute(a)==='pending')r.removeAttribute(a);});"
+		. "});})();</script>\n";
 }, 1 );
 
 /**

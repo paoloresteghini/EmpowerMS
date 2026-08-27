@@ -470,7 +470,14 @@ function empower_style_key() {
 		   archive.php's plain-list fallback; keying them 'archive' would hand
 		   them css/archive.css and motion.css for markup that has neither the
 		   classes nor the reveal attributes to use them. */
-		if ( is_category() ) {
+		/* `is_category() || is_home()` and still not `is_archive()`. is_home() is
+		   the posts page (/updates/), which joined this template on 2026-08-27.
+		   is_archive() would also be true on tag, author and date archives,
+		   which are NOT converted and are meant to keep archive.php's plain
+		   fallback; keying them 'archive' would hand them css/archive.css and
+		   motion.css for markup that has neither the classes nor the reveal
+		   attributes to use them. */
+		if ( is_category() || is_home() ) {
 			return 'archive';
 		}
 
@@ -851,6 +858,19 @@ add_filter( 'aioseo_canonical_url', function ( $url ) {
 	   in one filter deliberately: canonicals are decided in one place, which is
 	   the discipline whose absence produced the pair this filter was written
 	   for. */
+	/* THE POSTS PAGE LISTS ALL 490 POSTS, which is what the signed-off All
+	   Content page already is. Two indexable listings of one set compete rather
+	   than consolidate, so /updates/ credits /all-content/ -- the same call made
+	   for the three subject terms below, on 2026-08-27. Guarded on the
+	   destination existing for the same reason. */
+	if ( is_home() ) {
+		$target = get_page_by_path( 'all-content', OBJECT, 'page' );
+		if ( ! $target || 'publish' !== get_post_status( $target ) ) {
+			return $url;
+		}
+		return home_url( '/all-content/' );
+	}
+
 	if ( is_category() ) {
 		$term      = get_queried_object();
 		$overrides = empower_term_canonical_overrides();

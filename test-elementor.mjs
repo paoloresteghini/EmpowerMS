@@ -2088,13 +2088,32 @@ test('content-a’s filter labels are identical in the static build and the Elem
 
 test('the category archive condition parses flat, into archive + category', async () => {
   const { CATEGORY_ARCHIVE_CONDITIONS } = await import('./elementor/theme-parts/category-archive.mjs');
-  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 1, 'expected exactly one condition');
+  /* TWO conditions since 2026-08-27: this one document serves the ten category
+     archives AND the posts page (/updates/, titled "News", WordPress's own
+     page_for_posts). One template rather than two, because the two pages differ
+     only in what the head says. */
+  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 2,
+    `expected two conditions (category archives and the posts page), got ${CATEGORY_ARCHIVE_CONDITIONS.length}`);
 
   const parseCondition = (condition) => {
     const [type, name, subName, subId] = [...condition.split('/'), '', '', ''].slice(0, 4);
     return { type, name, subName, subId };
   };
   const parsed = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[0]);
+
+  /* THE POSTS-PAGE CONDITION IS TWO LEVELS FOR THE SAME REASON, and its second
+     level is the Post_Type_Archive condition's own name, which get_name()
+     builds as `<post_type>_archive`. Both of its checks pass on /updates/:
+     Archive::check() is `is_archive() || is_home() || is_search()` and
+     Post_Type_Archive::check() is `is_post_type_archive('post') || is_home()`,
+     and a page_for_posts request is is_home(). */
+  const posts = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[1]);
+  assert.equal(posts.type, 'include');
+  assert.equal(posts.name, 'archive', `the posts-page condition's first level is "${posts.name}"`);
+  assert.equal(posts.subName, 'post_archive',
+    `the posts-page condition's second level is "${posts.subName}"; it must be the Post_Type_Archive `
+    + "condition's own name, which is the post type plus '_archive'");
+  assert.equal(posts.subId, '', 'the posts-page condition carries a sub_id, which pins it to one object');
 
   assert.equal(parsed.type, 'include');
   assert.equal(parsed.name, 'archive',

@@ -42,11 +42,19 @@
  * @return string
  */
 function empower_archive_title_shortcode() {
-	if ( ! is_category() ) {
+	/* TWO KINDS OF PAGE REACH THIS, and they name themselves differently. A
+	   category archive is titled by its term. The posts page (/updates/) has no
+	   term at all, so single_term_title() returns nothing there; its name is the
+	   title of the page Empower designated as page_for_posts, which is theirs to
+	   change in wp-admin and is read here rather than written down. */
+	if ( is_home() ) {
+		$title = single_post_title( '', false );
+	} elseif ( is_category() ) {
+		$title = single_term_title( '', false );
+	} else {
 		return '';
 	}
 
-	$title = single_term_title( '', false );
 	if ( ! $title ) {
 		return '';
 	}
@@ -64,7 +72,9 @@ add_shortcode( 'empower_archive_title', 'empower_archive_title_shortcode' );
  * @return string
  */
 function empower_archive_count_shortcode() {
-	if ( ! is_category() ) {
+	/* Same two pages as the title above. Anything else that reaches this is a
+	   misconfiguration and should show as an absence rather than a wrong number. */
+	if ( ! is_category() && ! is_home() ) {
 		return '';
 	}
 

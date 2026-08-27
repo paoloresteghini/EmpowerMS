@@ -4244,6 +4244,63 @@ test('content-a’s filter bar is one line, and its labels are hidden rather tha
    and silent: the new topic would filter correctly on the static build and
    leave holes on the live page, which is precisely the defect this pair was
    written to fix. */
+/* THE ARCHIVE TEMPLATE NOW SERVES TWO KINDS OF PAGE, and the head is the only
+   thing that differs. A category archive is titled by its term; the posts page
+   (/updates/, WordPress's page_for_posts, titled "News") has no term at all, so
+   single_term_title() returns nothing there and the head would render empty.
+
+   Both cases go through the same shortcode rather than a second template,
+   because two templates differing in one string is two things to keep in step. */
+test('the archive head titles a category by its term and the posts page by its own title', () => {
+  const php = readFileSync('wp/empowerms-child/inc/archive.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_archive_title_shortcode'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  assert.match(body, /is_home\(\)/,
+    'the title shortcode has no posts-page branch, so /updates/ renders an empty heading');
+  assert.match(body, /single_post_title|get_the_title\(\s*(?:\(int\)\s*)?get_option\( 'page_for_posts'/,
+    'the posts-page branch does not read the page_for_posts title, so the heading is invented rather '
+    + 'than taken from the page Empower named');
+  assert.match(body, /single_term_title/,
+    'the category branch is gone');
+
+  /* The count shortcode has to follow, or /updates/ shows a heading with no
+     count while every category archive shows one. */
+  const cnt = php.slice(php.indexOf('function empower_archive_count_shortcode'));
+  assert.match(cnt.slice(0, cnt.indexOf('\n}')), /is_home\(\)/,
+    'the count shortcode still refuses anything that is not a category, so /updates/ shows no count');
+});
+
+/* THE POSTS PAGE CANONICALS TO /all-content/, for the reason the three topic
+   terms do: it lists all 490 posts, which is what the signed-off All Content
+   page already is, and two indexable listings of one set compete rather than
+   consolidate. Decided 2026-08-27. */
+test('the posts page credits /all-content/ rather than competing with it', () => {
+  const php = readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const filter = php.slice(php.indexOf("add_filter( 'aioseo_canonical_url'"));
+  const body = filter.slice(0, filter.indexOf('\n} );'));
+
+  assert.match(body, /is_home\(\)/,
+    'the canonical filter has no posts-page branch, so /updates/ declares itself canonical over the '
+    + 'same 490 posts /all-content/ lists');
+  assert.match(body, /\/all-content\//,
+    'the posts-page branch does not name /all-content/ as its destination');
+  assert.match(body, /'publish' !== get_post_status/,
+    'the destination is not checked for existence; a canonical pointing at a 404 is worse than the '
+    + 'duplicate it replaces');
+});
+
+/* And the stylesheet key has to answer the posts page too, or /updates/ gets
+   the cards' markup with none of content-a.css to draw them. */
+test('empower_style_key answers the posts page as well as category archives', () => {
+  const php = readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_style_key()'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+  assert.match(body, /is_category\(\) \|\| is_home\(\)|is_home\(\) \|\| is_category\(\)/,
+    'the archive branch still answers only category archives, so /updates/ loads neither '
+    + 'content-a.css nor archive.css and its cards render unstyled');
+});
+
 test('the topic filter hides the card and its grid cell, for the same set of topics', () => {
   const page = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');

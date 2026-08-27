@@ -26,17 +26,17 @@
  *      step: a template with correct data and no location is resolved from a
  *      CACHED option at render time and simply never appears.
  *      docs/elementor/theme-part-mechanism.md records the hour that cost.
- *   4. drafts Beaver's "Posts Category Archive" (11276), which is the layout
- *      being replaced. The OTHER Beaver archive layouts are deliberately left
- *      alone: 11248 "Posts Archive" and 11322 "Post Author Archive" are not in
- *      scope, and empower_style_key()'s branch is is_category() for the same
- *      reason.
+ *   4. drafts the two Beaver layouts this template replaces: 11276 "Posts
+ *      Category Archive" and, since 2026-08-27, 11248 "Posts Archive".
+ *      11322 "Post Author Archive" is deliberately left alone -- author
+ *      archives are not converted, and empower_style_key()'s branch is
+ *      `is_category() || is_home()` rather than is_archive() for that reason.
  *   5. flushes Elementor's CSS cache and the page cache. A deploy that does
  *      not flush fails as a subset of itself.
  *
  * TO REVERSE THE WHOLE THING:
  *
- *   wp post update 11276 --post_status=publish        # Beaver takes it back
+ *   wp post update 11276 11248 --post_status=publish  # Beaver takes them back
  *   wp post update <ARCHIVE_POST_ID> --post_status=draft
  *   wp elementor flush_css && wp cache flush && wp page-cache flush
  */
@@ -47,9 +47,15 @@ import { syncTheme } from '../wp/sync.mjs';
 import { wpe } from '../wpe.mjs';
 import { pathToFileURL } from 'node:url';
 
-/* Beaver Themer's "Posts Category Archive", read off the install with
-   `wp post list --post_type=fl-theme-layout` rather than typed from memory. */
-const BEAVER_CATEGORY_ARCHIVE_ID = 11276;
+/* Beaver Themer's two listing layouts, read off the install with
+   `wp post list --post_type=fl-theme-layout` rather than typed from memory.
+   Both are replaced by the one Elementor document: 11276 by the
+   `include/archive/category` condition and 11248 by `include/archive/post_archive`
+   (the posts page, /updates/, added 2026-08-27). */
+const BEAVER_LAYOUTS = [
+  { id: 11276, title: 'Posts Category Archive' },
+  { id: 11248, title: 'Posts Archive' },
+];
 
 const CREATE_COMMAND =
   "wp post create --post_type=elementor_library --post_status=publish "
@@ -109,8 +115,10 @@ export async function main(argv = process.argv.slice(2)) {
   console.error(`3/5 setting conditions ${JSON.stringify(CATEGORY_ARCHIVE_CONDITIONS)}...`);
   await setConditions(postId, CATEGORY_ARCHIVE_CONDITIONS);
 
-  console.error(`4/5 drafting Beaver layout ${BEAVER_CATEGORY_ARCHIVE_ID} ("Posts Category Archive")...`);
-  await wpe(`wp post update ${BEAVER_CATEGORY_ARCHIVE_ID} --post_status=draft`);
+  for (const { id, title } of BEAVER_LAYOUTS) {
+    console.error(`4/5 drafting Beaver layout ${id} ("${title}")...`);
+    await wpe(`wp post update ${id} --post_status=draft`);
+  }
 
   console.error('5/5 flushing...');
   await wpe('wp elementor flush_css && wp cache flush && wp page-cache flush');

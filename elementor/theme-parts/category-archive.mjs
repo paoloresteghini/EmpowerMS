@@ -55,7 +55,26 @@ import { LOOP_ITEM_POST_IDS } from '../pages/content-a/loop-item.mjs';
  * docs/elementor/theme-part-mechanism.md records the hour that cost. */
 export const CATEGORY_ARCHIVE_POST_ID = 20644;
 
-export const CATEGORY_ARCHIVE_CONDITIONS = ['include/archive/category'];
+/* TWO CONDITIONS, ONE DOCUMENT, since 2026-08-27. The second is the posts page
+ * -- /updates/, titled "News", WordPress's own page_for_posts -- which was the
+ * last listing still rendering through Beaver Themer's layout 11248.
+ *
+ * `post_archive` is the Post_Type_Archive condition's own name: get_name()
+ * builds it as the post type plus '_archive'. Both of its checks pass on a
+ * page_for_posts request, which is what makes the two-level form work here as
+ * it does for `category`: Archive::check() is
+ * `is_archive() || is_home() || is_search()`, and Post_Type_Archive::check() is
+ * `is_post_type_archive('post') || is_home()`.
+ *
+ * ONE TEMPLATE RATHER THAN TWO, because the two pages differ in exactly one
+ * string: what the head is titled. A category archive is titled by its term, the
+ * posts page by its own page title, and inc/archive.php's title shortcode
+ * answers both. Two templates differing in one string is two things to keep in
+ * step, and this build has paid that bill more than once already. */
+export const CATEGORY_ARCHIVE_CONDITIONS = [
+  'include/archive/category',
+  'include/archive/post_archive',
+];
 
 /* HOW MANY POSTS PER PAGE, and why a number rather than the site default.
    The terms this serves run from 27 posts (Community Stories) to 147

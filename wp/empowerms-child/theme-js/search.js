@@ -28,7 +28,7 @@ if (button && panel && input) {
 
   // The panel ships OPEN in the markup, with no `hidden` attribute and with
   // the button at aria-expanded="true", because that is this build's
-  // no-JavaScript contract and test-elementor.mjs:3341 enforces it. So the
+  // no-JavaScript contract and test-elementor.mjs:3360 enforces it. So the
   // script's job at load is to CLOSE it, exactly as js/nav.js:12-13 does for
   // the mobile nav. Setting the attribute here rather than in the markup is
   // what keeps the panel reachable when this file fails to load.

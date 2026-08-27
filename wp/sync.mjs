@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { installConfig } from '../install.mjs';
+import { buildShipped, shipSource, SHIP_DIR } from './ship.mjs';
 
 const run = promisify(execFile);
 
@@ -49,7 +50,12 @@ export const FROM_ROOT = ['tokens', 'components', 'css', 'js', 'assets', 'patter
    exclude exists to protect. */
 export function fromRootArgs(dir, ssh, host, dest) {
   const protectBridge = dir === 'css' ? ['--exclude', '/bridge.css'] : [];
-  return ['-az', '--delete', ...protectBridge, '-e', ssh, `${dir}/`, `${host}:${dest}/${dir}/`];
+  /* The SOURCE is wp/ship.mjs's stage for the three stylesheet directories
+     and the repository itself for everything else. The destination is
+     unchanged: the install still receives tokens/, components/ and css/ at
+     the same paths, holding the same rules, minus the comments that made
+     bridge.css alone 141 KB of render-blocking transfer on every page. */
+  return ['-az', '--delete', ...protectBridge, '-e', ssh, shipSource(dir), `${host}:${dest}/${dir}/`];
 }
 
 /* `run` and `config` are injectable for ONE reason, stated so nobody removes
@@ -64,6 +70,11 @@ export async function syncTheme({ run: runner = run, config } = {}) {
   const { host, key, root } = config ?? installConfig();
   const dest = `${root}/${THEME}`;
   const ssh = `ssh -i ${key} -o BatchMode=yes`;
+  /* Built HERE rather than by whatever called this, because a stale stage is
+     indistinguishable from a fresh one at the far end: the install would
+     receive last deploy's CSS and report nothing. The three CSS passes below
+     and the bridge pass at the end all read from what this writes. */
+  buildShipped();
   /* wp/empowerms-child/ holds the theme's own PHP files plus
      wp/empowerms-child/css/bridge.css; tokens/, components/, css/, js/ and
      assets/ are synced separately below, from the root, and (bridge.css
@@ -104,6 +115,6 @@ export async function syncTheme({ run: runner = run, config } = {}) {
      --delete here: this source only ever contains bridge.css, and deleting
      dest/css/ against it would erase everything the previous pass just put
      there. */
-  await runner('rsync', ['-az', '-e', ssh, 'wp/empowerms-child/css/', `${host}:${dest}/css/`]);
+  await runner('rsync', ['-az', '-e', ssh, `${SHIP_DIR}/wp/empowerms-child/css/`, `${host}:${dest}/css/`]);
   return dest;
 }

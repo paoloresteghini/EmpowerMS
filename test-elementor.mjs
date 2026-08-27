@@ -912,7 +912,12 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
      citation: an assertion pinned to an incidental detail of how the code is
      spelled. Matching either keeps this test about the PASS rather than about
      the identifier. */
-  const bridgePassMatch = src.match(/await (?:run|runner)\(\s*'rsync'\s*,\s*\[[^\]]*'wp\/empowerms-child\/css\/'[^\]]*\]\s*\)/);
+  /* The source moved from a plain 'wp/empowerms-child/css/' to the shipped
+     stage's copy of it on 2026-08-27, so the pattern names the path and not
+     the quoting around it. Pinning it to a single-quoted literal would go red
+     on a correct file, the same shape of breakage the `run|runner` note
+     below records. */
+  const bridgePassMatch = src.match(/await (?:run|runner)\(\s*'rsync'\s*,\s*\[[^\]]*wp\/empowerms-child\/css\/[^\]]*\]\s*\)/);
   assert.ok(bridgePassMatch, 'no rsync call syncing wp/empowerms-child/css/ was found in wp/sync.mjs');
   assert.ok(bridgePassMatch.index > loopEnd,
     'the wp/empowerms-child/css/ sync must run after the FROM_ROOT loop, or the loop\'s own --delete against dest/css/ removes bridge.css straight back out');
@@ -1020,11 +1025,19 @@ test('the css pass wp/sync.mjs actually issues leaves a destination-only bridge.
 
     const dest = `${root}/dest-root/wp-content/themes/empowerms-child`;
     for (const dir of ['css', 'js']) {
-      const pass = issued.find(([, args]) => args.includes(`${dir}/`) && args.includes('--delete'));
+      /* Keyed on the DESTINATION, and the source is then read positionally as
+         rsync's second-to-last argument. css/ is sourced from wp/ship.mjs's
+         stage rather than from the repository since 2026-08-27, so a finder
+         that looked for the literal `css/` among the arguments would match
+         pass one's own `--exclude /css/` instead, or nothing at all. */
+      const pass = issued.find(([, args]) => args.at(-1) === `:${dest}/${dir}/` && args.includes('--delete'));
       assert.ok(pass, `syncTheme issued no --delete pass for ${dir}/, so this test is no longer watching the code that runs`);
       const args = pass[1]
-        .map((a) => (a === `${dir}/` ? `${root}/src/${dir}/` : a))
-        .map((a) => (a === `:${dest}/${dir}/` ? `${root}/dest/${dir}/` : a))
+        .map((a, i, all) => {
+          if (i === all.length - 2) return `${root}/src/${dir}/`;
+          if (i === all.length - 1) return `${root}/dest/${dir}/`;
+          return a;
+        })
         .filter((a, i, all) => !(a === '-e' || all[i - 1] === '-e'));
       execFileSync('rsync', args);
     }
@@ -6713,4 +6726,160 @@ test('the redirected pages leave the sitemap', { concurrency: 1 }, async (t) => 
     `${listed.length} redirected page(s) are still in page-sitemap.xml:\n  ${listed.join('\n  ')}\n`
     + 'The sitemap is telling Google to crawl URLs that immediately redirect. Deploy the theme, then flush '
     + '(wp page-cache flush && wp cdn-cache flush): AIOSEO caches the sitemap.');
+});
+
+/* --- wp/ship.mjs / comments must not reach the wire ---------------------- */
+
+/* Measured cold on 2026-08-27, mobile 412x823 / Slow 4G / 4x CPU, against
+   the homepage on empv2: css/bridge.css is 443 KB on disk and 141 KB over
+   the wire, render-blocking, on EVERY converted page. 94% of its bytes are
+   the explanatory comments this repository writes on purpose. The same
+   rules with those comments removed are 4.6 KB gzipped.
+
+   The comments are not the problem: they are the reason the bridge is
+   maintainable, and they stay in the repository. What is wrong is that the
+   deploy is a plain rsync of the source, so documentation written for a
+   reader is paid for by every visitor. wp/ship.mjs stages a stripped copy
+   and the CSS passes of syncTheme() read from the stage.
+
+   Note what this can and cannot prove. That the stripped bytes render the
+   same page is a browser question, asserted below through the CSSOM rather
+   than by re-implementing a CSS parser here: a hand-rolled comment scanner
+   checked against a hand-rolled comment scanner proves only that the same
+   author made the same mistake twice. */
+
+test('stripCss drops a block comment and keeps the rule that followed it', async () => {
+  const { stripCss } = await import('./wp/ship.mjs');
+  const out = stripCss('/* why this exists */\n.a{color:red}\n');
+  assert.ok(!out.includes('why this exists'), `the comment survived: ${JSON.stringify(out)}`);
+  assert.ok(out.includes('.a{color:red}'), `the rule did not survive: ${JSON.stringify(out)}`);
+});
+
+/* The failure mode a naive /\/\*[\s\S]*?\*\// has, and the reason this is a
+   scanner and not a regex. `content` is the only property in CSS whose value
+   is arbitrary author text, and this build uses it (the orange rule motif,
+   the chevrons). A stray comment opener inside one would make the regex eat
+   everything up to the next real close, silently deleting whatever sat
+   between them. */
+test('stripCss leaves a comment opener alone when it sits inside a quoted value', async () => {
+  const { stripCss } = await import('./wp/ship.mjs');
+  const src = '.a::before{content:"/*"}\n.b{color:blue}\n';
+  const out = stripCss(src);
+  assert.ok(out.includes('content:"/*"'), `the quoted value was altered: ${JSON.stringify(out)}`);
+  assert.ok(out.includes('.b{color:blue}'), `the rule after the quoted opener was eaten: ${JSON.stringify(out)}`);
+});
+
+test('buildShipped stages every shipped stylesheet with no comment left in it', async () => {
+  const { buildShipped, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-'));
+  try {
+    buildShipped({ out });
+    let seen = 0;
+    for (const dir of SHIP_CSS_DIRS) {
+      for (const f of fs.readdirSync(path.join(out, dir)).filter((n) => n.endsWith('.css'))) {
+        const css = fs.readFileSync(path.join(out, dir, f), 'utf8');
+        assert.ok(!css.includes('/*'), `${dir}/${f} still ships a comment`);
+        seen += 1;
+      }
+    }
+    assert.ok(seen > 20, `expected the build's stylesheets, staged ${seen}`);
+    const bridge = fs.readFileSync(path.join(out, 'wp/empowerms-child/css/bridge.css'), 'utf8');
+    assert.ok(!bridge.includes('/*'), 'bridge.css still ships a comment');
+    assert.ok(bridge.length < 60_000,
+      `bridge.css staged at ${bridge.length} bytes; its rules are around 26 KB, so the comments are still in it`);
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+/* rsync -a compares size and mtime, and empower_asset_ver() keys ?ver= on the
+   SERVER's filemtime. A stage built with fresh mtimes therefore re-transfers
+   every stylesheet on every deploy and busts every visitor's cache each time,
+   whether or not a single byte of CSS changed. Carrying the source's mtime
+   across keeps both properties: unchanged CSS neither moves nor re-versions. */
+test('buildShipped gives each staged stylesheet its source file mtime', async () => {
+  const { buildShipped } = await import('./wp/ship.mjs');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-'));
+  try {
+    buildShipped({ out });
+    const src = fs.statSync('css/site.css').mtimeMs;
+    const staged = fs.statSync(path.join(out, 'css/site.css')).mtimeMs;
+    assert.equal(Math.round(staged), Math.round(src),
+      'the staged copy carries its own build time, so every deploy re-uploads and re-versions unchanged CSS');
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+/* The gate that makes the rest of this matter. stripCss can be perfect and
+   the install still receives the commented source, because the deploy is
+   what reaches it. Same shape as the bridge.css protection test above: read
+   the arguments syncTheme ITSELF issues, not a helper's, because the call
+   site is the thing that runs. */
+test('the css passes syncTheme issues read from the shipped stage, not the repository source', async () => {
+  const { SHIP_DIR, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const issued = [];
+  const dest = await syncTheme({
+    run: (cmd, args) => { issued.push(args); return Promise.resolve({ stdout: '', stderr: '' }); },
+    config: { host: 'host', key: 'key-unused', root: '/root' },
+  });
+
+  /* rsync's own argument order is the only reliable key here: the source is
+     the second-to-last argument and the destination the last. Matching on
+     "an argument ending in tokens/" instead finds pass one's own
+     `--exclude /tokens/` and reads that as the source. */
+  const sourceFor = (dir) => {
+    const pass = issued.find((args) => args.at(-1) === `host:${dest}/${dir}/`);
+    assert.ok(pass, `syncTheme issued no pass delivering ${dir}/ at all`);
+    return pass.at(-2);
+  };
+
+  for (const dir of SHIP_CSS_DIRS) {
+    assert.equal(sourceFor(dir), `${SHIP_DIR}/${dir}/`,
+      `${dir}/ is synced straight from the repository, so its comments still reach every visitor`);
+  }
+
+  /* The bridge pass shares its destination with the css/ pass, so it is found
+     by its source instead: it is the last thing syncTheme issues. */
+  assert.equal(issued.at(-1).at(-2), `${SHIP_DIR}/wp/empowerms-child/css/`,
+    'bridge.css is synced straight from the repository, and it is the largest render-blocking file on every page');
+
+  /* js/, assets/ and patterns/ are not CSS and are not staged: a stage that
+     quietly swallowed them would be a much larger change than this one. */
+  assert.equal(sourceFor('js'), 'js/',
+    'js/ is no longer synced from the repository root, so the stage has grown past CSS');
+});
+
+/* The correctness question, put to a real CSS parser rather than to a second
+   copy of the code under test. Chromium drops comments when it parses, so a
+   source stylesheet and its stripped copy must serialise to identical rule
+   text; any rule stripCss damaged shows up as a difference or as a rule the
+   browser refused to parse at all. */
+test('every shipped stylesheet parses to the same rules after stripping, read back through the CSSOM', async () => {
+  const { stripCss, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const sheets = [...SHIP_CSS_DIRS.flatMap((dir) => fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.css'))
+    .map((f) => path.join(dir, f))), 'wp/empowerms-child/css/bridge.css'];
+  assert.ok(sheets.length > 20, `expected the build's stylesheets, found ${sheets.length}`);
+
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    for (const sheet of sheets) {
+      const src = fs.readFileSync(sheet, 'utf8');
+      const [before, after] = await page.evaluate(([a, b]) => {
+        const serialise = (css) => {
+          const s = new CSSStyleSheet();
+          s.replaceSync(css);
+          return [...s.cssRules].map((r) => r.cssText).join('\n');
+        };
+        return [serialise(a), serialise(b)];
+      }, [src, stripCss(src)]);
+      assert.ok(before.length > 0, `${sheet} parsed to no rules at all, so this test is reading nothing`);
+      assert.equal(after, before, `${sheet} does not parse to the same rules after stripping`);
+    }
+  } finally {
+    await browser.close();
+  }
 });

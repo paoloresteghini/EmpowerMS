@@ -7126,7 +7126,7 @@ body .wpautoterms-footer a:focus-visible{
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
  * search.js:15), along with the assertion whose message carries the same
- * stale number (test-elementor.mjs:1487), so the reference and its target
+ * stale number (test-elementor.mjs:1500), so the reference and its target
  * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant

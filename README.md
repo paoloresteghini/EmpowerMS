@@ -720,6 +720,41 @@ Unset any of them and the next call fails immediately with a message naming
 the variable, the same way the `SPIKE_URL` guard above does, rather than
 reaching the install and failing as a permissions error.
 
+### What the install actually receives
+
+`syncTheme()` does not rsync the repository's stylesheets. It calls
+`buildShipped()` in `wp/ship.mjs` first, which stages a comment-stripped copy
+of `tokens/`, `components/`, `css/` and `wp/empowerms-child/css/` under
+`.ship/` (gitignored), and the three CSS passes plus the bridge pass read from
+there. Everything else — the theme's PHP, `js/`, `assets/`, `patterns/` — is
+still synced straight from the repository.
+
+The comments in these stylesheets are the reason the bridge is maintainable
+and they stay in the repository; what they stop doing is travelling. Measured
+cold on 2026-08-27 (mobile 412x823, Slow 4G, 4x CPU), `css/bridge.css` was
+443 KB on disk and 141 KB over the wire, render-blocking on every converted
+page, and 94% of those bytes were comments. Gzip cannot rescue prose. The
+homepage's render-blocking CSS went from 189 KB gzipped to 27 KB.
+
+Two consequences worth knowing before editing `wp/ship.mjs`:
+
+- `stripCss()` is a scanner, not a regex. `content` is the only property whose
+  value is arbitrary author text, and a comment opener inside one would make a
+  naive `/\*[\s\S]*?\*\//` eat everything up to the next real close.
+- Staged files carry their SOURCE file's mtime. `rsync -a` compares size and
+  mtime, and `empower_asset_ver()` keys `?ver=` on the server's `filemtime`,
+  so fresh mtimes would re-upload every stylesheet and bust every visitor's
+  CSS cache on every deploy. Both failures are silent; both have a test.
+- The consequence of that, found the first time this shipped: the version key
+  tracks how a stylesheet is AUTHORED, not how it is SHIPPED. Change
+  `stripCss()` and every URL stays identical, so Cloudflare keeps serving the
+  previous bytes under `cache-control: public, max-age=31536000` — for a year,
+  with no signal that anything is stale. The bare-URL check is not enough
+  either: the theme requests `?ver=<mtime>`, so a fetch has to carry the same
+  query the page does, and comparing it against a `&cb=` busted fetch is what
+  actually shows the difference. After any change to what ships rather than to
+  what is written, `touch` the shipped stylesheets once and re-sync.
+
 ## Mobile navigation
 
 Below 960px the desktop nav (`.em-header__nav`) hides and a mobile menu takes over: a

@@ -1095,3 +1095,80 @@ add_filter( 'script_loader_tag', function ( $tag, $handle, $src ) {
  * safe for as long as that stays true, so it is a test rather than a comment.
  */
 add_filter( 'elementor/frontend/print_google_fonts', '__return_false' );
+
+/**
+ * Drops plugin assets that a converted page provably has no use for.
+ *
+ * Today that is ProfilePress (the wp-user-avatar directory), which enqueues
+ * select2, flatpickr and its own frontend bundle site-wide: 60 KB across six
+ * requests, five of them render-blocking, measured cold on the deployed
+ * homepage on 2026-08-27. select2 is a searchable <select> and flatpickr is a
+ * date picker. No converted page has either. The only form-shaped pages in
+ * this build are Join Us, and those are Gravity Forms.
+ *
+ * SCOPED BY MEMBERSHIP OF empower_page_styles(), the register the reveal gate
+ * is already derived from, so "a page this project converted" has one
+ * definition rather than two. About thirty campaign pages on this install are
+ * still Beaver Builder and have not been looked at; stripping a plugin out
+ * from under them to save bytes on a page nobody measured would trade a known
+ * cost for an unknown breakage.
+ *
+ * NOT empower_style_key() ON ITS OWN, which is what this shipped as for one
+ * deploy on 2026-08-27. That key is the post slug for every singular request,
+ * so it is non-empty on the Beaver pages too: the guard read as "converted
+ * pages only" and behaved as "everything except tag archives, date archives
+ * and search". Three campaign pages had already lost the plugin before anyone
+ * looked, and the test that was supposed to prove the scope was asserting that
+ * the key appeared in this function rather than that an unconverted page kept
+ * its assets. Both halves are now tested, and the second one is the one that
+ * failed.
+ *
+ * MATCHED ON THE REGISTERED src, NOT ON HANDLE NAMES. ProfilePress's handles
+ * are not documented and are not visible from this repository, so a list of
+ * them here would be a guess that fails silently the day the plugin renames
+ * one, and it would fail by loading MORE than intended rather than less, which
+ * is the direction nobody checks. The directory in the URL is a fact about
+ * what reaches the browser.
+ *
+ * Dequeue and not deregister: a handle removed from the queue takes its own
+ * dependencies with it, because WordPress only resolves dependencies for
+ * queued items. Deregistering would additionally break anything outside this
+ * plugin that declared a dependency on it, which is a larger promise than this
+ * function needs to make.
+ */
+function empower_drop_unused_plugin_assets() {
+	if ( ! array_key_exists( empower_style_key(), empower_page_styles() ) ) {
+		return array();
+	}
+
+	$unused  = array( 'wp-user-avatar' );
+	$dropped = array();
+
+	foreach ( array( wp_scripts(), wp_styles() ) as $registry ) {
+		$is_script = $registry instanceof WP_Scripts;
+		foreach ( (array) $registry->queue as $handle ) {
+			if ( ! isset( $registry->registered[ $handle ] ) ) {
+				continue;
+			}
+			$src = (string) $registry->registered[ $handle ]->src;
+			foreach ( $unused as $dir ) {
+				if ( false === strpos( $src, '/plugins/' . $dir . '/' ) ) {
+					continue;
+				}
+				$dropped[] = $handle;
+				if ( $is_script ) {
+					wp_dequeue_script( $handle );
+				} else {
+					wp_dequeue_style( $handle );
+				}
+			}
+		}
+	}
+
+	return $dropped;
+}
+
+/* PHP_INT_MAX so every plugin has registered and enqueued before this runs.
+   At the default priority the queue is still being filled and the pass reads
+   a list that is not finished, which fails by dropping only some of them. */
+add_action( 'wp_enqueue_scripts', 'empower_drop_unused_plugin_assets', PHP_INT_MAX );

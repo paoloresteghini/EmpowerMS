@@ -7059,3 +7059,82 @@ test('the deployed page requests no font from Google', { concurrency: 1 }, async
   assert.deepEqual(hits, [],
     `the deployed page still reaches Google for fonts: ${hits.slice(0, 3).join(', ')}`);
 });
+
+/* --- wp-user-avatar / a form widget on pages with no form ---------------- */
+
+/* ProfilePress (the wp-user-avatar directory) enqueues select2, flatpickr and
+   its own frontend bundle on every page of this install. Measured cold on the
+   deployed homepage, 2026-08-27: 60 KB across six requests, FIVE of them
+   render-blocking, and the two libraries are a searchable <select> and a date
+   picker. The homepage has neither. Nor does any converted page: the only
+   form-shaped pages in this build are Join Us, and those are Gravity Forms.
+   It is the largest first-party cost left on the page after today's work.
+   
+   SCOPED TO CONVERTED PAGES, deliberately, via empower_style_key(). About
+   thirty campaign pages on this install are still Beaver Builder and have not
+   been looked at; dropping a plugin's assets out from under them to save
+   bytes on a page nobody measured would be trading a known cost for an
+   unknown breakage. Where the key is empty, nothing changes.
+   
+   DEQUEUED BY SRC RATHER THAN BY HANDLE. ProfilePress's handle names are not
+   documented and are not visible from this repository, so a hand-written list
+   of them would be a guess that fails silently the day the plugin renames
+   one. Matching the plugin's own directory in the registered src is a fact
+   about the URL that reaches the browser, which is the thing being removed. */
+
+test('the wp-user-avatar dequeue is scoped to converted pages, not the whole install', () => {
+  const fn = themeFile('functions.php');
+  const block = fn.match(/function empower_drop_unused_plugin_assets[\s\S]*?\n\}/);
+  assert.ok(block, 'empower_drop_unused_plugin_assets was not found in functions.php');
+  /* empower_style_key() ALONE IS NOT A SCOPE, and the first version of this
+     test accepted it as one. The key is the post slug for every singular
+     request, so it is non-empty on the roughly thirty Beaver campaign pages
+     too: a guard written on it reads as "converted pages only" and behaves as
+     "everything except tag archives, date archives and search". Membership of
+     empower_page_styles() is the register, and it is what the reveal gate is
+     already derived from, so "a page this project converted" keeps one
+     definition rather than gaining a second. */
+  assert.match(block[0], /empower_page_styles\(\)/,
+    'the dequeue consults no register, so it strips every page on the install including the unconverted Beaver ones');
+  assert.match(block[0], /wp-user-avatar/,
+    'the dequeue names no plugin directory, so it removes nothing');
+  assert.match(block[0], /->src/,
+    'the dequeue matches on handle names rather than on the registered src, which is a guess that fails silently when the plugin renames one');
+});
+
+test('a converted page loads no wp-user-avatar asset', { concurrency: 1 }, async () => {
+  const url = requireSpikeUrl();
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+  const hits = [...html.matchAll(/[^"']*plugins\/wp-user-avatar\/[^"']*/g)].map((m) => m[0].split('/').pop());
+  assert.deepEqual(hits, [],
+    `the page still loads ProfilePress assets it has no form for: ${hits.join(', ')}`);
+});
+
+/* The other half of that scope, asserted from the outside. A source test can
+   see that the register is consulted; only the install can say whether an
+   unconverted page kept what it was left alone with. This is the test that
+   was missing when the dequeue shipped scoped to nothing, and it is the one
+   that would have caught it: three Beaver pages had silently lost the plugin
+   before anyone looked. */
+test('an unconverted Beaver page keeps the plugin assets the converted pages drop', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    {
+      name: 'a page still built in Beaver Builder',
+      envVar: 'BEAVER_URL',
+      exampleUrl: 'https://empv2.wpenginepowered.com/2025-tax-calculator/',
+    },
+    t,
+  );
+  if (!url) return;
+
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+
+  assert.match(html, /fl-builder|fl-node-/,
+    `${url} carries no Beaver Builder markup, so it is not the unconverted page this test needs`);
+  assert.ok(html.includes('plugins/wp-user-avatar'),
+    'an unconverted page lost its ProfilePress assets: the dequeue is running site-wide, not on the register');
+});

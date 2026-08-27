@@ -765,19 +765,62 @@ add_filter( 'aioseo_robots_meta', function ( $meta ) {
  * author is set, and a fix listing today's two by name would quietly stop
  * covering them.
  *
- * FRONT PAGE ONLY, and that is a scope decision rather than an oversight. All
- * fifteen other converted pages carry the same wrong tag for the same reason.
- * Widening this is one predicate -- is_singular( 'page' ) here -- but it
- * changes the social metadata of pages Empower has signed off, so it is an
- * open question for them rather than a quiet extension. The blog posts, where
- * "article" is correct, must keep it either way; `the front page shares as a
- * website, and a blog post still shares as an article` asserts both sides.
+ * EVERY PAGE, NOT JUST THE FRONT ONE, on Paolo's 2026-08-27 call. This shipped
+ * scoped to is_front_page() first, with the wider fix left as a question for
+ * Empower, because it changes metadata on pages they signed off. The answer was
+ * to fix them: "article" is wrong on a page whoever built it, so the fifteen
+ * other converted pages, the unconverted Beaver campaign pages and the legacy
+ * pages are all corrected together. Scoping this to the converted register
+ * would have been arbitrary, and the gate checks an unconverted page from
+ * outside precisely so that a guard scoped to nothing cannot pass unnoticed.
+ *
+ * THREE PREDICATES, BECAUSE WORDPRESS ANSWERS DIFFERENTLY FOR THREE THINGS
+ * THAT ALL LOOK LIKE PAGES. is_singular( 'page' ) covers an ordinary page.
+ * /updates/ is the POSTS page, so is_home() answers for it and every singular
+ * check returns false -- without its own branch it would have kept the wrong
+ * tag while its fifteen neighbours were corrected, which is exactly the sort of
+ * near-miss a sweep derived from a hand-written list never finds. And
+ * is_front_page() is kept beside them rather than folded in: it is redundant
+ * while the front page is a static page, and it is the branch that keeps this
+ * correct if show_on_front is ever switched back to "posts".
+ *
+ * A BIO GETS "profile", WHICH IS THE OPEN GRAPH TYPE FOR A PERSON. The `person`
+ * entries are not dated pieces of writing, and article:published_time on one is
+ * a claim about when the person was published -- nonsense that a share card
+ * prints without hesitation. The type is part of the core Open Graph
+ * vocabulary, so a scraper that does not special-case it falls back to treating
+ * the page generically, which is where "website" would have left it anyway.
+ *
+ * THE POST TYPE DECIDES, and that deliberately splits the two Grant Callen
+ * URLs. /grant-callen/ is the converted team-bio TEMPLATE and is a `page`, so
+ * it is a website; /person/grant-callen/ is the CPT entry and is the bio, so it
+ * is a profile. Keying on what a page renders rather than on what it IS would
+ * need a second slug map, for one page that is slated for deletion at launch,
+ * and the signal already lands correctly without it: the template page's
+ * canonical points at the CPT bio (see empower_canonical_overrides above).
+ *
+ * LEFT ALONE, CHECKED RATHER THAN ASSUMED. Category and date archives emit no
+ * og:type at all, and the Open Graph specification defines an absent type as
+ * "website", so they are already right and adding a tag would be noise. Author
+ * archives already emit "profile" without any help from here. Blog posts keep
+ * "article", which is correct and is what a share card dates the piece from.
  */
+function empower_og_object_type() {
+	if ( is_singular( 'person' ) ) {
+		return 'profile';
+	}
+	if ( is_singular( 'page' ) || is_home() || is_front_page() ) {
+		return 'website';
+	}
+	return '';
+}
+
 add_filter( 'aioseo_facebook_tags', function ( $meta ) {
-	if ( ! is_front_page() ) {
+	$type = empower_og_object_type();
+	if ( ! $type ) {
 		return $meta;
 	}
-	$meta['og:type'] = 'website';
+	$meta['og:type'] = $type;
 	foreach ( array_keys( $meta ) as $key ) {
 		if ( 0 === strpos( $key, 'article:' ) ) {
 			unset( $meta[ $key ] );

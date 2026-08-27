@@ -6494,40 +6494,105 @@ test('every converted page offers exactly one share image, and it resolves', { c
    490 blog posts, where they are correct and are what a share card reads to
    date the piece. The post below is the excluded set, checked from outside.
 
-   STILL WRONG EVERYWHERE ELSE, deliberately not fixed here: /who-we-are/ and
-   the other fourteen converted pages emit og:type=article and a pair of
-   article:* timestamps too, for the same branch-4 reason. Widening this is
-   one predicate -- is_singular('page') in place of is_front_page() -- but it
-   changes the social metadata of fifteen pages Empower has signed off, so it
-   is an open loop in the vault rather than a quiet extension of a homepage
-   fix. */
-test('the front page shares as a website, and a blog post still shares as an article', { concurrency: 1 }, async () => {
+   NOW EVERY PAGE, NOT JUST THE FRONT ONE, on Paolo's 2026-08-27 call. The
+   fifteen other converted pages, the unconverted Beaver campaign pages and the
+   legacy pages all emitted og:type=article with a pair of article:* timestamps
+   for the same branch-4 reason, and it is wrong on all of them: a page is not
+   a dated piece of writing. The `person` bios get "profile" rather than
+   "website", which is the Open Graph type for a person and the honest answer
+   for a page that IS somebody.
+
+   THREE PREDICATES, NOT ONE, because WordPress answers differently for three
+   things that all look like pages: is_singular('page') for an ordinary page,
+   is_home() for /updates/ (the posts page, where every singular check returns
+   false), and is_singular('person') for a bio.
+
+   LEFT ALONE, and checked rather than assumed: category and date archives emit
+   NO og:type at all, and the Open Graph spec defines a missing type as
+   "website", so they are already right. Author archives already emit
+   "profile" without help from us. */
+test('every page shares as a website, a bio as a profile, and a blog post still as an article', { concurrency: 1 }, async () => {
   const origin = new URL(process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/').origin;
   const stamp = Date.now();
 
   /* Read off the delivered page, never off the option: the option that looks
      like it governs this is already set to the right value and governs
-     nothing. */
+     nothing at all on this install. */
   const read = async (path, key) => {
     const html = await fetchConverted(`${origin}${path}?empower_cb=ogt-${stamp}-${key}`);
     return {
+      path,
       type: (html.match(/<meta\s+property="og:type"\s+content="([^"]*)"/) ?? [, ''])[1],
       article: [...html.matchAll(/<meta\s+property="(article:[a-z_]+)"/g)].map((m) => m[1]).sort(),
     };
   };
 
-  const home = await read('/', 'home');
-  assert.equal(home.type, 'website',
-    `the front page shares as og:type="${home.type}". A homepage is not an article; every scraper that reads `
-    + 'this one files it as a dated piece of writing.');
-  assert.deepEqual(home.article, [],
-    `the front page still carries ${home.article.join(', ')} beside og:type="${home.type}". AIOSEO adds those `
-    + 'before aioseo_facebook_tags runs, so setting og:type alone leaves a page claiming to be a website and '
-    + 'dating itself like an article.');
+  /* DERIVED FROM THE REGISTER, not hand-written, for the reason this project
+     has already been bitten by twice: a sweep with a typed-out page list stops
+     covering the page somebody adds next and reports success while doing it. */
+  const registered = [...PAGE_REGISTER, ...EXCLUDED_PAGES]
+    .filter((p) => p.exampleUrl)
+    .map((p) => new URL(p.exampleUrl).pathname);
+  assert.ok(registered.length > 10, `only ${registered.length} pages carry an exampleUrl`);
 
+  /* /updates/ IS NOT is_singular('page'), and that is the trap in this fix.
+     It is the posts page, so WordPress answers is_home() for it and every
+     singular check returns false; it needs its own branch or it keeps the
+     wrong tag while its fifteen neighbours are corrected. */
+  const shouldBeWebsite = [...new Set([...registered, '/updates/'])];
+
+  const wrong = [];
+  for (const [i, path] of shouldBeWebsite.entries()) {
+    const r = await read(path, `w${i}`);
+    if (r.type !== 'website') wrong.push(`${path}: og:type="${r.type}", expected website`);
+    if (r.article.length) wrong.push(`${path}: still carries ${r.article.join(', ')}`);
+  }
+
+  /* A BIO IS A PERSON, NOT A DATED PIECE OF WRITING, and "profile" is the
+     Open Graph type for exactly that. article:published_time on a bio is a
+     statement about when the person was published, which is nonsense a share
+     card will happily print.
+
+     THE POST TYPE DECIDES, AND THAT SPLITS THE TWO GRANT CALLEN URLS. This
+     test asserted both were profiles and contradicted its own register sweep,
+     which was right to complain: /grant-callen/ is the converted team-bio
+     TEMPLATE and is a `page`, so it is a website; /person/grant-callen/ is the
+     CPT entry and is the bio, so it is a profile. Keying on what a page
+     renders rather than on what it is would need a second slug map for one
+     page that is slated for deletion at launch, and the profile signal already
+     lands in the right place without it: the template page's canonical points
+     at the CPT bio (see empower_canonical_overrides). */
+  const bio = await read('/person/grant-callen/', 'p0');
+  if (bio.type !== 'profile') wrong.push(`/person/grant-callen/: og:type="${bio.type}", expected profile`);
+  if (bio.article.length) wrong.push(`/person/grant-callen/: still carries ${bio.article.join(', ')}`);
+
+  /* A second bio, so this is a claim about the `person` CPT rather than about
+     one entry in it. */
+  const bio2 = await read('/person/kienna-horn/', 'p1');
+  if (bio2.type !== 'profile') wrong.push(`/person/kienna-horn/: og:type="${bio2.type}", expected profile`);
+
+  /* THE UNCONVERTED SIDE, and it is here on purpose. og:type="article" is
+     wrong on a Beaver campaign page for exactly the reason it is wrong on a
+     converted one, so scoping this to the converted register would have been
+     arbitrary. It is also the assertion that would have caught the
+     ProfilePress dequeue shipping scoped to nothing: a guard keyed on the
+     converted set behaves differently here, and only looking here shows it. */
+  const beaver = await read('/2025-tax-calculator/', 'b0');
+  if (beaver.type !== 'website') wrong.push(`an unconverted Beaver page shares as og:type="${beaver.type}"`);
+  if (beaver.article.length) wrong.push(`an unconverted Beaver page still carries ${beaver.article.join(', ')}`);
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} page(s) share as the wrong Open Graph type:\n${wrong.join('\n')}\n`
+    + 'empower_og_object_type() in the child theme decides this, and aioseo_facebook_tags applies it. '
+    + 'AIOSEO adds the article:* tags before that filter runs, so dropping them is part of the same fix.');
+
+  /* THE EXCLUDED SET, checked from outside. A filter that returned "website"
+     unconditionally, or stripped article:* everywhere, would satisfy every
+     assertion above while silently taking the correct tag off all 490 posts,
+     where it is what a share card dates the piece from. */
   const post = await read('/kyle-jackson-a-fathers-footsteps/', 'post');
   assert.equal(post.type, 'article',
-    `a blog post now shares as og:type="${post.type}". The fix has widened past the front page and taken the `
+    `a blog post now shares as og:type="${post.type}". The fix has widened past pages and bios and taken the `
     + 'correct tag off all 490 posts.');
   assert.ok(post.article.includes('article:published_time'),
     `a blog post has lost its article:* metadata (it carries ${post.article.join(', ') || 'none'}). Those tags `

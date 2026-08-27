@@ -731,6 +731,62 @@ add_filter( 'aioseo_robots_meta', function ( $meta ) {
 } );
 
 /**
+ * THE FRONT PAGE TOLD EVERY SCRAPER IT WAS AN ARTICLE.
+ *
+ * `og:type` shipped as "article" on the homepage, with article:published_time
+ * and article:modified_time beside it. The 2026-08-21 SEO audit filed this as
+ * "AIOSEO setting", and it is not one.
+ *
+ * THE SETTING THAT LOOKS LIKE IT GOVERNS THIS IS ALREADY CORRECT AND GOVERNS
+ * NOTHING. All in One SEO reads Social Networks > Facebook > Home Page >
+ * Object Type only when `show_on_front` is "posts". This install serves a
+ * static page as its front page (`show_on_front=page`), so that branch never
+ * runs. The option reads "website" today. Someone can open that screen,
+ * find it already right, close it, and have changed nothing at all.
+ *
+ * What actually decides the tag is the plugin's per-post-type default, which
+ * says "article" for every `page`. That is a dynamic option: invisible to
+ * every test in this repository, and revertible by anyone in wp-admin without
+ * noticing. Same argument as the Google Fonts filter above and the same
+ * decision: prefer the change a test can see.
+ *
+ * AIOSEO PUBLISHES NO FILTER FOR og:type. `aioseo_facebook_tags` is the only
+ * hook over this block and it receives the whole assembled array, which is
+ * why this reaches in by key rather than returning a value.
+ *
+ * THE article:* TAGS ARE THE OTHER HALF, and the half a narrower fix would
+ * have left behind. AIOSEO appends article:section, article:tag,
+ * article:published_time, article:modified_time, article:publisher and
+ * article:author whenever it has decided the type is "article", and it does
+ * that BEFORE this filter runs. Setting og:type on its own would ship a page
+ * that calls itself a website and still dates itself like an article. So the
+ * prefix is swept rather than the two tags that happen to be non-empty today:
+ * article:section and article:author appear the moment a category or an
+ * author is set, and a fix listing today's two by name would quietly stop
+ * covering them.
+ *
+ * FRONT PAGE ONLY, and that is a scope decision rather than an oversight. All
+ * fifteen other converted pages carry the same wrong tag for the same reason.
+ * Widening this is one predicate -- is_singular( 'page' ) here -- but it
+ * changes the social metadata of pages Empower has signed off, so it is an
+ * open question for them rather than a quiet extension. The blog posts, where
+ * "article" is correct, must keep it either way; `the front page shares as a
+ * website, and a blog post still shares as an article` asserts both sides.
+ */
+add_filter( 'aioseo_facebook_tags', function ( $meta ) {
+	if ( ! is_front_page() ) {
+		return $meta;
+	}
+	$meta['og:type'] = 'website';
+	foreach ( array_keys( $meta ) as $key ) {
+		if ( 0 === strpos( $key, 'article:' ) ) {
+			unset( $meta[ $key ] );
+		}
+	}
+	return $meta;
+} );
+
+/**
  * PAGES THAT NOW 301 SOMEWHERE ELSE, and must stop advertising themselves.
  *
  * Nine legacy pages were duplicates of converted ones: indexable, SELF-

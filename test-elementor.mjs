@@ -6455,6 +6455,85 @@ test('every converted page offers exactly one share image, and it resolves', { c
   assert.ok(bytes > 5000, `the share image is only ${bytes} bytes, which is not a 1200x630 card`);
 });
 
+/* --- what the front page claims to BE ------------------------------------
+   THE HOMEPAGE TELLS EVERY SCRAPER IT IS AN ARTICLE, and carries two
+   timestamps to prove it. The 2026-08-21 SEO audit recorded this as "og:type
+   is article on the HOME page; should be website. AIOSEO setting." It is not
+   a setting, and establishing that is the reason this comment is long.
+
+   All in One SEO 5.0.0.1 decides the tag in getObjectType(), and the order is
+   what matters:
+     1. is_home() AND show_on_front === 'posts'  ->  homePage->objectType
+     2. is_post_type_archive()                   ->  'website'
+     3. the post's own og_object_type meta, if it is not 'default'
+     4. the dynamic per-post-type option for this post type
+     5. 'article'
+   This install has show_on_front=page and page_on_front=20588, so branch 1
+   NEVER RUNS. Which means the setting a person would go looking for, in
+   Social Networks > Facebook > Home Page > Object Type, ALREADY READS
+   "website" and has no effect on anything. Someone can open that screen,
+   find it already correct, and leave believing the page is fixed. Branch 4
+   is what fires: aioseo_options_dynamic carries {"objectType":"article"} for
+   the `page` post type, so every page on the install claims to be an article.
+
+   THERE IS NO FILTER ON og:type. The only hook AIOSEO offers over this block
+   is aioseo_facebook_tags, which receives the assembled tag array.
+
+   AND THE TAG IS NOT THE WHOLE DEFECT. AIOSEO adds article:section,
+   article:tag, article:published_time, article:modified_time,
+   article:publisher and article:author whenever og:type is "article", and it
+   adds them BEFORE that filter runs. A fix that sets og:type and stops there
+   ships a front page that calls itself a website and still carries an
+   article's publication timestamps. Both halves are asserted below: the
+   og:type line on its own is a mechanism assertion wearing a property's
+   clothes.
+
+   TWO-SIDED, and that is the half this project has already shipped without
+   once. A filter that stripped article:* unconditionally would satisfy every
+   assertion about the front page while silently stripping the tags off all
+   490 blog posts, where they are correct and are what a share card reads to
+   date the piece. The post below is the excluded set, checked from outside.
+
+   STILL WRONG EVERYWHERE ELSE, deliberately not fixed here: /who-we-are/ and
+   the other fourteen converted pages emit og:type=article and a pair of
+   article:* timestamps too, for the same branch-4 reason. Widening this is
+   one predicate -- is_singular('page') in place of is_front_page() -- but it
+   changes the social metadata of fifteen pages Empower has signed off, so it
+   is an open loop in the vault rather than a quiet extension of a homepage
+   fix. */
+test('the front page shares as a website, and a blog post still shares as an article', { concurrency: 1 }, async () => {
+  const origin = new URL(process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/').origin;
+  const stamp = Date.now();
+
+  /* Read off the delivered page, never off the option: the option that looks
+     like it governs this is already set to the right value and governs
+     nothing. */
+  const read = async (path, key) => {
+    const html = await fetchConverted(`${origin}${path}?empower_cb=ogt-${stamp}-${key}`);
+    return {
+      type: (html.match(/<meta\s+property="og:type"\s+content="([^"]*)"/) ?? [, ''])[1],
+      article: [...html.matchAll(/<meta\s+property="(article:[a-z_]+)"/g)].map((m) => m[1]).sort(),
+    };
+  };
+
+  const home = await read('/', 'home');
+  assert.equal(home.type, 'website',
+    `the front page shares as og:type="${home.type}". A homepage is not an article; every scraper that reads `
+    + 'this one files it as a dated piece of writing.');
+  assert.deepEqual(home.article, [],
+    `the front page still carries ${home.article.join(', ')} beside og:type="${home.type}". AIOSEO adds those `
+    + 'before aioseo_facebook_tags runs, so setting og:type alone leaves a page claiming to be a website and '
+    + 'dating itself like an article.');
+
+  const post = await read('/kyle-jackson-a-fathers-footsteps/', 'post');
+  assert.equal(post.type, 'article',
+    `a blog post now shares as og:type="${post.type}". The fix has widened past the front page and taken the `
+    + 'correct tag off all 490 posts.');
+  assert.ok(post.article.includes('article:published_time'),
+    `a blog post has lost its article:* metadata (it carries ${post.article.join(', ') || 'none'}). Those tags `
+    + 'are correct on a post and are what a share card dates the piece from.');
+});
+
 /* --- shortening 490 auto-generated descriptions -------------------------
    EVERY BLOG POST DESCRIBES ITSELF IN 291 TO 374 CHARACTERS, against the
    roughly 160 Google shows. There are 490 of them and they were never

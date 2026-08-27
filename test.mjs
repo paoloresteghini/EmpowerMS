@@ -4258,6 +4258,16 @@ test('the archive head titles a category by its term and the posts page by its o
 
   assert.match(body, /is_home\(\)/,
     'the title shortcode has no posts-page branch, so /updates/ renders an empty heading');
+  /* AND AUTHOR ARCHIVES, which name themselves a third way: not a term, not a
+     page title, but the queried user's display_name. Read off the queried
+     object rather than get_the_author(), which depends on the loop having
+     started and is empty in a head rendered above it. 261 of the 490 posts sit
+     under the `empowerms` account, whose display_name is "Empower Mississippi",
+     so this is a real byline rather than a login leaking onto the page. */
+  assert.match(body, /is_author\(\)/,
+    'the title shortcode has no author branch, so /author/<name>/ renders an empty heading');
+  assert.match(body, /display_name/,
+    'the author branch does not read display_name, so the heading shows a login slug rather than a name');
   assert.match(body, /single_post_title|get_the_title\(\s*(?:\(int\)\s*)?get_option\( 'page_for_posts'/,
     'the posts-page branch does not read the page_for_posts title, so the heading is invented rather '
     + 'than taken from the page Empower named');
@@ -4267,8 +4277,28 @@ test('the archive head titles a category by its term and the posts page by its o
   /* The count shortcode has to follow, or /updates/ shows a heading with no
      count while every category archive shows one. */
   const cnt = php.slice(php.indexOf('function empower_archive_count_shortcode'));
-  assert.match(cnt.slice(0, cnt.indexOf('\n}')), /is_home\(\)/,
+  const cntBody = cnt.slice(0, cnt.indexOf('\n}'));
+  assert.match(cntBody, /is_home\(\)/,
     'the count shortcode still refuses anything that is not a category, so /updates/ shows no count');
+  assert.match(cntBody, /is_author\(\)/,
+    'the count shortcode refuses author archives, so they show a heading with no count while every '
+    + 'other archive shows one');
+});
+
+/* THE FALLBACK'S HEADING PRINTED ITS OWN MARKUP. get_the_archive_title() returns
+   HTML -- on a date archive, `Month: <span>May 2025</span>` -- and archive.php
+   passed it straight to esc_html(), so /2025/05/ rendered the tags as visible
+   text. Seen on the live install, not deduced. Now that categories, the posts
+   page and author archives all have an Elementor template, this fallback serves
+   only tag and date archives, which makes it MORE important that it reads
+   properly rather than less: it is the only thing a visitor there ever sees. */
+test('archive.php\'s fallback heading strips the markup WordPress puts in it', () => {
+  const php = readFileSync('wp/empowerms-child/archive.php', 'utf8');
+  const title = php.match(/esc_html\([^;]*get_the_archive_title\(\)[^;]*\)/);
+  assert.ok(title, 'the fallback no longer escapes its archive title at all');
+  assert.match(title[0], /wp_strip_all_tags/,
+    'the fallback escapes get_the_archive_title() without stripping it first, so a date archive '
+    + 'renders "Month: &lt;span&gt;May 2025&lt;/span&gt;" as visible text');
 });
 
 /* THE POSTS PAGE CANONICALS TO /all-content/, for the reason the three topic
@@ -4295,10 +4325,24 @@ test('the posts page credits /all-content/ rather than competing with it', () =>
 test('empower_style_key answers the posts page as well as category archives', () => {
   const php = readFileSync('wp/empowerms-child/functions.php', 'utf8');
   const fn = php.slice(php.indexOf('function empower_style_key()'));
-  const body = fn.slice(0, fn.indexOf('\n}'));
-  assert.match(body, /is_category\(\) \|\| is_home\(\)|is_home\(\) \|\| is_category\(\)/,
-    'the archive branch still answers only category archives, so /updates/ loads neither '
-    + 'content-a.css nor archive.css and its cards render unstyled');
+  /* COMMENTS STRIPPED FIRST. The negative assertion below asks whether the CODE
+     uses is_archive(), and the comment beside it explains at length why it must
+     not -- so an unstripped read fails on the prose that documents the rule.
+     Caught by this test going red against a correct implementation. */
+  const body = fn.slice(0, fn.indexOf('\n}'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  for (const cond of ['is_category()', 'is_home()', 'is_author()']) {
+    assert.ok(body.includes(cond),
+      `the archive branch does not answer ${cond}, so that archive loads neither content-a.css nor `
+      + 'archive.css and its cards render unstyled');
+  }
+  /* Still NOT is_archive(). Date and tag archives are not converted and keep
+     archive.php's plain fallback; keying them 'archive' would hand them a
+     stylesheet for markup that has none of its classes. */
+  assert.ok(!/is_archive\(\)/.test(body),
+    'the archive branch uses is_archive(), which also catches the date and tag archives that are '
+    + 'deliberately left on the plain fallback');
 });
 
 test('the topic filter hides the card and its grid cell, for the same set of topics', () => {

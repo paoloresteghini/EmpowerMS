@@ -51,6 +51,15 @@ function empower_archive_title_shortcode() {
 		$title = single_post_title( '', false );
 	} elseif ( is_category() ) {
 		$title = single_term_title( '', false );
+	} elseif ( is_author() ) {
+		/* THE QUERIED OBJECT, NOT get_the_author(). That function reads the
+		   author of the CURRENT POST IN THE LOOP, and this head renders above
+		   the loop, where it is empty. display_name and not the nicename: 261
+		   of the 490 posts sit under the `empowerms` account, whose
+		   display_name is "Empower Mississippi", so this is a real byline
+		   rather than a login slug on the page. */
+		$author = get_queried_object();
+		$title  = ( $author instanceof WP_User ) ? $author->display_name : '';
 	} else {
 		return '';
 	}
@@ -74,7 +83,7 @@ add_shortcode( 'empower_archive_title', 'empower_archive_title_shortcode' );
 function empower_archive_count_shortcode() {
 	/* Same two pages as the title above. Anything else that reaches this is a
 	   misconfiguration and should show as an absence rather than a wrong number. */
-	if ( ! is_category() && ! is_home() ) {
+	if ( ! is_category() && ! is_home() && ! is_author() ) {
 		return '';
 	}
 

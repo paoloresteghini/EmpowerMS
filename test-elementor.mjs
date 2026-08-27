@@ -2092,8 +2092,9 @@ test('the category archive condition parses flat, into archive + category', asyn
      archives AND the posts page (/updates/, titled "News", WordPress's own
      page_for_posts). One template rather than two, because the two pages differ
      only in what the head says. */
-  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 2,
-    `expected two conditions (category archives and the posts page), got ${CATEGORY_ARCHIVE_CONDITIONS.length}`);
+  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 3,
+    'expected three conditions (category archives, the posts page, author archives), got '
+    + CATEGORY_ARCHIVE_CONDITIONS.length);
 
   const parseCondition = (condition) => {
     const [type, name, subName, subId] = [...condition.split('/'), '', '', ''].slice(0, 4);
@@ -2114,6 +2115,17 @@ test('the category archive condition parses flat, into archive + category', asyn
     `the posts-page condition's second level is "${posts.subName}"; it must be the Post_Type_Archive `
     + "condition's own name, which is the post type plus '_archive'");
   assert.equal(posts.subId, '', 'the posts-page condition carries a sub_id, which pins it to one object');
+
+  /* AUTHOR ARCHIVES, added 2026-08-27, and the shallowest of the three: `author`
+     is a sub-condition of Archive itself (Archive's own $sub_conditions array is
+     ['author','date','search']), so it needs no intermediate. Its check is
+     is_author(). A sub_id would pin the template to ONE author, and there are
+     21 with published posts. */
+  const author = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[2]);
+  assert.equal(author.type, 'include');
+  assert.equal(author.name, 'archive', `the author condition's first level is "${author.name}"`);
+  assert.equal(author.subName, 'author', `the author condition's second level is "${author.subName}"`);
+  assert.equal(author.subId, '', 'the author condition carries a sub_id, so it serves one author only');
 
   assert.equal(parsed.type, 'include');
   assert.equal(parsed.name, 'archive',

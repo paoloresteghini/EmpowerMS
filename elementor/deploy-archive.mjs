@@ -28,15 +28,16 @@
  *      docs/elementor/theme-part-mechanism.md records the hour that cost.
  *   4. drafts the two Beaver layouts this template replaces: 11276 "Posts
  *      Category Archive" and, since 2026-08-27, 11248 "Posts Archive".
- *      11322 "Post Author Archive" is deliberately left alone -- author
- *      archives are not converted, and empower_style_key()'s branch is
- *      `is_category() || is_home()` rather than is_archive() for that reason.
+ *      and 11322 "Post Author Archive" (2026-08-27). What is NOT drafted is
+ *      anything serving tag or date archives: those keep archive.php's plain
+ *      fallback, which is why empower_style_key()'s branch is
+ *      `is_category() || is_home() || is_author()` and not is_archive().
  *   5. flushes Elementor's CSS cache and the page cache. A deploy that does
  *      not flush fails as a subset of itself.
  *
  * TO REVERSE THE WHOLE THING:
  *
- *   wp post update 11276 11248 --post_status=publish  # Beaver takes them back
+ *   wp post update 11276 11248 11322 --post_status=publish  # Beaver takes them back
  *   wp post update <ARCHIVE_POST_ID> --post_status=draft
  *   wp elementor flush_css && wp cache flush && wp page-cache flush
  */
@@ -55,6 +56,7 @@ import { pathToFileURL } from 'node:url';
 const BEAVER_LAYOUTS = [
   { id: 11276, title: 'Posts Category Archive' },
   { id: 11248, title: 'Posts Archive' },
+  { id: 11322, title: 'Post Author Archive' },
 ];
 
 const CREATE_COMMAND =

@@ -472,12 +472,11 @@ function empower_style_key() {
 		   classes nor the reveal attributes to use them. */
 		/* `is_category() || is_home()` and still not `is_archive()`. is_home() is
 		   the posts page (/updates/), which joined this template on 2026-08-27.
-		   is_archive() would also be true on tag, author and date archives,
-		   which are NOT converted and are meant to keep archive.php's plain
-		   fallback; keying them 'archive' would hand them css/archive.css and
+		   is_archive() would also be true on tag and date archives, which are
+		   NOT converted and are meant to keep archive.php's plain fallback; keying them 'archive' would hand them css/archive.css and
 		   motion.css for markup that has neither the classes nor the reveal
 		   attributes to use them. */
-		if ( is_category() || is_home() ) {
+		if ( is_category() || is_home() || is_author() ) {
 			return 'archive';
 		}
 

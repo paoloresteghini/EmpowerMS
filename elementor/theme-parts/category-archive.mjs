@@ -71,9 +71,19 @@ export const CATEGORY_ARCHIVE_POST_ID = 20644;
  * posts page by its own page title, and inc/archive.php's title shortcode
  * answers both. Two templates differing in one string is two things to keep in
  * step, and this build has paid that bill more than once already. */
+/* AUTHOR ARCHIVES joined on 2026-08-27, and they are the shallowest of the
+ * three: `author` is a sub-condition of Archive itself -- Archive's own
+ * $sub_conditions array is ['author','date','search'] -- so it needs no
+ * intermediate the way the posts page needs `post_archive`. Its check is
+ * is_author(). No sub_id: 21 authors have published posts.
+ *
+ * `date` is in that same array and is deliberately NOT claimed. Date archives
+ * keep archive.php's plain fallback, which is what empower_style_key()'s
+ * `is_category() || is_home() || is_author()` says in the other direction. */
 export const CATEGORY_ARCHIVE_CONDITIONS = [
   'include/archive/category',
   'include/archive/post_archive',
+  'include/archive/author',
 ];
 
 /* HOW MANY POSTS PER PAGE, and why a number rather than the site default.

@@ -6993,3 +6993,69 @@ test('a nav script that never arrives leaves the mobile panel open, and the gate
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+/* --- Elementor's Google Fonts / a family this build never uses ------------ */
+
+/* Measured on the deployed homepage, 2026-08-27: every page requests
+   fonts.googleapis.com/css?family=Inter with eighteen weights and styles. It
+   is render-blocking and it opens two cross-origin connections
+   (fonts.googleapis.com, then fonts.gstatic.com for the files it names).
+
+   Nothing in this build asks for it. The design self-hosts Figtree and
+   Source Sans 3 from tokens/fonts.css; Inter comes from Elementor's own kit,
+   seeded there by UiCore before it was switched off (see the UiCore notes:
+   what it wrote into the kit outlives the plugin). So this is a request for a
+   typeface no visitor will ever see, on the critical path of every page. */
+
+test('no shipped stylesheet declares a font this build does not self-host', async () => {
+  const { stripCss, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const hosted = new Set(
+    [...fs.readFileSync('tokens/fonts.css', 'utf8').matchAll(/font-family:\s*'([^']+)'/g)].map((m) => m[1]),
+  );
+  assert.ok(hosted.size > 0, 'tokens/fonts.css declared no @font-face family, so this test is reading nothing');
+
+  /* Comments stripped FIRST, and that is the point of doing it here rather
+     than grepping the file. Inter's only appearance in this repository is
+     inside a css/bridge.css comment documenting what Elementor's kit does,
+     and a negative source assertion that matched it would report a font as
+     used when nothing uses it. The same trap turned a style-key gate red
+     against correct code on 2026-08-27. */
+  /* The CSS-wide keywords belong here with the generic families: `revert` is
+     a value, not a typeface, and this list not knowing that was the first
+     thing this test reported. */
+  const generic = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer',
+    'sans-serif', 'serif', 'monospace', 'system-ui',
+    'ui-sans-serif', 'ui-serif', 'ui-monospace', 'cursive', 'fantasy', '-apple-system', 'BlinkMacSystemFont']);
+  const sheets = [...SHIP_CSS_DIRS.flatMap((dir) => fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.css')).map((f) => path.join(dir, f))), 'wp/empowerms-child/css/bridge.css'];
+
+  const named = new Map();
+  for (const sheet of sheets) {
+    const css = stripCss(fs.readFileSync(sheet, 'utf8'));
+    for (const m of css.matchAll(/font-family:\s*([^;}]+)/g)) {
+      for (const raw of m[1].split(',')) {
+        const family = raw.trim().replace(/^["']|["']$/g, '');
+        if (!family || family.startsWith('var(') || generic.has(family)) continue;
+        if (!hosted.has(family)) named.set(family, sheet);
+      }
+    }
+  }
+  assert.deepEqual([...named.keys()].sort(), [],
+    `these families are named by a shipped stylesheet but not self-hosted in tokens/fonts.css: ${[...named].map(([f, s]) => `${f} (${s})`).join(', ')}`);
+});
+
+test('the theme stops Elementor printing Google Fonts', () => {
+  const fn = themeFile('functions.php');
+  assert.match(fn, /add_filter\(\s*'elementor\/frontend\/print_google_fonts'\s*,\s*'__return_false'\s*\)/,
+    'Elementor still prints its kit\'s Google Fonts, so every page opens two cross-origin connections for a typeface nothing uses');
+});
+
+test('the deployed page requests no font from Google', { concurrency: 1 }, async () => {
+  const url = requireSpikeUrl();
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+  const hits = [...html.matchAll(/fonts\.(?:googleapis|gstatic)\.com[^"')\s]*/g)].map((m) => m[0]);
+  assert.deepEqual(hits, [],
+    `the deployed page still reaches Google for fonts: ${hits.slice(0, 3).join(', ')}`);
+});

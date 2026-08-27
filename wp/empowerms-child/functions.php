@@ -1065,3 +1065,33 @@ add_filter( 'script_loader_tag', function ( $tag, $handle, $src ) {
 	}
 	return preg_replace( '/<script /', '<script type="module" ', $tag, 1 );
 }, 10, 3 );
+
+/**
+ * Elementor's kit asks Google for Inter, and nothing in this build uses it.
+ *
+ * Measured on the deployed homepage, 2026-08-27: every page requested
+ * fonts.googleapis.com/css?family=Inter with eighteen weights and styles,
+ * render-blocking, which then opens a second cross-origin connection to
+ * fonts.gstatic.com for whichever files it names. The stylesheet itself is
+ * only ~1.5 KB; the cost is the two connections sitting on the critical path
+ * of every page, for a typeface no visitor will ever see.
+ *
+ * The design self-hosts Figtree and Source Sans 3 from tokens/fonts.css, both
+ * with font-display:swap, and reaches for nothing else. Inter comes from
+ * Elementor's own kit, seeded there by UiCore before it was switched off:
+ * what UiCore wrote into the kit outlives the plugin, which is the same class
+ * of leftover as the kit's container widths.
+ *
+ * FILTERED RATHER THAN UNSET IN THE KIT, deliberately. Clearing the family in
+ * Elementor's own settings is a change to install data that no test in this
+ * repository can see and that the next person to open the kit editor can undo
+ * without noticing. A filter is in source, ships with the theme, is reverted
+ * by deleting it, and is asserted by two tests: one that this filter exists,
+ * and one that fetches the deployed page and finds no Google font URL in it.
+ *
+ * The guard on the other side is 'no shipped stylesheet declares a font this
+ * build does not self-host', which fails the moment any stylesheet names a
+ * family tokens/fonts.css does not provide. Turning Google Fonts off is only
+ * safe for as long as that stays true, so it is a test rather than a comment.
+ */
+add_filter( 'elementor/frontend/print_google_fonts', '__return_false' );

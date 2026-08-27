@@ -48,7 +48,14 @@ const HARVEST_PHP = [
   '$out = array();',
   'foreach ($q->posts as $id) {',
   '  $body = wp_strip_all_tags( strip_shortcodes( get_post_field("post_content", $id) ) );',
-  '  $body = html_entity_decode( preg_replace("/\\s+/u", " ", $body), ENT_QUOTES );',
+  /* DECODE FIRST, THEN COLLAPSE, and the other order is a real bug this had.
+     Collapsing whitespace before decoding leaves every &nbsp; untouched,
+     because at that point it is still six ordinary characters; decoding then
+     turns it into U+00A0, which is whitespace that the collapse has already
+     been and gone past. It surfaced as a proposal reading "greatly
+     exaggerated" followed by three spaces, where a pull-quote had been glued
+     onto the body text. */
+  '  $body = preg_replace("/\\s+/u", " ", html_entity_decode( $body, ENT_QUOTES ) );',
   '  $out[] = array(',
   '    "id" => (int) $id,',
   '    "url" => get_permalink($id),',
@@ -189,8 +196,20 @@ export async function buildProposal({ concurrency = 4, tolerance = 0.02 } = {}) 
   const rows = posts.map((p, i) => {
     let { description, tier } = shorten(p);
     let body;
+    let replaced;
 
-    if (tier === 'manual' && written[String(p.id)]) {
+    /* THE OVERLAY WINS WHEREVER IT NAMES A POST, and that is wider than it
+       first was. It began covering only the `manual` rows, which propose
+       nothing; it now also covers `clause`, because a clause cut is
+       grammatical rather than meaningful. The worked example: a post headlined
+       "Charter Schools Outperform Districts on 3rd Grade Reading" was cut at
+       the comma, which landed immediately BEFORE the result the headline
+       promises. Accurate, in band, and useless.
+       `replaced` keeps what the shortener had made of the row, so the gate
+       below can assert the overlay never overrides a cut that already read as
+       a finished sentence. */
+    if (written[String(p.id)]) {
+      replaced = tier;
       description = written[String(p.id)];
       tier = 'written';
       body = p.body;
@@ -228,7 +247,7 @@ export async function buildProposal({ concurrency = 4, tolerance = 0.02 } = {}) 
          against "written, and there was nothing to write from" -- and the test
          over this file needs to tell them apart rather than treating a
          checkable row as missing. */
-      ...(tier === 'written' ? { body: body ?? '' } : {}),
+      ...(tier === 'written' ? { body: body ?? '', replaced } : {}),
     };
   });
 

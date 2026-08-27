@@ -6708,6 +6708,14 @@ test('the committed post-description proposal is internally consistent', () => {
        17179 is one short line and serves 59. For those a written description
        is an addition, and demanding it be shorter than nothing is demanding it
        not exist. */
+    /* A run of spaces, or a non-breaking one, means the body text was
+       assembled wrong rather than that the copy is odd. The live example was a
+       pull-quote glued onto the article with a &nbsp; between them, which
+       survived the harvester's whitespace collapse because the collapse ran
+       BEFORE entity decoding and so never saw it as whitespace at all. */
+    if (/\u00A0|\s\s/.test(r.description)) {
+      wrong.push(`${r.id}: the proposal carries a non-breaking or doubled space, so the body text was assembled wrong`);
+    }
     if (r.description.length > 160) wrong.push(`${r.id}: ${r.description.length} characters, over the 160 Google shows`);
     if (r.before > 160 && r.description.length >= r.before) {
       wrong.push(`${r.id}: proposal is not shorter than the ${r.before} characters live today`);
@@ -6779,6 +6787,16 @@ test('the hand-written overlay covers exactly the posts the shortener cannot do'
     'the proposal has written rows the overlay does not name');
   assert.equal(rows.filter((r) => r.tier === 'manual').length, 0,
     'some posts still propose nothing at all; every one of them needs a line in the overlay');
+  assert.equal(rows.filter((r) => r.tier === 'clause').length, 0,
+    'some posts are still mechanical clause cuts, which end mid-sentence; every one needs a line in the overlay');
+
+  /* THE OVERLAY MUST ONLY OVERRIDE CUTS THAT DID NOT READ AS FINISHED. A
+     written description replacing a clean sentence-boundary cut would be
+     hand-written copy quietly displacing the post's own words, which is the
+     one thing the mechanical tier exists to avoid. */
+  const overreach = rows.filter((r) => r.tier === 'written' && !['manual', 'clause'].includes(r.replaced));
+  assert.deepEqual(overreach.map((r) => `${r.id} replaced ${r.replaced}`), [],
+    'the overlay overrides rows the shortener had already handled cleanly');
 });
 
 /* NOTHING MAY BE WRITTEN TO THE INSTALL WITHOUT AN APPROVAL RECORD. This is

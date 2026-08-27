@@ -6455,6 +6455,238 @@ test('every converted page offers exactly one share image, and it resolves', { c
   assert.ok(bytes > 5000, `the share image is only ${bytes} bytes, which is not a 1200x630 card`);
 });
 
+/* --- shortening 490 auto-generated descriptions -------------------------
+   EVERY BLOG POST DESCRIBES ITSELF IN 291 TO 374 CHARACTERS, against the
+   roughly 160 Google shows. There are 490 of them and they were never
+   written: All in One SEO generates them at request time from post_content,
+   which is why the first sentence of the article IS the description, cut
+   wherever the character limit lands.
+
+   NOTHING IS STORED, and that took a wrong reading to establish. Read through
+   AIOSEO's own model, 473 of the 490 have an empty description and the other
+   17 hold thirteen characters or fewer; read off the delivered page, every
+   one of them carries 291 to 374. The generated value is never persisted.
+   Two consequences, both good: a write here cannot overwrite anything a
+   person typed, and the rollback record is the empty set. Two documents,
+   storage and output, and only one of them was what the audit measured.
+
+   79 OF THEM OPEN BY REPEATING THEIR OWN TITLE, because the article body
+   begins with the headline as a heading. Those descriptions spend their first
+   40 to 60 characters restating the line printed directly above them in the
+   search result. stripTitleEcho() is what removes that, and it is the single
+   largest improvement in the set.
+
+   THE ONE RULE THIS MUST NOT BREAK is Empower's: nothing invented. So
+   shorten() never composes a sentence. Every string it proposes is a literal
+   prefix of the post's own copy, cut at a boundary, and `describes` asserts
+   exactly that over every fixture below. A generator that paraphrased would
+   read better and would be the wrong tool for copy somebody else owns.
+
+   THREE TIERS, AND THE TIER IS PART OF THE PROPOSAL. `sentence` ends on a
+   full stop and needs a glance; `clause` is cut at a comma or a dash and
+   reads as unfinished, so it needs a reader; `manual` proposes nothing at all
+   because the post's opening sentence is longer than the whole budget and any
+   mechanical cut would land mid-thought. Labelling them is what lets the
+   review be proportionate instead of uniform. Measured over the corpus on
+   2026-08-27: 281 sentence, 72 clause, 137 manual. */
+test('splitSentences does not mistake an abbreviated title for the end of a sentence', async () => {
+  const { splitSentences } = await import('./elementor/post-seo.mjs');
+
+  /* The real failure, from the corpus: "On this episode of the Empower
+     Podcast, State Rep. Otis Anthony joins Grant..." was cut after "State
+     Rep." and proposed as a 50-character description. Mississippi politics
+     supplies Rep., Sen., Gov. and Lt. in quantity, so this is not an edge
+     case here, it is most of the corpus. */
+  assert.deepEqual(
+    splitSentences('On this episode, State Rep. Otis Anthony joins Grant. It ran long.'),
+    ['On this episode, State Rep. Otis Anthony joins Grant.', 'It ran long.'],
+  );
+  assert.deepEqual(
+    splitSentences('Dr. Clay Routledge joins us. Gov. Reeves did not.'),
+    ['Dr. Clay Routledge joins us.', 'Gov. Reeves did not.'],
+  );
+  /* A single initial, which is the other way a full stop appears mid-name. */
+  assert.deepEqual(splitSentences('J. Robertson wrote it. Twice.'), ['J. Robertson wrote it.', 'Twice.']);
+  /* And the abbreviation must not swallow a genuine sentence end when the
+     abbreviation is the last word before it. */
+  assert.deepEqual(splitSentences('He is a state rep. Nobody disputes that.'), ['He is a state rep.', 'Nobody disputes that.']);
+});
+
+test('stripTitleEcho removes a headline the body repeats, and leaves prose that merely starts the same way', async () => {
+  const { stripTitleEcho } = await import('./elementor/post-seo.mjs');
+
+  assert.equal(
+    stripTitleEcho('Sen. Jeremy England: Neighbors Before Opponents Politics works best when we remember.', 'Sen. Jeremy England: Neighbors Before Opponents'),
+    'Politics works best when we remember.',
+  );
+  /* The echo is not always verbatim: the post title carries a year the body
+     omits. Matching on a contiguous run of the title's words rather than on
+     the whole title is what covers this, and it is why the corpus figure went
+     from 79 exact echoes to a larger set. */
+  assert.equal(
+    stripTitleEcho('Capitol Chat: Sine Die Lawmakers returned to Jackson.', '2026 Capitol Chat: Sine Die'),
+    'Lawmakers returned to Jackson.',
+  );
+  /* THE EXCLUDED CASE, and the one that makes this safe to run over 490 posts
+     unattended. A body whose opening genuinely IS the article, sharing a word
+     or two with the title, must come back untouched: eating the first clause
+     of a real sentence would be silent and would ship. */
+  const prose = 'Mississippi lawmakers passed the bill on Tuesday after a long debate.';
+  assert.equal(stripTitleEcho(prose, 'Mississippi passes school choice'), prose);
+  assert.equal(stripTitleEcho(prose, 'A completely unrelated headline'), prose);
+});
+
+test('shorten proposes only the post\'s own words, never more than 160 characters, and says which rule it used', async () => {
+  const { shorten, MAX } = await import('./elementor/post-seo.mjs');
+
+  const cases = [
+    {
+      why: 'two whole sentences fit',
+      post_title: 'Neighbors Before Opponents',
+      body: 'Politics works best when we remember we are neighbors before we are opponents. But in an age of polarization, is that still possible? In this episode Grant sits down with the senator.',
+      tier: 'sentence',
+    },
+    {
+      why: 'the opening sentence is too long, but breaks at a comma inside the budget',
+      post_title: 'Charter Schools Outperform Districts',
+      body: 'The Mississippi Department of Education has released results of the initial administration of the 2026 third-grade reading assessment, and five of the six Mississippi charter schools outperformed their districts.',
+      tier: 'clause',
+    },
+    {
+      why: 'one long sentence with no boundary anywhere inside the budget',
+      post_title: 'A Flagship of Hope',
+      body: 'When Tony Yarber talks about the future of Midtown Public Charter he does not just talk about students passing tests or earning the grades that a state accountability model happens to reward in any given year.',
+      tier: 'manual',
+    },
+  ];
+
+  for (const c of cases) {
+    const r = shorten(c);
+    assert.equal(r.tier, c.tier, `"${c.why}" produced tier ${r.tier}: ${r.description}`);
+    if (c.tier === 'manual') {
+      assert.equal(r.description, '', 'a manual row must propose nothing at all rather than a bad cut');
+      continue;
+    }
+    assert.ok(r.description.length <= MAX, `"${c.why}" proposed ${r.description.length} characters`);
+    assert.ok(r.description.length >= 70, `"${c.why}" proposed only ${r.description.length} characters`);
+
+    /* NOTHING INVENTED. The proposed string, with whitespace normalised, must
+       appear verbatim in the post's own copy. This is Empower's rule applied
+       to a search snippet, and it is the assertion that makes a bulk pass
+       over somebody else's writing defensible at all. */
+    const flat = (s) => s.replace(/\s+/g, ' ').trim();
+    assert.ok(flat(c.body).includes(flat(r.description)),
+      `"${c.why}" proposed words that are not in the post:\n  ${r.description}`);
+  }
+
+  /* The two tiers are told apart by how they end, and that is the whole
+     reason a reviewer treats them differently. */
+  assert.match(shorten(cases[0]).description, /[.!?]$/, 'a sentence-tier row must end on terminal punctuation');
+  assert.doesNotMatch(shorten(cases[1]).description, /[.!?]$/, 'a clause-tier row ends mid-sentence; if it ends on a full stop it should have been tier sentence');
+});
+
+/* The proposal itself, as committed. Generated by elementor/harvest-post-seo.mjs
+   against the install and checked in so that what Empower is being shown is in
+   version control rather than in somebody's downloads folder.
+
+   THE COUNTS ARE ASSERTED AS A TOTAL, NOT PER TIER. A per-tier count would go
+   red every time a post is published, which is a gate that trains people to
+   edit the number; the invariants below are the ones that must hold whatever
+   the corpus does. */
+test('the committed post-description proposal is internally consistent', () => {
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'));
+  assert.ok(rows.length > 400, `the proposal holds only ${rows.length} rows`);
+
+  const ids = new Set(rows.map((r) => r.id));
+  assert.equal(ids.size, rows.length, 'the proposal repeats a post id');
+
+  const wrong = [];
+  for (const r of rows) {
+    if (!['sentence', 'clause', 'manual', 'unchanged'].includes(r.tier)) wrong.push(`${r.id}: unknown tier "${r.tier}"`);
+    if (r.tier === 'manual') {
+      if (r.description !== '') wrong.push(`${r.id}: a manual row proposes "${r.description}"`);
+      continue;
+    }
+    /* A post whose whole body is one short sentence already serves that
+       sentence, so the proposal is byte-identical to what is live and writing
+       it changes nothing. It is a real state, not a defect, and it is the only
+       row exempt from "must be shorter than what is live". */
+    if (r.tier === 'unchanged') {
+      if (r.length !== r.before) wrong.push(`${r.id}: tier unchanged but ${r.length} characters against ${r.before} live`);
+      continue;
+    }
+    if (r.description.length > 160) wrong.push(`${r.id}: ${r.description.length} characters`);
+    if (r.description.length < 70) wrong.push(`${r.id}: only ${r.description.length} characters`);
+    if (r.tier === 'sentence' && !/[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier sentence but does not end on a full stop`);
+    if (r.tier === 'clause' && /[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier clause but ends on a full stop`);
+    /* The point of the whole exercise: every proposal must be shorter than
+       what the page serves today. */
+    if (r.before >= 0 && r.description.length >= r.before) wrong.push(`${r.id}: proposal is not shorter than the ${r.before} characters live today`);
+  }
+  assert.deepEqual(wrong, [], `${wrong.length} row(s) in the proposal are wrong:\n${wrong.slice(0, 20).join('\n')}`);
+
+  /* THE ASSERTION THAT WOULD HAVE CAUGHT A HALF-BUILT PROPOSAL. `before` is
+     the length of the description the page serves today, and -1 means the page
+     could not be read. Every summary over this file treats -1 as "nothing to
+     save", so a harvest that was rate-limited produces a proposal that looks
+     complete and understates the problem: two runs of the same script over the
+     same 490 posts reported 76,110 and 18,511 characters removed, because the
+     second run had 362 pages refused and recorded each refusal as data.
+     Nothing errored either time. */
+  const unread = rows.filter((r) => r.before < 0);
+  assert.ok(unread.length <= rows.length * 0.02,
+    `${unread.length} of ${rows.length} rows have no reading of what the page serves today. The harvest was `
+    + 'rate-limited and recorded each refusal as -1, which every total over this file counts as zero. '
+    + 'Re-run elementor/harvest-post-seo.mjs at a lower concurrency.');
+});
+
+/* NOTHING MAY BE WRITTEN TO THE INSTALL WITHOUT AN APPROVAL RECORD. This is
+   client-facing copy on 490 pages and the deploy script that already exists
+   for the sixteen converted pages overwrites without asking. The gate is a
+   file, not a flag and not a habit: deployPostSeo() reads
+   elementor/approval/post-descriptions-approved.json and refuses if it is
+   absent, so the default state of a fresh checkout is "cannot write". A flag
+   would be one keystroke away from being passed by somebody who had not read
+   this; a missing file cannot be typed past. */
+test('the post description deploy refuses to run without a recorded approval', async () => {
+  const { approvalProblems, digestRows } = await import('./elementor/deploy-post-seo.mjs');
+  const rows = [{ id: 1, url: '/a/', tier: 'sentence', description: 'x'.repeat(120) }];
+  const approval = { approvedIds: [1], approvedBy: 'Empower', date: '2026-08-28', digest: digestRows(rows) };
+
+  assert.match(approvalProblems({ rows, approval: null }).join(' '), /no approval record/i);
+  assert.deepEqual(approvalProblems({ rows, approval }), []);
+
+  /* AND IT MUST BE THE SAME COPY THAT WAS APPROVED. An approval naming ids
+     only would let the proposal be regenerated afterwards and written under an
+     approval nobody gave for that wording, which is the failure mode that
+     matters most: the ids would all still match. The digest is over the
+     copy, so a single character moves it. */
+  const changed = [{ id: 1, url: '/a/', tier: 'sentence', description: 'y'.repeat(120) }];
+  assert.match(approvalProblems({ rows: changed, approval }).join(' '), /changed since it was approved/i);
+
+  /* An approval with no digest at all is not an approval of any particular
+     wording, so it is refused rather than accepted leniently. */
+  assert.match(
+    approvalProblems({ rows, approval: { approvedIds: [1], approvedBy: 'Empower', date: '2026-08-28' } }).join(' '),
+    /records no digest/i,
+  );
+
+  /* A row nobody approved must not travel with the ones that were. */
+  const extra = [...rows, { id: 2, url: '/b/', tier: 'sentence', description: 'z'.repeat(120) }];
+  assert.match(
+    approvalProblems({ rows: extra, approval: { ...approval, digest: digestRows(extra) } }).join(' '),
+    /not in the approval/i,
+  );
+
+  /* A manual row proposes nothing, so writing one would blank a description
+     that is at least serving today. Refused explicitly rather than left to
+     the empty string doing something harmless-looking. */
+  const manual = [{ id: 3, url: '/c/', tier: 'manual', description: '' }];
+  assert.match(
+    approvalProblems({ rows: manual, approval: { approvedIds: [3], approvedBy: 'Empower', date: '2026-08-28', digest: digestRows(manual) } }).join(' '),
+    /proposes no description/i,
+  );
+});
 
 /* --- pages that must never be found --------------------------------------
    THREE INTERNAL PAGES WERE IN THE PUBLIC SITEMAP when the SEO audit ran:

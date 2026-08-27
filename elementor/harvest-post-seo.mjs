@@ -23,9 +23,20 @@
 
 import fs from 'node:fs';
 import { wpe } from '../wpe.mjs';
-import { shorten } from './post-seo.mjs';
+import { shorten, MAX, MIN } from './post-seo.mjs';
 
 const OUT = 'elementor/approval/post-descriptions.json';
+
+/* THE 137 THE SHORTENER CANNOT DO, written by hand and kept separately.
+   post-seo.mjs proposes only literal runs of a post's own words, which is
+   right for a machine and has a hard ceiling: 137 posts open with a single
+   sentence longer than the whole 160-character budget and with no interior
+   break, so every mechanical cut lands mid-thought. Those rows proposed
+   nothing at all, which was honest and, as Paolo put it, not helpful.
+   So they are written, and the writing lives in its own file rather than
+   being pasted into the generated one: re-running this script regenerates
+   every mechanical row and must not touch a hand-written one. */
+const WRITTEN = 'elementor/approval/post-descriptions-written.json';
 
 /* 900 characters of body is far more than any 160-character proposal can use,
    and enough that a long opening sentence plus its successor both survive the
@@ -124,8 +135,37 @@ async function pooled(items, size, worker) {
    Eight was refused by the install for 74% of the corpus; four with the
    backoff above reads it. This is a one-off script and the difference is a
    couple of minutes. */
+/* Every number in a string, commas and trailing punctuation removed so that
+   "1,500 hours." and "1500" compare equal. */
+const numbersIn = (s) => (String(s).match(/[0-9][0-9,.]*/g) ?? []).map((n) => n.replace(/,/g, '').replace(/\.$/, ''));
+
+/* EMPOWER'S RULE, TURNED INTO A CHECK. No figure may appear in a search
+   snippet that does not appear on the page it describes: the same rule that
+   governs every heading in this build, and it binds harder here because a
+   hand-written description is not constrained to the post's own words the way
+   a mechanical one is. Anything a person writes can drift, and a plausible
+   wrong number in a search result is worse than a long right one.
+   Checked against the post's own text at generation time and refused, rather
+   than being left to review: a reviewer reading 137 descriptions will catch a
+   clumsy sentence long before they catch a transposed figure. The committed
+   proposal carries the body prefix for these rows so the same check can run as
+   a test without going back to the install. */
+export function writtenProblems({ id, description, body, title }) {
+  const problems = [];
+  if (description.length > MAX) problems.push(`post ${id}: ${description.length} characters, over ${MAX}`);
+  if (description.length < MIN) problems.push(`post ${id}: only ${description.length} characters`);
+  const hay = `${title} ${body}`.replace(/,/g, '');
+  for (const n of numbersIn(description)) {
+    if (!hay.includes(n)) {
+      problems.push(`post ${id}: the figure "${n}" is not in the post -- "${description.slice(0, 70)}..."`);
+    }
+  }
+  return problems;
+}
+
 export async function buildProposal({ concurrency = 4, tolerance = 0.02 } = {}) {
   const posts = await harvestPosts();
+  const written = JSON.parse(fs.readFileSync(WRITTEN, 'utf8'));
   const before = await pooled(posts, concurrency, (p) => servedDescription(p.url));
 
   /* LOUD, NOT RECORDED. An unread page contributes -1, which every summary
@@ -142,8 +182,21 @@ export async function buildProposal({ concurrency = 4, tolerance = 0.02 } = {}) 
     );
   }
 
-  return posts.map((p, i) => {
-    const { description, tier } = shorten(p);
+  /* Loud and all at once, before a single row is emitted. A partial refusal
+     would leave a proposal that is mostly hand-written and quietly missing the
+     rows that failed. */
+  const failures = [];
+  const rows = posts.map((p, i) => {
+    let { description, tier } = shorten(p);
+    let body;
+
+    if (tier === 'manual' && written[String(p.id)]) {
+      description = written[String(p.id)];
+      tier = 'written';
+      body = p.body;
+      failures.push(...writtenProblems({ id: p.id, description, body, title: p.post_title }));
+    }
+
     /* A FOURTH TIER THAT NOTHING GENERATES, only observation produces: the
        proposal is exactly what the page already serves, so writing it would
        change no character anybody reads. Labelled rather than dropped, so the
@@ -167,8 +220,25 @@ export async function buildProposal({ concurrency = 4, tolerance = 0.02 } = {}) 
          harvest time, not something anybody is approving. */
       now: before[i].text,
       before: before[i].length,
+      /* Only on the written rows, and only so the figure check above can run
+         as a repo test rather than needing the install. Adds about 120 KB.
+         PRESENT EVEN WHEN EMPTY, because one post has no prose at all: post
+         17962 is a gallery of 67 photographs and nothing else. An absent key
+         and an empty string mean different things there -- "not a written row"
+         against "written, and there was nothing to write from" -- and the test
+         over this file needs to tell them apart rather than treating a
+         checkable row as missing. */
+      ...(tier === 'written' ? { body: body ?? '' } : {}),
     };
-  }).sort((a, b) => (a.date < b.date ? 1 : -1));
+  });
+
+  if (failures.length) {
+    throw new Error(
+      `${failures.length} hand-written description(s) break the rules:\n${failures.map((f) => `  - ${f}`).join('\n')}`,
+    );
+  }
+
+  return rows.sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

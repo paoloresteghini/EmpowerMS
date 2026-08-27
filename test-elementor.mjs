@@ -6681,7 +6681,7 @@ test('the committed post-description proposal is internally consistent', () => {
 
   const wrong = [];
   for (const r of rows) {
-    if (!['sentence', 'clause', 'manual', 'unchanged'].includes(r.tier)) wrong.push(`${r.id}: unknown tier "${r.tier}"`);
+    if (!['sentence', 'clause', 'manual', 'written', 'unchanged'].includes(r.tier)) wrong.push(`${r.id}: unknown tier "${r.tier}"`);
     if (r.tier === 'manual') {
       if (r.description !== '') wrong.push(`${r.id}: a manual row proposes "${r.description}"`);
       continue;
@@ -6698,9 +6698,20 @@ test('the committed post-description proposal is internally consistent', () => {
     if (r.description.length < 70) wrong.push(`${r.id}: only ${r.description.length} characters`);
     if (r.tier === 'sentence' && !/[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier sentence but does not end on a full stop`);
     if (r.tier === 'clause' && /[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier clause but ends on a full stop`);
-    /* The point of the whole exercise: every proposal must be shorter than
-       what the page serves today. */
-    if (r.before >= 0 && r.description.length >= r.before) wrong.push(`${r.id}: proposal is not shorter than the ${r.before} characters live today`);
+    if (r.tier === 'written' && !/[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier written but does not end on a full stop`);
+    /* THE POINT OF THE EXERCISE, stated for the right set. Every proposal
+       must fit inside what Google shows; and where the live description
+       overruns that, the proposal must also be shorter than it.
+       NOT EVERY ROW IS A SHORTENING, which the first version of this rule got
+       wrong and two posts proved. Post 17962 is a gallery of photographs with
+       no prose, so AIOSEO generates nothing and it serves ZERO characters;
+       17179 is one short line and serves 59. For those a written description
+       is an addition, and demanding it be shorter than nothing is demanding it
+       not exist. */
+    if (r.description.length > 160) wrong.push(`${r.id}: ${r.description.length} characters, over the 160 Google shows`);
+    if (r.before > 160 && r.description.length >= r.before) {
+      wrong.push(`${r.id}: proposal is not shorter than the ${r.before} characters live today`);
+    }
   }
   assert.deepEqual(wrong, [], `${wrong.length} row(s) in the proposal are wrong:\n${wrong.slice(0, 20).join('\n')}`);
 
@@ -6717,6 +6728,57 @@ test('the committed post-description proposal is internally consistent', () => {
     `${unread.length} of ${rows.length} rows have no reading of what the page serves today. The harvest was `
     + 'rate-limited and recorded each refusal as -1, which every total over this file counts as zero. '
     + 'Re-run elementor/harvest-post-seo.mjs at a lower concurrency.');
+});
+
+/* THE 137 THE SHORTENER COULD NOT DO ARE WRITTEN BY HAND, and hand-writing is
+   where Empower's no-invented-statistics rule stops being automatic. A
+   mechanical proposal is a literal run of the post's own words, so it cannot
+   state a figure the post does not; a written one can, and a plausible wrong
+   number in a search result is worse than a long right one. Nobody reviewing
+   137 descriptions will catch a transposed figure -- they will catch a clumsy
+   sentence long before that -- so it is checked rather than reviewed.
+
+   RUNS OFF THE COMMITTED PROPOSAL, not off the install, which is why the
+   written rows carry a prefix of the post's own text. Without that the rule
+   could only be enforced at generation time, on a machine with SSH, by
+   whoever happened to re-run the harvester. */
+test('every hand-written description states no figure the post does not', async () => {
+  const { writtenProblems } = await import('./elementor/harvest-post-seo.mjs');
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'))
+    .filter((r) => r.tier === 'written');
+  assert.ok(rows.length > 100, `only ${rows.length} written rows; the overlay is not being applied`);
+
+  const problems = rows.flatMap((r) => {
+    /* The KEY, not a non-empty value. One post is a gallery of photographs
+       with no prose at all, so its body is legitimately empty and its
+       description can only be justified by its title -- which is what
+       writtenProblems() checks against, title and body together. Requiring a
+       non-empty body would have excluded the one row with the least to check
+       it against. */
+    assert.ok('body' in r, `post ${r.id} is tier written but carries no body field, so nothing can be checked against it`);
+    return writtenProblems({ id: r.id, description: r.description, body: r.body, title: r.post_title });
+  });
+  assert.deepEqual(problems, [], `${problems.length} hand-written description(s) break the rules:\n${problems.join('\n')}`);
+});
+
+/* The overlay and the mechanical ceiling have to describe the same set. A row
+   in the overlay that the shortener can now handle would be a hand-written
+   description silently overriding a generated one; a manual row missing from
+   the overlay is the gap this whole pass exists to close, and it would sit in
+   the proposal claiming nothing needs doing. */
+test('the hand-written overlay covers exactly the posts the shortener cannot do', () => {
+  const overlay = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions-written.json', 'utf8'));
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'));
+
+  const writtenIds = new Set(rows.filter((r) => r.tier === 'written').map((r) => String(r.id)));
+  const overlayIds = new Set(Object.keys(overlay));
+
+  assert.deepEqual([...overlayIds].filter((id) => !writtenIds.has(id)), [],
+    'the overlay names posts that are not tier written in the proposal');
+  assert.deepEqual([...writtenIds].filter((id) => !overlayIds.has(id)), [],
+    'the proposal has written rows the overlay does not name');
+  assert.equal(rows.filter((r) => r.tier === 'manual').length, 0,
+    'some posts still propose nothing at all; every one of them needs a line in the overlay');
 });
 
 /* NOTHING MAY BE WRITTEN TO THE INSTALL WITHOUT AN APPROVAL RECORD. This is

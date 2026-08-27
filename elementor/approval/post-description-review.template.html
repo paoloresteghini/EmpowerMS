@@ -1,0 +1,534 @@
+<title>The 160 Character Line</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+
+<style>
+  /* Empower Mississippi's own tokens, taken from tokens/colors.css and
+     tokens/typography.css in the build rather than invented here, so the
+     review reads as part of the same work. */
+  :root {
+    --blue-900:#002935; --blue-800:#003C50; --blue-600:#17657E;
+    --blue-400:#64A0B4; --blue-200:#C4DCE4; --blue-100:#E8F2F5;
+    --orange-600:#CE4E22; --orange-500:#E65A28; --orange-100:#FCEBE3;
+
+    --ground:#FFFFFF;
+    --ground-sunk:#F4F6F7;
+    --card:#FFFFFF;
+    --line:#E1E5E7;
+    --line-soft:#EDF0F1;
+    --ink:#1E2427;
+    --ink-body:#4A4A4A;
+    --ink-muted:#6E7A80;
+    --rule-over:#CE4E22;
+    --rule-under:#17657E;
+    --band:#F4F6F7;
+    --shadow:0 1px 2px rgba(0,41,53,.05), 0 8px 24px -16px rgba(0,41,53,.28);
+
+    --display:'Figtree','Gotham','Avenir Next',Helvetica,Arial,sans-serif;
+    --body:'Source Sans 3','Whitney','Helvetica Neue',Helvetica,Arial,sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#001C25;
+      --ground-sunk:#00151C;
+      --card:#012A38;
+      --line:#0C4257;
+      --line-soft:#08313F;
+      --ink:#EAF3F6;
+      --ink-body:#C0D4DB;
+      --ink-muted:#89A6B1;
+      --rule-over:#F09A75;
+      --rule-under:#64A0B4;
+      --band:#00202B;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#001C25;
+    --ground-sunk:#00151C;
+    --card:#012A38;
+    --line:#0C4257;
+    --line-soft:#08313F;
+    --ink:#EAF3F6;
+    --ink-body:#C0D4DB;
+    --ink-muted:#89A6B1;
+    --rule-over:#F09A75;
+    --rule-under:#64A0B4;
+    --band:#00202B;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink-body);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* --- masthead ------------------------------------------------------- */
+  .masthead {
+    background: var(--blue-800);
+    color: #fff;
+    padding: 56px 0 44px;
+    border-bottom: 4px solid var(--orange-500);
+  }
+  .eyebrow {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--blue-200);
+    margin: 0 0 14px;
+  }
+  .masthead h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 48px);
+    line-height: 1.08;
+    letter-spacing: -.02em;
+    margin: 0 0 18px;
+    color: #fff;
+    text-wrap: balance;
+  }
+  .standfirst {
+    max-width: 62ch;
+    margin: 0;
+    font-size: 18px;
+    color: rgba(255,255,255,.82);
+  }
+  .standfirst strong { color: #fff; font-weight: 600; }
+
+  /* --- the measure, which is the whole argument ----------------------- */
+  .measure { margin: 32px 0 0; max-width: 680px; }
+  .measure-label {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--blue-200);
+    margin: 0 0 10px;
+  }
+  .track {
+    position: relative;
+    height: 10px;
+    background: rgba(255,255,255,.13);
+    border-radius: 2px;
+    margin-bottom: 9px;
+  }
+  .track .fill { position: absolute; inset: 0 auto 0 0; border-radius: 2px; }
+  .track .fill.over { background: var(--orange-500); }
+  .track .fill.under { background: var(--blue-400); }
+  .track .cut {
+    position: absolute; top: -6px; bottom: -6px;
+    width: 2px; background: #fff;
+  }
+  .track-note {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: rgba(255,255,255,.68);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- summary -------------------------------------------------------- */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 44px 0 0;
+  }
+  .tile { background: var(--card); padding: 20px 22px; }
+  .tile .n {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 34px;
+    line-height: 1;
+    letter-spacing: -.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .tile .k {
+    font-family: var(--display);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-top: 8px;
+  }
+  .tile .d { font-size: 14px; margin-top: 6px; color: var(--ink-muted); line-height: 1.45; }
+  .tile.is-accent .n { color: var(--orange-600); }
+
+  /* --- section headings ----------------------------------------------- */
+  h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -.01em;
+    color: var(--ink);
+    margin: 56px 0 10px;
+  }
+  .lede { max-width: 68ch; margin: 0 0 22px; color: var(--ink-body); }
+
+  /* --- tier key ------------------------------------------------------- */
+  .key { display: grid; gap: 14px; margin: 0 0 8px; }
+  .key-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 18px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-top: 1px solid var(--line-soft);
+  }
+  .key-row p { margin: 0; font-size: 15px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--display);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    color: var(--ink-muted);
+    background: var(--band);
+    white-space: nowrap;
+  }
+  .chip::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor;
+  }
+  .chip.sentence { color: var(--rule-under); border-color: color-mix(in srgb, var(--rule-under) 34%, transparent); }
+  .chip.clause   { color: var(--rule-over);  border-color: color-mix(in srgb, var(--rule-over) 34%, transparent); }
+  .chip.written  { color: var(--rule-under); border-color: color-mix(in srgb, var(--rule-under) 34%, transparent); }
+  .chip.manual   { color: var(--ink-muted); }
+  .chip.unchanged{ color: var(--ink-muted); }
+
+  /* --- controls ------------------------------------------------------- */
+  .controls {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--ground);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 0;
+    margin-top: 30px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; }
+  button.f {
+    font-family: var(--display);
+    font-size: 12px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 7px 12px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink-muted);
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  button.f:hover { border-color: var(--blue-400); color: var(--ink); }
+  button.f[aria-pressed="true"] {
+    background: var(--blue-800); border-color: var(--blue-800); color: #fff;
+  }
+  :root[data-theme="dark"] button.f[aria-pressed="true"],
+  .dark-pressed { }
+  input[type="search"] {
+    flex: 1 1 200px; min-width: 160px;
+    font-family: var(--body); font-size: 15px;
+    padding: 7px 11px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--card);
+    color: var(--ink);
+  }
+  input[type="search"]::placeholder { color: var(--ink-muted); }
+  :focus-visible { outline: 2px solid var(--orange-500); outline-offset: 2px; }
+  .count {
+    font-family: var(--display); font-size: 12px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-muted); font-variant-numeric: tabular-nums;
+  }
+
+  /* --- rows ----------------------------------------------------------- */
+  .rows { border-top: 1px solid var(--line); }
+  .row { padding: 22px 0; border-bottom: 1px solid var(--line-soft); }
+  .row-head {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .row-title {
+    font-family: var(--display); font-weight: 700; font-size: 17px;
+    color: var(--ink); margin: 0; line-height: 1.3;
+    flex: 1 1 340px; text-wrap: balance;
+  }
+  .row-meta { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+  .row-date { font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .row a.perma { color: var(--rule-under); text-decoration: none; font-size: 13px; border-bottom: 1px solid currentColor; }
+  .row a.perma:hover { color: var(--orange-600); }
+
+  .pair { display: grid; gap: 12px; }
+  .side { display: grid; grid-template-columns: 92px 1fr; gap: 16px; align-items: start; }
+  .side-label {
+    font-family: var(--display); font-size: 11px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-muted); padding-top: 3px;
+  }
+  .side-text { margin: 0; font-size: 15.5px; line-height: 1.55; }
+  .side.now .side-text { color: var(--ink-muted); }
+  .side.now .side-text .tail { color: var(--rule-over); }
+  .side.next .side-text { color: var(--ink); }
+  .len {
+    font-family: var(--display); font-size: 12px; font-weight: 700;
+    color: var(--ink-muted); font-variant-numeric: tabular-nums;
+    margin-top: 4px; display: block;
+  }
+  .none {
+    font-style: italic; color: var(--ink-muted); font-size: 15px; margin: 0;
+  }
+
+  .minitrack {
+    position: relative; height: 6px; border-radius: 2px;
+    background: var(--band); border: 1px solid var(--line-soft);
+    margin-top: 9px; max-width: 520px;
+  }
+  .minitrack i { position: absolute; inset: 0 auto 0 0; border-radius: 2px 0 0 2px; display: block; }
+  .minitrack i.over { background: var(--rule-over); }
+  .minitrack i.under { background: var(--rule-under); }
+  .minitrack .cut { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-muted); }
+
+  footer {
+    background: var(--ground-sunk);
+    border-top: 1px solid var(--line);
+    margin-top: 64px;
+    padding: 36px 0 56px;
+    color: var(--ink-muted);
+    font-size: 14.5px;
+  }
+  footer p { max-width: 74ch; }
+  footer strong { color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 640px) {
+    .side { grid-template-columns: 1fr; gap: 5px; }
+    .key-row { grid-template-columns: 1fr; gap: 8px; }
+    .controls { position: static; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Empower Mississippi &middot; search listings &middot; 27 August 2026</p>
+    <h1>Every blog post describes itself twice as long as Google will show</h1>
+    <p class="standfirst">
+      All 490 published posts carry a search description nobody wrote. All in One SEO builds each
+      one at the moment the page is requested, from the opening of the article, and cuts it wherever
+      the character budget runs out. They run <strong>291 to 374 characters</strong>. Google shows
+      about <strong>160</strong>. Everything past that line is written, served, and never read.
+    </p>
+
+    <div class="measure">
+      <p class="measure-label">A typical post today</p>
+      <div class="track">
+        <span class="fill over" style="width:100%"></span>
+        <span class="cut" style="left:43%"></span>
+      </div>
+      <div class="track-note"><span>364 characters served</span><span>160 shown</span></div>
+
+      <p class="measure-label" style="margin-top:22px">The same post, proposed</p>
+      <div class="track">
+        <span class="fill under" style="width:36%"></span>
+        <span class="cut" style="left:43%"></span>
+      </div>
+      <div class="track-note"><span>131 characters served</span><span>160 shown</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2>Nothing here was written for you</h2>
+  <p class="lede">
+    Most proposals below are a run of the post’s own words, cut at a boundary: nothing
+    paraphrased and nothing invented, because a search snippet is copy and the copy is yours.
+    A mechanical pass has a ceiling, though. Where a post opens with one sentence longer than the
+    whole budget, no cut reads properly, and 137 posts are like that. Those were written rather
+    than cut, and they are labelled so you can see which is which. The rule still holds in both
+    cases: no figure appears in any description below that does not appear in the post it
+    describes.
+  </p>
+
+  <div class="key">
+    <div class="key-row">
+      <span class="chip sentence">Sentence</span>
+      <p>Ends on a full stop, so it reads as finished. Needs a glance, not a read.</p>
+    </div>
+    <div class="key-row">
+      <span class="chip clause">Clause</span>
+      <p>The opening sentence overruns the budget, so the cut falls at a comma, colon or dash.
+         Accurate, but it reads as unfinished. <strong>These are the ones worth reading properly.</strong></p>
+    </div>
+    <div class="key-row">
+      <span class="chip written">Written</span>
+      <p>The opening sentence runs past the whole budget with no interior break, so no
+         mechanical cut reads properly. These were written from the post, not cut from it.
+         <strong>New copy, so read these first.</strong> No figure appears in one that does not
+         appear in the post itself, and that is checked rather than trusted.</p>
+    </div>
+    <div class="key-row">
+      <span class="chip unchanged">Already right</span>
+      <p>The post is short enough that what is served is already the whole thing. Nothing to change.</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="filters" id="filters"></div>
+    <input type="search" id="q" placeholder="Search titles and descriptions" aria-label="Search titles and descriptions">
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="rows" id="rows"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>
+      <strong>Nothing has been written to the site.</strong> These are proposals. The script that
+      applies them refuses to run until an approval record exists naming which posts were agreed,
+      and it carries a fingerprint of the exact wording above, so regenerating this list cancels
+      any approval given for an earlier version of it.
+    </p>
+    <p>
+      <strong>Post titles are a separate matter.</strong> They are generated the same way and are
+      not covered here.
+    </p>
+  </div>
+</footer>
+
+<script>
+  const ROWS = __DATA__;
+  const CUT = 160;
+  const SCALE = 480; /* the longest description served on the install, 469 */
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+
+  const LABEL = { sentence:'Sentence', clause:'Clause', written:'Written', manual:'Needs writing', unchanged:'Already right' };
+  /* Ordered by how much of the reader's attention each tier deserves, not by
+     size: the written set is new copy and wants reading first. */
+  const ORDER = ['written','clause','sentence','manual','unchanged'];
+
+  /* Summary. The characters-removed figure counts only rows that actually
+     propose something, so it cannot be inflated by the ones that do not. */
+  const proposed = ROWS.filter((r) => r.description && r.tier !== 'unchanged');
+  const removed = proposed.reduce((n, r) => n + Math.max(0, r.before - r.length), 0);
+  const counts = {};
+  for (const r of ROWS) counts[r.tier] = (counts[r.tier] || 0) + 1;
+
+  document.getElementById('tiles').innerHTML = [
+    ['' + ROWS.length, 'Published posts', 'Every one of them auto-described.', false],
+    ['' + proposed.length, 'Proposed here', 'Shortened from the post’s own opening.', false],
+    ['' + (counts.written || 0), 'Written, not cut', 'No mechanical cut read properly.', true],
+    [removed.toLocaleString('en-GB'), 'Characters removed', 'Text served today and never shown.', false],
+  ].map(([n, k, d, accent]) =>
+    `<div class="tile${accent ? ' is-accent' : ''}"><div class="n">${n}</div><div class="k">${k}</div><div class="d">${d}</div></div>`
+  ).join('');
+
+  /* Filters, ordered by how much attention each tier needs rather than by
+     size, so the set that wants reading sits first. */
+  const filters = document.getElementById('filters');
+  let active = 'all';
+  const buttons = [['all', 'All ' + ROWS.length]].concat(
+    ORDER.filter((t) => counts[t]).map((t) => [t, LABEL[t] + ' ' + counts[t]])
+  );
+  filters.innerHTML = buttons.map(([v, label]) =>
+    `<button class="f" data-v="${v}" aria-pressed="${v === 'all'}">${esc(label)}</button>`
+  ).join('');
+
+  const rowsEl = document.getElementById('rows');
+  const countEl = document.getElementById('count');
+  const q = document.getElementById('q');
+
+  /* The current description with everything past the 160th character marked,
+     which is the single clearest way to show what is being paid for and never
+     seen. Escaped first, then split, so the split cannot land inside an
+     entity. */
+  function nowText(r) {
+    if (r.before < 0) return '<p class="none">The page could not be read when this was built.</p>';
+    if (!r.now) return `<p class="none">${r.before} characters, not captured in this listing.</p>`;
+    const head = esc(r.now.slice(0, CUT));
+    const tail = esc(r.now.slice(CUT));
+    return `<p class="side-text">${head}${tail ? '<span class="tail">' + tail + '</span>' : ''}</p>`;
+  }
+
+  function bar(len, over) {
+    const w = Math.min(100, (len / SCALE) * 100);
+    return `<div class="minitrack"><i class="${over ? 'over' : 'under'}" style="width:${w.toFixed(1)}%"></i>`
+      + `<span class="cut" style="left:${((CUT / SCALE) * 100).toFixed(1)}%"></span></div>`;
+  }
+
+  function render() {
+    const term = q.value.trim().toLowerCase();
+    const shown = ROWS.filter((r) => {
+      if (active !== 'all' && r.tier !== active) return false;
+      if (!term) return true;
+      return (r.post_title + ' ' + r.description).toLowerCase().includes(term);
+    });
+
+    countEl.textContent = shown.length + ' shown';
+    rowsEl.innerHTML = shown.map((r) => `
+      <article class="row">
+        <div class="row-head">
+          <h3 class="row-title">${esc(r.post_title)}</h3>
+          <div class="row-meta">
+            <span class="chip ${r.tier}">${LABEL[r.tier]}</span>
+            <span class="row-date">${esc(r.date)}</span>
+            <a class="perma" href="https://empv2.wpenginepowered.com${esc(r.url)}" target="_blank" rel="noopener">View</a>
+          </div>
+        </div>
+        <div class="pair">
+          <div class="side now">
+            <span class="side-label">Served now</span>
+            <div>
+              ${nowText(r)}
+              <span class="len">${r.before < 0 ? 'unread' : r.before + ' characters'}</span>
+              ${r.before >= 0 ? bar(r.before, r.before > CUT) : ''}
+            </div>
+          </div>
+          <div class="side next">
+            <span class="side-label">${r.tier === 'unchanged' ? 'Verdict' : r.tier === 'written' ? 'Written' : 'Proposed'}</span>
+            <div>
+              ${r.tier === 'manual'
+                ? '<p class="none">No proposal. The opening sentence runs past 160 characters with no break inside it, so every mechanical cut lands mid-thought. This one needs writing.</p>'
+                : r.tier === 'unchanged'
+                  ? '<p class="none">Already within the line and already the whole post. Nothing to change.</p>'
+                  : `<p class="side-text">${esc(r.description)}</p><span class="len">${r.length} characters</span>${bar(r.length, false)}`}
+            </div>
+          </div>
+        </div>
+      </article>`).join('');
+  }
+
+  filters.addEventListener('click', (e) => {
+    const b = e.target.closest('button.f');
+    if (!b) return;
+    active = b.dataset.v;
+    for (const other of filters.querySelectorAll('button.f')) {
+      other.setAttribute('aria-pressed', String(other === b));
+    }
+    render();
+  });
+  q.addEventListener('input', render);
+  render();
+</script>

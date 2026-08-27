@@ -9,7 +9,7 @@ import { installConfig } from './install.mjs';
 import { fromRootArgs, syncTheme, FROM_ROOT } from './wp/sync.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
-import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
+import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots, robotsProblems } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
 import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
 import {
@@ -3607,31 +3607,154 @@ test('settleReveal queries the reveal wait from document.body, not document', ()
 const requireSpikeUrl = () => process.env.SPIKE_URL
   ?? assert.fail('SPIKE_URL is not set. These eight tests need the deployed page (five drive a real browser, three fetch or check it directly): SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
 
-/* Fix round 1 review finding: this test used to sit outside the
-   requireSpikeUrl()-guarded group and made an unguarded live fetch to the
-   install on every run, on any machine. Before this task, a checkout with
-   no route to empv2.wpenginepowered.com only ever hit that wall inside the
-   seven tests below, each of which fails fast with a message naming
-   SPIKE_URL, never with a bare DNS error or a hang. checkRobots() does not
-   drive a browser, unlike the seven tests around it, but it is gated behind
-   the same requireSpikeUrl() on purpose: robots.txt lives on the same
-   install SPIKE_URL points at, "no network route to the install" is exactly
-   the failure requireSpikeUrl() already turns into a legible message for,
-   and a second, narrower guard (its own env var, a hand-rolled timeout and
-   error message) would duplicate that machinery to say the same thing.
-   checkRobots(baseUrl) wants an origin, not a page path, so the podcast-a
-   URL SPIKE_URL is documented to carry is trimmed down with `new URL()`
-   rather than assuming callers will pass a bare origin. The test is not
-   mocked: proving the crawler-disallow policy actually holds against the
-   real robots.txt is the entire point, and a mocked response would prove
+/* --- the crawl policy, and the day it has to invert ----------------------
+   `robots.txt says Disallow: / and that is not a file`. It is also not
+   blog_public, which is the hypothesis this work started from and spent its
+   first half-hour disproving. On 2026-08-27, on the install:
+     wp option get blog_public                        1
+     ls robots.txt in the webroot                     does not exist
+     All in One SEO's robots.txt editor               enable:false, rules:[]
+     ob_start(); do_robots(); in PHP                  Disallow: /wp-admin/
+                                                      Allow: /wp-admin/admin-ajax.php
+                                                      Crawl-delay: 10
+                                                      two Sitemap: lines
+     GET /robots.txt                                  User-agent: *
+                                                      Disallow: /
+   WordPress never emits the blanket block. The response headers settle it:
+   GET / comes back with x-cacheable: SHORT and x-cache: HIT, GET /robots.txt
+   comes back with neither, so /robots.txt is answered before the request
+   reaches WordPress at all. WP Engine's edge substitutes it for every
+   hostname it hands out before a site has its own.
+
+   SO THERE IS NOTHING TO FLIP AT LAUNCH. A guard on an option that is already
+   correct is a guard on nothing, and this project shipped one of those
+   earlier the same day. What is genuinely unguarded is the opposite risk: the
+   install has no assertion anywhere that it STAYS crawlable. Anyone can tick
+   "Discourage search engines from indexing this site" in Settings > Reading,
+   and on this hostname the result is indistinguishable from the block that is
+   already there.
+
+   THE GATE THIS REPLACES WAS INERT. It asserted /Disallow:\s*\// with no end
+   anchor, which "Disallow: /wp-admin/" satisfies, so it would have stayed
+   green against a completely open site. It was also keyed on SPIKE_URL, so
+   the branch that matters on launch day depended on somebody remembering to
+   change a shell variable. The origin now comes from the install's own `home`
+   option, because updating that option IS the launch.
+
+   NOT FIXED, RECORDED: the Crawl-delay: 10 in WordPress's own output comes
+   from WP Engine's mu-plugins/mu-plugin.php (wpe_robots_txt_crawl_delay), and
+   it will be on the live robots.txt. Google ignores Crawl-delay; Bing and
+   Yandex honour it. At 490 posts that is not a throttle worth overriding, but
+   it is not intentional either, and nobody has looked at it. */
+test('robotsProblems reports nothing when a holding domain blocks everything and WordPress does not', () => {
+  assert.deepEqual(robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\nCrawl-delay: 10\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  }), []);
+});
+
+test('robotsProblems reports nothing when a launched domain is open to crawlers', () => {
+  assert.deepEqual(robotsProblems({
+    home: 'https://empowerms.org',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n',
+    served: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n',
+  }), []);
+});
+
+/* THE ASSERTION THE OLD GATE COULD NOT MAKE, and the reason this function is
+   pure. On launch day the branch below is the only thing standing between
+   Empower and a site that is invisible to search, and until this test existed
+   it had never once been executed. A tripwire nobody has seen fire is a
+   tripwire nobody knows is connected. */
+test('robotsProblems catches the blanket block travelling to the live domain', () => {
+  const problems = robotsProblems({
+    home: 'https://empowerms.org',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /has launched/);
+});
+
+/* The other side of the same claim: while the install is still on a holding
+   domain, losing the block is the failure, because pages under conversion are
+   published and covered by nothing else. A one-sided test would let a fix for
+   the launch case quietly open staging up. */
+test('robotsProblems catches a holding domain that has stopped blocking crawlers', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\n',
+    served: 'User-agent: *\nDisallow: /wp-admin/\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /holding domain/);
+});
+
+/* blog_public = 0, which is what the whole task was originally reported as.
+   It is invisible on a holding domain: the served document is identical
+   either way, so only WordPress's own output can tell the two apart. */
+test('robotsProblems catches blog_public being switched off, even where the served file looks the same', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /blog_public/);
+});
+
+/* A half-failed SSH call returns an empty string, and an empty string
+   satisfies every "must not contain" assertion in the function. Without this
+   the gate would report a perfectly healthy install while having read
    nothing. */
-test('the install still disallows crawlers, which is what makes publishing during conversion safe', async () => {
-  /* Pages under conversion are published. That is only defensible while
-     robots.txt disallows everything. Checked rather than assumed, because
-     if it ever changes, the policy silently stops being safe. */
-  const robots = await checkRobots(new URL(requireSpikeUrl()).origin);
-  assert.match(robots, /User-agent:\s*\*/i);
-  assert.match(robots, /Disallow:\s*\//);
+test('robotsProblems refuses to pass judgement on a robots.txt it could not read', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: '',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /not read properly/);
+});
+
+/* THE FIXTURE ABOVE AND THE FIXTURE TWO TESTS UP ARE THE SAME LENGTH AND MEAN
+   OPPOSITE THINGS, which is what caught a real bug in robotsProblems() on the
+   first run. The readability proof was keyed on "Disallow: /wp-admin/", a line
+   WordPress emits only when blog_public is 1; so the blog_public=0 body, whose
+   entire content is "User-agent: *" and "Disallow: /", was reported as
+   unreadable rather than as the site being closed to search. This asserts the
+   two bodies are told apart, which is the property, rather than that either
+   message exists. */
+test('robotsProblems tells an unreadable robots.txt apart from a blog_public=0 one', () => {
+  const at = (generated) => robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated,
+    served: 'User-agent: *\nDisallow: /\n',
+  }).join(' | ');
+
+  assert.match(at(''), /not read properly/);
+  assert.doesNotMatch(at(''), /blog_public/);
+  assert.match(at('User-agent: *\nDisallow: /\n'), /blog_public/);
+  assert.doesNotMatch(at('User-agent: *\nDisallow: /\n'), /not read properly/);
+});
+
+/* Gated behind requireSpikeUrl() for the reason the group below is: on a
+   checkout with no route to the install, "no network" surfaces as a legible
+   message naming the variable rather than as a bare DNS error or a hang. Its
+   VALUE is deliberately not used. The origin comes from `wp option get home`,
+   which is the install's own statement of where it answers, so the launch
+   branch fires on the launch itself rather than on somebody remembering to
+   re-export SPIKE_URL. */
+test('the install blocks crawlers only for as long as it is on a holding domain', async () => {
+  requireSpikeUrl();
+  const home = (await wpe('wp option get home')).trim();
+  const generated = await wpe("wp eval 'ob_start(); do_robots(); echo ob_get_clean();'");
+  const served = await checkRobots(new URL(home).origin);
+
+  assert.deepEqual(robotsProblems({ home, generated, served }), [],
+    `the crawl policy on ${home} is wrong:\n`
+    + robotsProblems({ home, generated, served }).map((p) => `  - ${p}`).join('\n'));
 });
 
 /* The check that matters most and that nothing static can make. A Loop Grid
@@ -6331,6 +6454,7 @@ test('every converted page offers exactly one share image, and it resolves', { c
   const bytes = Number(res.headers.get('content-length') ?? 0);
   assert.ok(bytes > 5000, `the share image is only ${bytes} bytes, which is not a 1200x630 card`);
 });
+
 
 /* --- pages that must never be found --------------------------------------
    THREE INTERNAL PAGES WERE IN THE PUBLIC SITEMAP when the SEO audit ran:

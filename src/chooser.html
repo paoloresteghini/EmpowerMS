@@ -23,7 +23,7 @@
   <div class="em-container">
     <img class="ch__logo" src="../assets/logo-primary.png" alt="Empower Mississippi" width="1053" height="491">
     <h1>Build review</h1>
-    <p class="ch__lede"><strong>Two sets are left to review: All Content and the landing page template.</strong> Everything else has been decided. The homepage is the agreed build; on 5 August you picked The Table, Three Doors, The Roster and The Through Line Down; on 7 August Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast and The Dome for Capitol Chat; on 11 August The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador; and One Screen for Donate. Each decided set shows that one build and nothing else. The twenty-six we showed you that you did not choose are out of the way rather than gone: tick <em>Archived</em> in the filter, or follow the archive link under any set, and every one of them is still there and still building. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
+    <p class="ch__lede"><strong>Four sets are left to review: All Content, the landing page template, the two legal pages and Contact.</strong> Everything else has been decided. The homepage is the agreed build; on 5 August you picked The Table, Three Doors, The Roster and The Through Line Down; on 7 August Streetlight as the one template for all three solution pages, The Studio for The Empower Podcast and The Dome for Capitol Chat; on 11 August The Pinned Method for EPIC, Five Minutes for Email Sign Up and The Network for Ambassador; and One Screen for Donate. Each decided set shows that one build and nothing else. The twenty-six we showed you that you did not choose are out of the way rather than gone: tick <em>Archived</em> in the filter, or follow the archive link under any set, and every one of them is still there and still building. Every page uses the approved copy from the Website Refresh Roadmap, the brand palette, and the same navigation and footer. What changes is the composition.</p>
     <p class="ch__note">This page is a review tool. It is never part of the hand-off.</p>
   </div>
 </header>
@@ -47,7 +47,7 @@
 
       <div class="ch__rail__body">
         <!-- THREE STATUSES, AND THE DEFAULT IS NOT "EVERYTHING". Nothing ticked
-             shows the fourteen decisions and the four builds still waiting on
+             shows the fourteen decisions and the seven builds still waiting on
              one; the twenty-six that did not make it stay out of the way until
              Archived is ticked, or until a link in the page asks for them.
 
@@ -62,7 +62,7 @@
             <label class="ch__check__label" for="to-review">
               <span class="ch__check__box" aria-hidden="true"></span>
               To review
-              <span class="ch__check__n">4</span>
+              <span class="ch__check__n">7</span>
             </label>
           </div>
           <div class="ch__check">
@@ -83,7 +83,7 @@
           </div>
         </fieldset>
 
-        <!-- FOLDED, because sixteen rows is longer than the page above them. A
+        <!-- FOLDED, because eighteen rows is longer than the page above them. A
              <details> around the fieldset rather than around the checkboxes:
              the summary is the facet heading and the legend stays for the
              grouping, visually hidden because the summary already says it.
@@ -225,6 +225,24 @@
               <label class="ch__check__label" for="set-landing">
                 <span class="ch__check__box" aria-hidden="true"></span>
                 Landing page template
+                <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+                <span class="ch__check__n">2</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-contact">
+              <label class="ch__check__label" for="set-contact">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Contact
+                <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
+                <span class="ch__check__n">1</span>
+              </label>
+            </div>
+            <div class="ch__check">
+              <input class="ch__check__input ch__set" type="checkbox" id="set-legal">
+              <label class="ch__check__label" for="set-legal">
+                <span class="ch__check__box" aria-hidden="true"></span>
+                Legal pages
                 <span class="ch__new">New<span class="em-visually-hidden"> today</span></span>
                 <span class="ch__check__n">2</span>
               </label>
@@ -535,6 +553,67 @@
     </ul>
   </section>
 
+  <!-- CONTACT IS ONE BUILD, NOT A CHOICE, and it is the first page in this
+       review that replaces something people are actively using. The page it
+       supersedes runs a form that has taken 3,116 messages, most recently on
+       28 July. So the thing to look at here is not the composition but whether
+       the form is right: the fields, the character limit and the word on the
+       button are copied from the live form rather than designed, and the
+       converted page carries that live form itself rather than a copy. -->
+  <section data-set="contact" data-state="open" aria-labelledby="group-contact">
+    <h2 class="ch__group" id="group-contact">Contact</h2>
+    <ul class="ch__list">
+      <li data-set="contact" class="ch__opt">
+        <p class="ch__tag">Page, new</p>
+        <h3><a href="contact.html">Contact Us</a></h3>
+        <p class="ch__desc">The same two things the current page offers, on this build’s chrome: a message form and a postal address. Nothing is added — no map, no office hours, no second email address — because the page it replaces offers none of those. The form on this review copy is a stand-in that collects nothing, marked as such on the page; the live page keeps the real form, so no message is lost in the move. One thing needs your eye: the address. Your current contact page and the footer we built disagree about the street, and we have used the footer’s.</p>
+        <dl class="ch__meta">
+          <div><dt>Replaces</dt><dd>/contact, live form, 3,116 messages</dd></div>
+          <div><dt>Changed in the move</dt><dd>The street address, to match the footer</dd></div>
+          <div><dt>Needs a decision</dt><dd>Which address is current</dd></div>
+        </dl>
+      </li>
+    </ul>
+  </section>
+
+  <!-- THE LEGAL PAGES ARE NOT OPTIONS, and this is the one set in the chooser
+       where the two cards are not alternatives. They are Empower's two existing
+       legal documents moved onto this build's chrome: one privacy policy, one
+       terms, both already published, neither rewritten. Nothing is being chosen
+       between. They are here because everything a visitor can reach should be
+       reviewable from this page, and because the transcription is the thing
+       that needs a pair of eyes on it.
+
+       So the meta rows below say what each document is and what changed in the
+       move, rather than "Feels like / Signature / Best for", which would be
+       asking Empower to have a taste about a privacy policy. -->
+  <section data-set="legal" data-state="open" aria-labelledby="group-legal">
+    <h2 class="ch__group" id="group-legal">Legal pages</h2>
+    <ul class="ch__list">
+      <li data-set="legal" class="ch__opt">
+        <p class="ch__tag">Document, new</p>
+        <h3><a href="privacy.html">Privacy Policy</a></h3>
+        <p class="ch__desc">Empower’s existing privacy policy, word for word, on this build’s header, footer and reading column. Nothing is rewritten and nothing is added. Two structural things did change and both are recorded: the document’s one section heading was an h3 sitting directly under the h1, which skips a level and fails the accessibility sweep, so it is an h2 here; and the paste wrappers WordPress kept from the original Word document are gone. There is no “last updated” line because the document does not state one, and the date WordPress holds records a save rather than a revision.</p>
+        <dl class="ch__meta">
+          <div><dt>Source</dt><dd>/privacy-policy/, fetched 2026-09-02</dd></div>
+          <div><dt>Changed in the move</dt><dd>Heading level only; no wording</dd></div>
+          <div><dt>Needs a decision</dt><dd>Four wording points listed in the hand-off note</dd></div>
+        </dl>
+      </li>
+
+      <li data-set="legal" class="ch__opt">
+        <p class="ch__tag">Document, new</p>
+        <h3><a href="terms.html">Terms of Service</a></h3>
+        <p class="ch__desc">The terms, word for word, on the same page shape. The document’s own “Last updated: 01/22/2025” is lifted out of the body and set as a dateline under the title, which is the only thing that moved. One thing worth a decision: this document is called three different names across Empower’s own material — the page it lives on is titled “Terms and Conditions”, the footer link says “Terms of Service”, and the first line of the text calls it “Terms of Use”. The page and the footer agree with each other here; the body keeps every word the text itself uses.</p>
+        <dl class="ch__meta">
+          <div><dt>Source</dt><dd>/wpautoterms/terms-and-conditions/, fetched 2026-09-02</dd></div>
+          <div><dt>Changed in the move</dt><dd>Dateline out of the body into the head</dd></div>
+          <div><dt>Needs a decision</dt><dd>Which of its three names the page should carry</dd></div>
+        </dl>
+      </li>
+    </ul>
+  </section>
+
   <section class="ch__shared" aria-labelledby="shared-title">
     <h2 id="shared-title">The same on every page</h2>
     <ul>
@@ -562,7 +641,7 @@
        tagged as references rather than as options.
 
        HIDDEN BY DEFAULT. The page is for sign-off, so nothing ticked in the rail
-       means the fourteen decisions and the four builds still waiting on one, and
+       means the fourteen decisions and the seven builds still waiting on one, and
        none of this. Three things bring it back: the Archived box in the rail, the
        archive link in the intro, and the pointer under any decided set. The last
        two work through :target, which is why they still work while the section is

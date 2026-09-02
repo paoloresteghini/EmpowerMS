@@ -68,7 +68,18 @@ export const footerPart = () => [
             markup: [
               '<ul class="em-footer__links">',
               '<li><a href="/contact">Contact Us</a></li>',
-              '<li><a href="/privacy">Privacy Policy &amp; Terms of Service</a></li>',
+              /* TWO LINKS, since 2026-09-02, matching src/_shared/footer.html.
+                 This was one link labelled "Privacy Policy & Terms of Service"
+                 pointing at /privacy, which is the privacy document alone: the
+                 label named two documents and landed on one. Both now exist as
+                 converted pages, so each link lands on the document it names.
+
+                 THIS PART RENDERS ON EVERY PAGE OF THE INSTALL, so this edit
+                 reaches all fourteen signed-off pages the moment it deploys.
+                 That is why it was held back when the legal pages themselves
+                 went live, and why it ships on its own. */
+              '<li><a href="/privacy">Privacy Policy</a></li>',
+              '<li><a href="/terms">Terms of Service</a></li>',
               '</ul>',
             ].join(''),
           }),

@@ -1144,6 +1144,32 @@ export const PAGE_REGISTER = [
     minShared: 19,
     minBoxes: 38,
   },
+  /* THE TWO LEGAL PAGES, added 2026-09-02. Floors measured the same way every
+     other entry's were: census() and controlBoxes() from fidelity-browser.mjs
+     run against the static file alone, served locally, with no live side.
+
+     They are small pages and their floors say so. A legal document is a head
+     and a column of prose: privacy has 12 block elements in its body, terms 20.
+     Copying another page's floors here would either reject an honest conversion
+     or, on the box sweep, pass a wrong staticFile — which is the exact defect
+     fix round 1 found when a single constant calibrated on the homepage was
+     applied to everything. */
+  {
+    name: 'privacy',
+    envVar: 'PRIVACY_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/privacy-policy/',
+    staticFile: 'dist/privacy.html',
+    minShared: 8,
+    minBoxes: 20,
+  },
+  {
+    name: 'terms',
+    envVar: 'TERMS_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/terms/',
+    staticFile: 'dist/terms.html',
+    minShared: 12,
+    minBoxes: 20,
+  },
 ];
 
 /* Pages with a page.mjs that are deliberately NOT gated, each with the
@@ -1234,6 +1260,15 @@ export const PAGE_REGISTER = [
    four of them), so leaving it out here would mean writing its path by hand
    somewhere else, which is the failure this field exists to prevent. */
 export const EXCLUDED_PAGES = [
+  {
+    name: 'contact',
+    exampleUrl: 'https://empv2.wpenginepowered.com/contact/',
+    reason: 'the live page renders Gravity Form 3 — a honeypot field, GF\'s own wrappers, sub-labels '
+      + 'and an ajax frame — where dist/contact.html carries a review stand-in that collects nothing. '
+      + 'Every control key differs by construction, and deliberately: the stand-in exists so the page '
+      + 'can be reviewed, and test.mjs holds it to the live form field for field instead. A content '
+      + 'mismatch of the same kind podcast-a and content-a carry, not an image finding',
+  },
   {
     name: 'podcast-a',
     exampleUrl: 'https://empv2.wpenginepowered.com/podcast/',

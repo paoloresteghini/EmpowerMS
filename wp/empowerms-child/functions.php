@@ -205,7 +205,7 @@ function empower_page_styles() {
 		   to a `.cad-` class are four `body:has(#ca-…:checked)` filter rules,
 		   and those ids exist on the All Content page alone, so `:has()`
 		   cannot match here. */
-		'post'         => array( 'motion', 'content-a', 'post-single' ),
+		'post'         => array( 'motion', 'content-a', 'prose', 'post-single' ),
 		/* THE CATEGORY ARCHIVE, and the only key here that is not a post type
 		   or a page slug. content-a.css is in the list for the same reason it
 		   is in the `post` row above: the cards on this page ARE `.cad-card`,
@@ -215,6 +215,35 @@ function empower_page_styles() {
 		   an archive without a key would ship the reveal attributes the
 		   template authors and nothing to act on them. */
 		'archive'      => array( 'motion', 'content-a', 'archive' ),
+		/* THE TWO LEGAL PAGES, added 2026-09-02. Read off dist/privacy.html and
+		   dist/terms.html, whose <head> loads the shared tokens cascade,
+		   components.css, the site sheet, the header sheet, the motion sheet,
+		   then post-single.css and legal.css last, in that order. The site and
+		   header sheets are already enqueued unconditionally above, so only the
+		   three beyond that shared cascade belong here.
+
+		   post-single.css IS in this list and it is not a mistake. The prose on
+		   both pages is `.ps-body`, the article template's own reading column:
+		   the measure, the heading scale, the list indent and the link
+		   treatment all live in that file, and so do the Elementor repairs that
+		   make them survive conversion. Same call the category archive made
+		   about content-a.css, and for the same reason: loading a signed-off
+		   design costs less than duplicating it into a second file that then
+		   has to be kept in step. content-a.css is NOT needed here, unlike on
+		   the `post` key, because these pages carry no card grid.
+
+		   ORDER MATTERS AND MIRRORS THE STATIC BUILD. legal.css declares the
+		   static page's reading measure, which post-single.css states only in
+		   an Elementor-scoped selector; both say 880px and a test pins the two
+		   numbers together. */
+		/* contact. Read off dist/contact.html's own <head>. The page renders a
+		   live Gravity Form, whose own stylesheet Gravity Forms enqueues and
+		   which is deliberately NOT disabled: it is what hides the honeypot
+		   field and what carries the validation and error states this build has
+		   no markup for. bridge.css block 77 layers on top of it. */
+		'contact'        => array( 'motion', 'contact' ),
+		'privacy-policy' => array( 'motion', 'prose', 'legal' ),
+		'terms'          => array( 'motion', 'prose', 'legal' ),
 		/* who-we-are-a. Read off dist/who-we-are-a.html's own <head> (lines
 		   10-22), which loads the shared tokens cascade, components.css, then
 		   the site stylesheet, the header sheet, the motion sheet, and its own

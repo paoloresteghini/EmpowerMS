@@ -1,0 +1,87 @@
+<!-- The form, and the details beside it.
+
+     TWO COLUMNS AT DESKTOP, THE FORM FIRST ON A PHONE. Markup order is the
+     phone’s layout, and on a phone the form is the reason for the visit: the
+     postal address is what you check afterwards, if at all. So the form is
+     first in the source and the details column is pulled up beside it at the
+     wide breakpoint by css/contact.css.
+
+     THE FORM HERE IS A STAND-IN AND THE CONVERTED PAGE DOES NOT USE IT.
+     /contact runs Gravity Form 3, which held 3,116 entries when this was
+     written, notifies the site admin and shows its own confirmation. A static
+     page cannot run Gravity Forms, so this mirrors that form field for field
+     and elementor/pages/contact/ carries the real shortcode instead. The
+     fields, their required flags, the 1000-character cap and the word on the
+     button are all read off wp_gf_form_meta for form_id 3, not designed here;
+     a test asserts each one.
+
+     IT POSTS NOWHERE, deliberately, and says so on the page. A form-shaped
+     design in a review reads as a working form unless it is marked, and
+     elementor/redirects.mjs records what that costs: pointing a live signup at
+     one "would end ambassador signups and report success while doing it". -->
+<section class="ct-body">
+  <div class="em-container ct-body__grid">
+
+    <div class="ct-form" data-placeholder="form">
+      <form class="ct-form__form" method="post" action="#contact-form" id="contact-form" novalidate>
+
+        <div class="ct-form__row">
+          <div class="em-field">
+            <label class="em-field__label" for="ct-first">First<span class="em-field__req" aria-hidden="true">*</span></label>
+            <input class="em-input" type="text" id="ct-first" name="first_name" autocomplete="given-name" required>
+          </div>
+          <div class="em-field">
+            <label class="em-field__label" for="ct-last">Last<span class="em-field__req" aria-hidden="true">*</span></label>
+            <input class="em-input" type="text" id="ct-last" name="last_name" autocomplete="family-name" required>
+          </div>
+        </div>
+
+        <div class="em-field">
+          <label class="em-field__label" for="ct-email">Email<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="email" id="ct-email" name="email" autocomplete="email" required>
+        </div>
+
+        <div class="em-field">
+          <label class="em-field__label" for="ct-phone">Phone<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="tel" id="ct-phone" name="phone" autocomplete="tel" required>
+        </div>
+
+        <div class="em-field">
+          <label class="em-field__label" for="ct-message">Message<span class="em-field__req" aria-hidden="true">*</span></label>
+          <textarea class="em-textarea" id="ct-message" name="message" rows="7" maxlength="1000" required
+                    aria-describedby="ct-message-hint"></textarea>
+          <p class="em-field__hint" id="ct-message-hint">1000 characters maximum.</p>
+        </div>
+
+        <button class="em-btn em-btn--primary em-btn--lg" type="submit">Send</button>
+      </form>
+
+      <p class="ct-form__note" role="note">This is a stand-in for the live Gravity Form on
+        empowerms.org, shown so the page can be reviewed. It collects nothing. The converted
+        page carries the real form, so every field, the character limit and the button are
+        copied from it rather than designed here.</p>
+    </div>
+
+    <div class="ct-details" data-reveal-group>
+      <h2 class="ct-details__title" data-reveal="rise">Empower Mississippi</h2>
+      <!-- The address the footer on this same page carries, and the one in the
+           Phase 2A plan and asserted in both test files. The page it replaces
+           gives a DIFFERENT street address, and that one is the only surface
+           anywhere that does; Paolo chose the footer’s on 2026-09-02, so the
+           page and its own footer now agree instead of contradicting each other
+           in one scroll. The superseded address is deliberately not repeated
+           here, not even in a comment: a wrong postal address is the kind of
+           thing that gets copied back out of one. It is recorded in the vault
+           and in the memory note for this page. -->
+      <address class="ct-details__address" data-reveal="rise">
+        741 Avignon Dr., Suite C<br>
+        Ridgeland, MS 39157
+      </address>
+      <!-- NO EMAIL ADDRESS AND NO PHONE NUMBER. The old page publishes neither,
+           and three email addresses are in circulation across this build
+           (docs/legal/README.md item 3). The header strip and footer carry
+           theirs; this page does not add a fourth voice. Paolo’s call, same day. -->
+    </div>
+
+  </div>
+</section>

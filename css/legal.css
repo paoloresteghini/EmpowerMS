@@ -1,0 +1,107 @@
+/* THE TWO LEGAL PAGES: /privacy and /terms.
+   ---------------------------------------------------------------------------
+
+   This file is a FRAME, not a design. The reading column both pages wear is
+   `.ps-body` from css/prose.css, which owns the measure, the type scale, the
+   list indent, the link treatment and the quote bar. What is left for this file
+   is the page's own head, its dateline, and the vertical rhythm around them.
+
+   WHY THE COLUMN IS SHARED RATHER THAN REDRAWN. The 490 single posts already
+   wear it. Duplicating it here would be a second prose design to keep in step
+   with the first by hand, which is the trade css/archive.css already refused
+   when it took content-a's card design rather than drawing new cards.
+
+   WHY IT IS css/prose.css AND NOT css/post-single.css, which is where that
+   column lived until 2026-09-02 and where these pages first read it from. That
+   file is install-only: it dresses markup that exists only on WordPress, which
+   is what earns it the right to carry Elementor selectors a static page could
+   never satisfy. These pages have a static build, so loading it broke that
+   premise — and the repository caught it, because the exemption is derived from
+   two facts about files rather than from a list somebody maintains. The column
+   moved into a file belonging to neither page type; the furniture around it
+   (eyebrow, title, photograph, More grid) stayed behind, because a legal page
+   has none of it.
+
+   NO SIDE STRIPE ANYWHERE IN THIS FILE. The mark is 56x4 from above, the
+   build's motif, exactly as css/content-a.css:196 sets it. A test sweeps for
+   the side-border variant.
+*/
+
+/* --------------------------------- Frame -------------------------------- */
+
+/* Same opening rhythm as `.ps-article`, and for the same reason: these pages
+   and a single post are the same kind of screen, a title and a column of
+   prose, and two different top paddings on two documents that sit one click
+   apart would read as a mistake. */
+.lg-doc{padding-block:clamp(var(--space-9),5vw,var(--space-12))
+  clamp(var(--space-10),6vw,var(--space-12))}
+
+/* --------------------------------- Head --------------------------------- */
+
+/* LEFT ALIGNED, and this is the one place these pages deliberately part from
+   the article template. `.ps-head` centres, because a story wants a title that
+   presents itself. A legal document is a reference: the reader is scanning for
+   a clause, and a centred title over a left-aligned column of small print puts
+   two different axes on one screen. The measure is `.ps-body`'s own 880px so
+   the title sits directly over the first word of the text rather than over the
+   middle of nothing. */
+.lg-head{max-width:min(100%,880px);margin:0 auto
+  clamp(var(--space-7),3vw,var(--space-9))}
+
+/* Marked from above: 56 x 4. On the article template this mark sits on the
+   eyebrow, because the eyebrow is the first thing in that section. There is no
+   eyebrow here — a legal document has no category and no date to carry — so it
+   sits on the head itself, which is now the first thing. Left, not centred,
+   because everything under it is left aligned; `.ps-eyebrow::before` centres
+   its own for the opposite reason and says so. */
+.lg-head{position:relative;padding-top:calc(var(--space-5) + 4px)}
+.lg-head::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* Narrower than `.ps-title`'s 26ch. Both these titles are two or three words,
+   so the measure never bites; it is here so a longer one Empower may add later
+   still breaks somewhere sensible instead of running the width of the column. */
+.lg-head h1{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-h1);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue);text-wrap:balance;max-width:20ch}
+
+/* ------------------------------- Dateline ------------------------------- */
+
+/* Only the terms page renders this, because only the terms document states a
+   date. docs/legal/README.md carries the full account and a test holds the
+   privacy page's silence open, so this rule exists for one element on one
+   page and that is deliberate rather than an oversight.
+
+   --text-muted on the page ground measures 5.66:1, comfortably past AA. The
+   0.02 shortfall css/site.css records for this token is against
+   --surface-tint, which these pages do not use. */
+.lg-date{margin:var(--space-4) 0 0;color:var(--text-muted);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow,.8125rem);letter-spacing:.08em;
+  text-transform:uppercase;font-variant-numeric:tabular-nums}
+
+/* --------------------------------- Body --------------------------------- */
+
+/* NOTHING ABOUT THE PROSE IS DECLARED HERE. The reading column is
+   css/prose.css, which both these pages and the 490 single posts load, and it
+   owns the measure, the type scale, the list indent, the link treatment and
+   the quote bar. This file stops at the frame.
+
+   That split is younger than these pages by about an hour. They were written
+   loading the article stylesheet directly and re-declaring the measure here,
+   because the article sheet stated it only in a selector shaped for Elementor
+   and a static page therefore inherited no measure at all: the head sat at 880
+   and the prose ran to 1104 beside it, with every stylesheet loaded and nothing
+   failing. The repository's own guard then caught the deeper version of the
+   same problem — a static page had started loading a sheet that was allowed to
+   be Elementor-coupled precisely because no static page loaded it — and the
+   column moved out into a file that belongs to neither page type. */
+
+/* `.ps-body`'s first paragraph is set larger, as a lede. That is right for
+   both of these documents by construction rather than by luck: the terms open
+   on "Please read these Terms of Use carefully…" and the privacy policy on the
+   sentence that says what Empower collects. It is right only because the terms
+   dateline was lifted OUT of the prose into the head — left where the source
+   put it, the lede treatment would have landed on "Last updated: 01/22/2025".
+   That move is asserted by its own test, so this reasoning cannot quietly
+   stop being true. */

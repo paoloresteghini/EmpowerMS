@@ -7727,3 +7727,207 @@ body:has(.pca-guest:checked):not(:has(#pa-g-expert:checked)) .pca-catalogue .e-l
 body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-loop-item:has(> .pca-ep[data-guest="leader"]){
   display:none;
 }
+
+/* 76. THE READING COLUMN'S MEASURE, FOR THE CONVERTED PAGES.
+ *
+ * `.ps-body` is the shared reading column (css/prose.css). That file declares
+ * the measure at one class, which is all a static page needs, and carries no
+ * Elementor selector at all because static pages load it and a test sweeps it.
+ *
+ * Converted, the class lands on the widget's own wrapper, and Elementor ships
+ *
+ *     .elementor.elementor .e-con>.elementor-widget{max-width:100%}
+ *
+ * at 0,4,0 — they DOUBLE `.elementor` on purpose to win exactly this kind of
+ * fight. A single-class rule loses to it and the column runs the full 1200px
+ * container. Two earlier attempts lost to it in css/post-single.css and looked,
+ * from the rendered page, like the stylesheet had not loaded at all: 0,1,0 and
+ * then 0,3,0, both parsed, both matching, both silently outranked. The rule
+ * below mirrors their shape and adds the class, so it is 0,5,0 and wins on
+ * specificity rather than on source order, which is the only thing a child
+ * theme can rely on when the plugin is free to reorder its own enqueues.
+ *
+ * THE NUMBER IS DUPLICATED FROM css/prose.css AND MUST STAY EQUAL TO IT.
+ * Changing the measure means changing both in the same commit. test.mjs's "the
+ * legal prose is held to the same measure as an article" reads the number out
+ * of both files and fails if they drift, because a measure that differs between
+ * the static and converted renderings of the same document is precisely the
+ * defect that produced this rule: the head at 880 and the prose at 1104, side
+ * by side, with every stylesheet loaded and nothing failing.
+ *
+ * MOVED HERE FROM css/post-single.css on 2026-09-02, when the reading column
+ * stopped being install-only. It was legitimate there while nothing but
+ * WordPress wore that column; /privacy and /terms have a static build and wear
+ * it too. */
+.elementor.elementor .e-con > .elementor-widget.ps-body{max-width:min(100%,880px);margin-inline:auto}
+
+/* 77. GRAVITY FORM 3 ON THE CONTACT PAGE.
+ *
+ * The one live form this build renders. It is NOT rebuilt as markup: it holds
+ * 3,116 entries, notifies the admin and renders its own confirmation, and
+ * elementor/pages/contact/02-form.mjs records why replacing it with a
+ * form-shaped design would be the most expensive mistake available on this
+ * page. So Gravity Forms emits the markup and this block dresses it to match
+ * the build's own fields.
+ *
+ * GRAVITY FORMS KEEPS ITS OWN STYLESHEET AND MUST. The form carries a honeypot
+ * field (gfield--type-honeypot, labelled "URL") that GF's CSS is what hides,
+ * plus the validation and error states this build has no markup for. Turning
+ * its stylesheet off would show a bot trap to every human visitor. Everything
+ * below therefore layers on top of GF's own rules rather than replacing them,
+ * and is scoped to `.ct-form` so it cannot reach any other form on the install
+ * — the ambassador and newsletter forms on the legacy pages are untouched.
+ *
+ * SELECTORS ARE QUALIFIED WITH .ct-form AND A GF CLASS, which puts them at
+ * 0,2,0 or better against GF's own 0,1,0 and 0,2,0 rules. bridge.css is not
+ * reliably last on this install (Elementor enqueues per-widget CSS on demand,
+ * after the theme's), so this wins on specificity rather than on order, the way
+ * every other block in this file does after that finding.
+ *
+ * THE FIELDS ARE A LIST, and GF marks it up as one: ul.gform_fields > li.gfield.
+ * The list bullets and indent are GF's to remove and it does; what is left here
+ * is the gap, because GF's own spacing is tuned for its default theme rather
+ * than for this one. */
+.ct-form .gform_wrapper .gform_fields{
+  display:grid;
+  gap:clamp(var(--space-5),2vw,var(--space-6));
+}
+
+/* Labels match .em-field__label exactly (components/components.css:101), so a
+ * visitor moving between this form and the newsletter page sees one design. */
+.ct-form .gform_wrapper .gfield_label{
+  font-family:var(--font-display);
+  font-weight:var(--fw-semibold);
+  font-size:var(--fs-small);
+  color:var(--text-strong);
+  margin-bottom:var(--space-2);
+}
+
+/* GF renders the required marker as its own span. Same orange as
+ * .em-field__req, and the asterisk stays decorative: the input's own `required`
+ * attribute is what a screen reader announces. */
+.ct-form .gform_wrapper .gfield_required{
+  color:var(--em-orange);
+  margin-left:2px;
+}
+
+/* Inputs and textarea match .em-input / .em-textarea (components.css:107).
+ * Typed out rather than @extend-ed because this is plain CSS, and listed by
+ * attribute selector because GF renders each field type as a bare input with
+ * no shared class of its own. */
+/* THE SELECTOR IS THIS LONG BECAUSE GRAVITY FORMS' IS, and the first version of
+ * this block lost to it in exactly the way this file has recorded twice before.
+ * legacy/css/formsmain.min.css ships
+ *
+ *     .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox])
+ *       :not([type=submit]):not([type=button]):not([type=image]):not([type=file])
+ *       {padding:5px 4px}
+ *
+ * and `:not()` contributes its ARGUMENT's specificity, so each of those six
+ * attribute selectors counts as a class. That rule is 0,7,1. The plain
+ * `.ct-form .gform_wrapper input[type="email"]` this block started with is
+ * 0,3,1 and was outranked without a word from anywhere: every input on the page
+ * rendered 37px tall with 5px of padding while the textarea, which that rule
+ * does not target, was correctly 12px 14px. Two controls in one form disagreeing
+ * is what made it visible.
+ *
+ * Mirroring their shape and adding the two scoping classes puts this at 0,9,1,
+ * so it wins on specificity rather than on order — the only thing a child theme
+ * can rely on here, since Elementor enqueues per-widget CSS after the theme's.
+ * Same repair as css/post-single.css made against Elementor's doubled
+ * `.elementor.elementor`, and the same family as the tag-keyed reset at 0,4,1
+ * that cost the landing page its figure margin. */
+.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]),
+.ct-form .gform_wrapper textarea{
+  width:100%;
+  font-family:var(--font-body);
+  font-size:var(--fs-body);
+  color:var(--text-strong);
+  background:var(--white);
+  border:1px solid var(--border-default);
+  border-radius:var(--radius-input);
+  padding:12px 14px;
+  transition:border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out);
+}
+.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):hover,
+.ct-form .gform_wrapper textarea:hover{
+  border-color:var(--blue-400);
+}
+
+/* THE FOCUS RING IS NOT OPTIONAL AND THIS FILE HAS SHIPPED ITS ABSENCE ONCE.
+ * Block 41 exists because sixteen buttons across ten pages had no focus
+ * indicator for the whole of Phase 2B: the rule was keyed on the element
+ * CARRYING the class rather than the element that RECEIVES focus. Every control
+ * in this form is named here for that reason, including the submit. */
+.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):focus-visible,
+.ct-form .gform_wrapper textarea:focus-visible,
+.ct-form .gform_wrapper .gform_button:focus-visible{
+  outline:none;
+  box-shadow:var(--shadow-focus);
+  border-color:var(--em-blue);
+}
+
+.ct-form .gform_wrapper textarea{
+  resize:vertical;
+  min-height:11rem;
+}
+
+/* The name field is GF's two-up grid. Its own row gap is 0, which reads as one
+ * field split rather than two fields, so it gets the same gap as the rest. */
+.ct-form .gform_wrapper .ginput_complex{
+  gap:clamp(var(--space-5),2vw,var(--space-6));
+}
+
+/* Sub-labels (First, Last) are the only labels on this form GF sets below the
+ * input. They stay where GF puts them and only take the build's caption type. */
+.ct-form .gform_wrapper .gform-field-label--type-sub{
+  font-family:var(--font-body);
+  font-size:var(--fs-caption);
+  color:var(--text-muted);
+}
+
+/* The submit is the page's one orange action, matching .em-btn--primary --lg
+ * (components/components.css). `align-self:start` rather than a width, so it is
+ * as wide as its label at every breakpoint, like every other primary action in
+ * the build. */
+.ct-form .gform_wrapper .gform_footer{
+  margin:0;
+  padding:0;
+  display:flex;
+}
+.ct-form .gform_wrapper .gform_button{
+  align-self:start;
+  font-family:var(--font-display);
+  font-weight:var(--fw-bold);
+  font-size:var(--fs-body);
+  line-height:1;
+  letter-spacing:var(--ls-caps);
+  text-transform:uppercase;
+  color:var(--white);
+  background:var(--em-orange);
+  /* 2px and 17px 34px, not 1px and 16px 32px: components/components.css:4 and
+   * :10 are what .em-btn--lg computes to, and the static build's own submit is
+   * exactly that. The first version of this block guessed round numbers and
+   * left the live button 10px shorter than the one in the review copy. */
+  border:2px solid var(--em-orange);
+  border-radius:var(--radius-button);
+  padding:17px 34px;
+  cursor:pointer;
+  transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out);
+}
+.ct-form .gform_wrapper .gform_button:hover{
+  background:var(--orange-600,var(--em-orange));
+  border-color:var(--orange-600,var(--em-orange));
+}
+
+/* The confirmation GF swaps in after a successful send. It replaces the form
+ * in place, so without this it lands as unstyled body text where a designed
+ * form used to be. */
+.ct-form .gform_confirmation_message{
+  padding:var(--space-6);
+  border-radius:var(--radius-card);
+  background:var(--surface-tint);
+  font-size:var(--fs-lead);
+  line-height:1.6;
+  color:var(--text-strong);
+}

@@ -1455,8 +1455,8 @@ test('the chooser filters without a script, and every control is a real one', ()
     ['to-review', 'signed-off', 'archived',
      'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
      'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
-     'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing'],
-    'the facets in the rail are not the three statuses and sixteen sets expected');
+     'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing', 'set-contact', 'set-legal'],
+    'the facets in the rail are not the three statuses and eighteen sets expected');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1469,7 +1469,7 @@ test('the chooser filters without a script, and every control is a real one', ()
      visually. And a set ticked behind a shut panel has to announce itself, or the
      page is filtered for a reason nobody can see. */
   assert.match(chooser, /<details class="ch__facet ch__facet--fold">/,
-    'the Set facet is not collapsible, and sixteen rows is longer than the page beside it');
+    'the Set facet is not collapsible, and eighteen rows is longer than the page beside it');
   assert.ok(!/<details class="ch__facet ch__facet--fold" open>/.test(chooser),
     'the Set facet ships open, so folding it buys nothing');
   assert.match(chooser, /<fieldset class="ch__facet__body">\s*\n\s*<legend class="em-visually-hidden">Set<\/legend>/,
@@ -1508,9 +1508,15 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      beside the argument.
 
      Moving a key off this list is the commit that records the decision. */
-  const UNDECIDED = ['content', 'landing'];
+  /* `legal` joined the undecided sets on 2026-09-02. It is undecided in a
+     different sense from the other two: nothing is being chosen between, because
+     the two cards are a privacy policy and a terms document rather than two
+     readings of one brief. What is open is Empower's sign-off on the
+     transcription and on the wording questions the move surfaced, so it carries
+     no pick for the same reason a set awaiting a decision carries none. */
+  const UNDECIDED = ['content', 'landing', 'contact', 'legal'];
   const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 16, `expected sixteen sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 18, `expected eighteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -1892,15 +1898,23 @@ const TEAM_COPY = [
 
 /* Name, title, bio-page slug. Order here is the roadmap's alphabetical-by-last-
    name rule applied literally, which moves Richards above Thigpen; the roadmap
-   itself lists those two the other way round. */
+   itself lists those two the other way round.
+
+   NINE, NOT TEN, SINCE 2026-08-21, and two of the nine changed title in the
+   same edit. Kienna Horn: Wil Ervin "is moving on to another job opportunity at
+   the end of the month, so he'll need to be removed from the staff page along
+   with his bio and any related information", and "Patrick and Gina have both
+   had title and position updates". Gina Metzger's Executive Vice President is
+   now Dr. Patrick Miller's; hers is Chief Administrative Officer. All three
+   changes are read from Empower's own roadmap table, which they edited the same
+   day, not from the SEO sheet that arrived with them. */
 const TEAM_STAFF = [
   ['Grant Callen', 'Founder & CEO', 'grant-callen'],
-  ['Wil Ervin', 'Senior Vice President', 'wil-ervin'],
   ['Ashley Green', 'Director of Outreach', 'ashley-green'],
   ['Kienna Horn', 'Director of Communications', 'kienna-horn'],
   ['Elyse Marcellino', 'Director of Embark', 'elyse-marcellino'],
-  ['Gina Metzger', 'Executive Vice President', 'gina-metzger'],
-  ['Dr. Patrick Miller', 'Vice President of Development', 'patrick-miller'],
+  ['Gina Metzger', 'Chief Administrative Officer', 'gina-metzger'],
+  ['Dr. Patrick Miller', 'Executive Vice President', 'patrick-miller'],
   ['Joanna Pevey', 'Executive Assistant & Development Manager', 'joanna-pevey'],
   ['Dr Kristin Vance Richards', 'Director of Research', 'kristin-vance-richards'],
   ['Forest Thigpen', 'Senior Advisor', 'forest-thigpen'],
@@ -1945,7 +1959,7 @@ test('every member of staff appears on every variation, with title and bio link'
       assert.ok(text.includes(title), `${out} is missing ${name}'s title "${title}"`);
       /* The roadmap's section 2: "Each staff photo links to their full bio
          page." One of those pages exists — the CEO's — so every card points at
-         it for review. When the other nine are built this becomes a per-person
+         it for review. When the other eight are built this becomes a per-person
          destination, and `slug` below is the name each one will take. */
       assert.ok(html.includes('href="team-bio.html"'),
         `${out} does not link ${name} to the staff detail screen`);
@@ -1987,7 +2001,7 @@ test('every monogram tile on every team variation is marked as a placeholder', (
         `${out} has an unmarked monogram tile: ${tile.slice(0, 80)}`);
     }
     assert.ok(tiles.length >= TEAM_STAFF.length,
-      `${out} shows ${tiles.length} tiles — every variation gives all ten staff a portrait`);
+      `${out} shows ${tiles.length} tiles — every variation gives all ${TEAM_STAFF.length} staff a portrait`);
     assert.ok(html.includes('Placeholder portraits'),
       `${out} shows placeholder tiles but no longer says so`);
   }
@@ -2744,7 +2758,7 @@ const CAPITOL_COPY = [
   /* Section 2, about the show. */
   'The Capitol Moves Fast. We Help You Keep Up.',
   'Capitol Chat is Empower Mississippi’s weekly insider update on what’s happening at the Mississippi State Capitol during the legislative session.',
-  'Each week, Senior Vice President Wil Ervin breaks down the biggest developments and highlights the action under the dome—all in under five minutes.',
+  'Each week, we break down the biggest developments and highlight the action under the dome, all in under five minutes.',
   'Get the context you need to understand what’s happening, why it matters, and what to watch next.',
   'Listen and subscribe wherever you get your podcasts.',
 
@@ -2781,22 +2795,22 @@ test('Capitol Chat is an audio page with one action', () => {
   }
 });
 
-test('Wil Ervin’s name is not a link on either Capitol Chat reading', () => {
-  /* Grant Callen is a link on the podcast pages because his bio is built. Wil
-     Ervin's is not, and Empower asked for exactly this to stop happening: a card
-     or a name that opens somebody else's bio. The check is the whole anchor set,
-     because the failure would come from copying the podcast page's pattern. */
+test('no Capitol Chat reading names Wil Ervin anywhere', () => {
+  /* This test used to say the opposite half of the time: his name had to be on
+     the page and had to NOT be a link, because his bio page did not exist and a
+     visitor clicking it would have landed on somebody else's. Empower closed
+     that question by deletion on 2026-08-21 — he leaves at the end of the month
+     and Kienna Horn rewrote the sentence to be general — so the assertion flips
+     from "present but unlinked" to "absent". Kept rather than deleted because
+     the failure it guards against has not gone away: the copy lives in four
+     places (two static readings, the Elementor module, and this file's own
+     CAPITOL_COPY), and reinstating a departed member of staff by restoring one
+     of them is exactly the mistake nobody would notice. */
   for (const { out, html } of CAPITOLPAGES) {
-    const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
-    for (const inner of anchors) {
-      assert.ok(!/Wil Ervin/.test(inner),
-        `${out} links Wil Ervin's name — his bio page does not exist, so it would open somebody else's`);
-    }
+    assert.ok(!/Wil Ervin/.test(html),
+      `${out} still names Wil Ervin — Empower removed him from the page on 2026-08-21`);
     assert.ok(!html.includes('href="team-bio.html"'),
       `${out} links the CEO's bio from a page hosted by somebody else`);
-    /* And the name is still on the page: not-a-link must not become not-there. */
-    assert.ok(textOf(html).includes('Senior Vice President Wil Ervin'),
-      `${out} has lost the host's name`);
   }
 });
 
@@ -3254,9 +3268,12 @@ test('both Join Us tabs are built around a real form, not a picture of one', () 
 });
 
 test('neither Ambassador reading links Ashley Green’s name', () => {
-  /* Same rule as Wil Ervin on the Capitol Chat pages: only the CEO's bio page
-     exists, so a linked name here would open somebody else's. And the name must
-     still be present — not-a-link must not quietly become not-there. */
+  /* The rule Capitol Chat used to carry, and the last page still carrying it:
+     only the CEO's bio page exists, so a linked name here would open somebody
+     else's. And the name must still be present — not-a-link must not quietly
+     become not-there. Capitol Chat's copy of this test flipped to plain absence
+     on 2026-08-21 when Empower took its host's name out of the page; that is a
+     change to who is on the page, not a change to this rule. */
   for (const { out, html } of AMBPAGES) {
     const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
     for (const inner of anchors) {
@@ -3798,6 +3815,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
     'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc', 'give-d': 'gvd',
     'content-a': 'cad', 'content-b': 'cwa', 'landing': 'lnd', 'landing-b': 'lnb',
+    'contact': 'ct',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its
@@ -4698,4 +4716,315 @@ test('the handed-off landing template has shed its review strip, and the other h
 
   assert.match(other.html, /<div class="ln[bd]-note" role="note">/, `${other.out} has lost its review strip`);
   assert.match(textOf(other.html), /This page is a template/, `${other.out}'s review strip no longer says what it is`);
+});
+
+/* ---------------------------------------------------------------------------
+   THE TWO LEGAL PAGES.
+
+   These are not About variations and they are not a design. They are two legal
+   documents Empower already publishes, moved onto this build's chrome, so the
+   contract below is almost entirely about TRANSCRIPTION rather than about
+   composition: the words have to survive the move exactly.
+
+   `kind: 'legal'` rather than 'about' for that reason. The About contract asks
+   whether a page is one of several readings of the same brief, keeps each
+   variation's stylesheet separable and registers a namespace prefix per
+   reading. None of that describes a legal document, and there is only one
+   reading of each. They ARE in ALLPAGES, so every hygiene sweep in this file
+   still covers them.
+
+   docs/legal/*.source.html is the captured original, fetched from
+   empowerms.org on 2026-09-02, with third-party furniture stripped and nothing
+   else touched. docs/legal/README.md records what was stripped and why. */
+const LEGALPAGES = PAGES
+  .filter(p => p.kind === 'legal')
+  .map(p => ({ ...p, html: readFileSync(p.out, 'utf8') }));
+
+/* Prose, normalised for comparison: tags out, entities in, whitespace
+   collapsed. Both sides of every transcription assertion go through this, so a
+   difference it reports is a difference in WORDS and never in markup. */
+const proseOf = (h) => h
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&#8220;|&#8221;/g, '"')
+  .replace(/&#8217;/g, '’')
+  .replace(/&amp;/g, '&')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+test('both legal pages are in the build', () => {
+  assert.equal(LEGALPAGES.length, 2,
+    `expected the privacy and terms pages, found ${LEGALPAGES.length}`);
+  const outs = LEGALPAGES.map(p => p.out).sort();
+  assert.deepEqual(outs, ['dist/privacy.html', 'dist/terms.html']);
+});
+
+test('every word of each legal document survives the move', () => {
+  /* THE ONE TEST THAT MATTERS ON THESE PAGES. A dropped clause in a privacy
+     policy is not a visual regression, and no other sweep in this file would
+     see it: the hygiene tests read structure, and the About copy contracts
+     name strings that were chosen for a design. So the whole document is
+     compared, both directions, against the captured original.
+
+     Both directions deliberately. Comparing only source-into-page would pass a
+     page that had gained a sentence nobody at Empower wrote, which on a legal
+     document is the worse of the two failures. */
+  const SOURCES = {
+    'dist/privacy.html': 'docs/legal/privacy-policy.source.html',
+    'dist/terms.html': 'docs/legal/terms.source.html',
+  };
+  /* THE ONE LINE OF EITHER DOCUMENT THAT IS DELIBERATELY NOT IN THE BODY.
+     The terms open on their own dateline, and this build lifts it into the page
+     head where a dateline belongs — otherwise .ps-body's lede treatment, which
+     sets the first paragraph larger, would land on "Last updated: 01/22/2025"
+     instead of on the sentence that tells a reader what they are agreeing to.
+     It is dropped from the source side here and asserted in the head by "a
+     legal page states a date only when its own document states one", so it is
+     still checked, just by the test that knows where it went. */
+  const MOVED_TO_HEAD = 'Last updated: 01/22/2025';
+
+  for (const page of LEGALPAGES) {
+    const source = proseOf(readFileSync(SOURCES[page.out], 'utf8'))
+      .replace(MOVED_TO_HEAD, '').trim();
+    const body = page.html.match(/<div class="ps-body">([\s\S]*?)<\/div>\s*<\/div>/);
+    assert.ok(body, `${page.out} has no .ps-body block to compare`);
+    const built = proseOf(body[1]);
+
+    /* Sentence by sentence rather than one string equality, so a failure names
+       the clause that moved instead of printing two 600-word paragraphs. */
+    const sentences = s => s.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(x => x.length > 12);
+    for (const sentence of sentences(source)) {
+      assert.ok(built.includes(sentence),
+        `${page.out} is missing a sentence of the original: "${sentence.slice(0, 90)}…"`);
+    }
+    for (const sentence of sentences(built)) {
+      assert.ok(source.includes(sentence),
+        `${page.out} states something the original does not: "${sentence.slice(0, 90)}…"`);
+    }
+  }
+});
+
+test('the legal pages share one stylesheet and reuse the article prose sheet', () => {
+  /* css/legal.css is the page frame; the reading column is .ps-body from
+     css/prose.css, shared with the 490 single posts so there is one prose
+     design rather than two kept in step by hand. Same call css/archive.css made
+     when it took content-a's cards.
+
+     AND NOT css/post-single.css, which is where that column lived until
+     2026-09-02. That file is install-only, which is what earns it the right to
+     carry Elementor selectors; a static page loading it breaks the premise the
+     exemption is derived from. Asserted in both directions here, because
+     linking it again would be silent. */
+  for (const page of LEGALPAGES) {
+    const shell = readFileSync(`src/${page.src}`, 'utf8');
+    assert.match(shell, /css\/legal\.css/, `${page.src} does not link css/legal.css`);
+    assert.match(shell, /css\/prose\.css/, `${page.src} does not link the shared reading column`);
+    assert.ok(!shell.includes('css/post-single.css'),
+      `${page.src} links css/post-single.css, which is install-only and must not be loaded by a static page`);
+    assert.match(shell, /<!--@include _shared\/header-2\.html-->/,
+      `${page.src} does not use the agreed build's header`);
+    assert.ok(!shell.includes('megamenu'), `${page.src} still loads mega-menu code`);
+  }
+});
+
+test('a legal page states a date only when its own document states one', () => {
+  /* Terms carries "Last updated: 01/22/2025" in Empower's own text, so the page
+     shows it, lifted out of the prose into the page head where a dateline
+     belongs. The privacy policy states no date anywhere in its text. Its
+     WordPress `modified` field says 2025-02-20, and that is a record of when
+     somebody saved the post, not of when the policy changed; printing it as
+     "Last updated" would be this build asserting something Empower has not.
+     So privacy shows no date, and this test holds that open rather than
+     letting a future edit quietly invent one. */
+  const terms = LEGALPAGES.find(p => p.out === 'dist/terms.html');
+  const privacy = LEGALPAGES.find(p => p.out === 'dist/privacy.html');
+
+  assert.match(terms.html, /<p class="lg-date"[^>]*>Last updated: 01\/22\/2025<\/p>/,
+    'the terms page has lost the date its own document states');
+  assert.ok(!proseOf(terms.html.match(/<div class="ps-body">[\s\S]*?<\/div>\s*<\/div>/)[0])
+    .startsWith('Last updated'),
+    'the terms dateline is still inside the prose as well as in the head');
+
+  assert.ok(!/lg-date/.test(privacy.html),
+    'the privacy page has gained a dateline; its document states no date and none may be invented');
+});
+
+test('each legal page is one h1 followed by h2s, with no level skipped', () => {
+  /* The privacy policy's own markup on empowerms.org opens its one section with
+     an <h3> under an <h1>. That is a skipped level, and it is fixed here rather
+     than transcribed: the heading LEVEL is structure, not wording, so changing
+     it alters nothing Empower wrote. Recorded in docs/legal/README.md. */
+  for (const page of LEGALPAGES) {
+    const levels = [...page.html.matchAll(/<h([1-6])[^>]*>/g)]
+      .map(m => Number(m[1]));
+    const inMain = page.html.slice(page.html.indexOf('<main'), page.html.indexOf('</main>'));
+    const mainLevels = [...inMain.matchAll(/<h([1-6])[^>]*>/g)].map(m => Number(m[1]));
+    assert.equal(mainLevels.filter(l => l === 1).length, 1, `${page.out} does not have exactly one h1`);
+    assert.equal(mainLevels[0], 1, `${page.out} does not open with its h1`);
+    for (let i = 1; i < mainLevels.length; i += 1) {
+      assert.ok(mainLevels[i] <= mainLevels[i - 1] + 1,
+        `${page.out} skips from h${mainLevels[i - 1]} to h${mainLevels[i]}`);
+    }
+    assert.ok(levels.length > 0);
+  }
+});
+
+test('the footer links both legal pages, and the combined label is gone', () => {
+  /* The footer carried ONE link labelled "Privacy Policy & Terms of Service"
+     pointing at /privacy, which is the privacy document alone. The label
+     promised two documents and delivered one. Paolo chose two pages on
+     2026-09-02, so the label is now two links that each land on the document
+     they name.
+
+     Asserted on the shared partial rather than on a built page, because the
+     footer is a site-wide theme part: every page gets this or none does. */
+  const footer = readFileSync('src/_shared/footer.html', 'utf8');
+  assert.match(footer, /<a href="\/privacy">Privacy Policy<\/a>/,
+    'the footer has no privacy link');
+  assert.match(footer, /<a href="\/terms">Terms of Service<\/a>/,
+    'the footer has no terms link');
+  assert.ok(!footer.includes('Privacy Policy &amp; Terms of Service'),
+    'the footer still carries the combined label, which named two documents and linked one');
+});
+
+test('the legal prose is held to the same measure as an article', () => {
+  /* The measure is declared twice on purpose and the two must not drift.
+
+     css/prose.css declares it at one class, which is all a static page needs.
+     The theme's bridge stylesheet declares it again at the specificity
+     Elementor forces, because converted the class lands on a widget wrapper
+     that Elementor gives max-width:100% at four classes. Same number both
+     times, two different renderings of the same document.
+
+     THIS PAIR REPLACED A WORSE ONE ON 2026-09-02. The measure used to live in
+     css/post-single.css in the Elementor-shaped form alone, and the legal pages
+     re-declared it in css/legal.css because that selector matches nothing on a
+     static page. Both files have since stopped carrying it: the column is
+     shared now, and post-single.css keeps only the furniture around it. If this
+     test starts reading either of those files again, the split has been undone.
+
+     It pins the NUMBER in both places rather than the presence of a rule in
+     either, because the failure it exists to catch is silent: every stylesheet
+     loads, every rule parses, and the head and the prose simply sit at
+     different widths. */
+  const prose = readFileSync('css/prose.css', 'utf8');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  const legal = readFileSync('css/legal.css', 'utf8');
+
+  const staticMeasure = prose.match(/^\.ps-body\{max-width:min\(100%,(\d+)px\)/m);
+  assert.ok(staticMeasure, 'css/prose.css no longer gives the static page a reading measure');
+
+  const convertedMeasure = bridge.match(/\.elementor-widget\.ps-body\{max-width:min\(100%,(\d+)px\)/);
+  assert.ok(convertedMeasure, 'the bridge sheet no longer carries the converted measure');
+
+  assert.equal(convertedMeasure[1], staticMeasure[1],
+    `the converted measure (${convertedMeasure[1]}px) has drifted from the static one (${staticMeasure[1]}px)`);
+
+  /* The head is held to the same number, or the title sits over the middle of
+     nothing instead of over the first word of the text. */
+  assert.ok(legal.includes(`.lg-head{max-width:min(100%,${staticMeasure[1]}px)`),
+    'the legal page head is no longer on the same measure as its prose');
+
+  /* And the split itself: neither page-specific sheet may take the column back. */
+  assert.ok(!/\.ps-body\s*\{/.test(legal),
+    'css/legal.css has started declaring prose rules again; the column lives in css/prose.css');
+  const article = readFileSync('css/post-single.css', 'utf8');
+  assert.ok(!/^\.ps-body[\s,{]/m.test(article),
+    'css/post-single.css has taken the reading column back; it is shared with the legal pages');
+});
+
+/* ---------------------------------------------------------------------------
+   THE CONTACT PAGE.
+
+   Every other form-shaped page in this build is markup wired to nothing, and
+   that is safe because none of them replaces a working route. Contact does:
+   /contact is linked from the footer of all fourteen converted pages, and the
+   page it points at runs Gravity Form 3, which holds 3,116 entries with the
+   most recent on 2026-07-28, notifies the site admin and shows its own
+   confirmation. elementor/redirects.mjs states the hazard in its own words
+   about the ambassador form: pointing a live signup at a form-shaped design
+   "would end ambassador signups and report success while doing it".
+
+   So the CONVERTED page carries the real Gravity Forms shortcode, and the
+   STATIC build carries a stand-in, because a static page cannot run Gravity
+   Forms. The assertions below exist to keep those two honest about each other:
+   the stand-in must mirror the real form field for field, and must be marked
+   so nobody mistakes it for something that collects anything. */
+const CONTACT = () => readFileSync('dist/contact.html', 'utf8');
+
+test('the contact page is in the build', () => {
+  const page = PAGES.find(p => p.out === 'dist/contact.html');
+  assert.ok(page, 'dist/contact.html is not in the manifest');
+  assert.ok(existsSync('dist/contact.html'), 'dist/contact.html was not built');
+  assert.ok(existsSync('css/contact.css'), 'css/contact.css does not exist');
+});
+
+test('the contact stand-in mirrors Gravity Form 3 field for field', () => {
+  /* Read off the install on 2026-09-02, from wp_gf_form_meta for form_id 3:
+     four fields, all required, the name split into First and Last with the
+     prefix/middle/suffix inputs hidden, the message capped at 1000 characters,
+     and the submit reading "Send". A stand-in that promises different fields
+     from the form it stands in for is worse than no stand-in: it teaches a
+     reviewer the wrong page. */
+  const html = CONTACT();
+  const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+  for (const label of ['First', 'Last', 'Email', 'Phone', 'Message']) {
+    assert.ok(new RegExp(`>${label}\\b`).test(main), `the stand-in has no ${label} field`);
+  }
+  assert.match(main, /<textarea[^>]*maxlength="1000"/,
+    'the message field does not carry Gravity Forms’ own 1000-character cap');
+  assert.match(main, /type="submit"[^>]*>Send<|>Send<\/button>/,
+    'the submit does not read “Send”, which is what the live form says');
+
+  /* Every one of the four is required on the live form, so every one is
+     required here. Five inputs, because Name is two.
+
+     COUNTED ON THE TAGS, NOT IN THE PROSE. The first version of this matched
+     `\srequired\b` anywhere in <main> and read six, because the section's own
+     comment says "their required flags". A count that includes the commentary
+     about the thing it counts is not a count. */
+  const required = (main.match(/<(?:input|textarea)\b[^>]*\srequired[\s>]/g) || []).length;
+  assert.equal(required, 5,
+    `${required} required fields in the stand-in; Gravity Form 3 requires all four, which is five inputs`);
+});
+
+test('the contact form is marked as a stand-in and collects nothing', () => {
+  /* The same discipline the bio page uses for contact rows it has no data for:
+     a machine-readable mark AND a sentence a human reading the page can see.
+     Without both, a form-shaped design in a review reads as a working form. */
+  const html = CONTACT();
+  assert.match(html, /data-placeholder="form"/, 'the stand-in carries no placeholder mark');
+  assert.match(html, /the live Gravity Form/i,
+    'nothing on the page tells a reader the form is a stand-in for the live one');
+  assert.ok(!/action="(https?:)?\/\//.test(html),
+    'the stand-in posts somewhere; it must collect nothing');
+});
+
+test('the contact page carries the signed-off address and not the old one', () => {
+  /* Two addresses were in circulation on 2026-09-02: the old Contact page said
+     1000 Northpark Dr., and the footer this build shipped on all fourteen live
+     pages says 741 Avignon Dr., Suite C. Paolo chose the footer's, so the page
+     and the footer agree rather than contradicting each other in the same
+     scroll. Asserted in both directions: the old address must not come back. */
+  const html = CONTACT();
+  assert.match(html, /741 Avignon Dr\., Suite C/, 'the contact page has lost the signed-off address');
+  assert.match(html, /Ridgeland, MS 39157/, 'the contact page has lost the town and postcode');
+  assert.ok(!html.includes('Northpark'),
+    'the old 1000 Northpark address is back; the footer on this same page says otherwise');
+});
+
+test('the contact page invents no second contact route', () => {
+  /* The old page offers a form and nothing else. Paolo's call on 2026-09-02 was
+     to match it rather than publish an email address here, because three are in
+     circulation (info@empowerms.org in the header strip and footer,
+     Mail@empowerms.org twice in the privacy policy) and which is correct is an
+     open question in docs/legal/README.md. The header and footer still carry
+     theirs; what this asserts is that the PAGE does not add a fourth voice. */
+  const html = CONTACT();
+  const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  assert.ok(!main.includes('mailto:'),
+    'the contact page body publishes an email address; the old page published none');
+  assert.ok(!/\btelephone\b|\bCall us\b/i.test(main),
+    'the contact page offers a phone route the old page did not');
 });

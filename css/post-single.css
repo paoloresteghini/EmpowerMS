@@ -442,49 +442,26 @@
    their shape and adds the class, so it is 0,5,0 and wins on specificity
    rather than on source order, which is the only thing a child theme can rely
    on when the plugin is free to reorder its own enqueues. */
-.elementor.elementor .e-con > .elementor-widget.ps-body{max-width:min(100%,880px);margin-inline:auto}
-.ps-body p,.ps-body ul,.ps-body ol,.ps-body blockquote,.ps-body figure{
-  margin:0 0 var(--space-6)}
-.ps-body > :last-child{margin-bottom:0}
-/* One step above --fs-body (16px computed). The token stays untouched: it
-   sets card and UI copy everywhere else in the build, and this is the only
-   place running an 880px column of continuous prose. */
-.ps-body p,.ps-body li{font-size:clamp(1.0625rem,1rem + .3vw,1.1875rem);
-  line-height:1.75;color:var(--text-body)}
-.ps-body ul,.ps-body ol{padding-left:var(--space-6)}
-.ps-body li{margin-bottom:var(--space-3)}
+/* THE BODY'S OWN RULES MOVED TO css/prose.css ON 2026-09-02, and the measure
+   that went with them now lives in the theme's bridge stylesheet.
 
-/* The opening paragraph is the one a visitor reads if they read one. Lifted
-   from css/team-bio.css:116, which makes the same call for bio copy. */
-/* Raised with the body size above so the opening paragraph stays a step
-   ahead of the rest rather than matching it. */
-.ps-body > p:first-child{font-size:clamp(1.1875rem,1.1rem + .4vw,1.3125rem);
-  color:var(--text-strong)}
+   WHY. This file is install-only: it dresses markup that exists only on
+   WordPress, which is what earns it the right to carry Elementor selectors at
+   all. The reading column stopped being install-only the day /privacy and
+   /terms were built, because those have a static build and wear the same
+   column. Keeping it here would have meant either a second prose design to
+   maintain by hand or an exemption widened by hand, and this repository has
+   been bitten twice by hand-maintained lists.
 
-.ps-body h2,.ps-body h3,.ps-body h4{font-family:var(--font-display);
-  color:var(--em-blue);line-height:var(--lh-heading);letter-spacing:var(--ls-heading);
-  margin:clamp(var(--space-7),3vw,var(--space-9)) 0 var(--space-4)}
-.ps-body h2{font-size:var(--fs-h3)}
-.ps-body h3{font-size:var(--fs-h4)}
+   WHAT IS LEFT HERE IS EVERYTHING AROUND THE COLUMN: the eyebrow, the title,
+   the photograph and the More grid. Those are a single post's own furniture,
+   they are what a legal page does not have, and two of them still need the
+   Elementor selectors this file is exempt to carry.
 
-.ps-body a{color:var(--em-orange-ink);text-decoration-line:underline;
-  text-decoration-thickness:1px;
-  text-decoration-color:color-mix(in oklab,currentColor 45%,transparent);
-  text-underline-offset:2px}
-.ps-body a:hover{text-decoration-color:currentColor}
+   BOTH SHEETS LOAD, IN ORDER, prose then this one — see empower_page_styles()
+   in functions.php. Anything here that needs to beat a rule in prose.css must
+   say so and out-specify it deliberately; nothing does today. */
 
-/* Images inside post content are Empower's own, at whatever size the editor
-   inserted them. Constraining rather than cropping: some are charts where a
-   crop would cut an axis label off. */
-.ps-body img{max-width:100%;height:auto;border-radius:var(--radius-card)}
-
-.ps-body blockquote{margin-left:0;padding-left:var(--space-6);
-  border-left:4px solid var(--em-orange);font-size:var(--fs-lead);
-  line-height:1.6;color:var(--text-strong)}
-.ps-body blockquote p:last-child{margin-bottom:0}
-
-/* Embedded video, which 66 podcast posts and a good many others carry. */
-.ps-body iframe{max-width:100%;border-radius:var(--radius-card)}
 
 /* ------------------------------- 4 · More ------------------------------- */
 

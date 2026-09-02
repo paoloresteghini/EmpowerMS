@@ -48,6 +48,24 @@ export const REDIRECTS = [
   { from: '/justice/', to: '/public-safety/', why: 'h1 "Every Person Deserves a Fair Shake"; same' },
   { from: '/education-3/', to: '/quality-education/', why: 'h1 "Every child deserves a great education"; same' },
   { from: '/the-empower-podcast/', to: '/podcast/', why: 'superseded by the converted podcast page' },
+  /* Added 2026-09-02, when /terms/ went live. This is the ONLY entry in this
+     list whose source is not a `page`: it is `wpautoterms_page` 19170, a custom
+     post type the plugin `auto-terms-of-service-and-privacy-policy` maintains,
+     which is why the URL carries the plugin's own prefix rather than a path
+     anybody chose. /terms/ carries the same document word for word, checked by
+     test.mjs against a capture of this one.
+
+     SAFE TO REDIRECT, and checked against the two hazards this file records
+     rather than assumed. It serves no form, so nothing stops working; and it is
+     not a paginated archive, so nothing under it is thrown away. The plugin's
+     own footer strip links here, so after this rule that link lands on the
+     converted page, which is the outcome we want either way.
+
+     IT DOES NOT RETIRE THE PLUGIN and must not be read as doing so. The plugin
+     stays active and keeps rendering its compliance strip in the footer, which
+     was a deliberate decision on 2026-08-20. docs/legal/plugin-proposal.md is
+     the separate question. */
+  { from: '/wpautoterms/terms-and-conditions/', to: '/terms/', why: 'the plugin CPT this build replaced with a converted page at /terms/' },
 ];
 
 /* EXISTING RULES THAT WOULD BECOME CHAINS the moment the list above applies,

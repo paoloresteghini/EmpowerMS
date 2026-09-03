@@ -1,4 +1,4 @@
-import { container, heading, text, link, image } from '../../factory.mjs';
+import { container, text, link, image } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/final/sections/01-hero.html. Every class, string and
@@ -72,12 +72,16 @@ import { photo } from './media.mjs';
       becomes an html() widget and that IS one of the allowed exceptions,
       because escaped markup is Elementor failing to express the source at all.
 
-   6. _element_id ON THE HEADING lands on the widget's wrapper div rather than
-      on the <h1> itself, which is podcast-a's recorded risk 5. The section's
-      aria-labelledby="hero-title" still resolves, because it points at an id
-      that exists in the document; it just names a div that contains the
-      heading rather than the heading. Same behaviour as podcast-a, same
-      analysis, not re-litigated here. */
+   6. THE HEADING IS A text() WIDGET CARRYING A BARE <h1>, not a heading()
+      widget with _element_id. Class-in-markup migration (2026-08-17): the
+      id moves off the widget's wrapper div and onto the <h1> itself, so
+      the section's aria-labelledby="hero-title" now resolves to the heading
+      element rather than to a div that merely contains it, which is
+      podcast-a's recorded risk 5 and this page no longer carries it. The
+      same move also removes Elementor's own heading widget from the page,
+      so its frontend.min.css line-height:1 default (the rule the bridge
+      stylesheet was repairing for this element) stops applying and needs
+      no repair at all. */
 
 const TAGLINE = 'Real People. Real Problems. Real Solutions.';
 const HEADLINE = 'Your American&nbsp;Dream <em>Starts Here.</em>';
@@ -97,19 +101,15 @@ export function section() {
           { cssClass: 'fp-hero__copy', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
             text({
-              markup: `<p>${TAGLINE}</p>`,
-              cssClass: 'fp-tagline',
-              _attributes: 'data-reveal|rise',
-            }),
-            heading({
-              text: HEADLINE,
-              tag: 'h1',
-              _element_id: 'hero-title',
+              markup: `<p class="fp-tagline">${TAGLINE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
             text({
-              markup: `<p>${LEDE}</p>`,
-              cssClass: 'fp-hero__lede',
+              markup: `<h1 id="hero-title">${HEADLINE}</h1>`,
+              _attributes: 'data-reveal|rise',
+            }),
+            text({
+              markup: `<p class="fp-hero__lede">${LEDE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
             container(

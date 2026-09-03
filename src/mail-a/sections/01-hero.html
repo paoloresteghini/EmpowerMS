@@ -18,36 +18,43 @@
     </div>
 
     <div class="mla-signup" id="signup">
-      <form class="mla-form" method="post" action="#signup" novalidate>
+      <!-- STAND-IN, since 2026-09-02, mirroring Gravity Form 2 field for field.
+           The converted page carries that form itself, by shortcode; this is
+           here so the page can be reviewed, and it collects nothing.
+
+           IT IS SHORTER THAN THE FORM THIS PAGE WAS APPROVED WITH, and that is
+           the trade Paolo took on 2026-09-02. The approved design asked for
+           first name, last name, email and county. Gravity Form 2, which is the
+           live signup on /join/ and holds 836 entries against the 24 on the
+           other candidate, collects a name and an email and nothing else. So
+           County is gone: the form never collected it, and a field that posts
+           nowhere is worse than no field.
+
+           THE BUTTON SAYS "Submit" BECAUSE THE LIVE FORM DOES. The approved
+           design said "Join Our Email List". Changing it is one edit in Gravity
+           Forms and it is Empower’s to make, not this build’s; flagged rather
+           than quietly corrected here. -->
+      <form class="mla-form" method="post" action="#signup" novalidate data-placeholder="form">
         <p class="mla-form__title">Join Our Email List</p>
 
         <div class="mla-form__row">
           <div class="em-field em-field--light">
-            <label class="em-field__label" for="mla-first">First name</label>
-            <input class="em-input" type="text" id="mla-first" name="first_name" autocomplete="given-name">
+            <label class="em-field__label" for="mla-first">First<span class="em-field__req" aria-hidden="true">*</span></label>
+            <input class="em-input" type="text" id="mla-first" name="first_name" autocomplete="given-name" required>
           </div>
           <div class="em-field em-field--light">
-            <label class="em-field__label" for="mla-last">Last name</label>
-            <input class="em-input" type="text" id="mla-last" name="last_name" autocomplete="family-name">
+            <label class="em-field__label" for="mla-last">Last<span class="em-field__req" aria-hidden="true">*</span></label>
+            <input class="em-input" type="text" id="mla-last" name="last_name" autocomplete="family-name" required>
           </div>
         </div>
 
         <div class="em-field em-field--light">
-          <label class="em-field__label" for="mla-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
-          <input class="em-input" type="email" id="mla-email" name="email" autocomplete="email" required
-                 aria-describedby="mla-email-hint">
-          <p class="em-field__hint" id="mla-email-hint">We send one email a month, plus legislative updates while the session runs.</p>
+          <label class="em-field__label" for="mla-email">Email<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="email" id="mla-email" name="email" autocomplete="email" required>
         </div>
 
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="mla-county">County</label>
-          <input class="em-input" type="text" id="mla-county" name="county" autocomplete="address-level2"
-                 aria-describedby="mla-county-hint">
-          <p class="em-field__hint" id="mla-county-hint">Optional. It helps us send you what is happening near you.</p>
-        </div>
-
-        <button class="em-btn em-btn--primary em-btn--lg em-btn--block" type="submit">Join Our Email List</button>
-        <p class="mla-form__small">Unsubscribe in one click, any time.</p>
+        <button class="em-btn em-btn--primary em-btn--lg em-btn--block" type="submit">Submit</button>
+        <p class="mla-form__small">This is a stand-in for the live Gravity Form. It collects nothing. The converted page carries the real form, so every field and the button are copied from it rather than designed here.</p>
       </form>
     </div>
   </div>

@@ -53,7 +53,7 @@ export const PAGES = [
   { src: 'team-b/index.html', out: 'dist/team-b.html', title: 'Team B — The Directory', kind: 'about' },
   { src: 'team-c/index.html', out: 'dist/team-c.html', title: 'Team C — The Frame', kind: 'about' },
 
-  /* One staff detail screen, the CEO's, built as the template the other nine
+  /* One staff detail screen, the CEO's, built as the template the other eight
      bios are cut from. Every staff card on all three variations links to it
      until those exist. Not a variation of anything, so it is excluded from the
      three-way team contract in test.mjs by name. */
@@ -120,8 +120,9 @@ export const PAGES = [
   /* Capitol Chat, the sibling tab in the same dropdown, two readings. Its roadmap
      copy differs from The Empower Podcast's in ways that drive the design rather
      than decorate it: ONE button (it is an audio show, where the podcast leads on
-     YouTube), a five-minute weekly format, and a host — Wil Ervin — whose bio page
-     does not exist, so his name is deliberately not a link.
+     YouTube) and a five-minute weekly format. It used to name its host too, and
+     deliberately not link him because his bio page does not exist; Empower took
+     the name out on 2026-08-21 and the sentence is general now.
 
      Paolo chose unrelated readings on 2026-08-05 rather than a pair matched to the
      two podcast readings, so these are two more distinct compositions. Both carry
@@ -210,6 +211,44 @@ export const PAGES = [
      so nothing on it reads as an invented programme or an approved headline. */
   { src: 'landing/index.html', out: 'dist/landing.html', title: 'Flexible landing page A — the campaign kit', kind: 'about' },
   { src: 'landing-b/index.html', out: 'dist/landing-b.html', title: 'Flexible landing page B — the held ask', kind: 'about' },
+
+  /* CONTACT. `kind: 'about'` rather than a fourth kind: unlike the legal pages
+     this IS a page this build composed, with its own stylesheet and its own
+     namespace, and every About contract applies to it unchanged.
+
+     It is the first page in this build that replaces a WORKING route rather
+     than a design. /contact is in the footer of all fourteen converted pages
+     and the page behind it runs Gravity Form 3, 3,116 entries deep. So the
+     static build carries a marked stand-in and the converted page carries the
+     real shortcode; test.mjs holds the stand-in to the live form field for
+     field, and elementor/pages/contact/ is what actually ships. */
+  { src: 'contact/index.html', out: 'dist/contact.html', title: 'Contact Us', kind: 'about' },
+
+  /* THE TWO LEGAL PAGES, and a third `kind` because they are neither of the
+     other two.
+
+     They are not homepages and they are not About variations. An About page is
+     one of several readings of a brief this build wrote; there is exactly one
+     reading of a privacy policy, and its words are Empower's, already
+     published, and moved here rather than composed. The About contract asks
+     each variation to keep its own stylesheet separable and to register a
+     namespace prefix, both of which are questions about competing designs and
+     neither of which means anything here: these two deliberately share
+     css/legal.css, and the prose they share is .ps-body from the article
+     template.
+
+     `kind: 'legal'` keeps that distinction honest. They are still swept by
+     every hygiene test in test.mjs — alt text, heading order, the skip link,
+     the side-stripe rule — because ALLPAGES includes them; what they opt out
+     of is a contract about variations that they are not. Their own contract is
+     the block at the end of test.mjs, and it is mostly about transcription:
+     the risk on a page like this is a dropped clause, not a moved box.
+
+     Empower chose two pages over one combined page on 2026-09-02. The footer's
+     single "Privacy Policy & Terms of Service" link, which named two documents
+     and landed on one, becomes two links in the same commit. */
+  { src: 'privacy/index.html', out: 'dist/privacy.html', title: 'Privacy Policy', kind: 'legal' },
+  { src: 'terms/index.html', out: 'dist/terms.html', title: 'Terms of Service', kind: 'legal' },
 ];
 
 function resolve(html, depth = 0) {

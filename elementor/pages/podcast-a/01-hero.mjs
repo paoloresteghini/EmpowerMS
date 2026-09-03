@@ -1,4 +1,4 @@
-import { container, heading, text, link } from '../../factory.mjs';
+import { container, text, link } from '../../factory.mjs';
 
 /* Source of truth: src/podcast-a/sections/01-hero.html. Every class, string
    and attribute below is read from that partial, not typed from memory.
@@ -36,10 +36,14 @@ import { container, heading, text, link } from '../../factory.mjs';
       is risk 4 in the brief: reported, not fixed here (fixing it is a
       Phase 2 concern).
 
-   5. The <h1 id="hero-title"> carries the id the section's
-      aria-labelledby="hero-title" points at. _element_id lands on the
-      heading widget's WRAPPER div, not the <h1> itself (risk 5, see the
-      task report for the accessibility analysis).
+   5. THE HEADING IS A text() WIDGET CARRYING A BARE <h1>, not a heading()
+      widget with _element_id. Class-in-markup migration (2026-08-17): the
+      id moves off the widget's wrapper div and onto the <h1> itself, so
+      the section's aria-labelledby="hero-title" now resolves to the
+      heading element rather than to a div that merely contains it, which
+      was risk 5 in the brief and this page no longer carries it. The same
+      move also removes Elementor's own heading widget from this section,
+      so its frontend.min.css line-height:1 default needs no repair here.
 
    6. data-reveal-entrance and data-reveal-group are valueless in source.
       Elementor's Custom Attributes control (ElementorPro\Modules\
@@ -73,19 +77,15 @@ export function section() {
             { cssClass: 'pca-hero__copy', content_width: 'full', _attributes: 'data-reveal-group|' },
             [
               text({
-                markup: '<p>The Empower Podcast</p>',
-                cssClass: 'pca-eyebrow',
-                _attributes: 'data-reveal|rise',
-              }),
-              heading({
-                text: 'Mississippi’s Biggest Challenges. Biggest Opportunities. Real Conversations.',
-                tag: 'h1',
-                _element_id: 'hero-title',
+                markup: '<p class="pca-eyebrow">The Empower Podcast</p>',
                 _attributes: 'data-reveal|rise',
               }),
               text({
-                markup: '<p>Join Grant Callen for thoughtful conversations with lawmakers, policy experts, and community leaders about the ideas and solutions that can help every Mississippian rise.</p>',
-                cssClass: 'pca-hero__lede',
+                markup: '<h1 id="hero-title">Mississippi’s Biggest Challenges. Biggest Opportunities. Real Conversations.</h1>',
+                _attributes: 'data-reveal|rise',
+              }),
+              text({
+                markup: '<p class="pca-hero__lede">Join Grant Callen for thoughtful conversations with lawmakers, policy experts, and community leaders about the ideas and solutions that can help every Mississippian rise.</p>',
                 _attributes: 'data-reveal|rise',
               }),
               container(

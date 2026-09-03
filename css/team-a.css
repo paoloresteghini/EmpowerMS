@@ -232,6 +232,41 @@ a.ta-person__link:hover .ta-person__more::after{width:22px}
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);text-transform:uppercase;
   color:var(--orange-300)}
 
+/* THE NAME IS A LINK TO THE FELLOW'S BIO, on the converted page only. The
+   static build has no such element: when this design was signed off no fellow
+   had a bio page, so the ledger was a list of names and nothing more. All five
+   do now, through the `person` post type, and Paolo's 2026-08-20 call was to
+   link the NAME rather than the whole row. wp/empowerms-child/inc/person-loop.php
+   carries the reasoning; the short version is that a row with no visible
+   affordance that is silently clickable is worse than one that is not, and the
+   name is what a screen reader should announce as the destination.
+
+   INHERITS ITS COLOUR ON PURPOSE. `.ta-ledger__name` inside is already
+   --white and is still reached by its own class selector (nothing in this
+   block uses a child combinator, so wrapping the span changed no other rule).
+   Left to tokens/base.css:8 the anchor would paint itself --text-link, which is
+   a blue for light backgrounds and close to invisible on this one.
+
+   The hover accent is --orange-300, the colour the field beside it already
+   carries, so the row's two halves meet rather than introducing a third
+   colour. The focus ring is --focus-ring-inverse (white) rather than
+   --focus-ring (orange-500), because this section is dark. */
+/* The underline's LINE, COLOUR and THICKNESS are not here: Elementor's own
+   `.elementor a{text-decoration:none}` is 0,1,1 and outranks this selector on
+   every longhand its shorthand covers, so they are declared in bridge.css
+   block 64 where they can win. `text-underline-offset` is not part of that
+   shorthand and is uncontested, so it stays. */
+.ta-ledger__link{color:inherit;text-underline-offset:.2em;
+  transition:color var(--dur) var(--ease-out)}
+.ta-ledger__link:hover{color:var(--orange-300)}
+.ta-ledger__link:hover .ta-ledger__name{color:inherit}
+.ta-ledger__link:focus-visible{outline:3px solid var(--focus-ring-inverse);outline-offset:3px;
+  border-radius:var(--radius-xs)}
+
+@media (prefers-reduced-motion:reduce){
+  .ta-ledger__link{transition:none}
+}
+
 /* =============================== 4 · Board ================================ */
 /* Eight names and two officer roles. Anything card-shaped here would be a box
    holding a name, so the roll is set as a ragged wall of pills that wraps on

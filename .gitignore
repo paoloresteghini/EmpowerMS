@@ -11,3 +11,5 @@ docs/Empower Mississippi Design System/
 .sfdx/
 wb-new.jpeg
 node_modules/
+.snapshots/
+.ship/

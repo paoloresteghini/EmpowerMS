@@ -6,9 +6,10 @@ import os from 'node:os';
 import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
+import { fromRootArgs, syncTheme, FROM_ROOT } from './wp/sync.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
-import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots } from './fidelity.mjs';
+import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots, robotsProblems } from './fidelity.mjs';
 import { section as podcastHero } from './elementor/pages/podcast-a/01-hero.mjs';
 import { section as podcastAbout } from './elementor/pages/podcast-a/02-about.mjs';
 import {
@@ -24,10 +25,23 @@ import { section as finalInsights } from './elementor/pages/final/05-insights.mj
 import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
-import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle } from './elementor/deploy.mjs';
+import { POST_ID as whatWeDoAPostId, sections as whatWeDoASections } from './elementor/pages/what-we-do-a/page.mjs';
+import { deployPage, deployLoopItem, deployThemePart, setConditions, disableThemePageTitle, THEME_PART_LOCATIONS } from './elementor/deploy.mjs';
 import { extractBlock } from './elementor/theme-parts/extract.mjs';
 import { footerPart, FOOTER_POST_ID } from './elementor/theme-parts/footer.mjs';
 import { headerPart, HEADER_POST_ID } from './elementor/theme-parts/header.mjs';
+import { personSingle } from './elementor/theme-parts/person-single.mjs';
+import { postSingle } from './elementor/theme-parts/post-single.mjs';
+import { sections as probeSections } from './elementor/theme-parts/native-animation-probe.mjs';
+import { categoryArchive } from './elementor/theme-parts/category-archive.mjs';
+import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './elementor/theme-parts/search-result-item.mjs';
+import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } from './elementor/theme-parts/search-archive.mjs';
+import { PAGE_REGISTER, EXCLUDED_PAGES, convertedPageDirs } from './elementor/pages/register.mjs';
+import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
+import {
+  isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
+  validateContentExemption, explainLayoutHeights, CONTENT_HEIGHT_EXEMPTIONS, MEASURED_WIDTHS,
+} from './fidelity-deferred.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
    directly (served locally, not fetched from the live install), so it needs
@@ -302,6 +316,32 @@ test('text() matches the captured text-editor shape', () => {
   assert.ok('editor' in ref.settings, 'captured text-editor has no editor key; the schema notes are wrong');
 });
 
+test('text() refuses a cssClass the markup already carries', () => {
+  assert.throws(
+    () => text({ markup: '<p class="em-eyebrow">x</p>', cssClass: 'em-eyebrow' }),
+    /em-eyebrow/,
+    'the belt-and-braces form measured WORSE than either alone and must not be constructible',
+  );
+});
+
+test('text() still accepts a cssClass the markup does not carry', () => {
+  const made = text({ markup: '<p class="em-eyebrow">x</p>', cssClass: 'zz-layout-hook' });
+  assert.equal(made.settings._css_classes, 'zz-layout-hook');
+});
+
+test('text() does not treat a hyphen as a class-name boundary', () => {
+  /* A regex \b boundary treats '-' as a token separator, so a
+     boundary-based match on 'em-eyebrow' would also fire on
+     'em-eyebrow-large' or 'large-em-eyebrow', classes that share no real
+     token and do not conflict. This is not a hypothetical: both directions
+     are live vocabulary here (elementor/pages/final/04-stories.mjs and
+     05-insights.mjs both pass cssClass: 'em-eyebrow'), and the guard
+     throws rather than warns, so a false positive here hard-fails a build
+     that was correct. */
+  assert.doesNotThrow(() => text({ markup: '<p class="em-eyebrow-large">x</p>', cssClass: 'em-eyebrow' }));
+  assert.doesNotThrow(() => text({ markup: '<p class="large-em-eyebrow">x</p>', cssClass: 'em-eyebrow' }));
+});
+
 test('image() matches the captured image shape', () => {
   const ref = findByClass(REF, 'zz-probe__photo');
   assert.ok(ref, 'fixture has no .zz-probe__photo image; recapture it');
@@ -367,6 +407,207 @@ test('loopGrid() rejects a non-integer templateId before building anything', () 
   assert.throws(() => loopGrid({ templateId: undefined }), /templateId/);
 });
 
+/* Classifies every character of src as 'code', 'string', or 'comment':
+   tracks // line comments, /* block comments, and '"' / '\'' / '`' quoted
+   strings (with backslash escapes), one pass, one state machine, indexed
+   by UTF-16 code unit so it stays aligned with src's own indices (a
+   surrogate-pair emoji is two code units here, matching src.length, not
+   one, which is what a code-point-based walk would collapse it to). Both
+   blankNonCode() and extractBalancedCall() below read this same
+   kinds array rather than each re-deriving string/comment boundaries, so
+   the tracking logic exists exactly once. Returns finalMode alongside
+   kinds: real JavaScript never ends a file mid-string or mid-block-comment,
+   so a scan finishing in either state has desynced against something it
+   doesn't understand, which the caller below turns into a loud failure
+   naming the file rather than a silently narrowed sweep.
+
+   Known limits, recorded rather than fixed:
+   - A regex literal containing a quote, e.g. /["']/. This scanner has no
+     regex-literal handling at all: telling a regex literal from a
+     division operator requires knowing whether the previous token was a
+     value or an operator, the classic hard problem in JS lexing, and a
+     hand-rolled attempt that gets it subtly wrong reintroduces silent
+     under-detection wearing a different hat. So the '"' inside the regex
+     is read as opening a string that never closes, and finalMode ends as
+     'string'. That is exactly the case the caller's invariant catches.
+   - Nested template literals, e.g. `${`x`}`. The naive backtick toggle
+     miscounts the inner backticks, but two nested opens and closes happen
+     to rebalance by EOF, so finalMode still ends as 'code' and the
+     invariant below does NOT catch this one. Nothing in the swept tree
+     uses a nested template literal today. Not fixed, for the same reason
+     as the regex case: a partial fix here is a worse failure mode than an
+     honestly documented gap. */
+const scanSource = (src) => {
+  const kinds = new Array(src.length);
+  let mode = 'code';
+  let quote = null;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (mode === 'line-comment') {
+      kinds[i] = 'comment';
+      if (c === '\n') mode = 'code';
+      continue;
+    }
+    if (mode === 'block-comment') {
+      kinds[i] = 'comment';
+      if (c === '*' && next === '/') { kinds[i + 1] = 'comment'; i++; mode = 'code'; }
+      continue;
+    }
+    if (mode === 'string') {
+      kinds[i] = 'string';
+      if (c === '\\' && i + 1 < src.length) { kinds[i + 1] = 'string'; i++; continue; }
+      if (c === quote) { mode = 'code'; quote = null; }
+      continue;
+    }
+    if (c === '/' && next === '/') { kinds[i] = 'comment'; mode = 'line-comment'; continue; }
+    if (c === '/' && next === '*') { kinds[i] = 'comment'; mode = 'block-comment'; continue; }
+    if (c === '"' || c === '\'' || c === '`') { kinds[i] = 'string'; mode = 'string'; quote = c; continue; }
+    kinds[i] = 'code';
+  }
+  return { kinds, finalMode: mode };
+};
+
+/* Same length as src, so offsets found in the blanked string line up
+   exactly with the original. Built with an index-based loop over
+   src.length, NOT Array.from(src, ...) or [...src]: both of those iterate
+   by Unicode CODE POINT, which collapses a surrogate pair into a single
+   step and desyncs the output length against src.length (and therefore
+   against kinds, which is code-UNIT indexed) the moment an astral
+   character (an emoji, for instance) appears anywhere earlier in the
+   file. Every comment or string character is replaced with a space,
+   EXCEPT a newline is kept as a newline, so the `^` line-start anchor in
+   callRe still lands on real line boundaries. Matching heading( against
+   this instead of the raw source means a `// heading({...})` comment or a
+   template literal that merely contains the word cannot be read as a real
+   call. */
+const blankNonCode = (src, kinds) => {
+  let out = '';
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    out += (kinds[i] === 'code' || c === '\n') ? c : ' ';
+  }
+  return out;
+};
+
+/* Runs scanSource and blankNonCode for one file (or fixture) and asserts
+   the two invariants the rest of the sweep depends on, instead of only
+   claiming them in a comment: the blanked copy is exactly as long as the
+   source (the astral-character bug above, should it recur, fails here
+   rather than silently misreading a call's offset), and the scan did not
+   end inside a string or a block comment (the regex-literal case above,
+   and anything else the scanner doesn't understand yet, fails here rather
+   than silently reporting zero offenders for a file it couldn't actually
+   read). label is the file path (or fixture name) named in the failure. */
+const scanForSweep = (src, label) => {
+  const { kinds, finalMode } = scanSource(src);
+  const blanked = blankNonCode(src, kinds);
+  assert.strictEqual(blanked.length, src.length,
+    `${label}: blanked copy is ${blanked.length} chars, source is ${src.length}; the scanner desynced and this file's sweep cannot be trusted`);
+  assert.ok(finalMode !== 'string' && finalMode !== 'block-comment',
+    `${label}: scan ended inside a ${finalMode === 'string' ? 'string that never closed' : 'block comment that never closed'}; the scanner does not understand some construct in this file (a regex literal containing a quote is the known one) and the sweep cannot be trusted for it until it does`);
+  return { kinds, blanked };
+};
+
+/* Extracts the balanced-parenthesis call text starting at the '(' found at
+   openIdx, so a multi-line heading({...}) call can be tested as a whole
+   rather than line by line. Only counts parens where kinds says 'code', so
+   a stray '(' or ')' inside a quoted string or a comment within the call's
+   own text does not desync the depth count. Reads from the ORIGINAL src
+   (not the blanked copy) so the extracted call text still carries
+   __dynamic__ and every other real character for the exemption check. */
+const extractBalancedCall = (src, openIdx, kinds) => {
+  let depth = 0;
+  for (let i = openIdx; i < src.length; i++) {
+    if (kinds[i] !== 'code') continue;
+    if (src[i] === '(') depth++;
+    else if (src[i] === ')') {
+      depth--;
+      if (depth === 0) return src.slice(openIdx, i + 1);
+    }
+  }
+  return src.slice(openIdx);
+};
+
+test('no page module or theme part builds a heading widget', async (t) => {
+  const { readdir, readFile } = await import('node:fs/promises');
+
+  /* The directory list is DERIVED, not hand-typed: this repo has already
+     shipped the hand-written-list failure once (a side-stripe test whose
+     page list was hand-written stayed green while four pages added later
+     carried the violation). Reading elementor/pages fresh means a page
+     added after this test was written is swept automatically instead of
+     silently escaping it. */
+  const pagesRoot = 'elementor/pages';
+  const pageEntries = await readdir(pagesRoot, { withFileTypes: true });
+  const dirs = [
+    ...pageEntries.filter((e) => e.isDirectory()).map((e) => `${pagesRoot}/${e.name}`),
+    'elementor/theme-parts',
+  ];
+  /* The derivation cannot silently cover nothing today (theme-parts is
+     appended unconditionally), but this repo has already shipped a sweep
+     that passed green while covering less than it claimed, so the
+     invariant is asserted rather than trusted: a one-or-zero-directory
+     result means the derivation broke, not that the codebase is clean. */
+  assert.ok(dirs.length > 1,
+    `derived directory sweep found only ${dirs.length} director${dirs.length === 1 ? 'y' : 'ies'} (expected elementor/pages/* plus elementor/theme-parts); the derivation is broken, not the codebase clean`);
+
+  let filesSwept = 0;
+  const offenders = [];
+  for (const dir of dirs) {
+    for (const f of await readdir(dir)) {
+      if (!f.endsWith('.mjs')) continue;
+      filesSwept++;
+      const src = await readFile(`${dir}/${f}`, 'utf8');
+      const { kinds, blanked } = scanForSweep(src, `${dir}/${f}`);
+      const callRe = /(^|[^a-zA-Z_$.])heading\s*\(/gm;
+      let match;
+      let fileOffends = false;
+      while ((match = callRe.exec(blanked))) {
+        const openIdx = match.index + match[0].length - 1;
+        const call = extractBalancedCall(src, openIdx, kinds);
+        /* NAMED EXEMPTION: a heading() call bound to a dynamic tag does not
+           get reported. A text widget binds exactly one dynamic field
+           (editor), so it can carry a post title OR a per-post href but not
+           both; Elementor's dynamic tags replace a whole field value, never
+           an attribute fragment inside authored markup. A heading widget's
+           title and link fields bind separately, which is what a headline
+           that must link to the post it names (the project's own rule)
+           requires. podcast-a/03-library.mjs's loopItem() pca-ep__title is
+           the one call this exempts today; see the test at
+           "the podcast loop item title is a Heading widget..." for its
+           asserted shape. Do not widen this into a blanket allowance: the
+           test is for __dynamic__ presence on THIS call, not for a filename
+           or caller name. */
+        if (!/__dynamic__/.test(call)) fileOffends = true;
+      }
+      if (fileOffends) offenders.push(`${dir}/${f}`);
+    }
+  }
+
+  /* Coverage is visible on a red run (in the failure message) and on a
+     green run (as a diagnostic line), so a future reader never has to
+     instrument the test to see how much of the tree it actually swept. */
+  t.diagnostic(`swept ${filesSwept} files across ${dirs.length} directories: ${dirs.join(', ')}`);
+  assert.deepEqual(offenders, [],
+    `heading() cannot put a class on the heading element, and Elementor sets line-height:1 on heading widgets at 0,2,0; use text() with real heading markup (swept ${filesSwept} files across ${dirs.length} directories)`);
+});
+
+test('the heading-widget sweep fails loudly on a source it cannot classify, rather than reporting zero offenders', () => {
+  /* A regex literal containing a quote is the scanner's known, recorded
+     limit (see the comment above scanSource): the '"' inside /["']/
+     is read as opening a string that never closes, so finalMode ends as
+     'string'. Without the invariant this fixture's real, non-exempt
+     heading() call would simply vanish from the sweep: the whole file
+     from the regex onward reads as one unterminated string and blanks to
+     nothing. The fixture is a string here, not a file in a swept
+     directory, so it cannot pollute the real 10-file offender list. */
+  const fixture = "const re = /[\"']/;\nheading({ text: 'T' });\n";
+  assert.throws(() => scanForSweep(fixture, 'fixture'),
+    /does not understand some construct/,
+    'a source the scanner cannot classify must fail loudly, not silently report zero offenders');
+});
+
 test('container() nests its children', () => {
   const made = container({ cssClass: 'outer' }, [heading({ text: 'x', tag: 'h2' })]);
   assert.equal(made.elements.length, 1);
@@ -429,6 +670,56 @@ test('the styles enqueue guards against UiCore loading after site.css', () => {
   assert.ok(priority, 'functions.php has no EMPOWER_STYLES_PRIORITY constant');
   assert.ok(Number(priority[1]) > 50,
     'styles enqueue priority is not late enough to run after UiCore enqueues uicore_global at 50');
+});
+
+/* Every stylesheet and script this theme enqueues is served with
+   `cache-control: public, max-age=31536000` (measured against the live
+   install, 2026-08-17), so the query string on the URL is the ONLY thing
+   that can retire a visitor's cached copy. Versioning every asset with the
+   theme's own `Version:` header made that query string a constant: the
+   header has read 2.0.0 through every stylesheet edit of the conversion, so
+   a browser that fetched css/bridge.css once keeps it for a year and sees
+   none of the repairs written into it afterwards.
+
+   That is not a hypothetical. It is what Paolo's browser was showing on
+   2026-08-17: a header with a 15px-wide wordmark, a 899px nav and a
+   borderless search control, which is precisely the pre-2026-08-15 state of
+   bridge.css's `.elementor button.em-header__*` block. The same page
+   measured correct in a cold-cache browser at the same moment (logo
+   111.63x52, nav 640.67, search 38x38 with a 1px border).
+
+   The contract asserted here is that the version travels with the FILE, not
+   with the theme: every enqueue passes empower_asset_ver( <path relative to
+   the stylesheet directory> ), and that helper derives the version from the
+   file's own mtime. Asserted against every enqueue call in the file rather
+   than a hand-listed subset, so an asset added later cannot quietly opt out
+   the way css/megamenu.css once did. */
+test('every enqueued asset is versioned by its own file, not by the theme version', () => {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+
+  const helper = fn.match(/function\s+empower_asset_ver\s*\([\s\S]*?\n}/);
+  assert.ok(helper, 'functions.php has no empower_asset_ver() helper');
+  assert.match(helper[0], /filemtime\s*\(/,
+    'empower_asset_ver() does not read the file mtime, so the version cannot change when the file does');
+  /* A missing file must not emit an empty version: that produces a bare
+     .../bridge.css with no query string at all, which is MORE cacheable
+     than the constant it replaced, not less. */
+  assert.match(helper[0], /wp_get_theme\(\)\s*->\s*get\(\s*'Version'\s*\)/,
+    'empower_asset_ver() has no theme-version fallback for a file it cannot stat');
+
+  /* Every enqueue call, style and script alike. The version argument is the
+     fourth, and each call in this file spans one line. */
+  const calls = [...fn.matchAll(/wp_enqueue_(?:style|script)\((.*)$/gm)].map(m => m[1]);
+  assert.ok(calls.length >= 8, `expected the enqueue calls to still be here, found ${calls.length}`);
+  for (const call of calls) {
+    assert.match(call, /empower_asset_ver\(/,
+      `an enqueue call does not version by file: ${call.trim()}`);
+  }
+
+  /* And the constant it replaced is gone from both enqueue callbacks, so
+     nothing can pass it by a different name. */
+  assert.doesNotMatch(fn, /\$ver\s*=\s*wp_get_theme\(\)\s*->\s*get\(\s*'Version'\s*\)/,
+    'an enqueue callback still hoists the theme version into $ver');
 });
 
 /* Generalised from a motion-only version whose guard, `fn.includes('motion')`,
@@ -614,7 +905,19 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
   assert.ok(loopMatch, 'the FROM_ROOT sync loop was not found in wp/sync.mjs');
   const loopEnd = loopMatch.index + loopMatch[0].length;
 
-  const bridgePassMatch = src.match(/await run\(\s*'rsync'\s*,\s*\[[^\]]*'wp\/empowerms-child\/css\/'[^\]]*\]\s*\)/);
+  /* `run|runner`: syncTheme's runner became injectable so that the test below
+     can capture the arguments the function actually issues, and the call sites
+     changed from `run(` to `runner(`. This pattern named only `run(` and went
+     red on a correct file, which is the same shape of breakage as a stale line
+     citation: an assertion pinned to an incidental detail of how the code is
+     spelled. Matching either keeps this test about the PASS rather than about
+     the identifier. */
+  /* The source moved from a plain 'wp/empowerms-child/css/' to the shipped
+     stage's copy of it on 2026-08-27, so the pattern names the path and not
+     the quoting around it. Pinning it to a single-quoted literal would go red
+     on a correct file, the same shape of breakage the `run|runner` note
+     below records. */
+  const bridgePassMatch = src.match(/await (?:run|runner)\(\s*'rsync'\s*,\s*\[[^\]]*wp\/empowerms-child\/css\/[^\]]*\]\s*\)/);
   assert.ok(bridgePassMatch, 'no rsync call syncing wp/empowerms-child/css/ was found in wp/sync.mjs');
   assert.ok(bridgePassMatch.index > loopEnd,
     'the wp/empowerms-child/css/ sync must run after the FROM_ROOT loop, or the loop\'s own --delete against dest/css/ removes bridge.css straight back out');
@@ -623,6 +926,253 @@ test('wp/sync.mjs syncs wp/empowerms-child/css/ after the FROM_ROOT loop, withou
   assert.doesNotMatch(bridgePass, /--delete/,
     'the wp/empowerms-child/css/ sync must not carry --delete: its source is only ever bridge.css, and --delete against dest/css/ would erase every file the previous pass just placed there');
   assert.match(bridgePass, /`\$\{dest\}\/css\/`|dest\}\/css\//, 'the wp/empowerms-child/css/ sync does not target dest/css/');
+});
+
+/* Task 10, found on the live install rather than by reading the code: a direct
+   md5sum run moments after a clean syncTheme() answered "No such file or
+   directory" for bridge.css. The FROM_ROOT loop rsyncs the repository's css/
+   with --delete, bridge.css does not live there, so it is deleted on every
+   sync and the third pass restores it. Between those two rsyncs every
+   converted page on the install renders with no bridge stylesheet.
+
+   THIS TEST RUNS THE REAL RSYNC, and its own first version is why. That
+   version asserted three things about the loop's SOURCE TEXT: that it
+   mentions bridge.css, that it passes some --exclude, and that
+   --delete-excluded appears nowhere. Review applied three edits to
+   wp/sync.mjs that each fully reopen the window, and all three stayed green:
+   binding the exclude to js/ instead of css/, deleting the exclude while
+   keeping the comment that names bridge.css, and excluding a file that does
+   not exist. A source-text assertion cannot tell an exclude that protects
+   bridge.css from an exclude that protects something else, which is two steps
+   removed from the property that matters.
+
+   The property that matters is observable without any install, and the fix's
+   author had already observed it by hand against a scratch directory before
+   writing the fix. So: build the real argument list from wp/sync.mjs's own
+   exported fromRootArgs(), swap the remote destination for a local one, put a
+   destination-only bridge.css in place, run the local rsync, and assert the
+   file survives with its contents. The css pass must protect it and every
+   other pass must not, since a blanket exclude would be a different defect. */
+/* DERIVED, not hand-maintained, and that is the whole point of it. On
+   2026-08-18 `patterns/` was missing from FROM_ROOT while pages.mjs's own
+   SHARED list had carried it since the review site was built, so every
+   converted page had been rendering without the build's hex-lattice motif
+   since Phase 2A: the file 404'd on the install and no instrument in this
+   project could see it, because the mask sits on a ::before, changes no
+   layout and belongs to no control.
+
+   Two hand-maintained coverage lists have now shipped wrong in this
+   repository (the earlier one was a test whose page list was written by
+   hand). So this test does not restate the answer, it derives it: every
+   directory a SHIPPED stylesheet reaches for through url() must be in
+   FROM_ROOT, or the deploy cannot carry it. Adding a stylesheet that
+   references a new directory turns this red without anybody remembering to
+   update a list.
+
+   Scope is deliberately the stylesheets that ship to the theme, which is the
+   same set the sync copies: css/, components/ and tokens/. Inline `data:`
+   URIs have no directory and are ignored. */
+test('every directory a shipped stylesheet reaches for through url() is in wp/sync.mjs FROM_ROOT', () => {
+  const sheets = ['css', 'components', 'tokens']
+    .flatMap((dir) => fs.readdirSync(dir)
+      .filter((f) => f.endsWith('.css'))
+      .map((f) => path.join(dir, f)));
+  assert.ok(sheets.length > 20, `expected the build's stylesheets, found ${sheets.length}`);
+
+  const roots = new Set();
+  for (const sheet of sheets) {
+    const src = fs.readFileSync(sheet, 'utf8');
+    for (const m of src.matchAll(/url\(\s*['"]?([^)'"]+)/g)) {
+      const ref = m[1].trim();
+      if (ref.startsWith('data:') || ref.startsWith('#')) continue;
+      const seg = ref.replace(/^\.\.\//, '').split('/')[0];
+      if (seg && !seg.includes('.')) roots.add(seg);
+    }
+  }
+  assert.ok(roots.size > 0, 'no url() references found at all, which means this test stopped reading the stylesheets');
+
+  const missing = [...roots].filter((r) => !FROM_ROOT.includes(r)).sort();
+  assert.deepEqual(missing, [],
+    `these directories are referenced by a shipped stylesheet and would not reach the install: ${missing.join(', ')}`);
+});
+
+test('the css pass wp/sync.mjs actually issues leaves a destination-only bridge.css in place, run against a real rsync', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-rsync-'));
+  try {
+    for (const dir of ['css', 'js']) {
+      fs.mkdirSync(path.join(root, 'src', dir), { recursive: true });
+      fs.mkdirSync(path.join(root, 'dest', dir), { recursive: true });
+      fs.writeFileSync(path.join(root, 'src', dir, `site.${dir === 'css' ? 'css' : 'js'}`), 'from source\n');
+      fs.writeFileSync(path.join(root, 'dest', dir, 'bridge.css'), 'the bridge\n');
+    }
+
+    /* The arguments come from syncTheme() ITSELF, not from fromRootArgs(),
+       and that is the whole point of this shape. Review found an edit that
+       keeps a fromRootArgs-only test green while reopening the window:
+       leave the helper alone, inline the arguments at the call site, drop
+       the exclude. Capturing what syncTheme issues closes that, because the
+       call site is what reaches the install.
+
+       syncTheme's runner is injected, so nothing is executed here and no
+       network is touched; the captured argv is then rewritten to local paths
+       and run through a real rsync. Passing an empty host makes
+       `${host}:${dest}/` a plain path. */
+    const issued = [];
+    await syncTheme({
+      run: (cmd, args) => { issued.push([cmd, args]); return Promise.resolve({ stdout: '', stderr: '' }); },
+      config: { host: '', key: 'key-unused', root: `${root}/dest-root` },
+    });
+
+    const dest = `${root}/dest-root/wp-content/themes/empowerms-child`;
+    for (const dir of ['css', 'js']) {
+      /* Keyed on the DESTINATION, and the source is then read positionally as
+         rsync's second-to-last argument. css/ is sourced from wp/ship.mjs's
+         stage rather than from the repository since 2026-08-27, so a finder
+         that looked for the literal `css/` among the arguments would match
+         pass one's own `--exclude /css/` instead, or nothing at all. */
+      const pass = issued.find(([, args]) => args.at(-1) === `:${dest}/${dir}/` && args.includes('--delete'));
+      assert.ok(pass, `syncTheme issued no --delete pass for ${dir}/, so this test is no longer watching the code that runs`);
+      const args = pass[1]
+        .map((a, i, all) => {
+          if (i === all.length - 2) return `${root}/src/${dir}/`;
+          if (i === all.length - 1) return `${root}/dest/${dir}/`;
+          return a;
+        })
+        .filter((a, i, all) => !(a === '-e' || all[i - 1] === '-e'));
+      execFileSync('rsync', args);
+    }
+
+    const cssBridge = path.join(root, 'dest', 'css', 'bridge.css');
+    assert.ok(fs.existsSync(cssBridge),
+      'the css pass deleted bridge.css from the destination: every theme sync then leaves the live install with no bridge stylesheet until the third pass restores it');
+    assert.equal(fs.readFileSync(cssBridge, 'utf8'), 'the bridge\n',
+      'bridge.css survived the css pass but its contents were replaced');
+    assert.ok(fs.existsSync(path.join(root, 'dest', 'css', 'site.css')),
+      'the css pass did not deliver the repository css/, so the exclude is too broad');
+    assert.ok(!fs.existsSync(path.join(root, 'dest', 'js', 'bridge.css')),
+      'a destination-only file survived the js pass, so the exclude is not scoped to css/ and every other directory has stopped being mirrored');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/* Task 10 review, Important finding 2. Three file:line citations in this
+   batch went stale, and every one was correct when it was written: a sibling
+   commit in the SAME batch inserted lines above the target and moved it. The
+   project's standing rule, that every cited line opens to what it claims, is
+   enforced at write time by a human, and nothing re-checks it afterwards.
+
+   This test checks the two invariants that are decidable without knowing what
+   each citation meant:
+
+   1. A citation of `test-elementor.mjs:N` must land on a line containing an
+      assertion. Every such citation in the tree exists to point at the
+      assertion that gives a register floor its meaning, and the observed
+      failure moved one onto the word "catches." in the middle of a comment.
+
+   2. A citation of `bridge.css:N` from inside bridge.css must land on CSS,
+      not on comment prose. The observed failure moved a citation for a rule
+      onto the explanation of a different rule, which reads as plausible and
+      is wrong.
+
+   Neither invariant catches a citation that moves onto a DIFFERENT assertion
+   or a DIFFERENT selector, and that limit is deliberate: this asserts what a
+   machine can decide. The rest still needs a reader. */
+/* bridge.css's braces must balance, and every numbered block must sit at the
+   TOP LEVEL of the file rather than nested inside another rule.
+
+   Written 2026-08-20 after a merge resolution silently deleted the closing
+   brace of block 63's `.elementor-location-header{display:contents}`. Nothing
+   caught it: the file still parsed, the citation validator still passed, both
+   suites still went green, and the file even LOOKED right, because the missing
+   brace is invisible in a 7000-line file whose blocks are separated by pages of
+   prose. What it actually did was nest blocks 71 and 72 inside block 63's rule,
+   so every declaration in them was dead on the live site while being present in
+   the served stylesheet. It took a browser and a computed-style read to find,
+   which is exactly the kind of defect this file's own header warns is invisible
+   to source inspection.
+
+   Comments are stripped before counting because this file's prose is full of
+   braces (selectors quoted inside explanations), and a naive count reports a
+   false imbalance on a correct file. */
+test('bridge.css braces balance and every numbered block sits at the top level', () => {
+  const raw = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const opens = (css.match(/\{/g) || []).length;
+  const closes = (css.match(/\}/g) || []).length;
+  assert.equal(opens, closes,
+    `bridge.css has ${opens} opening braces and ${closes} closing ones; an unclosed rule silently nests every block after it`);
+
+  /* Depth at each block header, measured on the comment-stripped text but
+     located by the block's first selector, because the header itself is a
+     comment and is gone by then. */
+  let depth = 0;
+  let line = 1;
+  const depthAtLine = new Map();
+  for (const ch of css) {
+    if (ch === '\n') { line += 1; depthAtLine.set(line, depth); }
+    else if (ch === '{') depth += 1;
+    else if (ch === '}') depth -= 1;
+  }
+  assert.equal(depth, 0, 'bridge.css does not return to depth 0 at end of file');
+
+  /* Every block header line in the raw file, then the first non-blank line
+     after it that is not comment prose, is where that block's rules start. */
+  const rawLines = raw.split('\n');
+  const headers = [];
+  rawLines.forEach((l, idx) => {
+    const m = l.match(/^\/\* -+ (\d+)\./);
+    if (m) headers.push({ number: Number(m[1]), line: idx + 1 });
+  });
+  assert.ok(headers.length >= 60, `only ${headers.length} numbered blocks found; this test has stopped finding them`);
+
+  for (const h of headers) {
+    const d = depthAtLine.get(h.line) ?? 0;
+    assert.equal(d, 0,
+      `bridge.css block ${h.number} (line ${h.line}) starts at nesting depth ${d}, not top level, so its rules are trapped inside an unclosed rule above it`);
+  }
+});
+
+test('every internal file:line citation still lands on the kind of line it claims', () => {
+  const files = [
+    'elementor/pages/register.mjs',
+    'wp/empowerms-child/css/bridge.css',
+    ...fs.readdirSync('elementor/pages', { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .flatMap((d) => fs.readdirSync(path.join('elementor/pages', d.name))
+        .filter((f) => f.endsWith('.mjs'))
+        .map((f) => path.join('elementor/pages', d.name, f))),
+  ];
+
+  const suiteLines = fs.readFileSync('test-elementor.mjs', 'utf8').split('\n');
+  const bridgeLines = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').split('\n');
+
+  let checked = 0;
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+
+    for (const m of src.matchAll(/test-elementor\.mjs:(\d+)/g)) {
+      const n = Number(m[1]);
+      const line = suiteLines[n - 1] ?? '';
+      checked += 1;
+      assert.match(line, /assert\./,
+        `${file} cites test-elementor.mjs:${n}, which is now "${line.trim().slice(0, 60)}" and carries no assertion`);
+    }
+
+    if (!file.endsWith('bridge.css')) continue;
+    for (const m of src.matchAll(/bridge\.css:(\d+)(?:-(\d+))?/g)) {
+      const n = Number(m[1]);
+      const line = bridgeLines[n - 1] ?? '';
+      checked += 1;
+      assert.doesNotMatch(line, /^\s*\*/,
+        `${file} cites bridge.css:${m[0].split(':')[1]}, whose first line is now comment prose rather than CSS: "${line.trim().slice(0, 60)}"`);
+    }
+  }
+
+  /* A sweep that silently checks nothing is the failure this project has
+     already shipped once, in a test whose page list was hand-written. */
+  assert.ok(checked >= 5, `only ${checked} citations were checked, so this test has stopped finding them`);
 });
 
 /* --- fidelity.mjs ------------------------------------------------------- */
@@ -898,6 +1448,59 @@ test('the theme registers its Elementor locations so later parts can be assigned
      cannot offer single or archive as somewhere to put a new part. */
   assert.match(themeFile('functions.php'), /elementor\/theme\/register_locations/,
     'the theme never registers its Elementor locations');
+});
+
+/* theme-js/ is a DESTINATION-ONLY directory, the same shape as
+   wp/empowerms-child/css/bridge.css: it exists under wp/empowerms-child/ and
+   has no counterpart at the repository root. That is deliberate. The root
+   js/ directory is synced into the theme by wp/sync.mjs and is the protected
+   static build (functions.php:486 records what editing it cost last time);
+   an Elementor-only script placed there would ship inside a static hand-off
+   it is not part of, and would join the three-way fight over a top-level
+   `const root` that this file's own comments describe.
+
+   This test exists because the sync is the silent part. syncTheme() reports
+   nothing on failure, and a script that never reaches the install produces a
+   header whose panel is simply always open: wrong-looking, not broken, and
+   therefore easy to miss. */
+test('theme-js is not excluded from the theme sync', () => {
+  assert.ok(!FROM_ROOT.includes('theme-js'),
+    'theme-js is in FROM_ROOT, so the wp/empowerms-child pass will exclude it and nothing will ever upload it');
+  assert.ok(fs.existsSync('wp/empowerms-child/theme-js/search.js'),
+    'wp/empowerms-child/theme-js/search.js does not exist');
+});
+
+/* An ES module loaded as a classic script shares one global scope with every
+   other classic script on the page, and the second file to declare an
+   identifier the first already claimed throws a SyntaxError and never runs.
+   That is not hypothetical here: it took down every desktop dropdown on the
+   site once, and functions.php's own comment at :452 is the post-mortem.
+   wp_script_add_data($handle,'type','module') looks like the fix and is not
+   one; the script_loader_tag filter is, and it reads its handle list from
+   empower_module_script_handles(). A handle missing from that list loads
+   classic. */
+test('the search script is enqueued and loads as a module', () => {
+  const fn = themeFile('functions.php');
+  assert.match(fn, /wp_enqueue_script\(\s*'empower-search',\s*\$dir \. '\/theme-js\/search\.js'/,
+    'empower-search is not enqueued from theme-js/search.js');
+  assert.match(fn, /empower_asset_ver\(\s*'theme-js\/search\.js'\s*\)/,
+    'the search script is enqueued without a content-derived version, so a change will not bust the cache');
+  assert.match(fn, /\$handles = array\([^)]*'empower-search'/,
+    'empower-search is missing from empower_module_script_handles(), so it will load as a classic script and collide');
+});
+
+/* The panel ships open in the markup by design (Task 2's comment says why),
+   and this attribute is what lets CSS close it. If the script never runs the
+   attribute is never set, the closed-by-default rules never apply, and the
+   form stays visible and usable. That is the intended degraded state and it
+   is worth asserting the gate exists, because a script that closes the panel
+   with inline styles instead would break the no-JavaScript contract silently. */
+test('the search script gates its CSS on a root attribute rather than inline styles', () => {
+  const js = fs.readFileSync('wp/empowerms-child/theme-js/search.js', 'utf8');
+  assert.match(js, /setAttribute\(\s*['"]data-search['"]\s*,\s*['"]on['"]\s*\)/,
+    'search.js never sets [data-search="on"], so bridge.css block 71 has no gate to key on');
+  assert.doesNotMatch(js, /\.style\.(display|visibility|opacity)\s*=/,
+    'search.js closes the panel with inline styles, which breaks the JavaScript-off contract');
 });
 
 /* --- elementor/pages/final/ (the homepage) ------------------------------ */
@@ -1330,16 +1933,33 @@ async function discoverTrees(dir, { skip = [] } = {}) {
   return found;
 }
 
-test('every container in every podcast-a mapping module and both theme parts sets content_width: \'full\'', async () => {
+test('every container in every podcast-a mapping module and every theme part sets content_width: \'full\'', async () => {
   function* everyContainer(nodes) {
     for (const n of nodes) {
       if (n.elType === 'container') yield n;
       if (n.elements?.length) yield* everyContainer(n.elements);
     }
   }
+  /* personSingle() joined this list on 2026-08-20, and it did not join it
+     voluntarily: the drift check below went red the moment
+     elementor/theme-parts/person-single.mjs existed, naming 6 walked trees
+     against 7 that exist. That is the check doing exactly the job its own
+     comment describes, on the first new theme part added since it was
+     written.
+
+     postSingle() joined on 2026-08-23 the same way. Adding it did NOT make
+     the count agree, which is the more useful half of the story: it read 10
+     walked against 11, and the eleventh was native-animation-probe.mjs,
+     which had been uncovered since the day it was written. Nobody had
+     noticed, because the check reports one number and a human reads it as
+     one omission. Its three containers were already 'full' and now they are
+     checked rather than assumed. Two theme parts and one probe, three red
+     counts, no human deciding any of them: that is what the check is for. */
   const trees = [
     podcastHero(), podcastAbout(), podcastLibrary(), podcastLoopItem(),
-    headerPart(), footerPart(),
+    headerPart(), footerPart(), personSingle(),
+    searchArchivePart(), searchResultItem(), postSingle(),
+    probeSections(), categoryArchive(),
   ];
 
   /* page.mjs is excluded from the podcast-a scan: sections() there just
@@ -1380,6 +2000,23 @@ test('the podcast-a page composes hero, about, then library, in that order', () 
   assert.ok(Number.isInteger(podcastAPostId), 'podcast-a/page.mjs POST_ID is not an integer');
 });
 
+/* --- elementor/pages/what-we-do-a/page.mjs -------------------------------- */
+
+/* Same contract, same reasoning as the podcast-a test above: deployPage()
+   overwrites _elementor_data wholesale, so this list being right is the only
+   thing standing between a dropped import and a page that renders, returns
+   200, and is missing a section. */
+test('the what-we-do-a page composes hero, solutions, then reports, in that order', () => {
+  const built = whatWeDoASections();
+  assert.deepEqual(
+    built.map(s => s.settings.css_classes),
+    ['da-hero', 'da-solutions', 'da-reports'],
+    'what-we-do-a/page.mjs does not compose da-hero, da-solutions, da-reports in that order',
+  );
+  assert.equal(typeof whatWeDoAPostId, 'number', 'what-we-do-a/page.mjs POST_ID is not a number');
+  assert.ok(Number.isInteger(whatWeDoAPostId), 'what-we-do-a/page.mjs POST_ID is not an integer');
+});
+
 /* --- elementor/theme-parts ------------------------------------------------ */
 
 /* I4 from the final review: HEADER_POST_ID and FOOTER_POST_ID were imported
@@ -1394,6 +2031,638 @@ test('the header and footer theme-part post ids are real integers', () => {
   assert.ok(Number.isInteger(HEADER_POST_ID), 'theme-parts/header.mjs HEADER_POST_ID is not an integer');
   assert.equal(typeof FOOTER_POST_ID, 'number', 'theme-parts/footer.mjs FOOTER_POST_ID is not a number');
   assert.ok(Number.isInteger(FOOTER_POST_ID), 'theme-parts/footer.mjs FOOTER_POST_ID is not an integer');
+});
+
+/* SEARCH_ARCHIVE_POST_ID and SEARCH_RESULT_ITEM_POST_ID are two different
+   library posts: the archive document and the loop item its Loop Grid
+   points at by id (elementor/theme-parts/search-archive.mjs:191). Task 5's
+   brief fixed both ids and the archive's own Theme Builder condition, so
+   this checks all three land as the values the brief actually specifies,
+   and that the two posts were not accidentally given the same id. */
+test('the search results part is a real archive document with a search condition', () => {
+  assert.ok(Number.isInteger(SEARCH_ARCHIVE_POST_ID),
+    'SEARCH_ARCHIVE_POST_ID is not an integer post id');
+  assert.deepEqual(SEARCH_ARCHIVE_CONDITIONS, ['include/archive/search'],
+    'the search results condition is not include/archive/search');
+  assert.ok(Number.isInteger(SEARCH_RESULT_ITEM_POST_ID),
+    'SEARCH_RESULT_ITEM_POST_ID is not an integer post id');
+  assert.notEqual(SEARCH_ARCHIVE_POST_ID, SEARCH_RESULT_ITEM_POST_ID,
+    'the archive template and its loop item point at the same post');
+});
+
+/* --- elementor/theme-parts/category-archive.mjs --------------------------- */
+
+/* THE CONDITION IS TWO LEVELS, AND THE THREE-LEVEL FORM IS THE TRAP.
+   Elementor Pro registers Taxonomy as a sub-condition of Post_Type_Archive,
+   which reads as a nesting and is not one. Conditions_Manager::parse_condition()
+   is `list($type,$name,$sub_name,$sub_id) = array_pad(explode('/',$condition),4,'')`
+   and the match is FLAT: get_condition($name)->check([]), then, only if that
+   passed, get_condition($sub_name)->check(['id'=>$sub_id]).
+
+   So `include/archive/post_archive/category` parses as name=archive,
+   sub_name=post_archive, sub_id=category, and runs
+   Post_Type_Archive::check() = `is_post_type_archive('post') || is_home()`,
+   which is FALSE on a category archive. Taxonomy::check() never runs. The
+   template deploys, looks right in the editor, and never appears on a page.
+
+   `include/archive/category` runs Archive::check() = is_archive() (true), then
+   Taxonomy::check() with `$id = (int) '' = 0`, and is_category(0) is true for
+   any category archive. Same two-level shape as include/archive/search and
+   include/singular/post, which is the corroboration.
+
+   This test re-implements parse_condition rather than asserting the literal,
+   because the literal is what a future edit would change and the parse is what
+   makes it wrong. */
+/* THE CONTROL LABELS EXIST TWICE, AND THE ONE-LINE BAR DEPENDS ON BOTH.
+   src/content-a/sections/02-browse.html is the static build; the same markup is
+   embedded as a string in elementor/pages/content-a/02-browse.mjs for the
+   converted page. They were shortened by hand on 2026-08-26 to make the filter
+   bar fit one line (343 + 492 + 48 = 883px against a 1200px container), and
+   either copy drifting back to the full wording puts that page's bar silently
+   back to two rows while the other stays right.
+
+   The fidelity gates compare the LIVE page against the static build, so they
+   would catch this too -- but only after a deploy, and only with the env var
+   set. This catches it at HEAD. */
+test('content-a’s filter labels are identical in the static build and the Elementor module', () => {
+  const labels = (file) => {
+    const src = fs.readFileSync(file, 'utf8');
+    return [...src.matchAll(/<label class="(cad-tab|cad-chip)"[^>]*for="([^"]+)"[^>]*>([^<]*)<\/label>/g)]
+      .map(m => `${m[2]}=${m[3].trim()}`);
+  };
+  const staticLabels = labels('src/content-a/sections/02-browse.html');
+  const moduleLabels = labels('elementor/pages/content-a/02-browse.mjs');
+
+  assert.equal(staticLabels.length, 10, `expected 10 control labels in the static build, found ${staticLabels.length}`);
+  assert.deepEqual(moduleLabels, staticLabels,
+    'the Elementor module and the static build disagree about the filter labels, so one of the two '
+    + 'pages has a bar that no longer fits on one line');
+});
+
+test('the category archive condition parses flat, into archive + category', async () => {
+  const { CATEGORY_ARCHIVE_CONDITIONS } = await import('./elementor/theme-parts/category-archive.mjs');
+  /* TWO conditions since 2026-08-27: this one document serves the ten category
+     archives AND the posts page (/updates/, titled "News", WordPress's own
+     page_for_posts). One template rather than two, because the two pages differ
+     only in what the head says. */
+  assert.equal(CATEGORY_ARCHIVE_CONDITIONS.length, 3,
+    'expected three conditions (category archives, the posts page, author archives), got '
+    + CATEGORY_ARCHIVE_CONDITIONS.length);
+
+  const parseCondition = (condition) => {
+    const [type, name, subName, subId] = [...condition.split('/'), '', '', ''].slice(0, 4);
+    return { type, name, subName, subId };
+  };
+  const parsed = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[0]);
+
+  /* THE POSTS-PAGE CONDITION IS TWO LEVELS FOR THE SAME REASON, and its second
+     level is the Post_Type_Archive condition's own name, which get_name()
+     builds as `<post_type>_archive`. Both of its checks pass on /updates/:
+     Archive::check() is `is_archive() || is_home() || is_search()` and
+     Post_Type_Archive::check() is `is_post_type_archive('post') || is_home()`,
+     and a page_for_posts request is is_home(). */
+  const posts = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[1]);
+  assert.equal(posts.type, 'include');
+  assert.equal(posts.name, 'archive', `the posts-page condition's first level is "${posts.name}"`);
+  assert.equal(posts.subName, 'post_archive',
+    `the posts-page condition's second level is "${posts.subName}"; it must be the Post_Type_Archive `
+    + "condition's own name, which is the post type plus '_archive'");
+  assert.equal(posts.subId, '', 'the posts-page condition carries a sub_id, which pins it to one object');
+
+  /* AUTHOR ARCHIVES, added 2026-08-27, and the shallowest of the three: `author`
+     is a sub-condition of Archive itself (Archive's own $sub_conditions array is
+     ['author','date','search']), so it needs no intermediate. Its check is
+     is_author(). A sub_id would pin the template to ONE author, and there are
+     21 with published posts. */
+  const author = parseCondition(CATEGORY_ARCHIVE_CONDITIONS[2]);
+  assert.equal(author.type, 'include');
+  assert.equal(author.name, 'archive', `the author condition's first level is "${author.name}"`);
+  assert.equal(author.subName, 'author', `the author condition's second level is "${author.subName}"`);
+  assert.equal(author.subId, '', 'the author condition carries a sub_id, so it serves one author only');
+
+  assert.equal(parsed.type, 'include');
+  assert.equal(parsed.name, 'archive',
+    `the first level is "${parsed.name}"; it must be a condition whose check() is true on a category `
+    + 'archive, and Archive::check() (is_archive()) is the only one that is');
+  assert.equal(parsed.subName, 'category',
+    `the second level is "${parsed.subName}"; parse_condition() looks conditions up FLAT by name, so `
+    + 'this must be the Taxonomy condition\'s own name (the taxonomy slug), never an intermediate '
+    + 'like post_archive, whose check() is is_post_type_archive(\'post\') and false here');
+  assert.equal(parsed.subId, '',
+    'a sub_id pins the template to ONE term; this template serves every category');
+});
+
+/* THE CARD IS content-a's, BY POST ID, NOT BY COPY. Every listing surface in
+   this build that has grown its own card has cost a second design to keep in
+   step: post-single.mjs's More grid reuses LOOP_ITEM_POST_IDS.article for the
+   same reason, and its note gives it. `article` specifically, out of the four
+   deployed Loop Items, because it is the only one that carries a photograph, a
+   topic and a date without assuming the post is about a named person, and a
+   category archive holds whatever the category holds.
+
+   Asserting the ID rather than the markup is the point: a copied tree would
+   satisfy any structural assertion and still be a second design. */
+test('the category archive grid points at content-a\'s article Loop Item, not a card of its own', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const { LOOP_ITEM_POST_IDS } = await import('./elementor/pages/content-a/loop-item.mjs');
+
+  const grids = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.widgetType === 'loop-grid') grids.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(categoryArchive());
+
+  assert.equal(grids.length, 1, `expected one Loop Grid on the archive, found ${grids.length}`);
+  assert.equal(grids[0].settings.template_id, LOOP_ITEM_POST_IDS.article,
+    'the archive grid does not point at content-a\'s article Loop Item, so this page has grown a '
+    + 'second card design that has to be kept in step with the signed-off one by hand');
+});
+
+/* NOTHING ABOUT THE TERM IS WRITTEN INTO THE TREE. One template serves ten
+   terms, so a term name or a post count in the tree is wrong on nine of them
+   the moment it is written, and wrong on all ten the moment Empower add a post.
+   This build has been bitten by both halves already: `1b886a4` took typed
+   counts out of the approval generators, and the "Our north star" line is the
+   standing example of invented copy that reads as approved copy.
+
+   The list below is every category name on the install, read with
+   `wp term list category` on 2026-08-26 rather than typed from the roadmap.
+   Their post counts are the reason pagination is not optional: education 147,
+   work 126, empower news 78, justice 78, bill-summaries 74, podcast 66, press
+   releases 33, capitol-chat 28, community-stories 27, uncategorized 0. */
+test('the category archive writes no term name and no count into its own tree', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+
+  const TERM_NAMES = [
+    'Bill Summaries', 'Capitol Chat', 'Community Stories', 'Education',
+    'Empower News', 'Justice', 'Podcast', 'Press Releases', 'Work',
+  ];
+  for (const name of TERM_NAMES) {
+    assert.ok(!markup.includes(name),
+      `"${name}" is written into the archive tree, which serves all ten terms; the term has to come `
+      + 'from the query, not from this file');
+  }
+
+  /* Any run of digits that is not part of a post id, a column count, a
+     breakpoint or a per-page setting. A count belongs to the query. */
+  const prose = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      const t = n.settings?.title ?? n.settings?.editor ?? n.settings?.html ?? '';
+      if (typeof t === 'string' && t) prose.push(t);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(categoryArchive());
+  for (const line of prose) {
+    assert.ok(!/\b\d+\b/.test(line.replace(/\[[^\]]*\]/g, '')),
+      `the archive head states the number "${line.trim().slice(0, 60)}"; every number on this page is `
+      + 'a property of the query and must be rendered from it');
+  }
+});
+
+/* THE HEAD IS TWO SHORTCODES, and each is here because no Elementor control
+   can produce it. Same division of labour as inc/post-single.php.
+
+   1. THE HEADING NEEDS A REAL id, because the section is labelled
+      aria-labelledby. Elementor's Heading widget writes its own wrapper and
+      offers no id control on the heading element itself. Its Archive Title
+      dynamic tag also prefixes "Category: " on this install, which is
+      WordPress's own get_the_archive_title() default and not a label anybody
+      approved.
+   2. THERE IS NO COUNT CONTROL OR TAG AT ALL. The number is
+      $wp_query->found_posts, which only PHP can reach.
+
+   Both render nothing rather than something wrong for the term with no posts
+   (uncategorized, 0), which is the rule inc/post-single.php's figure already
+   follows for the 95 posts with no featured image. */
+test('the category archive head is rendered by shortcodes, not by widgets that cannot do the job', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+
+  assert.match(markup, /\[empower_archive_title\]/,
+    'the archive head does not render [empower_archive_title], so its h1 carries no id for '
+    + 'aria-labelledby and inherits WordPress\'s "Category: " prefix');
+  assert.match(markup, /\[empower_archive_count\]/,
+    'the archive head does not render [empower_archive_count], so the page cannot say how many posts '
+    + 'the term holds without typing a number');
+
+  const php = fs.readFileSync('wp/empowerms-child/inc/archive.php', 'utf8');
+  for (const tag of ['empower_archive_title', 'empower_archive_count']) {
+    assert.match(php, new RegExp(`add_shortcode\\(\\s*'${tag}'`),
+      `inc/archive.php does not register [${tag}], so the archive renders the literal shortcode text`);
+  }
+  assert.match(php, /found_posts/,
+    'the count shortcode does not read $wp_query->found_posts, so it is counting something other than '
+    + 'what the archive actually resolved');
+
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.match(fn, /require_once get_stylesheet_directory\(\) \. '\/inc\/archive\.php'/,
+    'functions.php does not require inc/archive.php, so neither shortcode is registered');
+});
+
+/* THE STYLE KEY GAINS A THIRD CASE, AND THE OTHER TWO MUST SURVIVE IT.
+   empower_style_key() has answered two questions since 2026-08-20: a PAGE is
+   keyed by its slug, a SINGULAR OF ANY OTHER POST TYPE by its post type. Both
+   are inside an `is_singular()` guard that returns '' for everything else, so
+   an archive gets tokens, components, site.css, header-2.css and bridge.css and
+   nothing more. That is why the archive needs a case at all: its cards are
+   `.cad-card`, which lives in css/content-a.css, and the reveal gate
+   (empower_page_has_motion()) derives from the SAME map, so without a key the
+   archive would also ship with no animation while carrying reveal attributes.
+
+   This asserts the shape of the branch rather than its result, which a source
+   read can honestly do; the live gate below asserts the result. */
+test('empower_style_key answers archives without disturbing pages or singulars', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_style_key()'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  assert.match(body, /is_category\(\)|is_archive\(\)/,
+    'empower_style_key() has no archive case, so a category archive still resolves to the empty key '
+    + 'and loads neither content-a.css nor motion.css');
+  assert.match(body, /return \(string\) 'archive';|return 'archive';/,
+    "the archive case does not return the 'archive' key that empower_page_styles() is looked up by");
+
+  /* The two older cases, in the order their own docblock argues for: the
+     is_singular() guard must still come first, or a `person` archive-shaped
+     request would take the archive branch. */
+  assert.ok(body.indexOf('is_singular()') < body.indexOf("'archive'"),
+    'the archive case is evaluated before the is_singular() guard, so singulars can fall into it');
+  assert.match(body, /get_post_field\( 'post_name'/,
+    'the page-keyed-by-slug case is gone');
+  assert.match(body, /\(string\) \$post_type/,
+    'the singular-keyed-by-post-type case is gone');
+
+  const styles = php.slice(php.indexOf('function empower_page_styles()'));
+  assert.match(styles.slice(0, styles.indexOf('\n}')), /'archive'\s*=>\s*array\(([^)]*)\)/,
+    'empower_page_styles() has no archive row, so the key resolves to nothing');
+  const row = styles.match(/'archive'\s*=>\s*array\(([^)]*)\)/)[1];
+  for (const sheet of ['motion', 'content-a', 'archive']) {
+    assert.ok(row.includes(`'${sheet}'`),
+      `the archive row does not load ${sheet}.css`);
+  }
+});
+
+const CATEGORY_ARCHIVE_PAGE = {
+  name: 'category archive',
+  envVar: 'CATEGORY_ARCHIVE_URL',
+  exampleUrl: 'https://empv2.wpenginepowered.com/category/community-stories/',
+};
+
+/* The result the source test above cannot prove: that a real category archive
+   request reaches the Elementor template and carries the sheets its cards and
+   its animation need. Beaver's own archive layout is the thing being replaced,
+   so its marker class is the clearest negative. */
+test('the live category archive renders the Elementor template with its stylesheets', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(CATEGORY_ARCHIVE_PAGE, t);
+  if (!url) return;
+
+  /* fetchConverted(), not a bare fetch: it refuses an explicit x-cache HIT, so
+     this gate cannot pass or fail on a page WP Engine cached before the
+     template was deployed. */
+  const html = await fetchConverted(url);
+
+  assert.ok(!/fl-theme-builder-archive/.test(html),
+    'the archive still carries Beaver Themer\'s archive body class, so the Elementor template is not '
+    + 'winning: check the condition is include/archive/category (two levels, not three) and that '
+    + 'setConditions() regenerated the conditions cache');
+  assert.match(html, /elementor-location-archive/,
+    'no Elementor archive location rendered, so archive.php fell through to its plain-list fallback');
+  assert.match(html, /id="archive-title"/,
+    'the head shortcode did not render, so nothing carries the id the section is labelled by');
+  for (const sheet of ['content-a.css', 'motion.css', 'archive.css']) {
+    assert.ok(html.includes(sheet),
+      `${sheet} is not enqueued on the archive, so empower_style_key() is not returning 'archive'`);
+  }
+  assert.ok(!/Category:/.test(html),
+    'the archive title carries WordPress\'s "Category: " prefix, so it is rendering '
+    + 'get_the_archive_title() rather than single_term_title()');
+});
+
+/* THREE OF THE TEN TERMS ARE TOPICS, NOT TYPES, AND THEY COMPETE WITH PAGES
+   THAT ARE ALREADY CONVERTED AND SIGNED OFF.
+
+   The category taxonomy on this install holds both kinds of term at one level
+   (which is also why inc/post-single.php has to code a precedence for the
+   eyebrow). Six describe what a post IS; three describe what it is ABOUT, and
+   those three are the biggest terms on the install: education 147, work 126,
+   justice 78. Each has a converted page saying the same thing to the same
+   reader, and the 2026-08-21 SEO audit found twelve existing instances of
+   exactly this shape, all of them self-canonical and therefore competing
+   rather than consolidating.
+
+   Paolo chose canonical over redirect or noindex on 2026-08-26: the archives
+   stay reachable, keep working as a way to browse a topic, and credit their
+   signal to the page that is the destination. Same instrument and the same
+   file as the Grant Callen pair, which is the precedent for consolidation
+   over hiding.
+
+   THE MAP IS ASSERTED WHOLE. Three entries, exactly: a fourth would be a topic
+   term nobody has decided about, and a missing one is a term left competing. */
+test('the three topic archives credit their converted page, and only those three', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_term_canonical_overrides()'));
+  assert.ok(fn, 'empower_term_canonical_overrides() does not exist');
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  const pairs = [...body.matchAll(/'([a-z0-9-]+)'\s*=>\s*'([^']+)'/g)].map(m => [m[1], m[2]]);
+  assert.deepEqual(pairs.sort(), [
+    ['education', '/quality-education/'],
+    ['justice', '/public-safety/'],
+    ['work', '/meaningful-work/'],
+  ], 'the topic-to-page map is not the three terms and destinations that were agreed');
+
+  /* One filter, two maps. A second add_filter on the same hook would put the
+     answer to "what is canonical here" in two places, which is how the pair
+     that this filter exists to fix came about. */
+  assert.equal((php.match(/add_filter\( 'aioseo_canonical_url'/g) ?? []).length, 1,
+    'there is more than one aioseo_canonical_url filter, so canonicals are decided in two places');
+
+  const filter = php.slice(php.indexOf("add_filter( 'aioseo_canonical_url'"));
+  const filterBody = filter.slice(0, filter.indexOf('\n} );'));
+  assert.match(filterBody, /is_category\(\)/,
+    'the canonical filter has no category branch, so the topic archives still declare themselves '
+    + 'canonical and go on competing with their converted pages');
+  assert.match(filterBody, /'publish' !== get_post_status/,
+    'the term branch does not check the destination is published; a canonical pointing at a 404 or a '
+    + 'draft is worse than the duplicate it replaces');
+});
+
+/* The result, on the term with the most posts. */
+/* AN EMPTY-STATE MESSAGE THAT IS NOT SWITCHED ON IS NOT AN EMPTY STATE.
+   Elementor Pro's Loop Grid gates the whole block on a SWITCHER:
+
+     if ( isset( $settings['enable_nothing_found_message'] )
+          && 'yes' === $settings['enable_nothing_found_message'] ) { ... }
+
+   and `enable_nothing_found_message` is registered with NO `default`, so it is
+   '' unless something sets it. `nothing_found_message_text` is itself
+   conditioned on that switch being 'yes'. Writing the text alone therefore
+   produces exactly nothing on the page.
+
+   This was found on 2026-08-26 while building the category archive, and it had
+   already shipped: theme-parts/search-archive.mjs set the text and not the
+   switch, so the search results page has never had the empty state it was
+   written to have. The gate covering it asserted the string was present in the
+   TREE, which stayed true the whole time. A source assertion about a setting
+   cannot see a second setting that suppresses it, which is why this one is an
+   invariant over every grid rather than a check on one. */
+test('every loop grid that writes an empty state also switches it on', async () => {
+  const trees = {
+    'search-archive': searchArchivePart(),
+    'post-single': postSingle(),
+    'category-archive': categoryArchive(),
+  };
+
+  let checked = 0;
+  for (const [name, tree] of Object.entries(trees)) {
+    (function walk(nodes) {
+      for (const n of nodes) {
+        if (n.widgetType === 'loop-grid' && n.settings?.nothing_found_message_text) {
+          checked += 1;
+          assert.equal(n.settings.enable_nothing_found_message, 'yes',
+            `${name} sets nothing_found_message_text without enable_nothing_found_message:'yes', so `
+            + 'Elementor renders no empty state at all and the copy is dead');
+        }
+        if (n.elements?.length) walk(n.elements);
+      }
+    })(tree);
+  }
+  assert.ok(checked > 0, 'no loop grid with an empty state was found; the walk itself is broken');
+});
+
+/* The archive's own empty state. A category can empty out at any time: these
+   are Empower's terms and Empower's posts, and `uncategorized` sits at 0 posts
+   today. An archive that renders a heading, a count of nothing and a blank
+   band is the page failing silently. */
+/* THE DOCUMENT TYPE FOR A CATEGORY ARCHIVE IS 'archive'. deployThemePart()'s
+   third argument is written to `_elementor_template_type`, and it validates
+   against a fixed list that predates this template: header, footer,
+   single-post, search-results. Elementor Pro's own Archive document returns
+   'archive' from get_type(), and Search_Results EXTENDS Archive, which is why
+   the narrower type was already on the list and the base one was not.
+
+   Tested through the function's own rejection rather than by reading the
+   constant: the constant is what a future edit changes, and the rejection is
+   what actually stops a deploy. A non-integer postId is used so the assertion
+   is reached with no network call at all -- if 'archive' were still refused,
+   the error would name the location instead. */
+/* THE DEPLOY SCRIPT'S ARGUMENTS DECIDE WHETHER A LIVE WRITE HAPPENS, so they
+   are worth more than a glance. Three modes, and the two that are not a deploy
+   must not become one by accident:
+
+     (no args)   explain, write nothing, exit non-zero
+     --create    create the elementor_library post, print its id, STOP
+     <id>        deploy into that id
+
+   `--create` deliberately does not chain into the deploy. Creating the post is
+   a write to Empower's install and deploying is another; keeping them apart is
+   what makes the id a thing somebody has read before it is written to. */
+/* THE SAME GUARD, ON THE SECOND DEPLOY SCRIPT. content-a's script takes no post
+   id -- the id lives in elementor/pages/content-a/page.mjs, where the register
+   can see it -- so "no arguments" cannot mean "nothing to deploy into" here the
+   way it does for the archive. It has to mean something else, and it means
+   explain and write nothing: deployPage() overwrites _elementor_data wholesale,
+   so a script that deploys on a bare invocation is one stray shell history entry
+   away from overwriting a page nobody meant to touch. */
+/* THE THIRD DEPLOY SCRIPT, SAME GUARD. This one drafts a Beaver Themer layout
+   as well as writing a template, so a bare invocation would hand the search
+   page over on a stray shell-history entry. */
+test('the search deploy script writes nothing without an explicit flag', async () => {
+  const { parseArgs } = await import('./elementor/deploy-search.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'a bare invocation does something other than explain itself');
+  assert.deepEqual(parseArgs(['--deploy']), { mode: 'deploy' },
+    '--deploy is not recognised, so the script cannot deploy at all');
+
+  for (const argv of [['deploy'], ['-d'], ['--deploy', 'extra'], ['20639'], ['--yes'], ['--force']]) {
+    assert.notEqual(parseArgs(argv).mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only the exact --deploy flag may`);
+  }
+});
+
+test('the content-a deploy script writes nothing without an explicit flag', async () => {
+  const { parseArgs } = await import('./elementor/deploy-content-a.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'a bare invocation does something other than explain itself');
+  assert.deepEqual(parseArgs(['--deploy']), { mode: 'deploy' },
+    '--deploy is not recognised, so the script cannot deploy at all');
+
+  for (const argv of [['deploy'], ['-d'], ['--deploy', 'extra'], ['20613'], ['--yes']]) {
+    assert.notEqual(parseArgs(argv).mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only the exact --deploy flag may`);
+  }
+});
+
+test('the archive deploy script never deploys without an explicit post id', async () => {
+  const { parseArgs } = await import('./elementor/deploy-archive.mjs');
+
+  assert.deepEqual(parseArgs([]), { mode: 'explain' },
+    'no arguments does something other than explain itself');
+  assert.deepEqual(parseArgs(['--create']), { mode: 'create' },
+    '--create is not recognised, so the post cannot be created over SSH');
+  assert.deepEqual(parseArgs(['20699']), { mode: 'deploy', postId: 20699 },
+    'a bare id does not select the deploy');
+
+  /* The shapes that must NOT reach a deploy. '<id>' is the literal placeholder
+     from the instructions, and it is the one that actually got typed. */
+  for (const argv of [['<id>'], ['--create', '20699'], ['abc'], ['0'], ['-1'], ['20699.5']]) {
+    const parsed = parseArgs(argv);
+    assert.notEqual(parsed.mode, 'deploy',
+      `parseArgs(${JSON.stringify(argv)}) selected a deploy; only a positive integer id may`);
+  }
+});
+
+test('deployThemePart accepts archive as a document type', async () => {
+  const { deployThemePart } = await import('./elementor/deploy.mjs');
+  await assert.rejects(
+    () => deployThemePart('not-an-id', [], 'archive'),
+    /postId must be an integer/,
+    "deployThemePart refuses the 'archive' document type, so the category archive template cannot be "
+    + 'deployed at all',
+  );
+});
+
+/* THE LIBRARY POST THIS TEMPLATE LIVES IN, recorded the same way every other
+   theme part records its own. The id is not decoration: deployThemePart()
+   overwrites _elementor_data wholesale, so a wrong one silently destroys
+   another document's tree, and the check it makes on the install only proves
+   the target is SOME elementor_library post. Asserting the ids are distinct
+   here is what stops two theme parts pointing at one post in the first place. */
+test('the category archive names its own library post, distinct from the other parts', async () => {
+  const { CATEGORY_ARCHIVE_POST_ID } = await import('./elementor/theme-parts/category-archive.mjs');
+  const { POST_SINGLE_POST_ID } = await import('./elementor/theme-parts/post-single.mjs');
+
+  assert.ok(Number.isInteger(CATEGORY_ARCHIVE_POST_ID) && CATEGORY_ARCHIVE_POST_ID > 0,
+    'CATEGORY_ARCHIVE_POST_ID is not a positive integer post id');
+
+  const others = {
+    POST_SINGLE_POST_ID,
+    SEARCH_ARCHIVE_POST_ID,
+    SEARCH_RESULT_ITEM_POST_ID,
+    HEADER_POST_ID,
+    FOOTER_POST_ID,
+  };
+  for (const [name, id] of Object.entries(others)) {
+    assert.notEqual(CATEGORY_ARCHIVE_POST_ID, id,
+      `the category archive and ${name} name the same post; deploying either would overwrite the other`);
+  }
+});
+
+/* PAGINATION IS NOT AUTOMATIC EITHER, AND THIS IS THE SECOND TIME THE SAME
+   SHAPE HAS BITTEN. Elementor Pro's pagination trait is
+
+     private function widget_has_pagination( $element ) {
+       return ! empty( $element['settings']['pagination_type'] );
+     }
+
+   No default, gated on presence, exactly like enable_nothing_found_message.
+   theme-parts/search-archive.mjs's own comment says pagination "is not a
+   separate element in this tree: it is the Loop Grid widget's own built-in
+   behaviour", which is true of the MARKUP and false of the BEHAVIOUR, and that
+   sentence was copied forward into the category archive. Result: /category/
+   education/ shipped 147 posts with 12 on screen and no way to reach the other
+   135. Caught by looking at the deployed page, not by any gate.
+
+   SO THE KEY MUST BE PRESENT ON EVERY LOOP GRID, and an empty string is a
+   legitimate value meaning "this grid does not paginate" — post-single's More
+   grid is a fixed teaser of three and should not. What is not legitimate is
+   leaving it out, because absent and "deliberately none" then look identical
+   in the source and only one of them is a decision. */
+test('every loop grid declares whether it paginates', async () => {
+  const trees = {
+    'search-archive': searchArchivePart(),
+    'post-single': postSingle(),
+    'category-archive': categoryArchive(),
+  };
+  const VALID = ['', 'numbers', 'prev_next', 'numbers_and_prev_next',
+    'load_more_on_click', 'load_more_infinite_scroll'];
+
+  let checked = 0;
+  for (const [name, tree] of Object.entries(trees)) {
+    (function walk(nodes) {
+      for (const n of nodes) {
+        if (n.widgetType === 'loop-grid') {
+          checked += 1;
+          assert.ok(Object.hasOwn(n.settings, 'pagination_type'),
+            `${name}'s loop grid does not declare pagination_type. Elementor gates pagination on that `
+            + 'key being non-empty, so leaving it out silently truncates the listing to one page; if '
+            + "this grid genuinely should not paginate, say so with pagination_type: ''");
+          assert.ok(VALID.includes(n.settings.pagination_type),
+            `${name}'s loop grid sets pagination_type: ${JSON.stringify(n.settings.pagination_type)}, `
+            + `which is not one of ${VALID.filter(Boolean).join(', ')} or ''`);
+        }
+        if (n.elements?.length) walk(n.elements);
+      }
+    })(tree);
+  }
+  assert.ok(checked >= 3, `only ${checked} loop grids were walked; the walk itself is broken`);
+});
+
+/* The archive paginates by PAGE RELOAD, not by loading more in place, and the
+   reason is the same one that makes this build's filters CSS: a listing that
+   needs JavaScript to reach its second page has 135 of its 147 posts behind a
+   script. Page reload also gives every page a real URL for indexing. */
+test('the category archive paginates on real URLs rather than behind a script', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const grid = JSON.parse(JSON.stringify(categoryArchive()));
+  const found = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.widgetType === 'loop-grid') found.push(n.settings);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(grid);
+
+  assert.equal(found[0].pagination_type, 'numbers_and_prev_next',
+    'the archive does not paginate with numbers, so a visitor cannot jump into the middle of a term '
+    + 'that holds 147 posts');
+  assert.equal(found[0].pagination_load_type, 'page_reload',
+    'the archive paginates by AJAX, so page two has no URL of its own and needs JavaScript to exist');
+});
+
+test('the category archive has an empty state', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+  const markup = JSON.stringify(categoryArchive());
+  assert.match(markup, /nothing_found_message_text/,
+    'the archive grid has no empty state, so an emptied category renders a heading above a blank band');
+});
+
+test('the live education archive credits /quality-education/', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl({
+    name: 'education category archive',
+    envVar: 'TOPIC_ARCHIVE_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/category/education/',
+  }, t);
+  if (!url) return;
+
+  const html = await fetchConverted(url);
+  const canonical = html.match(/<link[^>]+rel=["']canonical["'][^>]*>/i)?.[0] ?? '';
+  assert.ok(canonical, 'the education archive emits no canonical at all');
+  assert.match(canonical, /\/quality-education\//,
+    `the education archive still credits itself (${canonical.slice(0, 120)}), so it competes with the `
+    + 'converted page rather than consolidating into it');
+});
+
+/* The page has to say what was searched for and it has to have an empty
+   state. Beaver's page has the first and not the second, and "nothing
+   matched" is a routine outcome rather than an edge case: it is the reason
+   search.php's own fallback calls get_search_form() again. */
+test('the search results page echoes the query, offers a form, and has an empty state', () => {
+  const markup = JSON.stringify(searchArchivePart());
+  assert.match(markup, /name=\\"s\\"/,
+    'the results page carries no search input, so a visitor cannot refine in place');
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the results page search input does not opt out of SearchWP Live Ajax Search');
+  assert.match(markup, /name=\\"archive-title\\"/,
+    'the head band does not bind archive-title, so the page never echoes what was searched for');
+  assert.match(markup, /No results found\. Try different search terms/,
+    'the results grid does not carry the search-specific empty-state message, the thing Beaver never had');
 });
 
 /* --- elementor/deploy.mjs ------------------------------------------------ */
@@ -1453,7 +2722,11 @@ test('deployPage writes the Elementor data through a temporary file on the insta
     const sections = [podcastHero()];
     await deployPage(42, sections);
     const script = fs.readFileSync(capturePath, 'utf8');
-    const json = JSON.stringify(sections);
+    /* remapLinks(), not `sections`, because deployElements() rewrites internal
+       links on the way out and podcast-a's hero carries two of them: the
+       payload on the wire is the remapped tree, and comparing against the
+       authored one would fail on a difference this test is not about. */
+    const json = JSON.stringify(remapLinks(sections));
 
     /* The payload is large and contains quotes, so it must land in the
        script as heredoc body content, not as an inline CLI argument to
@@ -1725,12 +2998,56 @@ test('deployThemePart writes the footer template type', async () => {
   }
 });
 
-test('deployThemePart refuses a location that is not header or footer', async () => {
-  /* 'wp-page' and 'loop-item' are real template types with their own deploy
+test('deployThemePart refuses a location it does not know', async () => {
+  /* Renamed on 2026-08-20: it said "not header or footer", and the list grew a
+     third entry ('single-post', for the person bio template) that day. The name
+     is deliberately not a list any more, because THEME_PART_LOCATIONS is the
+     list and a test title that restates it goes stale every time a real Theme
+     Builder document type is added.
+
+     'wp-page' and 'loop-item' are real template types with their own deploy
      functions. Accepting one here would write a page's type onto a library
-     post that Elementor then never renders in a location, with no error. */
+     post that Elementor then never renders in a location, with no error.
+
+     'single' IS NOT 'single-post', and that near-miss is worth keeping rather
+     than replacing with an obviously-invented string: Elementor Pro has a
+     Single_Base class and documents.php registers the concrete type as
+     'single-post', so 'single' is exactly the plausible-but-wrong value a
+     reader of the plugin might pass. It must still be refused. */
   await assert.rejects(() => deployThemePart(4242, [], 'single'), /location/);
   await assert.rejects(() => deployThemePart(4242, [], 'wp-page'), /location/);
+});
+
+/* The search results template is the build's first theme part where the
+   Elementor document type and the Theme Builder render location are not
+   the same string (see the comment above THEME_PART_LOCATIONS for why
+   header and footer never exposed this). deployThemePart()'s `location`
+   parameter reaches deployElements() as the value written to
+   _elementor_template_type, so what belongs in THEME_PART_LOCATIONS is
+   Search_Results' document type, 'search-results', not the 'archive'
+   render location it inherits from Archive. wp/empowerms-child/search.php
+   still asks for the 'archive' location; that string is unaffected by this
+   array. search-archive.mjs writes the document type separately. */
+test('deployThemePart accepts the search-results document type and still refuses an invented one', async () => {
+  assert.ok(THEME_PART_LOCATIONS.includes('search-results'),
+    'THEME_PART_LOCATIONS does not include search-results, so the search results part can never deploy');
+  await assert.rejects(
+    () => deployThemePart(1, [], 'sidebar'),
+    /location must be one of/,
+    'deployThemePart no longer refuses a location that is not a real document type');
+  /* 'search' is not an obviously-bogus value like 'sidebar': it is a real
+     Elementor string for this exact document, one method away from the
+     correct one. Elementor Pro's Search_Results document returns
+     'search-results' from get_type() and 'search' from get_sub_type(), so
+     'search' is what a future author gets by reading the wrong method off
+     the same object. An earlier draft of this plan specified 'archive'
+     here, which is the render LOCATION rather than the document type, and
+     it shipped a fix round; a test that only rejects an obviously-bogus
+     string would not have caught that class of error either. */
+  await assert.rejects(
+    () => deployThemePart(1, [], 'search'),
+    /location must be one of/,
+    'deployThemePart accepts get_sub_type() (\'search\') where only get_type() (\'search-results\') is a real document type');
 });
 
 /* I4 from the final review: deployElements() validates only postId's shape,
@@ -2086,6 +3403,24 @@ test('the Our Solutions item stays a link plus a disclosure button', () => {
   assert.match(json, /em-header__item--split/);
   assert.match(json, /em-header__disclosure/);
   assert.match(json, /href=\\"\/solutions\\"/);
+
+  /* The three assertions above are about the tree as AUTHORED, which since the
+     link remap of 2026-08-20 is no longer the tree that ships: /solutions 301s
+     to Empower's existing live page rather than to the converted one. Empower's
+     requirement is that the WORDS navigate to the Solutions landing page, so it
+     is only really tested on the deployed shape. Asserted here rather than in a
+     separate test because it is the same requirement, and splitting it would
+     let one half pass while the half a visitor experiences fails. */
+  const shipped = JSON.stringify(remapLinks(headerPart()));
+  /* The expected path is DERIVED from the register rather than written here.
+     It was a literal `/solutions-b/` for about an hour, and the slug rename of
+     2026-08-20 broke it immediately: a test that hard-codes a slug fails the
+     next time anyone renames a page, which is precisely the drift the register
+     exists to absorb. */
+  const solutionsPath = convertedPagePaths().get('solutions-b');
+  assert.ok(solutionsPath, 'solutions-b has no exampleUrl in the register');
+  assert.ok(shipped.includes(`href=\\"${solutionsPath}\\"`),
+    `the Our Solutions link no longer resolves to the converted Solutions page (${solutionsPath}) after the remap`);
 });
 
 test('the header carries the mobile nav and its toggle', () => {
@@ -2095,21 +3430,25 @@ test('the header carries the mobile nav and its toggle', () => {
   assert.match(json, /id=\\"mobile-nav\\"/);
 });
 
-test('the header takes exactly three html widgets, and they are the named three', () => {
-  /* The spec sanctions a fourth exception for the nav, the actions and the
+test('the header takes exactly four html widgets, and they are the named four', () => {
+  /* The spec sanctions four exceptions: the nav, the actions, the search
+     panel (added 2026-08-20, Task 2 of the header-search plan) and the
      mobile nav. A fifth html widget here is scope drift and should fail
      loudly rather than be noticed later by eye. */
   const json = JSON.stringify(headerPart());
   const htmlWidgets = json.match(/"widgetType":"html"/g) || [];
-  assert.equal(htmlWidgets.length, 3);
-  for (const marker of ['em-header__nav', 'em-header__actions', 'em-mobilenav']) {
+  assert.equal(htmlWidgets.length, 4);
+  for (const marker of ['em-header__nav', 'em-header__actions', 'em-search', 'em-mobilenav']) {
     assert.ok(json.includes(marker), `the header part is missing ${marker}`);
   }
 });
 
 test('the header markup matches the static partial, string for string', () => {
-  /* The three html widgets exist to preserve markup exactly. Anything in
-     them that is not in the partial is drift. */
+  /* Three of the header's four html widgets (nav, actions, mobile nav) exist
+     to preserve markup exactly against the partial below. The fourth, the
+     search panel added 2026-08-20, has no partial counterpart and is not
+     checked here. Anything the three DO carry that is not in the partial is
+     drift. */
   const partial = fs.readFileSync('src/_shared/header-2.html', 'utf8');
   for (const copy of [
     'A non-profit working to expand opportunity in Mississippi',
@@ -2121,6 +3460,97 @@ test('the header markup matches the static partial, string for string', () => {
     assert.ok(partial.includes(copy), `"${copy}" is not in src/_shared/header-2.html`);
     assert.ok(JSON.stringify(headerPart()).includes(copy), `"${copy}" is not in the header part`);
   }
+});
+
+/* The overlay exists ONLY in the Elementor build. src/_shared/header-2.html
+   still carries a decorative button with no form, because js/ and src/ are
+   the protected static build (functions.php:486). That divergence is the
+   whole reason this test is structural rather than a comparison against the
+   static partial: there is nothing on the static side to compare to, and a
+   fidelity-shaped test here would either fail forever or quietly stop
+   checking anything. */
+test('the header carries a search panel with a native GET form', () => {
+  const widgets = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'widget') widgets.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(headerPart());
+
+  const panel = widgets.find(w => w.widgetType === 'html' && /class="em-search"/.test(w.settings.html ?? ''));
+  assert.ok(panel, 'no html widget in the header carries .em-search');
+
+  const markup = panel.settings.html;
+  assert.match(markup, /<form[^>]+method="get"/, 'the search panel form is not a GET form');
+  assert.match(markup, /<form[^>]+action="\/"/, 'the search panel form does not post to the site root');
+  assert.match(markup, /<form[^>]+role="search"/, 'the search panel form has no role="search"');
+  assert.match(markup, /name="s"/, 'the search input is not named s, so WordPress will never see the query');
+  assert.match(markup, /id="site-search"/, 'the panel has no id for aria-controls to point at');
+  assert.match(markup, /<label[^>]+for="site-search-input"/, 'the search input has no label');
+  assert.match(markup, /type="submit"/, 'the form has no submit control, so it cannot be used without JavaScript');
+});
+
+/* SearchWP Live Ajax Search is active and enabled on the install
+   (searchwp_live_search_settings: enable-live-search true). Left alone it
+   binds itself to any input[name="s"] and injects its own results pane, its
+   own markup and its own stylesheet into our header. data-swplive="false"
+   is the plugin's own opt-out, read from its shipped JavaScript
+   (assets/javascript/dist/script.js) rather than from its documentation.
+   This assertion is what stops the opt-out being lost in a later edit
+   without anything reporting it: the failure mode is a third party's
+   dropdown appearing in the most-seen component on the site. */
+/* Paolo asked for a visible way to dismiss the panel on 2026-08-20. The
+   trigger already toggled, and Escape and an outside click already closed it,
+   but none of those is discoverable to someone looking at an open panel.
+
+   type="button" is the load-bearing attribute and the reason this test exists:
+   a bare <button> inside a <form> defaults to type="submit", so a close control
+   that lost this attribute would run an empty search instead of closing the
+   panel, and would look identical in the markup. */
+test('the search panel carries a close control that cannot submit the form', () => {
+  const widgets = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.elType === 'widget') widgets.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(headerPart());
+  const panel = widgets.find(w => w.widgetType === 'html' && /class="em-search"/.test(w.settings.html ?? ''));
+  assert.ok(panel, 'no html widget in the header carries .em-search');
+
+  const closer = (panel.settings.html.match(/<button class="em-search__close"[^>]*>/) || [])[0];
+  assert.ok(closer, 'the search panel has no .em-search__close control');
+  assert.match(closer, /type="button"/,
+    'the close control is not type="button", so it will submit the form and run an empty search instead of closing the panel');
+  assert.match(closer, /aria-label="[^"]+"/,
+    'the close control is an icon with no accessible name');
+});
+
+test('the header search input opts out of SearchWP Live Ajax Search', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /data-swplive=\\"false\\"/,
+    'the search input does not carry data-swplive="false"');
+});
+
+/* The button was <button type="button"> with an aria-label and nothing else
+   from Phase 2A until 2026-08-20. A control that toggles a panel needs to
+   say so, and the two attributes have to agree with the panel's real id or
+   the relationship exists only in the markup's intention.
+
+   aria-expanded="true", not "false": every other trigger in the header
+   ships expanded, with its panel in normal flow, and JS is what closes it
+   on load (see header.mjs's own comment on withSearchControl for the
+   header-2.html line numbers and js/nav.js:12-13). This is also what keeps
+   the search button inside 'the header part keeps the no-JavaScript
+   contract' below, rather than being the one trigger in the header that
+   is exempt from it. */
+test('the header search button is a real disclosure control', () => {
+  const markup = JSON.stringify(headerPart());
+  assert.match(markup, /class=\\"em-header__search\\"[^>]*aria-expanded=\\"true\\"/,
+    'the search button has no aria-expanded, so it is still decoration');
+  assert.match(markup, /aria-controls=\\"site-search\\"/,
+    'the search button does not point at the panel it controls');
 });
 
 test('the converted page carries the chrome sections in order', () => {
@@ -2177,31 +3607,154 @@ test('settleReveal queries the reveal wait from document.body, not document', ()
 const requireSpikeUrl = () => process.env.SPIKE_URL
   ?? assert.fail('SPIKE_URL is not set. These eight tests need the deployed page (five drive a real browser, three fetch or check it directly): SPIKE_URL=https://empv2.wpenginepowered.com/podcast-a/ node --test test-elementor.mjs');
 
-/* Fix round 1 review finding: this test used to sit outside the
-   requireSpikeUrl()-guarded group and made an unguarded live fetch to the
-   install on every run, on any machine. Before this task, a checkout with
-   no route to empv2.wpenginepowered.com only ever hit that wall inside the
-   seven tests below, each of which fails fast with a message naming
-   SPIKE_URL, never with a bare DNS error or a hang. checkRobots() does not
-   drive a browser, unlike the seven tests around it, but it is gated behind
-   the same requireSpikeUrl() on purpose: robots.txt lives on the same
-   install SPIKE_URL points at, "no network route to the install" is exactly
-   the failure requireSpikeUrl() already turns into a legible message for,
-   and a second, narrower guard (its own env var, a hand-rolled timeout and
-   error message) would duplicate that machinery to say the same thing.
-   checkRobots(baseUrl) wants an origin, not a page path, so the podcast-a
-   URL SPIKE_URL is documented to carry is trimmed down with `new URL()`
-   rather than assuming callers will pass a bare origin. The test is not
-   mocked: proving the crawler-disallow policy actually holds against the
-   real robots.txt is the entire point, and a mocked response would prove
+/* --- the crawl policy, and the day it has to invert ----------------------
+   `robots.txt says Disallow: / and that is not a file`. It is also not
+   blog_public, which is the hypothesis this work started from and spent its
+   first half-hour disproving. On 2026-08-27, on the install:
+     wp option get blog_public                        1
+     ls robots.txt in the webroot                     does not exist
+     All in One SEO's robots.txt editor               enable:false, rules:[]
+     ob_start(); do_robots(); in PHP                  Disallow: /wp-admin/
+                                                      Allow: /wp-admin/admin-ajax.php
+                                                      Crawl-delay: 10
+                                                      two Sitemap: lines
+     GET /robots.txt                                  User-agent: *
+                                                      Disallow: /
+   WordPress never emits the blanket block. The response headers settle it:
+   GET / comes back with x-cacheable: SHORT and x-cache: HIT, GET /robots.txt
+   comes back with neither, so /robots.txt is answered before the request
+   reaches WordPress at all. WP Engine's edge substitutes it for every
+   hostname it hands out before a site has its own.
+
+   SO THERE IS NOTHING TO FLIP AT LAUNCH. A guard on an option that is already
+   correct is a guard on nothing, and this project shipped one of those
+   earlier the same day. What is genuinely unguarded is the opposite risk: the
+   install has no assertion anywhere that it STAYS crawlable. Anyone can tick
+   "Discourage search engines from indexing this site" in Settings > Reading,
+   and on this hostname the result is indistinguishable from the block that is
+   already there.
+
+   THE GATE THIS REPLACES WAS INERT. It asserted /Disallow:\s*\// with no end
+   anchor, which "Disallow: /wp-admin/" satisfies, so it would have stayed
+   green against a completely open site. It was also keyed on SPIKE_URL, so
+   the branch that matters on launch day depended on somebody remembering to
+   change a shell variable. The origin now comes from the install's own `home`
+   option, because updating that option IS the launch.
+
+   NOT FIXED, RECORDED: the Crawl-delay: 10 in WordPress's own output comes
+   from WP Engine's mu-plugins/mu-plugin.php (wpe_robots_txt_crawl_delay), and
+   it will be on the live robots.txt. Google ignores Crawl-delay; Bing and
+   Yandex honour it. At 490 posts that is not a throttle worth overriding, but
+   it is not intentional either, and nobody has looked at it. */
+test('robotsProblems reports nothing when a holding domain blocks everything and WordPress does not', () => {
+  assert.deepEqual(robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\nCrawl-delay: 10\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  }), []);
+});
+
+test('robotsProblems reports nothing when a launched domain is open to crawlers', () => {
+  assert.deepEqual(robotsProblems({
+    home: 'https://empowerms.org',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n',
+    served: 'User-agent: *\nDisallow: /wp-admin/\nAllow: /wp-admin/admin-ajax.php\n',
+  }), []);
+});
+
+/* THE ASSERTION THE OLD GATE COULD NOT MAKE, and the reason this function is
+   pure. On launch day the branch below is the only thing standing between
+   Empower and a site that is invisible to search, and until this test existed
+   it had never once been executed. A tripwire nobody has seen fire is a
+   tripwire nobody knows is connected. */
+test('robotsProblems catches the blanket block travelling to the live domain', () => {
+  const problems = robotsProblems({
+    home: 'https://empowerms.org',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /has launched/);
+});
+
+/* The other side of the same claim: while the install is still on a holding
+   domain, losing the block is the failure, because pages under conversion are
+   published and covered by nothing else. A one-sided test would let a fix for
+   the launch case quietly open staging up. */
+test('robotsProblems catches a holding domain that has stopped blocking crawlers', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /wp-admin/\n',
+    served: 'User-agent: *\nDisallow: /wp-admin/\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /holding domain/);
+});
+
+/* blog_public = 0, which is what the whole task was originally reported as.
+   It is invisible on a holding domain: the served document is identical
+   either way, so only WordPress's own output can tell the two apart. */
+test('robotsProblems catches blog_public being switched off, even where the served file looks the same', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: 'User-agent: *\nDisallow: /\n',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /blog_public/);
+});
+
+/* A half-failed SSH call returns an empty string, and an empty string
+   satisfies every "must not contain" assertion in the function. Without this
+   the gate would report a perfectly healthy install while having read
    nothing. */
-test('the install still disallows crawlers, which is what makes publishing during conversion safe', async () => {
-  /* Pages under conversion are published. That is only defensible while
-     robots.txt disallows everything. Checked rather than assumed, because
-     if it ever changes, the policy silently stops being safe. */
-  const robots = await checkRobots(new URL(requireSpikeUrl()).origin);
-  assert.match(robots, /User-agent:\s*\*/i);
-  assert.match(robots, /Disallow:\s*\//);
+test('robotsProblems refuses to pass judgement on a robots.txt it could not read', () => {
+  const problems = robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated: '',
+    served: 'User-agent: *\nDisallow: /\n',
+  });
+  assert.equal(problems.length, 1, `expected exactly one problem, got: ${problems.join(' | ')}`);
+  assert.match(problems[0], /not read properly/);
+});
+
+/* THE FIXTURE ABOVE AND THE FIXTURE TWO TESTS UP ARE THE SAME LENGTH AND MEAN
+   OPPOSITE THINGS, which is what caught a real bug in robotsProblems() on the
+   first run. The readability proof was keyed on "Disallow: /wp-admin/", a line
+   WordPress emits only when blog_public is 1; so the blog_public=0 body, whose
+   entire content is "User-agent: *" and "Disallow: /", was reported as
+   unreadable rather than as the site being closed to search. This asserts the
+   two bodies are told apart, which is the property, rather than that either
+   message exists. */
+test('robotsProblems tells an unreadable robots.txt apart from a blog_public=0 one', () => {
+  const at = (generated) => robotsProblems({
+    home: 'https://empv2.wpenginepowered.com',
+    generated,
+    served: 'User-agent: *\nDisallow: /\n',
+  }).join(' | ');
+
+  assert.match(at(''), /not read properly/);
+  assert.doesNotMatch(at(''), /blog_public/);
+  assert.match(at('User-agent: *\nDisallow: /\n'), /blog_public/);
+  assert.doesNotMatch(at('User-agent: *\nDisallow: /\n'), /not read properly/);
+});
+
+/* Gated behind requireSpikeUrl() for the reason the group below is: on a
+   checkout with no route to the install, "no network" surfaces as a legible
+   message naming the variable rather than as a bare DNS error or a hang. Its
+   VALUE is deliberately not used. The origin comes from `wp option get home`,
+   which is the install's own statement of where it answers, so the launch
+   branch fires on the launch itself rather than on somebody remembering to
+   re-export SPIKE_URL. */
+test('the install blocks crawlers only for as long as it is on a holding domain', async () => {
+  requireSpikeUrl();
+  const home = (await wpe('wp option get home')).trim();
+  const generated = await wpe("wp eval 'ob_start(); do_robots(); echo ob_get_clean();'");
+  const served = await checkRobots(new URL(home).origin);
+
+  assert.deepEqual(robotsProblems({ home, generated, served }), [],
+    `the crawl policy on ${home} is wrong:\n`
+    + robotsProblems({ home, generated, served }).map((p) => `  - ${p}`).join('\n'));
 });
 
 /* The check that matters most and that nothing static can make. A Loop Grid
@@ -2217,6 +3770,130 @@ test('the podcast guest filter actually filters', { concurrency: 1 }, async () =
   assert.ok(r.after < r.before, 'ticking a guest hid nothing: the loop is not emitting data-guest');
   assert.deepEqual(r.kinds, ['lawmaker'], `filtered view still shows ${r.kinds.join(', ')}`);
   assert.equal(r.restored, r.before, 'unticking did not restore the full list');
+});
+
+/* --- fidelity-browser.mjs / the content-a type and topic filters --------- */
+
+/* Its own guard rather than requirePageUrl(), because content-a is in
+   EXCLUDED_PAGES and therefore has no register entry to read an envVar,
+   exampleUrl or staticFile out of. Same shape and same reason as
+   requireSpikeUrl() above: a missing variable surfaces as Playwright's own
+   "url: expected string, got undefined", which reads like a broken test
+   rather than a missing environment variable. */
+const requireContentAUrl = () => process.env.CONTENT_A_URL
+  ?? assert.fail('CONTENT_A_URL is not set. This test needs the deployed content-a page: CONTENT_A_URL=https://empv2.wpenginepowered.com/content-a/ node --test test-elementor.mjs');
+
+/* THIS TEST IS content-a's GATE, AND IT IS THE ONLY ONE IT HAS.
+   The page is in EXCLUDED_PAGES: its four Loop Grids render 205 real posts
+   where dist/content-a.html carries 23 authored cards, so neither census() nor
+   controlBoxes() can compare the two sides. What CAN silently fail is the
+   thing the whole page is for, and it can fail in exactly the way podcast-a's
+   filter could: a loop item template that does not emit data-topic, or a band
+   container that does not carry data-type, produces a page where every radio
+   still moves, every label still turns navy, and nothing at all hides. No
+   static parse and no computed-style probe can see that.
+
+   FOUR STATES, chosen to exercise each of the filter's four rules
+   (css/content-a.css:330-344) and to end where it started:
+
+     1. everything      both groups on their do-nothing option. The unfiltered
+                        page IS the page with no rule applied, which is the
+                        design's own claim ("the default state is not a special
+                        case, it is the absence of one"), so this is also the
+                        baseline every other step is compared against.
+     2. story           rule 1: a chosen type hides the other three bands.
+     3. story + bills   rule 3 hides three bands INCLUDING this one, and rule 4
+                        shows the written empty state. One of exactly three
+                        dead-end pairs, and the reason the page has an empty
+                        state at all: bill summaries are published as articles,
+                        so no community story carries that topic.
+     4. everything      back to the start, which is what proves the "All" and
+                        "Everything" options really are the absence of a rule
+                        rather than a fifth filter of their own.
+
+   Asserted RELATIVELY wherever possible, never against card counts typed into
+   this file. The bands are Loop Grids over a live archive: 141 Empower News
+   posts today, 27 Community Stories, 33 Press Releases. Empower publishing one
+   more post must not turn this test red, so what is asserted is the SHAPE of
+   each state (which bands survive, which topics survive, that filtering
+   removes cards and that returning restores them) rather than any number the
+   archive controls. */
+test('the content-a type and topic filters actually filter', { concurrency: 1 }, async () => {
+  const { checkRadioFilter } = await import('./fidelity-browser.mjs');
+  const [all, education, story, deadEnd, restored] = await checkRadioFilter(requireContentAUrl(), {
+    bandSelector: '.cad-band',
+    cardSelector: '.cad-card',
+    emptySelector: '.cad-empty',
+    /* Radio IDS, not selectors: checkRadioFilter clicks each one's LABEL and
+       then asserts the input really became checked, because these radios are
+       clipped to a pixel behind their labels and carry `pointer-events:none`
+       (css/content-a.css:133-134). Its own comment carries the argument. */
+    steps: [
+      { name: 'everything', check: ['ca-t-all', 'ca-p-all'] },
+      { name: 'education', check: ['ca-p-education'] },
+      { name: 'story', check: ['ca-p-all', 'ca-t-story'] },
+      { name: 'story + bills', check: ['ca-p-bills'] },
+      { name: 'everything again', check: ['ca-t-all', 'ca-p-all'] },
+    ],
+  });
+
+  /* The baseline. Four bands and some cards, or the page did not render its
+     loops at all and every assertion below would pass trivially. */
+  assert.equal(all.bands, 4, `unfiltered page shows ${all.bands} bands, not the four the design has`);
+  assert.deepEqual(all.bandTypes, ['article', 'story', 'research', 'press'],
+    `unfiltered band order is ${all.bandTypes.join(', ')}`);
+  assert.ok(all.cards > 23, `only ${all.cards} cards rendered; the Loop Grids are not returning the archive`);
+  assert.equal(all.emptyShown, 0, 'the empty state is visible with no filter applied');
+
+  /* data-topic is the attribute the whole filter turns on, and it comes from a
+     PHP hook rather than from anything a static read of the page tree can
+     check. If the hook never fired, or fired once and got cached across the
+     loop, every card carries the same value or none. */
+  assert.ok(all.cardTopics.length > 1,
+    `every visible card carries the same data-topic (${all.cardTopics.join(' / ')}); the loop is emitting one post's value for all of them`);
+
+  /* Rule 2: a chosen topic hides the cards that do not carry it, and leaves
+     every band standing. This is the step that catches BOTH ways the page can
+     fail, which is why it is here rather than left to the cardinality check
+     above: with the filter's CSS gone it shows all 205, and with data-topic
+     missing from the loop item it shows 0. Measured both, red first. */
+  assert.equal(education.bands, all.bands, 'choosing a topic hid a whole band; only Bill Summaries is supposed to do that');
+  assert.ok(education.cards > 0, 'choosing Quality Education hid every card: the loop is not emitting data-topic');
+
+  /* AND THE SURVIVORS MUST CLOSE UP. The assertions above count what is shown
+     and would all pass on a page full of holes, which is what shipped: hiding
+     `.cad-card` leaves Elementor's `.e-loop-item` wrapper -- the real grid item
+     on a converted page -- occupying its cell. Measured live before the fix:
+     175 cards hidden, 175 wrappers still laid out. */
+  for (const step of [all, education, story, deadEnd, restored]) {
+    assert.equal(step.orphanCells, 0,
+      `after "${step.name}", ${step.orphanCells} hidden cards left their .e-loop-item wrapper occupying a `
+      + 'grid cell, so the remaining cards do not close up and the grid renders with holes');
+  }
+  assert.ok(education.cards < all.cards, 'choosing Quality Education hid nothing: the filter CSS is not reaching the cards');
+  for (const t of education.cardTopics) {
+    assert.match(t ?? '', /(^|\s)education(\s|$)/,
+      `a card without the education topic is still visible under Quality Education (data-topic="${t}")`);
+  }
+
+  /* Rule 1: a chosen type hides the other three bands. */
+  assert.equal(story.bands, 1, `choosing Community Stories leaves ${story.bands} bands visible`);
+  assert.deepEqual(story.bandTypes, ['story'], `choosing Community Stories leaves ${story.bandTypes.join(', ')}`);
+  assert.ok(story.cards < all.cards, 'choosing a type hid no cards at all');
+  assert.ok(story.cards > 0, 'choosing Community Stories hid everything, including its own band');
+
+  /* Rule 3 and rule 4 together: this pair holds nothing, so every band goes and
+     the page says so in words instead of showing a blank grid. */
+  assert.equal(deadEnd.cards, 0,
+    `the story-and-bills pair still shows ${deadEnd.cards} cards; it is supposed to hold nothing`);
+  assert.equal(deadEnd.emptyShown, 1,
+    'the story-and-bills dead end shows no empty state: a filter that can return nothing has to say so');
+
+  /* And back. A radio group's "all" option is the absence of a rule, not a
+     fifth rule, and this is the assertion that proves it. */
+  assert.equal(restored.bands, all.bands, 'returning to Everything did not restore the bands');
+  assert.equal(restored.cards, all.cards, 'returning to Everything and All did not restore the cards');
+  assert.equal(restored.emptyShown, 0, 'the empty state stayed visible after clearing the filter');
 });
 
 /* Step 9. checkVisibleWithoutJs existed and was bug-fixed but was never
@@ -2432,13 +4109,95 @@ test('the bridge stylesheet carries the two values Site Settings cannot hold', (
    just -widget and -button by name, which is what "and the like" actually
    commits to; the directory list now matches every directory test.mjs
    protects. */
+/* THE EXEMPTION IS DERIVED FROM TWO POSITIVE FACTS, NOT FROM A FILENAME LIST.
+   css/post-single.css broke this test on 2026-08-23 by carrying six
+   Elementor selectors deliberately, and moving them to bridge.css was the
+   wrong repair: they are not global Elementor fixes, they are one page's
+   design fighting two Elementor defaults (`.e-con > .elementor-widget
+   {max-width:100%}` and the widget figure margin reset) plus four rules
+   opting its loop grid out of content-a's lead-card treatment. Split across
+   two files, that design stops being readable in one place.
+
+   What actually changed is the CATEGORY of sheet, which the test predates.
+   Every sheet it was written to protect dresses markup that the static build
+   emits, so an Elementor selector in one is proof the static page can no
+   longer stand on its own. An INSTALL-ONLY sheet dresses markup that exists
+   only on WordPress: there are 490 single posts and no dist/post-single.html
+   for them to diverge from, so the premise of the guard is simply absent.
+
+   Install-only is decided by the repository, never by a list here, because a
+   hand-written exemption list is the coverage bug this file has already been
+   bitten by twice (the trees array above, and the roster count in e0b661f).
+   A sheet is exempt only when BOTH are true, and both are read off files:
+   no page in dist/ loads it, AND empower_page_styles() in the child theme
+   serves it. Absence alone would exempt any sheet somebody forgot to wire
+   into build.mjs; the second fact is what makes it a deliberate arrangement
+   rather than an oversight. The day a dist page loads post-single.css, the
+   exemption evaporates on its own and this test goes red again. */
+function installOnlySheets() {
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const from = fn.indexOf('function empower_page_styles()');
+  assert.ok(from !== -1, 'empower_page_styles() is gone from functions.php; this exemption cannot be derived');
+  const body = fn.slice(from, fn.indexOf('\n}', from));
+  /* The array VALUES only. The keys of that map are page slugs, and a slug
+     can collide with a stylesheet name (`work-a` is both), which would
+     exempt a sheet nothing actually serves. */
+  const served = new Set();
+  for (const [, list] of body.matchAll(/array\(([^)]*)\)/g)) {
+    for (const [, name] of list.matchAll(/'([a-z0-9-]+)'/g)) served.add(name);
+  }
+  const pages = fs.readdirSync('dist').filter(f => f.endsWith('.html'))
+    .map(f => fs.readFileSync(`dist/${f}`, 'utf8'));
+  return new Set([...served].filter(name => fs.existsSync(`css/${name}.css`)
+    && !pages.some(html => html.includes(`${name}.css`))));
+}
+
 test('no stylesheet outside the bridge carries an Elementor selector', () => {
   const ELEMENTOR_SELECTOR = /\.e-con\b|\.elementor-[\w-]+/;
+  const exempt = installOnlySheets();
+  let checked = 0;
   for (const dir of ['css', 'components', 'tokens']) {
     for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.css'))) {
+      if (dir === 'css' && exempt.has(file.replace(/\.css$/, ''))) continue;
       const css = fs.readFileSync(`${dir}/${file}`, 'utf8');
       assert.doesNotMatch(css, ELEMENTOR_SELECTOR, `${dir}/${file} carries an Elementor selector`);
+      checked += 1;
     }
+  }
+  /* The exemption is narrow by construction, and this is what keeps it so:
+     if it ever grows to swallow the protected build, the walk itself has
+     stopped proving anything. */
+  assert.ok(checked > 20, `only ${checked} stylesheets were checked; the install-only exemption has grown too wide`);
+});
+
+/* The exemption's own arithmetic, asserted rather than assumed. A sheet
+   arriving in this set is a decision somebody should have to make on purpose,
+   and on 2026-08-26 this test did exactly that job: css/archive.css was written
+   the same morning the exemption was, and this assertion is what surfaced it
+   rather than letting the set widen quietly.
+
+   BEING IN THE SET IS NOT THE SAME AS RELYING ON IT. Membership is derived
+   (no dist page loads it, and empower_page_styles() serves it), so an
+   install-only sheet lands here whether or not it carries an Elementor
+   selector. Only post-single.css actually needs the exemption; archive.css is
+   in the set and would pass the guard on its own, because its cards are
+   content-a's and it never has to out-specify an Elementor default. If that
+   changes, it changes here, deliberately. */
+test('the install-only stylesheet exemption names exactly the sheets it is meant to', () => {
+  assert.deepEqual([...installOnlySheets()].sort(), ['archive', 'post-single']);
+});
+
+/* The half of the arithmetic above that is easy to lose: the exemption is only
+   worth anything while the sheets in it are genuinely unreachable from the
+   static build. This asserts the derivation from the other end, so a sheet
+   cannot join the set by being quietly dropped from build.mjs. */
+test('no exempt stylesheet is loaded by any page in dist', () => {
+  const pages = fs.readdirSync('dist').filter(f => f.endsWith('.html'));
+  for (const name of installOnlySheets()) {
+    const loaders = pages.filter(f => fs.readFileSync(`dist/${f}`, 'utf8').includes(`${name}.css`));
+    assert.deepEqual(loaders, [],
+      `css/${name}.css is exempt from the Elementor-selector guard AND loaded by ${loaders.join(', ')}; `
+      + 'it cannot be both install-only and part of the static build');
   }
 });
 
@@ -2456,4 +4215,3506 @@ test('bridge.css repairs the skip link with a :focus-within rule on .em-skip', (
   const css = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
   assert.match(css, /\.em-skip:focus-within\s*\{[^}]*top:/,
     'bridge.css must carry a :focus-within rule for .em-skip that moves it into view');
+});
+
+/* --- fidelity-deferred.mjs / the deferred-image list, tested without a
+   browser --------------------------------------------------------------- */
+
+/* Fix round 1 (Critical 1): the register's coverage is no longer decided by
+   what is hand-typed into PAGE_REGISTER. It is decided by
+   convertedPageDirs(), which reads elementor/pages/ directly, and this
+   test asserts every directory it finds is accounted for in exactly one of
+   PAGE_REGISTER (gated) or EXCLUDED_PAGES (excluded, with a reason). Delete
+   the 'final' entry and add 'what-we-do-a' without touching EXCLUDED_PAGES,
+   and 'final' still has a page.mjs on disk but is in neither list: this
+   test goes red naming it, which is exactly the silent-loss scenario the
+   brief's own precedent (a hand-written page list that stayed green while
+   four pages went unregistered) describes. */
+test('every converted page directory is either gated by the register or explicitly excluded', () => {
+  const dirs = convertedPageDirs();
+  assert.ok(dirs.length > 0, 'convertedPageDirs() found no page.mjs under elementor/pages/; the derivation is broken, not the coverage');
+  /* Fix round 2 (N1): the exactly-one-list check above passes even if
+     PAGE_REGISTER is empty, as long as every directory is in
+     EXCLUDED_PAGES instead. That is a legitimate reading of "exactly one
+     list", but it is also exactly how the two instrument loops below
+     (`for (const page of PAGE_REGISTER)`) would silently stop generating
+     any tests at all: the suite goes green, with a LOWER test count, and
+     both instruments this task exists to build cease to exist. The old
+     standalone `'the page register is not empty'` test caught this and
+     was deleted as "superseded" in fix round 1; it was not superseded for
+     this shape, so the check is restored here, next to the derivation it
+     depends on rather than as a separate assertion that could drift from
+     it. */
+  assert.ok(PAGE_REGISTER.length > 0,
+    'PAGE_REGISTER is empty: every converted page is excluded and nothing is gated. '
+    + 'At least one page must be measured, or the two instruments below have nothing to run against');
+  const registered = new Set(PAGE_REGISTER.map((p) => p.name));
+  const excluded = new Set(EXCLUDED_PAGES.map((p) => p.name));
+  for (const dir of dirs) {
+    const inRegister = registered.has(dir);
+    const inExcluded = excluded.has(dir);
+    assert.ok(inRegister || inExcluded,
+      `"${dir}" has a page.mjs under elementor/pages/ but is in neither PAGE_REGISTER nor EXCLUDED_PAGES `
+      + '(both in elementor/pages/register.mjs); a converted page must be gated or explicitly excluded, never neither');
+    assert.ok(!(inRegister && inExcluded),
+      `"${dir}" is in both PAGE_REGISTER and EXCLUDED_PAGES; a page cannot be gated and excluded at once`);
+  }
+  /* The reverse direction: a name in either list that names no real
+     directory is a typo or a stale entry left behind by a rename. */
+  for (const p of PAGE_REGISTER) {
+    assert.ok(dirs.includes(p.name), `PAGE_REGISTER names "${p.name}", which has no elementor/pages/${p.name}/page.mjs`);
+  }
+  for (const p of EXCLUDED_PAGES) {
+    assert.ok(dirs.includes(p.name), `EXCLUDED_PAGES names "${p.name}", which has no elementor/pages/${p.name}/page.mjs`);
+    assert.ok(p.reason && p.reason.trim() !== '', `EXCLUDED_PAGES entry for "${p.name}" carries no reason`);
+  }
+});
+
+/* Fix round 2 (N3): Number.isFinite(...) > 0 let minBoxes: 0.5 through, which
+   would clear `shared.length > minBoxes` on the __unsettled__ bookkeeping
+   key alone (a 404 static file gives shared.length exactly 1, the marker
+   with nothing measured). A floor is a count of real elements, so it must
+   be an integer of at least 1. */
+test('every PAGE_REGISTER entry carries its own coverage floors', () => {
+  for (const p of PAGE_REGISTER) {
+    assert.ok(Number.isInteger(p.minShared) && p.minShared >= 1,
+      `PAGE_REGISTER entry "${p.name}" has no integer minShared >= 1 (the census floor)`);
+    assert.ok(Number.isInteger(p.minBoxes) && p.minBoxes >= 1,
+      `PAGE_REGISTER entry "${p.name}" has no integer minBoxes >= 1 (the box-sweep floor)`);
+  }
+});
+
+/* compareBoxes() is the box sweep's diff-and-defer logic, extracted out of
+   the browser test below so its five load-bearing behaviours can be proven
+   against plain objects, in milliseconds, without Playwright. Everything
+   here makes a test MORE PERMISSIVE (that is what a deferred list is), so
+   each behaviour below is tested for the failure it exists to catch, not
+   just the pass it exists to produce.
+
+   These use the real registered page name 'final', not a placeholder like
+   the old 'x', because fix round 1 (M2) made validateDeferredEntry() check
+   a deferred entry's `page` against PAGE_REGISTER: a synthetic page name
+   would now throw, for the same reason a typo'd one should. */
+
+test('compareBoxes subtracts a deferred key from the diff, and reports the count', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
+  assert.deepEqual(diffKeys, [], 'a deferred key must not appear in the remaining diff');
+  assert.equal(subtracted, 1, 'exactly one difference was excused and must be counted');
+});
+
+test('compareBoxes does not subtract a key that is not on the deferred list, and it still fails', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', []);
+  assert.deepEqual(diffKeys, ['img|team.jpg'], 'an undeferred difference must still be reported');
+  assert.equal(subtracted, 0, 'nothing was excused, so nothing should be counted as subtracted');
+});
+
+/* This is the half the recipe calls out as most important: without it the
+   list only ever grows, excusing whatever fixed the thing it was written
+   for, and eventually excusing defects nobody has looked at. Fix round 1
+   (I3) moved expiry out of compareBoxes() into expiredDeferredEntries(),
+   called once over the union of every width's raw differences (see the box
+   sweep below); this test exercises that function directly. */
+test('a deferred entry whose key no longer differs at all is reported as expired, by name', () => {
+  const live = { 'img|team.jpg': { w: 320, h: 240 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, rawDiffKeys } = compareBoxes(live, stat, 'final', deferred);
+  assert.deepEqual(diffKeys, [], 'the two sides agree, so there is nothing left to report as a difference');
+  const expired = expiredDeferredEntries(new Set(rawDiffKeys), 'final', deferred);
+  assert.deepEqual(expired, ['img|team.jpg'], 'the entry that no longer differs must be named so it can be removed');
+});
+
+/* I3's own failure mode: an entry that differs at one width and agrees at
+   the other must NOT be reported expired from either single width's
+   result. Only the union across every measured width decides expiry. */
+test('a deferred entry that differs at one width and agrees at another is not expired', () => {
+  const deferred = [{ page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const at1440 = compareBoxes({ 'img|team.jpg': { w: 400, h: 300 } }, { 'img|team.jpg': { w: 320, h: 240 } }, 'final', deferred);
+  const at390 = compareBoxes({ 'img|team.jpg': { w: 320, h: 240 } }, { 'img|team.jpg': { w: 320, h: 240 } }, 'final', deferred);
+  assert.deepEqual(at1440.diffKeys, [], 'the difference at 1440 is deferred and must not fail the test');
+  assert.deepEqual(at390.diffKeys, [], 'the two sides agree at 390 already, nothing to fail');
+  const union = new Set([...at1440.rawDiffKeys, ...at390.rawDiffKeys]);
+  const expired = expiredDeferredEntries(union, 'final', deferred);
+  assert.deepEqual(expired, [], 'the entry is still needed at 1440, so it must not be reported expired');
+});
+
+/* An entry deferred for a DIFFERENT page must not silently excuse a
+   same-named key on this one; page scoping is not exercised by the two
+   tests above, which both use a single page. 'other-page' does not need to
+   be a real registered page here: compareBoxes() filters deferred entries
+   by `page === pageName` before validating them, so an entry for a page
+   other than the one being compared is never read, let alone validated. */
+test('a deferred entry does not cross pages: the same key deferred elsewhere still fails here', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 } };
+  const deferred = [{ page: 'other-page', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' }];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
+  assert.deepEqual(diffKeys, ['img|team.jpg'], 'a deferral on another page must not excuse this one');
+  assert.equal(subtracted, 0, 'nothing on this page was excused');
+});
+
+/* Nothing may be deferred except an image key: a deferred control, link or
+   heading is outside Paolo's instruction and needs asking about, so the
+   mechanism refuses it rather than trusting whoever writes the entry. */
+test('a non-image key is refused when it is added to the deferred list', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'an anchor key must be refused, not silently accepted');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'button|Submit', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'a button key must be refused, not silently accepted');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'h2|Our mission', reason: 'no', date: '2026-08-17' }),
+    /not an image key/, 'a heading key must be refused, not silently accepted');
+});
+
+/* The two bookkeeping keys are neither images nor deferrable, and get their
+   own refusal message rather than falling through to the generic one. */
+test('the two bookkeeping keys are refused with their own message, not the generic one', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: '__excluded_count__', reason: 'no', date: '2026-08-17' }),
+    /bookkeeping marker/, '__excluded_count__ must be refused as bookkeeping, not as "not an image"');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: '__unsettled__', reason: 'no', date: '2026-08-17' }),
+    /bookkeeping marker/, '__unsettled__ must be refused as bookkeeping, not as "not an image"');
+  assert.equal(isBookkeepingKey('__excluded_count__'), true);
+  assert.equal(isBookkeepingKey('__unsettled__'), true);
+  assert.equal(isImageKey('__excluded_count__'), false);
+});
+
+test('isImageKey is decidable from the key alone, for the shapes controlBoxes() actually emits', () => {
+  assert.equal(isImageKey('img|team.jpg'), true);
+  assert.equal(isImageKey('img|team.jpg#2'), true, 'a deduped image key keeps the img| prefix');
+  assert.equal(isImageKey('a|Contact us'), false);
+  assert.equal(isImageKey('button|Submit'), false);
+  assert.equal(isImageKey('h2|Our mission'), false);
+});
+
+/* Fix round 1 Minors, all closing the same gap: a bad entry was refused
+   only on the two axes the brief named (image key, bookkeeping key), and
+   was trusted on everything else. */
+test('a deferred entry for a page the register does not gate is refused (M2)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'no-such-page', key: 'img|team.jpg', reason: 'no', date: '2026-08-17' }),
+    /is not in PAGE_REGISTER/, 'a typo\'d or unregistered page name must be refused, not silently accepted and left inert');
+});
+
+test('a deferred entry with no reason or no date is refused (M1)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', date: '2026-08-17' }),
+    /has no reason/, 'a missing reason must be refused: the recipe requires one on every entry');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', reason: '   ', date: '2026-08-17' }),
+    /has no reason/, 'a blank reason must be refused the same as a missing one');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 'img|team.jpg', reason: 'no' }),
+    /has no date/, 'a missing date must be refused: the recipe requires one on every entry');
+});
+
+test('a deferred entry with a missing or non-string key gets an informative message, not a raw TypeError (M3)', () => {
+  assert.throws(() => validateDeferredEntry({ page: 'final', reason: 'no', date: '2026-08-17' }),
+    /non-string key/, 'a missing key must be named as the problem, not surface as a TypeError from inside isImageKey');
+  assert.throws(() => validateDeferredEntry({ page: 'final', key: 42, reason: 'no', date: '2026-08-17' }),
+    /non-string key/, 'a numeric key must be refused the same way');
+});
+
+test('compareBoxes refuses an invalid deferred entry even when the caller supplies the list directly (M5)', () => {
+  const live = { 'a|Contact us': { w: 10, h: 10 } };
+  const stat = { 'a|Contact us': { w: 20, h: 20 } };
+  const badList = [{ page: 'final', key: 'a|Contact us', reason: 'no', date: '2026-08-17' }];
+  assert.throws(() => compareBoxes(live, stat, 'final', badList),
+    /not an image key/, 'a hand-built deferred list bypassing DEFERRED_IMAGES must get the same refusal, not a silent subtraction');
+});
+
+/* The subtraction count must be visible on a green run too, not only when
+   there is a remaining failure to explain: a silent subtraction is how a
+   gate stops being a gate. This proves the count is still computed and
+   correct when diffKeys ends up empty, i.e. when the test that reads it
+   would otherwise pass without anyone noticing anything was excused. */
+test('the subtraction count is available even when every difference was deferred (a green run)', () => {
+  const live = { 'img|team.jpg': { w: 400, h: 300 }, 'img|hero.jpg': { w: 100, h: 100 } };
+  const stat = { 'img|team.jpg': { w: 320, h: 240 }, 'img|hero.jpg': { w: 90, h: 90 } };
+  const deferred = [
+    { page: 'final', key: 'img|team.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+    { page: 'final', key: 'img|hero.jpg', reason: 'placeholder photo, wrong crop', date: '2026-08-17' },
+  ];
+  const { diffKeys, subtracted } = compareBoxes(live, stat, 'final', deferred);
+  assert.deepEqual(diffKeys, [], 'both differences were deferred, so the test this feeds would pass');
+  assert.equal(subtracted, 2, 'a passing result must not hide how many differences were excused to get there');
+});
+
+/* --- fidelity-deferred.mjs / CONTENT_HEIGHT_EXEMPTIONS ------------------- *
+
+   Tested the same way and for the same reason DEFERRED_IMAGES is: this is
+   the one mechanism in the suite that lets a MEASURED difference not be a
+   failure, so its behaviour has to be provable without a browser, a live
+   install or a particular page's real geometry.
+
+   The fixtures below are the shape layoutInvariants() returns for `painted`
+   (a map of key -> { top, h }, top measured from <main>'s own top), and
+   they are built to the same arithmetic `final` at 390 really produces: an
+   ancestor that contains the exempted element, the exempted element itself,
+   and a box below it that the difference pushes down. `page: 'final'` on
+   every entry because validateContentExemption() requires a registered
+   page; nothing about these tests is specific to the homepage. */
+
+test('a content-height exemption explains its own box, its container and everything below it, and nothing else', () => {
+  const stat = {
+    section: { top: 0, h: 500 }, card: { top: 100, h: 200 }, below: { top: 400, h: 50 },
+  };
+  const live = {
+    section: { top: 0, h: 470 }, card: { top: 100, h: 170 }, below: { top: 370, h: 50 },
+  };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.diffs, [], 'all three boxes are explained exactly by the card being 30px shorter');
+  assert.deepEqual(out.roots.map((r) => [r.key, r.dH]), [['card', -30]],
+    'the difference is MEASURED from the two maps, never read from the entry');
+  assert.equal(out.mainExpected, 970, "main is compared against the static height plus what the exemption explains");
+});
+
+test('a content-height exemption does not excuse a box that moved by more than it explains', () => {
+  const stat = {
+    section: { top: 0, h: 500 }, card: { top: 100, h: 200 }, below: { top: 400, h: 50 },
+  };
+  /* `below` has moved 40px where the card only explains 30, and its own
+     height is 4px out. Both must survive the exemption. */
+  const live = {
+    section: { top: 0, h: 470 }, card: { top: 100, h: 170 }, below: { top: 360, h: 54 },
+  };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.equal(out.diffs.length, 1, 'exactly the one box whose difference is not explained is reported');
+  assert.match(out.diffs[0], /^below:/, 'and it is named');
+  assert.match(out.diffs[0], /residual dTop -10 dH 4/,
+    'the message must show what is left AFTER the exemption, not the raw difference, or it reads as a 40px defect');
+});
+
+test('a content-height exemption whose difference has disappeared is reported expired, not silently applied', () => {
+  const stat = { card: { top: 100, h: 200 } };
+  const live = { card: { top: 100, h: 200 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.expired, ['card'],
+    'an exemption that has outlived the difference it excused must fail, the same half that keeps DEFERRED_IMAGES honest');
+  assert.deepEqual(out.roots, [], 'and it must not count as a root, or it would subtract zero and look applied');
+});
+
+test('a content-height exemption naming an element that is no longer painted on both sides is reported, not ignored', () => {
+  const stat = { other: { top: 0, h: 10 } };
+  const live = { other: { top: 0, h: 10 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.deepEqual(out.unmeasured, ['card'],
+    'an entry that has stopped naming a real element is a defect in the list, not an inert line');
+});
+
+test('a content-height exemption is scoped to its own width and its own page', () => {
+  const stat = { card: { top: 100, h: 200 } };
+  const live = { card: { top: 100, h: 170 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const wrongWidth = explainLayoutHeights(live, stat, 1000, 'final', 1440, list);
+  assert.equal(wrongWidth.roots.length, 0, 'the 390 entry must not reach the 1440 measurement');
+  assert.equal(wrongWidth.diffs.length, 1, 'so the difference is still reported at 1440');
+  const wrongPage = explainLayoutHeights(live, stat, 1000, 'team-a', 390, list);
+  assert.equal(wrongPage.roots.length, 0, "and final's entry must not reach team-a");
+  assert.equal(wrongPage.diffs.length, 1, 'so the difference is still reported there too');
+});
+
+test('a box that only partially overlaps an exempted element is refused rather than guessed at', () => {
+  /* The shape solutions-b really produces: a panel whose negative margin
+     makes it overhang the box above it. If such a box ever sat across an
+     exempted element there is no derivable expected difference, and a
+     guess is how a gate stops being a gate. */
+  const stat = { overhang: { top: 50, h: 200 }, card: { top: 100, h: 200 } };
+  const live = { overhang: { top: 50, h: 200 }, card: { top: 100, h: 170 } };
+  const list = [{ page: 'final', width: 390, key: 'card', reason: 'real post copy', date: '2026-08-18' }];
+  const out = explainLayoutHeights(live, stat, 1000, 'final', 390, list);
+  assert.equal(out.ambiguous.length, 1, 'the undecidable case is reported');
+  assert.match(out.ambiguous[0], /^overhang .*partially overlaps the exempted card/);
+});
+
+test('explainLayoutHeights refuses an invalid exemption even when the caller supplies the list directly', () => {
+  const stat = { card: { top: 0, h: 10 } };
+  const live = { card: { top: 0, h: 20 } };
+  assert.throws(() => explainLayoutHeights(live, stat, 100, 'final', 390,
+    [{ page: 'final', width: 390, key: 'card', date: '2026-08-18' }]),
+  /has no reason/, 'a hand-built list must get the same refusal the module list gets at import');
+  assert.throws(() => explainLayoutHeights(live, stat, 100, 'final', 390,
+    [{ page: 'nope', width: 390, key: 'card', reason: 'r', date: '2026-08-18' }]),
+  /not in PAGE_REGISTER/, 'a typo in the page name must fail rather than sit inert forever');
+  assert.throws(() => validateContentExemption({
+    page: 'final', width: 900, key: 'card', reason: 'r', date: '2026-08-18',
+  }), /not one of the measured widths/, 'a width nothing measures could never be applied');
+  assert.throws(() => validateContentExemption({
+    page: 'final', width: 390, key: '__unsettled__', reason: 'r', date: '2026-08-18',
+  }), /bookkeeping marker/, 'a bookkeeping key names no element');
+});
+
+/* The list this build actually ships, checked as data rather than as
+   behaviour: every entry validates, and every entry names a width the
+   suite really measures. The forEach at the bottom of fidelity-deferred.mjs
+   already throws at import for the first of those; this proves it stays
+   true after an edit, and names MEASURED_WIDTHS as the reason the width
+   field is closed rather than free. */
+test('every CONTENT_HEIGHT_EXEMPTIONS entry this build ships is valid and reachable', () => {
+  assert.ok(CONTENT_HEIGHT_EXEMPTIONS.length > 0,
+    'an empty list would make every test above vacuous against the real data');
+  for (const entry of CONTENT_HEIGHT_EXEMPTIONS) {
+    assert.doesNotThrow(() => validateContentExemption(entry), `${entry.page} ${entry.key} must validate`);
+    assert.ok(MEASURED_WIDTHS.includes(entry.width),
+      `${entry.key} names width ${entry.width}, which the layout test never measures`);
+  }
+});
+
+/* --- fidelity-browser.mjs / the homepage's two measuring instruments ----- */
+
+/* The homepage's ~40 defects were found by two throwaway session scripts,
+   not by anything in this suite. They are load-bearing for thirteen more
+   page conversions and must stop being throwaway. Guarded the same way the
+   SPIKE_URL group above guards itself, with one difference: SPIKE_URL fails
+   the run when unset, right for eight tests the whole run depends on. This
+   register is meant to grow past what any one developer has credentials
+   for, so a page whose variable is unset is skipped, not failed, BY
+   DEFAULT: a developer without empv2 access still gets a usable, all-green
+   `node --test test-elementor.mjs`, with a visible line naming what was
+   skipped and why, rather than a false failure to explain away every run.
+
+   Fix round 1 (M4): a skip is invisible to an automated run that only
+   checks for a nonzero fail count, so a misspelled variable name in a CI
+   config could retire the gate with nothing going red. FIDELITY_REQUIRE_ALL
+   is the opt-in escape hatch: set it, and a missing variable fails instead
+   of skipping, with the same message plus a note explaining why. Unset (the
+   default, and every environment this task was built in), behaviour is
+   exactly as before.
+
+   Fix round 2 (N2): `env` is a parameter defaulting to `process.env`, not
+   read from `process.env` directly inside the function body. Fix round 1's
+   own unit test for this proved the opposite of what it claimed: it SET
+   process.env.FIDELITY_REQUIRE_ALL and then DELETED it in a finally, and
+   because node runs a file's top-level tests in registration order, that
+   test ran and cleaned up before either instrument test below ever called
+   requirePageUrl(), so the flag was already gone by the time it mattered.
+   Measured on that shipped tree: `FIDELITY_REQUIRE_ALL=1 node --test
+   test-elementor.mjs` produced skips, identical to an unset run; the flag
+   only worked when the proving test was filtered out with
+   --test-name-pattern, which a real CI invocation never does. A restore-
+   the-previous-value finally would have papered over that one instance but
+   left the same ordering dependency in place for the next test that reads
+   this variable; taking `env` as an argument removes the shared mutable
+   state, and with it the ordering dependency, entirely. */
+function requirePageUrl(page, t, env = process.env) {
+  const url = env[page.envVar];
+  if (url) return url;
+  const message = `${page.envVar} is not set. This test needs the deployed ${page.name} page: `
+    + `${page.envVar}=${page.exampleUrl} node --test test-elementor.mjs`;
+  if (env.FIDELITY_REQUIRE_ALL) {
+    assert.fail(`${message} (FIDELITY_REQUIRE_ALL is set, so a missing variable fails this test instead of skipping it)`);
+  }
+  t.skip(message);
+  return null;
+}
+
+test('requirePageUrl fails instead of skipping when FIDELITY_REQUIRE_ALL is set (M4, fixed N2)', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
+  const fakeContext = { skip: () => assert.fail('should have failed via FIDELITY_REQUIRE_ALL, not skipped') };
+  /* A local object, not process.env: this test cannot leave shared state
+     for a later test to trip over, which is exactly what fix round 1's
+     version of this test did. */
+  const fakeEnv = { FIDELITY_REQUIRE_ALL: '1' };
+  assert.throws(() => requirePageUrl(page, fakeContext, fakeEnv), /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
+});
+
+/* Fix round 2 (N2)'s own name for this test, "regardless of test order",
+   overstated what it proves: this test passes an explicit `{}`, so it says
+   nothing about ordering at all. Order-independence is a property of the
+   FIRST test no longer mutating process.env, not something a test that
+   never touches process.env can demonstrate. Renamed. */
+test('requirePageUrl skips by default when FIDELITY_REQUIRE_ALL is absent from the given env', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'NO_SUCH_FIDELITY_VAR_XYZ', exampleUrl: 'https://example.test/' };
+  let skipMessage = null;
+  const fakeContext = { skip: (msg) => { skipMessage = msg; } };
+  const url = requirePageUrl(page, fakeContext, {});
+  assert.equal(url, null, 'a missing variable with no FIDELITY_REQUIRE_ALL must skip, not throw');
+  assert.match(skipMessage, /NO_SUCH_FIDELITY_VAR_XYZ is not set/);
+});
+
+/* Fix round 2 (N5): both tests above pass their own `env` object, so
+   neither one touches the one piece of wiring N2 was actually about: the
+   default parameter binding to the real process.env. Round 1 proved the
+   flag while deleting it from shared state; round 2 proved it against a
+   substitute environment; both left the default itself unobserved. Change
+   `env = process.env` to `env = {}` and every test in this file still
+   passes, while both instrument tests below skip forever regardless of
+   what HOME_URL or FIDELITY_REQUIRE_ALL are actually set to, with the
+   suite green: the entire gate retires on a one-token typo nothing
+   catches.
+   PATH is relied on rather than a fabricated variable because it is set in
+   every environment this suite runs in (a local shell, CI, this task's own
+   offline environment), so the two-argument call can be checked against
+   the real process.env directly instead of against a fixture. */
+test('requirePageUrl reads process.env when no env argument is passed', () => {
+  const page = { name: 'nonexistent-test-page', envVar: 'PATH', exampleUrl: 'https://example.test/' };
+  const fakeContext = { skip: () => assert.fail('PATH is always set, so the two-argument call must not skip') };
+  assert.equal(requirePageUrl(page, fakeContext), process.env.PATH,
+    'the default env parameter must be process.env; if it is not, both instrument loops read '
+    + 'an empty object and skip forever with the suite green');
+});
+
+/* The 32 hand-picked probes reported 31 of 32 matching on a page the census
+   found 40 differences on. A curated check set can only find the failures
+   somebody already imagined; this enumerates both sides and compares on a key
+   the conversion cannot move, which is the element's own text.
+
+   Looped over PAGE_REGISTER rather than hard-coding the homepage: the two
+   instrument tests used to name dist/final.html and HOME_URL inside their
+   own bodies, so covering a second page meant editing a test per page. The
+   loop reads its set from the register instead, the same source of truth a
+   human reads to see what is covered. */
+for (const page of PAGE_REGISTER) {
+  test(`every paragraph and heading on the converted ${page.name} page matches the static build`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { census } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      const live = await census(url);
+      const stat = await census(`${server.url}/${page.staticFile}`);
+      const shared = Object.keys(live).filter((k) => stat[k]);
+      /* page.minShared, not a shared constant: fix round 1 (I1) found this
+         floor was calibrated on the homepage's own census count (63) and
+         then applied, unchanged, to every registered page by the loop this
+         used to be hard-coded outside of. what-we-do-a's static build has
+         17 such elements, well under the old 40, so it could never have
+         passed however faithful its conversion was. See the comment on
+         minShared in elementor/pages/register.mjs for where each page's
+         number comes from. */
+      assert.ok(shared.length > page.minShared,
+        `only ${shared.length} elements matched by text on both sides (need > ${page.minShared}); the key is not lining up`);
+      const diffs = shared.filter((k) => JSON.stringify(live[k]) !== JSON.stringify(stat[k]))
+        .map((k) => `${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+      assert.deepEqual(diffs, [], `${diffs.length} computed-style differences:\n${diffs.join('\n')}`);
+    } finally {
+      await server.close();
+    }
+  });
+}
+
+/* The census compares values. This compares boxes, and the two find disjoint
+   defects: a Loop Grid wrapper cost 222px of card height with every property on
+   both sides agreeing, and a kit padding pushed the nav 258px wide while no
+   colour moved. Anchors inside Elementor's button widget are skipped: link()
+   renders the pill on the WRAPPER and the anchor fills it, which is by design
+   and measured correct against the static build's own anchor.
+
+   Looped over PAGE_REGISTER for the same reason as the census test above.
+   The homepage carries nothing in DEFERRED_IMAGES, so compareBoxes() with
+   an empty deferred list for 'final' reduces to exactly the diffKeys
+   computation this test ran inline before this task: same shared/diff
+   logic, same messages, same assertion. That equivalence is what "the
+   homepage's behaviour must not change" means here, and it is proven, not
+   merely asserted, by the extraction: compareBoxes() runs the identical
+   shared-key JSON.stringify comparison this file used to run inline, now
+   unit-tested in isolation above against exactly this case (an empty
+   deferred list).
+
+   Fix round 1 added two things this test used to be missing entirely:
+
+   I2: a coverage floor (`shared.length > page.minBoxes`), inside the width
+   loop, the same shape the census test already had. Before this, a wrong
+   `staticFile` (a typo, or a page renamed on disk without the register
+   being updated) made `controlBoxes()` read a bare 404, which measures
+   only the two bookkeeping keys; `shared` then reduced to the
+   `__unsettled__` marker alone, on both sides, and the sweep reported a
+   clean pass having compared one key out of dozens. The census's own floor
+   caught this by accident, since both instruments must pass; this instrument
+   did not catch it on its own, which is the gap I2 closed.
+
+   I3: expiry is no longer decided inside the width loop. A DEFERRED_IMAGES
+   entry has no width, so a per-width expiry check could not be satisfied by
+   an image that differs at 1440 and agrees at 390: subtracted at one width,
+   reported expired at the other, with no way to write the entry that
+   satisfies both. rawDiffKeys from every width is accumulated into
+   `unionRawDiffs` and expiredDeferredEntries() is called once, after the
+   loop, over that union: an entry is only ever reported expired when it is
+   not needed at ANY measured width. */
+for (const page of PAGE_REGISTER) {
+  test(`every control and image on the converted ${page.name} page matches the static build box for box`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { controlBoxes } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      const unionRawDiffs = new Set();
+      for (const width of [1440, 390]) {
+        const live = await controlBoxes(url, { width });
+        const stat = await controlBoxes(`${server.url}/${page.staticFile}`, { width });
+        /* Asserted before the diff, not folded into it: __excluded_count__ is
+           a scalar, not a box, and `stat[k]` below is falsy for a static
+           count of 0, so a live-side regression would silently drop out of
+           `shared` and never reach the diff check at all. Asserted as
+           exactly 0, not as "the two sides agree": two sides that both
+           silently excluded the same element would agree and still be a
+           coverage gap. If either count is ever nonzero, the cause is an
+           element whose tag controlBoxes()'s key cascade has no identity
+           rule for; the remedy is to extend that cascade, not to raise this
+           expected number. */
+        assert.equal(live.__excluded_count__, 0,
+          `controlBoxes excluded ${live.__excluded_count__} element(s) on the live page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+        assert.equal(stat.__excluded_count__, 0,
+          `controlBoxes excluded ${stat.__excluded_count__} element(s) on the static page at ${width}px; extend the key cascade in controlBoxes() to cover them, do not raise this expected count`);
+        delete live.__excluded_count__;
+        delete stat.__excluded_count__;
+        const {
+          shared, rawDiffKeys, diffKeys, subtracted,
+        } = compareBoxes(live, stat, page.name);
+        /* I2: catches a wrong staticFile (typo, or a renamed static build
+           the register was not updated for) directly, rather than relying
+           on the census test's own floor to catch it by accident.
+
+           Fix round 2 (N3): `shared` still carries __unsettled__ (by
+           design; it must stay in the DIFF compareBoxes() computes, so a
+           settle mismatch between live and static is still caught as a
+           real difference), but a bookkeeping marker is not a measured
+           element and must not count toward "how many elements did we
+           actually compare". Filtered out here, not inside compareBoxes(),
+           so the diff behaviour above is untouched and only the floor's
+           own arithmetic changes: on the homepage this drops the count
+           from 88 to 87, matching the register comment's own count. */
+        const measuredElements = shared.filter((k) => !isBookkeepingKey(k)).length;
+        assert.ok(measuredElements > page.minBoxes,
+          `only ${measuredElements} controls/images matched by key on both sides at ${width}px (need > ${page.minBoxes}); `
+          + `check page.staticFile ("${page.staticFile}") actually exists and built`);
+        /* Printed on green as well as on red, per the recipe: a silent
+           subtraction is how a gate stops being a gate. */
+        console.log(`[fidelity] ${page.name} @ ${width}px: subtracted ${subtracted} deferred image key(s) from the diff`);
+        for (const k of rawDiffKeys) unionRawDiffs.add(k);
+        const diffs = diffKeys.map((k) => `@${width} ${k}: live ${JSON.stringify(live[k])} static ${JSON.stringify(stat[k])}`);
+        assert.deepEqual(diffs, [], `${diffs.length} box differences at ${width}px:\n${diffs.join('\n')}`);
+      }
+      /* I3: evaluated once, over both widths' raw differences together, not
+         once per width; see the comment above this loop. */
+      const expired = expiredDeferredEntries(unionRawDiffs, page.name);
+      assert.deepEqual(expired, [],
+        `${expired.length} deferred entr${expired.length === 1 ? 'y' : 'ies'} for "${page.name}" no longer differ `
+        + `at EITHER width and must be removed from DEFERRED_IMAGES: ${expired.join(', ')}`);
+    } finally {
+      await server.close();
+    }
+  });
+}
+
+/* THE THIRD INSTRUMENT, added 2026-08-18.
+
+   An audit of all seven converted pages
+   (.superpowers/sdd/2026-08-15-class-in-markup/audit-invisible-defects.md)
+   found 10 defects on 5 pages that neither instrument above reports, and
+   counted the blind spot: on a typical converted page, 71 to 86 percent of
+   everything rendered inside <main> is reached by neither census() nor
+   controlBoxes(). Every one of the 10 lives on a container, or on the one
+   widget class controlBoxes() excludes by design.
+
+   WHY A THIRD TEST RATHER THAN A WIDER controlBoxes(). Measured, not assumed:
+   a container sweep over the same seven pages inherits 188 tag changes, 120
+   flex-wrap differences and a set of container height differences that are box
+   shifts with nothing inside them moving. One of the 188 is a real defect. The
+   cost of that false-positive volume is not wasted investigations, it is that a
+   noisy shared gate gets its tolerances widened until it stops being a gate,
+   and this project has already shipped one test that failed green. So the
+   element set and the property set are both named, and layoutInvariants() in
+   fidelity-browser.mjs documents exactly what is in each and what is
+   deliberately left out.
+
+   WHAT THIS CAUGHT BEFORE ANY REPAIR, which is the only evidence that it tests
+   what it claims. A check that is green before the repair is not a check:
+
+     mainHeight      final -32.00 @1440 and -108.62 @390, capitol-a +20.00
+                     @1440 and -16.85 @390, team-a +3.19 @390. Exactly 0.00 on
+                     what-we-do-a, solutions-b and who-we-are-a at both widths.
+     axis, direction final `.em-stories__mini` and `#2`, row live against
+                     column static at 390. Two findings in twelve page-width
+                     measurements, both real.
+     axis, x         capitol-a `.em-btn.em-btn--lg.em-btn--primary`, live x 144
+                     against static 619.94 at 1440 and 24 against 94.94 at 390.
+                     One finding, real, and structurally invisible to
+                     controlBoxes(), which skips anchors inside
+                     .elementor-widget-button and never reads x at all.
+     painted         solutions-b `.sb-research`, top 2121.45 live against
+                     2035.06 static with height 287.88 against 374.27. One
+                     finding, real, and the only instrument that can see it:
+                     that page's main height is identical on both sides, so the
+                     box shift is invisible to mainHeight, and the section is a
+                     container, so it is invisible to both older instruments.
+
+   ON THE PAINTED ASSERTION'S VOLUME, because it looks like noise and is not.
+   Before repair it reported 14 differences on final, 17 on capitol-a and 20 on
+   team-a at 390. Every one traces to a confirmed defect: a root cause that
+   moves one box moves every painted box below it, so the count is
+   AMPLIFICATION of a true positive, not a false-positive rate. The tell is the
+   signature: a downstream shift has an identical height and a top offset by the
+   same constant as everything else below the root. They clear together when the
+   root clears, and the assertion prints all of them so the constant is
+   readable.
+
+   The coverage assertion is an EQUALITY, not a floor, and that is measured
+   rather than aspirational: after PLATFORM_CLASS was corrected, the keyed sets
+   match exactly on all six registered pages at both widths, 0 live-only and 0
+   static-only. A static-only key means the conversion lost an element that
+   carries a build class; a live-only key means it invented one. Both are worth
+   a red. It also detects a dead page for free: a 404 has no <main> and no keys
+   at all, so every static key becomes static-only.
+
+   podcast-a needs no exclusion here and gets one for free: it is in
+   EXCLUDED_PAGES rather than PAGE_REGISTER, because its live loop grid renders
+   66 real episodes against 9 static placeholders. That is the one page whose
+   main height differs by content rather than by defect, and this loop never
+   reaches it. */
+for (const page of PAGE_REGISTER) {
+  test(`the converted ${page.name} page holds its layout invariants against the static build`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { layoutInvariants } = await import('./fidelity-browser.mjs');
+    const server = await serveRepoRoot();
+    try {
+      for (const width of [1440, 390]) {
+        const live = await layoutInvariants(url, { width });
+        const stat = await layoutInvariants(`${server.url}/${page.staticFile}`, { width });
+
+        /* Asserted first, and against the STATIC side, because everything
+           below is vacuously true over an empty key set. dist/ is gitignored,
+           so an unbuilt static file is a live possibility on a fresh
+           checkout, and a 404 measures null. */
+        assert.ok(typeof stat.__main_height__ === 'number' && stat.__main_height__ > 0,
+          `${page.staticFile} reported no <main> at ${width}px; the build is likely missing or unreachable (run node build.mjs)`);
+        assert.ok(typeof live.__main_height__ === 'number' && live.__main_height__ > 0,
+          `the live ${page.name} page reported no <main> at ${width}px`);
+
+        const liveOnly = Object.keys(live.axis).filter((k) => !stat.axis[k]);
+        const statOnly = Object.keys(stat.axis).filter((k) => !live.axis[k]);
+        assert.deepEqual(statOnly, [],
+          `${statOnly.length} element(s) carrying a build class exist on the static ${page.name} page at ${width}px and not on the live one: ${statOnly.join(', ')}`);
+        assert.deepEqual(liveOnly, [],
+          `${liveOnly.length} element(s) carrying a build class exist on the live ${page.name} page at ${width}px and not on the static one: ${liveOnly.join(', ')}`);
+
+        const shared = Object.keys(live.axis).filter((k) => stat.axis[k]);
+        console.log(`[layout] ${page.name} @ ${width}px: ${shared.length} keyed element(s) compared, `
+          + `${Object.keys(live.painted).length} of them painted`);
+
+        /* CONTENT_HEIGHT_EXEMPTIONS, resolved once per page-width and used by
+           both the mainHeight assertion and the painted one, because a
+           content difference moves both and explaining it in one place and
+           not the other would just move the failure. explainLayoutHeights()
+           reads no pixel value from the list: it measures each exempted
+           element's own height difference here and propagates that. See
+           fidelity-deferred.mjs for what an entry does and does not buy.
+
+           PRINTED ON GREEN AS WELL AS ON RED, the same reason the comparison
+           size above is: an exemption nobody sees is an exemption nobody
+           re-examines, and this is the one place in the suite where a
+           measured difference is allowed not to be a defect. */
+        const explained = explainLayoutHeights(live.painted, stat.painted, stat.__main_height__, page.name, width);
+        for (const root of explained.roots) {
+          console.log(`[layout] ${page.name} @ ${width}px: content-height exemption applied to ${root.key}, `
+            + `measured ${root.dH > 0 ? '+' : ''}${root.dH}px`);
+        }
+
+        /* Three ways the list itself can be wrong, all failures rather than
+           information: an entry that names something no longer compared, an
+           entry whose difference has gone (the half that keeps DEFERRED_IMAGES
+           honest, and this list needs it for the same reason), and a box whose
+           expected difference is not derivable because it only partially
+           overlaps an exempted element. */
+        assert.deepEqual(explained.unmeasured, [],
+          `${explained.unmeasured.length} content-height exemption(s) on ${page.name} at ${width}px name an element `
+          + `that is not painted on both sides any more: ${explained.unmeasured.join(', ')}. `
+          + 'Delete the entry or fix the key (fidelity-deferred.mjs, CONTENT_HEIGHT_EXEMPTIONS).');
+        assert.deepEqual(explained.expired, [],
+          `${explained.expired.length} content-height exemption(s) on ${page.name} at ${width}px no longer excuse `
+          + `anything: ${explained.expired.join(', ')} now measure the same height live and static. `
+          + 'Delete the entry (fidelity-deferred.mjs, CONTENT_HEIGHT_EXEMPTIONS); an exemption that has outlived '
+          + 'the difference it excused will eventually excuse a defect nobody has looked at.');
+        assert.deepEqual(explained.ambiguous, [],
+          `${explained.ambiguous.length} painted box(es) on ${page.name} at ${width}px partially overlap an exempted `
+          + `element, so no expected difference can be derived:\n${explained.ambiguous.join('\n')}`);
+
+        /* 1. mainHeight. One number, exact where nothing is exempted: every
+           non-zero value measured during Task 11's before-pass traced to a
+           named defect, so a tolerance here would only ever hide one.
+
+           Where an exemption DOES apply, the comparison is against the static
+           height plus the exempted elements' own measured differences, which
+           is still an equality and not a tolerance: the 0.05 is the
+           accumulated 2dp rounding of the six measurements the sum is built
+           from (max 0.03), an order of magnitude under the 0.5px slack the
+           painted and x assertions already carry and two orders under the
+           3.19px smallest real finding this phase has produced. */
+        if (explained.roots.length === 0) {
+          assert.equal(live.__main_height__, stat.__main_height__,
+            `main is ${live.__main_height__}px live against ${stat.__main_height__}px static at ${width}px `
+            + `(${live.__main_height__ > stat.__main_height__ ? '+' : ''}${Math.round((live.__main_height__ - stat.__main_height__) * 100) / 100}px)`);
+        } else {
+          assert.ok(Math.abs(live.__main_height__ - explained.mainExpected) <= 0.05,
+            `main is ${live.__main_height__}px live against ${stat.__main_height__}px static at ${width}px, and the `
+            + `${explained.roots.length} content-height exemption(s) explain only ${explained.exemptedTotal}px of that, `
+            + `so main should measure ${explained.mainExpected}px`);
+        }
+
+        /* 2a. axis, flex-direction, GATED. flex-direction computes on every
+           element whatever its display, so an ungated comparison reports a
+           display:grid container whose inert flex-direction differs. Both
+           sides must compute flex or inline-flex for the property to mean
+           anything, which is what layoutInvariants() records as a null dir. */
+        const dirDiffs = shared
+          .filter((k) => live.axis[k].dir && stat.axis[k].dir && live.axis[k].dir !== stat.axis[k].dir)
+          .map((k) => `${k}: live ${live.axis[k].dir} static ${stat.axis[k].dir}`);
+        assert.deepEqual(dirDiffs, [],
+          `${dirDiffs.length} flex container(s) run on the wrong axis at ${width}px:\n${dirDiffs.join('\n')}`);
+
+        /* 2b. axis, absolute viewport x. This is the half controlBoxes()
+           structurally cannot have: three of the audit's defects moved an
+           element horizontally without changing its box at all, and all three
+           sit on link() wrappers, which controlBoxes() skips. Half a pixel of
+           slack absorbs subpixel layout, and nothing else: the smallest real
+           finding this has produced is 70.94px. */
+        const xDiffs = shared
+          .filter((k) => Math.abs(live.axis[k].x - stat.axis[k].x) > 0.5)
+          .map((k) => `${k}: live x ${live.axis[k].x} static x ${stat.axis[k].x}`);
+        assert.deepEqual(xDiffs, [],
+          `${xDiffs.length} element(s) sit at a different horizontal position at ${width}px:\n${xDiffs.join('\n')}`);
+
+        /* 3. paintedBox. Border-box top (measured from main's own top, so the
+           two builds' different header heights cancel) and height, for every
+           keyed element that computes a non-transparent background-color or a
+           background-image. This is the discriminator that makes the
+           lost-margin-collapsing family priceable: three of the four box
+           shifts the audit found are free and one uncovers a navy band, and
+           only paint tells them apart.
+
+           Computed by explainLayoutHeights() rather than inline, so the
+           content exemption is subtracted from the box it belongs to and from
+           nothing else: a box CONTAINING an exempted element has that
+           element's measured difference taken off its own height, a box
+           BELOW one has it taken off its own top, and every other box is
+           compared exactly as before. With the exemption in place each
+           downstream box is still asserted to have moved by precisely what
+           the content explains, which is a stronger statement than dropping
+           the keys would make. */
+        assert.deepEqual(explained.diffs, [],
+          `${explained.diffs.length} painted box(es) moved or resized at ${width}px:\n${explained.diffs.join('\n')}`);
+      }
+    } finally {
+      await server.close();
+    }
+  });
+}
+
+/* The box sweep above compares live against static at 390 and passes today
+   because both sides settle. This test isolates one side: does the STATIC
+   build alone reach __unsettled__: "settled" at 390, with nothing else in
+   the picture. No HOME_URL, no live install, deliberate: this must keep
+   working once the conversion is finished and the install is gone.
+
+   Run three times, not once. controlBoxes(staticUrl, { width: 390 }) alone
+   in a process was measured reporting "unsettled" roughly two runs in
+   three before the settleReveal repair (a single-frame vertical pass
+   giving js/reveal.js's IntersectionObserver exactly one chance to catch a
+   heading that only ever appears as a sliver at a step boundary), so a
+   single passing run is not evidence of anything. Three consecutive
+   "settled" results, after the repair, is the bar: by chance alone against
+   a ~1-in-3 pre-repair pass rate that would happen under 4% of the time.
+   Worth being honest about what three runs buys, though: against the
+   original defect (measured at 75% per run) it is a strong revert
+   detector, but its power against a brand NEW flake introduced later is
+   only 1 - (1 - p)^3, so a regression reintroducing even a 25% per-run
+   flake is caught in only about 58% of suite runs, and a 10% flake in
+   about 27%. If this test goes red only occasionally rather than every
+   time, that is not a sign it is oversensitive; treat any red as real.
+
+   Measures rather than assumes: a fresh checkout has dist/ gitignored, and
+   an unbuilt or unreachable dist/final.html would make every phase of
+   settleReveal succeed trivially over an empty page (zero images, zero
+   containers, zero [data-reveal] elements, every() over an empty array is
+   true), which is a green result that measured nothing. controlBoxes()
+   against a fully built page found 87 controls at 390px, so a floor of 40
+   (the same margin the census test above uses for the same reason) is
+   asserted on every run before its settle marker is trusted. */
+test('the static build alone settles at 390px, not just relative to the live page', { concurrency: 1 }, async () => {
+  const { controlBoxes } = await import('./fidelity-browser.mjs');
+  const server = await serveRepoRoot();
+  try {
+    const RUNS = 3;
+    const results = [];
+    for (let i = 0; i < RUNS; i++) {
+      const stat = await controlBoxes(`${server.url}/dist/final.html`, { width: 390 });
+      const measured = Object.keys(stat).filter((k) => !k.startsWith('__')).length;
+      assert.ok(measured > 40,
+        `controlBoxes measured only ${measured} controls on run ${i + 1} of dist/final.html at 390px; `
+        + 'the build is likely missing or unreachable (run node build.mjs), not settled');
+      results.push(stat.__unsettled__);
+    }
+    assert.deepEqual(results, Array(RUNS).fill('settled'),
+      `dist/final.html at 390px did not settle on every run: ${results.join(', ')}`);
+  } finally {
+    await server.close();
+  }
+});
+
+/* THE LINK REMAP.
+
+   Three tests, and the split between them is the point. The first is a
+   property of the map that goes red if a label mapping is lost; the second
+   drives the corpus and goes red if any authored link points nowhere; the
+   third goes red if the remap is ever unwired from the deploy path.
+
+   WHY THE FIRST TEST IS NOT A RESTATEMENT OF THE MAP. src/_shared/header-2.html
+   uses `/latest` as a placeholder for seven different destinations, so the one
+   thing the remap can silently get wrong is collapsing several menu items onto
+   one page. Deleting any label from BY_LABEL does exactly that: the link still
+   RESOLVES (it falls through to the href entry) so unresolvedInternalLinks()
+   stays green, and only a distinctness assertion catches it. Asserting the
+   count of distinct destinations tests that property without copying the
+   pairs. */
+test('the seven /latest menu items resolve to seven different pages', async () => {
+  const { resolveHref } = await import('./elementor/links.mjs');
+  const LABELS = ['Articles', 'Community Stories', 'Press Releases', 'Research',
+    'Research (EPIC)', 'The Empower Podcast', 'Capitol Chat'];
+
+  const resolved = LABELS.map((label) => [label, resolveHref('/latest', label)]);
+  for (const [label, target] of resolved) {
+    assert.ok(target, `the "${label}" menu item still resolves to nothing, so it would ship as /latest, which 404s`);
+  }
+
+  /* Each item must resolve BY ITS LABEL, not by falling through to the href.
+     Proved necessary: deleting one label from BY_LABEL leaves distinctness
+     green, because the orphan lands on the bare fallback and collides with
+     nobody. Only comparing against the fallback catches a single lost label,
+     which is the likelier accident of the two. */
+  const fallback = resolveHref('/latest', 'a label no menu item carries');
+  for (const [label, target] of resolved) {
+    assert.notEqual(target, fallback,
+      `the "${label}" menu item no longer has a label mapping, so it falls through to ${fallback} `
+      + 'instead of its own destination. The link still works, which is why nothing else catches this.');
+  }
+  const distinct = new Set(resolved.map(([, target]) => target));
+  assert.equal(distinct.size, LABELS.length,
+    'two or more of the All Content / Podcast / Our Solutions menu items now resolve to the SAME page. '
+    + `Got ${distinct.size} distinct destinations for ${LABELS.length} menu items: `
+    + resolved.map(([l, t]) => `${l} -> ${t}`).join(', '));
+
+  /* The same collapse in the other two placeholders, which have two items each. */
+  assert.notEqual(resolveHref('/', 'Home'), resolveHref('/', 'Who We Are'), 'Home and Who We Are collapsed onto one page');
+  assert.notEqual(resolveHref('/solutions', 'Our Solutions'), resolveHref('/solutions', 'What We Do'), 'Our Solutions and What We Do collapsed onto one page');
+  assert.notEqual(resolveHref('/join', 'Newsletter'), resolveHref('/join', 'Ambassador Program'), 'Newsletter and Ambassador Program collapsed onto one page');
+});
+
+/* Every internal link every converted page and both theme parts carry, after
+   the remap, points at a page that exists on this install or at a destination
+   NO_CONVERTED_PAGE records a reason for. The page list is DERIVED from the
+   directories on disk rather than typed, for the reason recorded on
+   convertedPageDirs(): two hand-written page lists have already shipped wrong
+   here, one of them a test that passed green while measuring nothing. */
+test('no converted page links to a route that does not exist', { concurrency: 1 }, async () => {
+  const { remapLinks, unresolvedInternalLinks, oldSitePaths } = await import('./elementor/links.mjs');
+
+  const trees = [];
+  for (const dir of convertedPageDirs()) {
+    const page = await import(`./elementor/pages/${dir}/page.mjs`);
+    trees.push([dir, page.sections()]);
+  }
+  trees.push(['theme-parts/header', headerPart()], ['theme-parts/footer', footerPart()]);
+
+  assert.ok(trees.length >= 19,
+    `only ${trees.length} trees were collected; the corpus is 17 pages plus the header and footer, `
+    + 'so something is importing as empty and this test would pass while measuring nothing');
+
+  const broken = [];
+  for (const [name, tree] of trees) {
+    /* oldSitePaths() is read off the UNREMAPPED tree, which is the only point
+       at which an empowerms.org link is still recognisable as one. See
+       unresolvedInternalLinks()'s own note on why these are allowed here and
+       checked live instead. */
+    for (const link of unresolvedInternalLinks(remapLinks(tree), undefined, oldSitePaths(tree))) {
+      broken.push(`${name}: href="${link.href}"${link.label ? ` (${link.label})` : ''}`);
+    }
+  }
+  assert.deepEqual(broken, [],
+    `${broken.length} internal link(s) point at a route that exists neither as a converted page nor `
+    + 'in NO_CONVERTED_PAGE. Either map it in elementor/links.mjs or record why it has no page:\n  '
+    + broken.join('\n  '));
+});
+
+/* The remap is applied by deployElements(), so every tree reaches the install
+   rewritten whether it is a page, a loop item or a theme part. This asserts the
+   wiring rather than the map: it fails if links.mjs is ever imported but not
+   called, which is the one way all of the above can be green while the install
+   still ships /latest. */
+test('the deploy path rewrites links rather than only the map being able to', async () => {
+  const source = fs.readFileSync(new URL('./elementor/deploy.mjs', import.meta.url), 'utf8');
+  const serialise = /const json = JSON\.stringify\((.+?)\);/.exec(source);
+  assert.ok(serialise, 'deployElements() no longer serialises with JSON.stringify(...); this test needs rewriting');
+  assert.match(serialise[1], /^remapLinks\(/,
+    `deployElements() serialises ${serialise[1]}, which does not pass the tree through remapLinks(). `
+    + 'Every converted page would ship the static build\'s routes, which 404 or leave the build.');
+});
+
+/* --- podcast-a's guest filter -------------------------------------------
+
+   podcast-a stays in EXCLUDED_PAGES: its library is a Loop Grid over 66 real
+   episodes where dist/podcast-a.html carries 9 placeholder cards, so census and
+   box keys compare different CONTENT and no key exists that identifies a card
+   slot independently of which episode landed in it.
+
+   This is the same substitute content-a got: a behavioural gate on the one thing
+   that CAN silently fail. Two things can, and both have precedent in this
+   repository. inc/loop-attributes.php stamps data-guest onto each card, and
+   without `_element_cache: 'yes'` on the container it fires once per page load
+   and every card inherits one episode's value. The facet ids are the other half:
+   css/podcast-a.css:248-251 names #pa-g-leader, #pa-g-lawmaker and #pa-g-expert
+   literally, so an id that drifts leaves three checkboxes that do nothing. Both
+   were injected against a copy of the live page before this test was trusted;
+   the first read 66 visible where 60 was correct, the second threw.
+
+   EXPECTATIONS ARE DERIVED FROM THE START ROW, not typed. Empower have tagged 9
+   of 66 episodes so far (guest_type exists; the untagged 57 are theirs to fix),
+   and hard-coding today's counts would turn their progress into a failure. */
+test('the podcast-a guest facets actually filter, and un-filter', { concurrency: 1 }, async () => {
+  const { checkGuestFilter } = await import('./fidelity-browser.mjs');
+  const rows = await checkGuestFilter(requireSpikeUrl(), {
+    cardSelector: '.pca-ep',
+    facetSelector: '.pca-guest',
+    steps: [
+      { name: 'leader on', toggle: ['pa-g-leader'] },
+      { name: 'lawmaker also on', toggle: ['pa-g-lawmaker'] },
+      { name: 'both off', toggle: ['pa-g-leader', 'pa-g-lawmaker'] },
+    ],
+  });
+  const [start, leader, both, cleared] = rows;
+
+  assert.equal(start.facets, 3, `expected three guest checkboxes, found ${start.facets}`);
+  assert.deepEqual(start.checked, [], 'the library did not start unfiltered');
+
+  /* AND THE SURVIVORS MUST CLOSE UP. Every other assertion in this test counts
+     what is shown, and all of them passed while the catalogue rendered with
+     holes: `.pca-ep` sits inside Elementor's `.e-loop-item`, which is the real
+     grid item on a converted page, so hiding the episode empties its cell
+     without releasing it. Measured live before the repair, with one facet
+     ticked: 6 episodes hidden, 6 wrappers still laid out, 205-253px tall each.
+     Identical defect to content-a's, found by sweeping after fixing that one. */
+  for (const row of rows) {
+    assert.equal(row.orphanCells, 0,
+      `after "${row.name}", ${row.orphanCells} hidden episodes left their .e-loop-item wrapper holding a `
+      + 'grid cell, so the catalogue renders with holes rather than closing up');
+  }
+
+  const tagged = Object.keys(start.byGuest).filter((g) => g !== '(untagged)').sort();
+  assert.deepEqual(tagged, ['expert', 'lawmaker', 'leader'],
+    `expected all three guest types on the unfiltered page, found ${tagged.join(', ')}. `
+    + 'If Empower have retired a term this needs updating; if data-guest has stopped being '
+    + 'emitted, inc/loop-attributes.php or its _element_cache setting is the cause.');
+
+  const untagged = start.byGuest['(untagged)'] ?? 0;
+
+  /* Checking one box leaves that type and hides the other two. Untagged cards
+     are matched by none of the three selectors and stay, which is the filter's
+     real behaviour rather than a defect: see checkGuestFilter's own note. */
+  assert.deepEqual(Object.keys(leader.byGuest).sort(), ['(untagged)', 'leader'].sort(),
+    `checking Leader left ${JSON.stringify(leader.byGuest)} visible; the other two tagged types should be hidden`);
+  assert.equal(leader.byGuest.leader, start.byGuest.leader, 'checking Leader hid some Leader episodes');
+  assert.equal(leader.byGuest['(untagged)'] ?? 0, untagged, 'checking Leader changed how many untagged episodes show');
+  assert.ok(leader.visible < start.visible,
+    `checking Leader hid nothing: ${leader.visible} visible against ${start.visible} before. `
+    + 'The likeliest cause is data-guest missing from the cards, which makes every selector in '
+    + 'css/podcast-a.css:248-251 match nothing.');
+
+  /* Two boxes is OR, not AND, which is the trade css/podcast-a.css records. */
+  assert.deepEqual(Object.keys(both.byGuest).sort(), ['(untagged)', 'lawmaker', 'leader'].sort(),
+    `checking Leader and Lawmaker left ${JSON.stringify(both.byGuest)}; both types should show and expert should not`);
+  assert.ok(both.visible > leader.visible, 'adding a second facet did not widen the result, so the filter is AND rather than OR');
+
+  /* Un-checking is half of what a checkbox filter promises, and it is the half a
+     radio group cannot even express. */
+  assert.deepEqual(cleared.checked, [], 'the facets did not clear');
+  assert.equal(cleared.visible, start.visible,
+    `clearing every facet left ${cleared.visible} episodes visible against ${start.visible} at the start`);
+  assert.deepEqual(cleared.byGuest, start.byGuest, 'clearing every facet did not restore the unfiltered library');
+});
+
+/* --- fidelity-browser.mjs / the sticky header ---------------------------- */
+
+/* THE ONE TEST IN THIS SUITE THAT SCROLLS, and the reason it exists is that
+   nothing else did.
+
+   css/site.css:79 makes `.em-header` sticky at top:0, and since Phase 2A the
+   header is an Elementor Theme Builder part whose wrapper shrink-wraps to the
+   header's own height. A sticky element travels within its parent's box, so a
+   113px parent gives a 113px header zero travel and it scrolls away. That was
+   true on EVERY converted page for fourteen conversions and no instrument here
+   reported it, because at scroll position 0 — where census(), controlBoxes(),
+   computedStyles() and layoutInvariants() all measure — a sticky element and a
+   static one are identical, and every computed value (`position: sticky`,
+   `top: 0px`) agreed with the static build the whole time. bridge.css block 63
+   repairs it.
+
+   ASSERTED ON THREE PAGES RATHER THAN ONE, because the defect was in the
+   site-wide header and a single-page test would not have distinguished "this
+   page is fine" from "the header is fine". They are chosen to differ in the
+   ways that could plausibly matter: the front page, a page whose own content is
+   a Loop Grid, and a Theme Builder single, which is a different document type
+   again.
+
+   /all-content/ IS ASSERTED HARDER, because it is where the defect was
+   reported. Its own filter bar sticks at top:113px (css/content-a.css:93), a
+   number that exists to sit exactly under the stuck header. Asserting the two
+   numbers TOGETHER is what catches the real user-visible failure: a header at
+   0 and a bar at 113 are flush, and any other pair leaves the gap Paolo saw. */
+const STICKY_HEADER_PAGES = [
+  { name: 'the front page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+  { name: 'a Loop Grid page', envVar: 'TEAM_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/team/' },
+  { name: 'a Theme Builder single', envVar: 'TEAM_BIO_URL', exampleUrl: 'https://empv2.wpenginepowered.com/grant-callen/' },
+];
+
+for (const page of STICKY_HEADER_PAGES) {
+  test(`the site header stays put when ${page.name} is scrolled`, { concurrency: 1 }, async (t) => {
+    const url = requirePageUrl(page, t);
+    if (!url) return;
+    const { stickyAfterScroll } = await import('./fidelity-browser.mjs');
+    const read = await stickyAfterScroll(url, ['.em-header']);
+    const header = read.elements['.em-header'];
+
+    assert.ok(header, `no .em-header on ${url}; the site-wide header part is not rendering`);
+    assert.equal(header.position, 'sticky',
+      `.em-header computes position:${header.position}; css/site.css:79 makes it sticky`);
+    assert.equal(header.top, 0,
+      `after scrolling to ${read.scrollY}, .em-header sits at top ${header.top} instead of 0, so it is not `
+      + `sticking. Its parent is ${header.parentHeight}px tall; if that is about the height of the header `
+      + 'itself, Elementor\'s theme-part wrapper is shrink-wrapping and giving it nowhere to travel, which '
+      + 'is what bridge.css block 63 collapses with display:contents.');
+  });
+}
+
+test('the all-content filter bar sits flush under the stuck header', { concurrency: 1 }, async (t) => {
+  const page = { name: 'content-a', envVar: 'CONTENT_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/all-content/' };
+  const url = requirePageUrl(page, t);
+  if (!url) return;
+  const { stickyAfterScroll } = await import('./fidelity-browser.mjs');
+  const read = await stickyAfterScroll(url, ['.em-header', '.cad-controls']);
+  const header = read.elements['.em-header'];
+  const controls = read.elements['.cad-controls'];
+
+  assert.ok(header && controls, 'the header or the filter bar is missing from this page');
+  assert.equal(controls.position, 'sticky', `.cad-controls computes position:${controls.position}`);
+
+  /* The bar's own offset is read from the page rather than hard-coded, so a
+     design change to the header's height moves both numbers together and this
+     test keeps meaning the same thing. */
+  const barOffset = parseFloat(controls.cssTop);
+  assert.ok(Number.isFinite(barOffset), `.cad-controls has top:${controls.cssTop}, which is not a length`);
+
+  assert.equal(header.top, 0, `the header is at ${header.top}, not stuck (see the three tests above)`);
+  assert.equal(controls.top, barOffset,
+    `the filter bar sits at ${controls.top} rather than at its own ${barOffset}px offset, so it is not sticking`);
+
+  /* THE ASSERTION THAT WOULD HAVE CAUGHT WHAT PAOLO SAW. Both elements can be
+     stuck at exactly their authored offsets and still leave a hole: the bar
+     reserves a fixed 113px, and if the header above it is not filling that
+     113px the archive scrolls through the difference. So the check is that the
+     header's BOTTOM EDGE meets the bar's TOP EDGE, computed from what the two
+     elements actually occupy rather than from either number alone. */
+  const gap = controls.top - (header.top + header.height);
+  assert.equal(gap, 0,
+    `there is a ${gap}px band between the bottom of the header (${header.top} + ${header.height}) and the `
+    + `top of the filter bar (${controls.top}). The archive scrolls through it. The bar reserves `
+    + `${barOffset}px for the header via css/content-a.css:93; if the header is shorter or taller than `
+    + 'that, the two numbers have drifted apart and one of them has to move.');
+});
+
+/* --- fidelity-browser.mjs / what-we-do-a's cards and reports ------------- */
+
+/* Read out of the register rather than named here, so the envVar, the example
+   URL and the page's existence all stay in one place. Fails loudly if the entry
+   is ever renamed or moved to EXCLUDED_PAGES, instead of quietly skipping. */
+const WHAT_WE_DO_A = PAGE_REGISTER.find((p) => p.name === 'what-we-do-a')
+  ?? assert.fail('what-we-do-a is no longer in PAGE_REGISTER; the two tests below read its envVar from there');
+
+/* what-we-do-a IS a gated page, so unlike the three tests below this one is not
+   standing in for a register entry. It covers the two things that page's
+   register entry cannot: a click target, which no box or computed-style
+   comparison can see, and four outbound destinations, which live outside the
+   document entirely.
+
+   1. THE WHOLE CARD IS ONE CLICK TARGET. css/what-we-do-a.css:82 makes the
+      card's heading anchor span the whole plate with an `inset:0` overlay.
+      Elementor gives BOTH `.e-con` and `.elementor-widget` `position:relative`,
+      so on the live page the overlay was captured by the heading's own widget
+      wrapper and covered only the heading: clicking the photograph or the
+      "Learn More" cue did nothing, while the cue kept its hover animation and
+      still read as a link. bridge.css block 62 repairs it. Hit-testing the
+      photograph and the cue is the assertion, because every element and every
+      property was already correct while the page was broken.
+
+   2. THE FOUR REPORT TILES RESOLVE. They pointed at `/reports/<year>`, a route
+      the static build invented and this install has never had, and they 404'd
+      by omission for the whole conversion. They now point at the report PDFs in
+      Empower's media library. Asserted as real HTTP responses rather than as
+      strings, because the failure mode being guarded is a URL that is perfectly
+      well-formed and serves nothing: a media file can be replaced or renamed in
+      wp-admin with no signal here at all, which is exactly what happened to the
+      route these replaced. */
+test('every what-we-do-a card is clickable across its whole plate', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(WHAT_WE_DO_A, t);
+  if (!url) return;
+  const { clickTargets } = await import('./fidelity-browser.mjs');
+  const cards = await clickTargets(url, {
+    cardSelector: '.da-door',
+    probeSelectors: ['.da-door__cue', 'img'],
+  });
+
+  assert.equal(cards.length, 3, `expected three solution cards, found ${cards.length}`);
+
+  for (const card of cards) {
+    assert.ok(card.href, 'a card has no anchor at all');
+    for (const [probe, hit] of Object.entries(card.probes)) {
+      assert.equal(hit, card.href,
+        `on the "${card.href}" card, the point over ${probe} resolves to ${JSON.stringify(hit)} `
+        + `rather than to the card's own link. The overlay at css/what-we-do-a.css:82 is being sized `
+        + 'against a nearer positioned ancestor than .da-door, which is what Elementor\'s '
+        + 'position:relative on .e-con and .elementor-widget does unless bridge.css block 62 makes '
+        + 'them static. The card still looks correct: the heading text navigates and the cue still '
+        + 'animates on hover.');
+    }
+  }
+});
+
+test('every what-we-do-a annual report tile serves a real report', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(WHAT_WE_DO_A, t);
+  if (!url) return;
+  const { clickTargets } = await import('./fidelity-browser.mjs');
+  const tiles = await clickTargets(url, {
+    cardSelector: '.da-years li',
+    probeSelectors: ['span'],
+  });
+
+  assert.equal(tiles.length, 4, `expected four report tiles, found ${tiles.length}`);
+
+  const stale = tiles.filter((t) => /\/reports\//.test(t.href ?? '')).map((t) => t.href);
+  assert.deepEqual(stale, [],
+    'these tiles still point at /reports/<year>, the route the static build invented and this '
+    + 'install has never had; they 404 by omission');
+
+  for (const tile of tiles) {
+    assert.match(tile.href ?? '', /^https?:\/\/\S+\.pdf$/i,
+      `a report tile points at ${JSON.stringify(tile.href)}, which is not a PDF URL`);
+    const res = await fetch(tile.href, { method: 'HEAD', redirect: 'follow' });
+    assert.equal(res.status, 200,
+      `${tile.href} returned ${res.status}. The report PDFs live in Empower's media library and can `
+      + 'be replaced or renamed in wp-admin, which this test exists to catch.');
+    assert.match(res.headers.get('content-type') ?? '', /application\/pdf/i,
+      `${tile.href} is served as ${res.headers.get('content-type')} rather than a PDF`);
+  }
+});
+
+/* --- fidelity-browser.mjs / the team-a roster ---------------------------- */
+
+/* Its own guard rather than requirePageUrl(), because team-a moved to
+   EXCLUDED_PAGES on 2026-08-20 and therefore no longer has a register entry to
+   read an envVar, exampleUrl or staticFile out of. Same shape and same reason
+   as requireSpikeUrl() and requireContentAUrl() above. */
+const requireTeamAUrl = () => process.env.TEAM_A_URL
+  ?? assert.fail('TEAM_A_URL is not set. This test needs the deployed team-a page: TEAM_A_URL=https://empv2.wpenginepowered.com/team/ node --test test-elementor.mjs');
+
+/* THIS TEST IS team-a's GATE, AND IT IS THE ONLY ONE IT HAS.
+   The page left the register when its staff roster and fellows ledger became
+   Loop Grids over the `person` post type: the live page renders 13 staff and 5
+   fellows where dist/team-a.html carries 10 and 5, with four people on each
+   side the other does not have, so neither census() nor controlBoxes() can
+   compare the two.
+
+   WHAT IT ASSERTS IS RULES, NOT NAMES, and that is the whole design of it.
+   Every name, role and photograph on this page is Empower's to change in
+   wp-admin without touching this repository — that is the point of the
+   conversion — so a test carrying a list of thirteen people would go red on
+   the next hire and teach whoever is on call that this test is noise. What
+   this build actually OWNS is three derivations, and all three can fail
+   silently:
+
+     1. THE SPLIT. wp/empowerms-child/inc/person-loop.php sorts people into the
+        two sections on whether `position_title` begins with the word "Fellow".
+        If that stops working, fellows appear in Our Team with a photograph and
+        a "Read bio" line, which looks entirely correct.
+
+     2. THE ORDER. The page tells the visitor, out loud in its own `.ta-note`,
+        "In alphabetical order by last name". WordPress cannot express that
+        ordering, so person-loop.php computes it. If that regresses to
+        WP_Query's default the page silently starts lying to the reader, and
+        every element on it still carries every correct class.
+
+     3. THE LEDGER'S HAIRLINE. `.ta-ledger__row:last-child` matches EVERY row
+        once each row is the only child of its own loop item.
+        elementor/pages/team-a/03-fellows.mjs's note 1 predicted this in
+        writing before the conversion existed; bridge.css block 59 repairs it.
+        A repair that stops applying is five hairlines where the design has
+        one.
+
+   It also asserts the two things the Loop Grid conversion is FOR: that the
+   portraits are real photographs from the media library rather than the
+   monogram placeholders the static build ships, and that every card links to
+   its own person. Both are what Empower asked for and neither is visible to a
+   class-based check. */
+test('the team-a roster is driven by the person post type', { concurrency: 1 }, async () => {
+  const { teamRoster } = await import('./fidelity-browser.mjs');
+  const roster = await teamRoster(requireTeamAUrl());
+
+  assert.ok(roster.staff.length >= 5,
+    `found ${roster.staff.length} staff cards; the Loop Grid is rendering almost nothing, which is what `
+    + 'an empty post__in looks like (see the guard in empower_person_groups()\'s hook)');
+  assert.ok(roster.fellows.length >= 2, `found ${roster.fellows.length} fellow rows`);
+
+  /* 1. THE SPLIT, asserted from both sides so neither an empty Our Team nor an
+        empty ledger can pass by matching a vacuous "none of these are". */
+  const fellowish = /^fellow\b/i;
+  const misfiled = roster.staff.filter((p) => p.role && fellowish.test(p.role));
+  assert.deepEqual(misfiled.map((p) => p.name), [],
+    'these people are in Our Team with a Fellow role, so the split in '
+    + 'wp/empowerms-child/inc/person-loop.php is not being applied');
+  const notFellows = roster.fellows.filter((f) => !f.field || !fellowish.test(f.field));
+  assert.deepEqual(notFellows.map((f) => f.name), [],
+    'these rows are in Contributing Fellows without a Fellow role, so the ledger query is not the '
+    + 'fellows query');
+
+  /* 2. THE ORDER, derived from the rendered names rather than compared against
+        a list. The sort key is person-loop.php's own: the last whitespace-
+        separated word of the title, folded to lower case. Asserted on both
+        grids, because both are sorted by the same code. */
+  const surname = (name) => {
+    const parts = name.split(/\s+/).filter(Boolean);
+    return (parts.length ? parts[parts.length - 1] : '').toLowerCase();
+  };
+  for (const [label, list] of [['staff', roster.staff], ['fellows', roster.fellows]]) {
+    const keys = list.map((p) => surname(p.name));
+    const sorted = [...keys].sort();
+    assert.deepEqual(keys, sorted,
+      `the ${label} are not in alphabetical order by last name: rendered ${JSON.stringify(keys)}. `
+      + `The page promises this order in its own visible note (${JSON.stringify(roster.note)}), and it `
+      + 'comes from empower_person_groups(), not from WP_Query.');
+  }
+  assert.match(roster.note, /alphabetical order by last name/i,
+    'the note that this test holds the page to has changed; if the design no longer promises an order, '
+    + 'the ordering code and this assertion should go together');
+
+  /* 3. THE LEDGER'S HAIRLINE: the last row alone. */
+  const borders = roster.fellows.map((f) => f.borderBottom);
+  const expected = borders.map((_, i) => (i === borders.length - 1 ? '1px' : '0px'));
+  assert.deepEqual(borders, expected,
+    `ledger row bottom borders read ${JSON.stringify(borders)}. Every row carrying one means `
+    + 'bridge.css block 59 is not applying and :last-child is matching each row inside its own '
+    + 'loop item, which is the defect 03-fellows.mjs predicted.');
+  assert.deepEqual(roster.fellows.map((f) => f.tracks), roster.fellows.map(() => 3),
+    'a ledger row is not laying out as three columns, so bridge.css block 60 is not promoting the '
+    + 'name and field spans to grid items and the subject is not at the right-hand edge');
+
+  /* WHAT THE CONVERSION WAS FOR: real photographs, and a destination per
+     person. */
+  const noPhoto = roster.staff.filter((p) => !p.img).map((p) => p.name);
+  assert.deepEqual(noPhoto, [],
+    'these staff cards have no <img> in their portrait, so the tile is back to being a placeholder');
+  const badFit = roster.staff.filter((p) => p.imgFit !== 'cover').map((p) => p.name);
+  assert.deepEqual(badFit, [],
+    'these portraits are not object-fit:cover, so the photograph is letterboxed inside its 4:5 box '
+    + '(bridge.css block 57)');
+  const badLink = roster.staff.filter((p) => !p.href || !/\/person\//.test(p.href)).map((p) => p.name);
+  assert.deepEqual(badLink, [],
+    'these cards do not link to their own person single');
+  assert.deepEqual([...new Set(roster.staff.map((p) => p.href))].length, roster.staff.length,
+    'two or more cards share a destination, which is what a Loop Item template renders when '
+    + "`_element_cache: 'yes'` is missing and Elementor reuses the first item's HTML");
+  assert.deepEqual([...new Set(roster.staff.map((p) => p.more))], ['Read bio'],
+    'not every card carries the "Read bio" line');
+
+  /* THE BOARD IS STILL HAND-WRITTEN, and its placeholder note moved with it.
+     04-board.mjs note 6 records why none of these eight can be a Loop Grid:
+     none has a `person` entry on the install. */
+  assert.ok(roster.board.length >= 5, `found ${roster.board.length} board names`);
+  assert.ok(roster.pendingInBoard,
+    'the .ta-pending placeholder note is not in the board section. It moved there on 2026-08-20 '
+    + 'because staff and fellows now carry real photographs and the board is the last placeholder; '
+    + 'if it has gone back up to the staff head it is describing sections that no longer have '
+    + 'placeholders.');
+  assert.match(roster.pending, /board/i,
+    'the placeholder note no longer names the board, which is the only section it is still true of');
+});
+
+/* --- fidelity-browser.mjs / the person Single template ------------------- */
+
+/* Three real people, chosen because between them they exercise every optional
+   block in the template. Read off the install on 2026-08-20 and named here
+   rather than discovered, because the point of the test is to pin the three
+   SHAPES, and a discovered sample could quietly stop covering one of them.
+
+   If Empower fill in a missing field, the row's expectation here goes stale and
+   the test says so in its own message rather than just going red: that is the
+   correct outcome, because filling those fields is exactly what this build has
+   asked them to do, and this is the record of what was missing when. */
+const PERSON_SINGLE_CASES = [
+  { slug: 'grant-callen', role: true, email: true, note: 'the only person with both a role and an email' },
+  { slug: 'matt-ladner', role: true, email: false, note: 'a fellow: role, no email' },
+  { slug: 'ashley-green', role: false, email: false, note: 'neither field filled in on the install' },
+];
+
+const requirePersonBaseUrl = () => process.env.PERSON_BASE_URL
+  ?? assert.fail('PERSON_BASE_URL is not set. This test needs the install\'s person singles: PERSON_BASE_URL=https://empv2.wpenginepowered.com/person/ node --test test-elementor.mjs');
+
+/* THIS TEST IS THE person SINGLE TEMPLATE'S GATE.
+   The template (elementor/theme-parts/person-single.mjs) renders
+   dist/team-bio.html's design for all eighteen published people. It cannot be
+   gated the usual way: census() and controlBoxes() compare a converted page to
+   its static counterpart, and seventeen of these eighteen have no counterpart.
+   The converted page at /grant-callen/ IS still gated against
+   dist/team-bio.html and covers the design; what it cannot cover is the part
+   that only exists because the template is dynamic.
+
+   FOUR THINGS, ALL OF WHICH CAN FAIL WITHOUT LOOKING WRONG:
+
+     1. THE OPTIONAL BLOCKS. `.tp-role` and `.tp-contact` render only when the
+        record has the field. A widget would emit its wrapper either way and
+        draw `.tp-role`'s padding and its rule under blank space; the shortcodes
+        in inc/person-loop.php emit nothing. Asserted in BOTH directions on
+        three real records, so "always absent" cannot pass.
+
+     2. THE STYLESHEET. Read as `.tp-role`'s computed colour, which
+        css/team-bio.css is the only source of. Seventeen of these pages
+        shipped with no stylesheet at all until empower_style_key() stopped
+        keying non-pages by slug, and Grant Callen's shipped correctly the whole
+        time through a slug collision with the converted page at
+        /grant-callen/. A <link>-in-head check would have passed on the
+        collision. This is the assertion that would not have.
+
+     3. THE PORTRAIT. A real photograph, filling its frame, with the
+        placeholder's dashed edge gone (bridge.css block 61) — and that block is
+        scoped `:has(img)` precisely so it cannot reach the gated page's
+        monogram, so a regression there shows up here as a border coming back.
+
+     4. THE THINGS THAT ARE NOT SUPPOSED TO BE THERE. The social plugin appends
+        a Follow/Share/Tweet row to `the_content` on every singular; the design
+        has none, and inc/person-loop.php removes the filter for this post type
+        only. And `.tp-contact__pending` explained a placeholder inbox that no
+        longer exists. Both are absences, which no fidelity instrument on the
+        converted page can see. */
+for (const person of PERSON_SINGLE_CASES) {
+  test(`the person single template renders ${person.slug} (${person.note})`, { concurrency: 1 }, async () => {
+    const { personSingle: readPerson } = await import('./fidelity-browser.mjs');
+    const base = requirePersonBaseUrl().replace(/\/?$/, '/');
+    const page = await readPerson(`${base}${person.slug}/`);
+
+    assert.ok(page.h1, 'no <h1 id="bio-title">, so the name shortcode did not run');
+    assert.equal(page.h1Count, 1, `the page has ${page.h1Count} <h1> elements; the template contributes exactly one`);
+    assert.equal(page.labelledBy, 'bio-title',
+      'the profile section does not point aria-labelledby at the heading, so its accessible name is not the person');
+
+    /* 1. The optional blocks, both directions. */
+    assert.equal(!!page.role, person.role,
+      person.role
+        ? `${person.slug} has a position_title on the install but no .tp-role rendered`
+        : `${person.slug} has NO position_title on the install, so no .tp-role should render; found ${JSON.stringify(page.role)}. `
+          + 'If Empower have filled the field in, update PERSON_SINGLE_CASES rather than the template.');
+    assert.equal(page.contact, person.email,
+      person.email
+        ? `${person.slug} has an email on the install but no "Get in touch" block rendered`
+        : `${person.slug} has NO email on the install, so no .tp-contact should render. `
+          + 'If Empower have filled the field in, update PERSON_SINGLE_CASES.');
+    if (person.email) {
+      assert.match(page.mailto ?? '', /^mailto:/, 'the contact row is not a mailto: link');
+    }
+
+    /* 2. The stylesheet, read through the element only it can style. */
+    if (person.role) {
+      assert.notEqual(page.roleColor, 'rgb(0, 0, 0)',
+        `.tp-role computes ${page.roleColor}, which is the UA default: css/team-bio.css did not load on this page. `
+        + 'empower_style_key() keys non-page singulars by POST TYPE; a `person` row must exist in '
+        + 'empower_page_styles(). Note that /person/grant-callen/ can load it by slug collision with the '
+        + 'converted page at /grant-callen/, so check a different person before believing it is fixed.');
+    }
+
+    /* 3. The portrait. */
+    assert.ok(page.portrait, 'no <img> in .tp-portrait, so the frame is back to being a placeholder');
+    assert.equal(page.portraitFit, 'cover',
+      'the portrait is not object-fit:cover, so it floats at its own ratio inside a 4:5 box (bridge.css block 61)');
+    assert.equal(page.portraitBorder, '0px',
+      `.tp-portrait still draws a ${page.portraitBorder} border around a real photograph; block 61's `
+      + ':has(img) scope is not matching');
+
+    /* 4. The absences. */
+    assert.equal(page.share, false,
+      'the social plugin\'s share row is inside the bio. inc/person-loop.php removes '
+      + 'sfsi_social_buttons_below from the_content on singular person views only');
+    assert.equal(page.pending, false,
+      '.tp-contact__pending is rendering; it explained the organisation-inbox placeholder, and the '
+      + "block now carries the person's own address");
+
+    /* The way back out, which dist/team-bio.html's own comment says every bio
+       needs and which is now a real route rather than a review-site stand-in. */
+    assert.deepEqual(page.backLinks, ['/team/', '/team/'],
+      `the two back links point at ${JSON.stringify(page.backLinks)}; both should be the converted roster at /team/`);
+    /* `/donate/` with the trailing slash, because elementor/links.mjs's remap
+       runs inside deployElements() and therefore over theme-builder templates
+       too, not only over the converted page set. It rewrote this module's
+       authored `/donate` to the install's real path. Matched as a pattern
+       rather than pinned to one spelling, so a future remap that normalises
+       the other way does not fail a link that works. */
+    assert.match(page.cta ?? '', /^\/donate\/?$/,
+      `the Support Our Work button points at ${JSON.stringify(page.cta)} rather than the donate page`);
+    assert.ok(page.bioParagraphs >= 1, 'the bio rendered no paragraphs, so the Post Content widget is empty');
+  });
+}
+
+/* Every converted page's slug has a row in functions.php's stylesheet map.
+
+   WRITTEN AFTER IT FAILED IN PRODUCTION, 2026-08-20. empower_page_styles() is
+   keyed by page SLUG, and the slug rename that morning orphaned all sixteen
+   rows at once: the pages still rendered, still carried every class, and every
+   one of them lost its stylesheet. The suite caught it as 46 failures spread
+   across census, computed-style and filter tests, which is a slow way to learn
+   that one map went stale.
+
+   The map is hand-maintained and cannot be derived, because the KEY is an
+   install slug and the VALUE is a stylesheet filename and the two genuinely
+   differ (`/solutions/` loads css/solutions-b.css, and the three solution pages
+   share css/solution.css). What CAN be derived is the key set: every page in
+   PAGE_REGISTER and EXCLUDED_PAGES must appear, because every converted page
+   has at least css/motion.css. That is the half that goes stale. */
+test('every converted page slug still has a stylesheet row in functions.php', () => {
+  const php = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const map = php.slice(php.indexOf('function empower_page_styles'));
+  const keys = new Set([...map.matchAll(/^\s*'([a-z0-9-]+)'\s*=>\s*array\(/gm)].map((m) => m[1]));
+
+  assert.ok(keys.size >= 15,
+    `only ${keys.size} rows were found in empower_page_styles(); the parse has stopped working `
+    + 'and this test would pass while checking nothing');
+
+  const missing = [];
+  for (const page of [...PAGE_REGISTER, ...EXCLUDED_PAGES]) {
+    if (!page.exampleUrl) continue;
+    const slug = new URL(page.exampleUrl).pathname.replace(/^\/|\/$/g, '');
+    /* The front page's path is '/', so its slug is not in the URL. Read it from
+       the map's own homepage row instead of hard-coding, and assert only that
+       SOME row claims the homepage stylesheet. */
+    if (slug === '') {
+      assert.ok([...map.matchAll(/^\s*'([a-z0-9-]+)'\s*=>\s*array\([^)]*'homepage'/gm)].length === 1,
+        'no single row in empower_page_styles() loads css/homepage.css, so the front page ships unstyled');
+      continue;
+    }
+    if (!keys.has(slug)) missing.push(`${page.name} lives at /${slug}/ but no row keys that slug`);
+  }
+
+  assert.deepEqual(missing, [],
+    `${missing.length} converted page(s) would render with no page stylesheet at all:\n  `
+    + missing.join('\n  ')
+    + '\nempower_page_styles() is keyed by install slug; renaming a page means renaming its key.');
+});
+
+/* --- /team/ links every person it lists ---------------------------------- */
+
+/* THE DEFECT THIS EXISTS FOR SHIPPED, and it shipped because the two halves of
+   the roster were built from different templates and only one of them got a
+   link. The thirteen staff cards are anchors carrying "Read bio"; the five
+   contributing fellows were a ledger of names with no link of any kind, so
+   their `person` singles existed, rendered correctly, and were reachable only
+   by typing the URL. Nothing caught it: every page-level gate passed, because
+   a missing link changes no box and no computed style on the page that should
+   have carried it.
+
+   Found by auditing the install's own outgoing links rather than by any test,
+   which is why the gate is written against the RENDERED page: the roster is two
+   Loop Grids over a post type, so what it links is a fact about the install's
+   data and its two loop item templates together, and neither one alone can be
+   asserted usefully.
+
+   THE LEDGER IS ASSERTED SEPARATELY from the total, and that is the whole
+   point. A single "the roster links at least everybody" check goes green the
+   moment the staff cards are joined by as many more staff as there are
+   fellows, which is the shape the bug had. Asserting the fellows section on its own is what fails if
+   the ledger ever loses its links again. */
+test('every person the roster lists is linked to their bio', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'team-a', envVar: 'TEAM_A_URL', exampleUrl: 'https://empv2.wpenginepowered.com/team/' },
+    t,
+  );
+  if (!url) return;
+
+  /* BOTH COUNTS ARE READ OFF THE INSTALL, not typed here. They were typed here
+     ("18 published people on 2026-08-20: 13 staff, 5 fellows") and went red on
+     2026-08-21 the moment Empower's staff change drafted five of them, which
+     is the same defect this repository has now shipped three times: a number
+     copied out of live data ages into a false assertion, and the failure
+     accuses the page of a bug the page does not have. The install is the only
+     honest source for who exists, exactly as the search-listing coverage gate
+     argues at greater length.
+
+     The fellow split uses person-loop.php's own rule, a position_title
+     beginning with the whole word "Fellow", so the test cannot disagree with
+     the template about who belongs in the ledger.
+
+     ONE wp eval, NOT a shell loop over `wp post meta get`. The obvious
+     spelling of this reads the ids with one command and the titles with one
+     command per id, which needs the id in a remote shell variable, which is
+     the trap wpe.mjs documents at length: every WP-CLI call on this install
+     glues a PHP deprecation notice onto its value, and a value captured by
+     the REMOTE shell never passes through stripNotices(). Written that way
+     first, it reported 17 published people where there are 13, and took eight
+     minutes doing it, because each of those calls bootstraps WordPress. */
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const rows = stripNotices(await wpe(
+    `wp eval 'foreach (get_posts(["post_type"=>"person","post_status"=>"publish","numberposts"=>-1]) as $p) `
+    + `{ echo $p->post_name, "|", get_post_meta($p->ID, "position_title", true), "\n"; }'`,
+  )).split('\n').map((line) => line.trim()).filter((line) => line.includes('|'));
+  const published = rows.length;
+  const fellows = rows.filter((line) => /^fellow\b/i.test(line.split('|')[1] ?? '')).length;
+
+  assert.ok(published > 5, `only ${published} published people came back from the install; the query did not work`);
+  assert.ok(fellows > 0, 'no published person has a position_title starting "Fellow", so the ledger split cannot be checked');
+
+  const html = await (await fetch(url)).text();
+  const hrefs = [...html.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]);
+  const distinct = [...new Set(hrefs)];
+
+  /* A floor rather than an equality, because a link to someone not in the
+     roster is a different question from the roster failing to link someone. */
+  assert.ok(distinct.length >= published,
+    `/team/ links only ${distinct.length} distinct person page(s), and the install publishes ${published} `
+    + 'people. Someone in the roster is rendering without a link to their bio.');
+
+  /* The fellows ledger, on its own. It carried ZERO links until 2026-08-20. */
+  const ledgerAt = html.indexOf('ta-ledger');
+  assert.ok(ledgerAt > 0, 'no .ta-ledger on /team/, so the fellows section is not rendering at all');
+  const ledger = html.slice(ledgerAt);
+  const ledgerLinks = [...new Set([...ledger.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]))];
+  assert.ok(ledgerLinks.length >= fellows,
+    `the fellows ledger links ${ledgerLinks.length} bio(s) and the install publishes ${fellows} contributing fellows. The `
+    + 'ledger rows carry no "read bio" affordance, so a fellow whose name is not a link is a bio page '
+    + 'nothing on the site reaches.');
+
+  const broken = [];
+  for (const href of distinct) {
+    const res = await fetch(new URL(href, url).href, { redirect: 'manual' });
+    if (res.status >= 400) broken.push(`${href} -> ${res.status}`);
+  }
+  assert.deepEqual(broken, [], `the roster links ${broken.length} bio page(s) that do not resolve:\n  ` + broken.join('\n  '));
+});
+
+/* --- links.mjs / the story links that used to leave the install ---------- */
+
+/* SEVEN CONVERTED PAGES CARRIED 29 ABSOLUTE LINKS TO EMPOWER'S LIVE SITE, and
+   a reviewer clicking one left the build without being told. capitol-a's six
+   weekly chats, epic-a's four reports, and the story links on safety, work,
+   education and landing were all authored as `https://empowerms.org/<slug>/`,
+   because that is the site the static build was written against. isInternal()
+   reads an absolute http URL as external, so the remap had never looked at
+   them.
+
+   They are now localised to `/<slug>/`, which is correct on the review install
+   AND after hand-off, since the post sits at that path on both.
+
+   WHAT THIS TEST EXISTS FOR. The static gate above cannot check these: whether
+   a post exists is not a property of a tree. This one asks the install, which
+   is the only place the answer lives. It is also the gate that would catch the
+   localisation being WRONG in a way that still looks fine, i.e. a slug that
+   differs between empowerms.org and this install; a link that 404s here after
+   the rewrite is exactly that case, and before the rewrite it would have gone
+   on working by pointing off-site. */
+test('every story link a converted page carries resolves on the install', { concurrency: 1 }, async (t) => {
+  const home = requirePageUrl(
+    { name: 'install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!home) return;
+  const { oldSitePaths } = await import('./elementor/links.mjs');
+
+  const paths = new Set();
+  for (const dir of convertedPageDirs()) {
+    const page = await import(`./elementor/pages/${dir}/page.mjs`);
+    for (const p of oldSitePaths(page.sections())) paths.add(p);
+  }
+
+  /* A floor, so this cannot pass by collecting nothing. 29 were found on
+     2026-08-20; asserting the exact number would fail the day a page gains a
+     story link, which is not a defect. */
+  assert.ok(paths.size >= 25,
+    `only ${paths.size} old-site links were collected from the page modules, and there were 29 on `
+    + '2026-08-20. Either oldSitePaths() has stopped recognising them or the pages import as empty, '
+    + 'and in both cases this test would otherwise pass while checking almost nothing.');
+
+  const origin = new URL(home).origin;
+  const broken = [];
+
+  /* A PER-REQUEST CACHE BUSTER, not a flush at the top of the loop. This loop
+     makes ~29 sequential requests, which is long enough for another session's
+     traffic to re-warm WP Engine's page cache underneath it: a flush makes a
+     page fresh ONCE, and a loop that outlives that freshness reads whatever the
+     cache has. A parallel session in this tree hit exactly that on 2026-08-20
+     and its gate went red on a page nothing was wrong with, so this uses the
+     convention it settled on rather than inventing a second one.
+
+     `empower_cb`, and the PREFIX is the point. This install returns a
+     200-shaped 404 for WordPress's reserved query vars (`?s=` is a search,
+     `?w=` a week number), which a corpus sweep in this repository was fooled by
+     once: it read "0 found" on every page and reported success. A prefixed name
+     cannot collide with a public query var.
+
+     `Math.random()` is deliberately not used for the run id: the value only has
+     to be unique WITHIN this loop, and the index alone gives that. */
+  for (const [i, path] of [...paths].sort().entries()) {
+    const bust = new URL(origin + path);
+    bust.searchParams.set('empower_cb', `story-${i}`);
+    const res = await fetch(bust.href, { redirect: 'manual' });
+    if (res.status >= 400) broken.push(`${path} -> ${res.status}`);
+  }
+
+  assert.deepEqual(broken, [],
+    `${broken.length} of ${paths.size} story link(s) do not resolve on the install:\n  `
+    + broken.join('\n  ')
+    + '\nThese were absolute empowerms.org URLs before the remap localised them, so a 404 here means '
+    + 'the slug differs between Empower\'s live site and this install.');
+});
+
+/* --- fidelity-browser.mjs / the legacy post page's "More" grid ----------- */
+
+/* WHAT THIS GATES, AND WHY IT IS NOT A CONVERSION TEST.
+ *
+ * Paolo reported the closing "More" grid on /kyle-jackson-a-fathers-footsteps/
+ * as unstyled and asked for the All Content card treatment on it. That page is
+ * NOT converted and is not going to be by this change: all 490 posts render
+ * through the Beaver Themer layout "Post Singular", and every element the
+ * assertions below touch is Beaver's own markup. css/post-single.css dresses
+ * it; css/post-single.css's header carries the whole account.
+ *
+ * So there is no static counterpart to diff against, and none of the five
+ * conversion instruments apply. What can be asserted is that the sheet REACHED
+ * the page and won, which is exactly the pair of failures computedStyles()
+ * exists for (a stylesheet that never enqueued, and another sheet winning over
+ * it). Both are live here rather than hypothetical: the sheet loads through a
+ * new `post` row in empower_page_styles(), keyed off empower_style_key()'s post
+ * type branch rather than a slug, and it is fighting `a{color:var(--text-link)}`
+ * in tokens/base.css for the title and the excerpt, which is what made the
+ * cards read as a wall of orange underlines in the first place.
+ *
+ * THE PHOTOGRAPH ASSERTION IS WRITTEN NOT TO GO VACUOUS. Which related posts
+ * this grid shows is Beaver's choice and changes as Empower publishes, so a
+ * test pinned to "there is a card with no featured image" would quietly stop
+ * asserting anything the day that stopped being true. Both cases are probed,
+ * at least one is required to exist (which is also the check that the grid has
+ * any cards at all), and whichever are present are asserted. */
+const POST_SINGLE_PAGE = {
+  name: 'legacy single post',
+  envVar: 'POST_SINGLE_URL',
+  exampleUrl: 'https://empv2.wpenginepowered.com/kyle-jackson-a-fathers-footsteps/',
+};
+
+/* css/site.css:28 is `--em-orange-ink:#BA4920`, which is the accessible orange
+   the accessibility overrides established and the colour css/content-a.css:279
+   gives `.cad-card__topic`. Written as the rgb() a computed style returns. */
+const ORANGE_INK = 'rgb(186, 73, 32)';
+
+test('the legacy post page\'s More grid wears the All Content card design', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(POST_SINGLE_PAGE, t);
+  if (!url) return;
+  const { computedStyles } = await import('./fidelity-browser.mjs');
+
+  const read = await computedStyles(url, [
+    { name: 'gridDisplay', selector: '.pcw-post-cards .fl-post-grid', property: 'display' },
+    { name: 'cardRadius', selector: '.pcw-post-cards .fl-post-grid-post', property: 'border-top-left-radius' },
+    { name: 'cardBorder', selector: '.pcw-post-cards .fl-post-grid-post', property: 'border-top-width' },
+    { name: 'topicColor', selector: '.pcw-post-cards .pcw-post-card-category', property: 'color' },
+    { name: 'topicCase', selector: '.pcw-post-cards .pcw-post-card-category', property: 'text-transform' },
+    { name: 'titleColor', selector: '.pcw-post-cards .pcw-post-card-title', property: 'color' },
+    { name: 'bodyUnderline', selector: '.pcw-post-cards .post-card-content-link', property: 'text-decoration-line' },
+    { name: 'plainPhoto', selector: '.pcw-post-cards .fl-post-grid-post:not(.has-post-thumbnail) .pcw-post-card-image-link', property: 'display' },
+    { name: 'realPhoto', selector: '.pcw-post-cards .fl-post-grid-post.has-post-thumbnail .pcw-post-card-image-link', property: 'display' },
+    { name: 'clearBefore', selector: '.pcw-post-cards .fl-post-grid', property: 'content', pseudo: '::before' },
+    { name: 'clearAfter', selector: '.pcw-post-cards .fl-post-grid', property: 'content', pseudo: '::after' },
+    { name: 'gridBleed', selector: '.pcw-post-cards .fl-post-grid', property: 'margin-left' },
+  ]);
+
+  assert.ok(read.gridDisplay,
+    `no .pcw-post-cards .fl-post-grid on ${url}. Either the Beaver layout "Post Singular" stopped `
+    + 'rendering the closing grid, or this URL is not a post any more.');
+  assert.equal(read.gridDisplay, 'grid',
+    `the More grid computes display:${read.gridDisplay}. css/post-single.css replaces Beaver's floated `
+    + '.fl-post-column layout with the same auto-fill grid .cad-cards uses; if this is not grid, the sheet '
+    + 'did not load at all (check the `post` row in empower_page_styles(), and that empower_style_key() '
+    + 'still returns the post type for a non-page singular).');
+
+  assert.notEqual(read.cardRadius, '0px',
+    'the cards have square corners, so .cad-card\'s border-radius did not reach them');
+  assert.equal(read.cardBorder, '1px',
+    `the cards have a ${read.cardBorder} top border rather than the 1px hairline .cad-card carries`);
+
+  assert.equal(read.topicColor, ORANGE_INK,
+    `the category eyebrow is ${read.topicColor}, not the ${ORANGE_INK} of .cad-card__topic`);
+  assert.equal(read.topicCase, 'uppercase',
+    `the category eyebrow computes text-transform:${read.topicCase}; the All Content eyebrow is caps`);
+
+  /* The two assertions that catch what Paolo actually saw: every string in the
+     card was a link colour with a link underline, because the whole card body
+     IS one anchor and nothing was overriding tokens/base.css:8. */
+  assert.notEqual(read.titleColor, ORANGE_INK,
+    'the card headline is still the link colour, so tokens/base.css:8 is winning over css/post-single.css '
+    + 'and the card reads as a wall of orange');
+  assert.equal(read.bodyUnderline, 'none',
+    `the card body computes text-decoration-line:${read.bodyUnderline}. The whole copy block is one anchor `
+    + 'on this markup, so an underline there underlines the headline, the byline and the excerpt together.');
+
+  /* FOUND ON THE FIRST LIVE RENDER, and worth a gate of its own because every
+     other assertion here was already green while the grid was visibly wrong.
+     Beaver clears its floated columns with
+     `.fl-post-grid::before/::after{content:" ";display:table}`. A generated box
+     with a content value is a grid item, so turning the parent into a grid
+     turned those two into blank cards: `::before` took the first cell and every
+     real card shifted one place, leaving a hole in the top-left and a card
+     stranded on a row of its own. Both boxes measured 312 x 441.891, the size
+     of a card, which is why it read as a layout bug rather than a stray
+     element. Asserted on `content` because that is what generates the box. */
+  assert.equal(read.clearBefore, 'none',
+    `.fl-post-grid::before still generates a box (content: ${read.clearBefore}). It is Beaver's clearfix, `
+    + 'and in a grid container it is a blank card that pushes every real one out of place.');
+  assert.equal(read.clearAfter, 'none',
+    `.fl-post-grid::after still generates a box (content: ${read.clearAfter}); see the assertion above`);
+
+  /* The module's own generated rule pulls the grid 20px past the row on each
+     side, because Beaver pads it back in on `.fl-post-column` and the pair is a
+     gutter. `display:contents` on those columns keeps the bleed and loses the
+     padding, which at 768 put the first card's left edge at x:0, hard against
+     the viewport. */
+  assert.equal(read.gridBleed, '0px',
+    `the More grid still carries margin-left:${read.gridBleed}. That is half of Beaver's gutter, and its `
+    + 'other half went with the columns; the grid\'s own gap replaces both.');
+
+  assert.ok(read.plainPhoto !== null || read.realPhoto !== null,
+    'the More grid rendered no cards at all, so nothing above was actually measured on a card');
+  if (read.plainPhoto !== null) {
+    assert.equal(read.plainPhoto, 'none',
+      'a related post with no featured image is still drawing its photo plate. The layout writes '
+      + '`background-image: url()` with an empty url for those, which computes to none and leaves an empty '
+      + 'grey 3:2 block; css/post-single.css suppresses it from WordPress\'s own has-post-thumbnail class.');
+  }
+  if (read.realPhoto !== null) {
+    assert.equal(read.realPhoto, 'block',
+      'a related post WITH a featured image is not drawing it, so the has-post-thumbnail gate is inverted');
+  }
+});
+
+/* --- the reveal gate ------------------------------------------------------
+   THE HERO ENTRANCE ANIMATION WAS DEAD ON ALL EIGHTEEN CONVERTED PAGES, and
+   the suite was green throughout. Repaired 2026-08-20; these three tests are
+   the instruments that would have caught it.
+
+   WHAT WAS BROKEN. css/motion.css nests every hidden start-state under
+   [data-reveal="on"]. js/reveal.js set that attribute as its first statement
+   and js/reveal.js is a deferred script, so on the live install the gate
+   landed AFTER first paint, every time (measured: /person/kienna-horn/ first
+   paint 392ms, gate 408ms; / first paint 268ms, gate 304ms). The page painted
+   fully visible; only then did opacity:0 apply; and .is-revealed followed two
+   frames later. A frame-by-frame read of the hero's computed opacity was
+   1.00 for the entire load. Scroll reveals further down were unaffected,
+   because by the time they intersect the start state has long since applied,
+   which is exactly why the symptom read to a human as "some pages animate and
+   some do not".
+
+   WHY NOTHING HERE SAW IT. Every existing reveal instrument in this harness
+   (settleReveal, checkVisibleWithJs, the no-JS parity tests) asks "did
+   everything end up visible?" The broken page answered yes. The defect was
+   purely temporal, and a suite with no temporal instrument cannot have an
+   opinion about it. entranceAnimation() in fidelity-browser.mjs is that
+   instrument, and its own header records why it reads the gate off the HTTP
+   response rather than off the DOM. */
+
+/* Cheap and exhaustive: every converted page, one fetch each, no browser.
+   Derived from the register's own exampleUrl the same way elementor/links.mjs
+   derives its targets, so a page added to the register is covered here
+   without this test being edited, and EXCLUDED_PAGES are covered too -- they
+   render the same motion layer and their exclusion is about census
+   comparability, not about motion. */
+test('every converted page serves the reveal gate and its no-JS fallback in the markup', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10,
+    `only ${pages.length} pages carry an exampleUrl; this test would be passing on almost nothing`);
+  /* Unique per run, not per file: two runs of this suite minutes apart must
+     not share a cache entry either. */
+  const cacheBuster = Date.now();
+  /* A PER-REQUEST CACHE BUSTER RATHER THAN A FLUSH, and the difference is
+     not a style preference: this loop makes eighteen requests over about
+     forty seconds, and WP Engine's page cache re-warms from any other
+     traffic while it runs. A flush at the top is a race the loop loses -
+     observed 2026-08-20, where a concurrent suite in another session
+     re-cached /solutions/ between the flush and this loop reaching it, and
+     fetchConverted() refused the HIT. A flush makes the page fresh ONCE; a
+     unique query string makes every one of these requests uncacheable, so
+     the test cannot be made to read a stale <html> tag no matter what else
+     is touching the install.
+
+     `empower_cb`, and the name matters. This install returns a 200-shaped
+     404 for the RESERVED query vars (`?s=` is a search and `?w=` a week
+     number), which a corpus sweep in this repository has already been
+     fooled by once: it read "0 found" on every page and reported success.
+     A prefixed name cannot collide with WordPress's own public query vars.
+     Verified against /solutions/ before being relied on here: x-cache goes
+     HIT -> MISS and the page still renders as itself, title and all. */
+  const missing = [];
+  for (const [i, page] of pages.entries()) {
+    const bust = new URL(page.exampleUrl);
+    bust.searchParams.set('empower_cb', `${cacheBuster}-${i}`);
+    const html = await fetchConverted(bust.href);
+    /* Asserted on the <html> tag as the SERVER sent it. js/reveal.js sets the
+       same attribute on documentElement at runtime, so any DOM-side reading
+       of this passes identically on the broken page: the bytes are the only
+       place the two states differ. */
+    if (!/<html[^>]*\sdata-reveal="on"/.test(html)) missing.push(`${page.name}: no data-reveal="on" on <html>`);
+    if (!/<noscript><style>\[data-reveal\]\{[^<]*opacity:1!important/.test(html)) {
+      missing.push(`${page.name}: no <noscript> reveal fallback`);
+    }
+  }
+  assert.deepEqual(missing, [],
+    `${missing.length} converted pages do not paint the reveal start state:\n${missing.join('\n')}\n`
+    + 'The gate comes from the language_attributes filter in the child theme\'s functions.php, which is keyed '
+    + 'off empower_page_has_motion(). A page missing it either is not in empower_page_styles() or does not '
+    + 'list the motion sheet there.');
+});
+
+/* The temporal half, on one page rather than eighteen: this one needs a real
+   browser and 2.2s of frame sampling each time, and the fetch test above
+   already proves the gate reaches every page. /person/kienna-horn/ is the
+   page the defect was reported on, so it is the page the gate watches. */
+test('the person single hero actually animates rather than snapping into place', { concurrency: 1 }, async () => {
+  const base = requirePersonBaseUrl();
+  const { entranceAnimation } = await import('./fidelity-browser.mjs');
+  const r = await entranceAnimation(new URL('kienna-horn/', base).href);
+
+  assert.ok(r.frames > 30,
+    `only ${r.frames} frames were sampled; the sampler did not run and nothing below was measured`);
+  assert.ok(r.gateInMarkup, 'the server did not send data-reveal="on" on <html>; see the fetch test above');
+  assert.ok(r.hiddenAtFirstFrame,
+    'the hero was already visible on the document\'s first frame, so the start state never painted and there '
+    + 'is nothing for the transition to animate FROM. This is the exact defect repaired on 2026-08-20: it '
+    + 'means the gate is arriving after first paint again.');
+  assert.ok(r.fadeFrames > 0,
+    'no frame caught the hero part-way through the fade: it went from hidden straight to shown. That is a '
+    + 'snap, not an animation - check --dur-reveal and css/motion.css\'s transition declaration.');
+  assert.ok(r.endsVisible,
+    'the hero never became visible at all. js/reveal.js did not run, and with the gate now in the server '
+    + 'markup that leaves the page permanently blank - check for a classic-script collision on a top-level '
+    + 'identifier such as `root`.');
+});
+
+/* The gate is only as good as the thing it is derived from. This is the same
+   rule elementor/links.mjs's own targets follow and the same failure this
+   repository has already shipped twice: a second hand-written list of pages,
+   which drifts from the first one silently. */
+test('the reveal gate is derived from empower_page_styles, not from a second page list', () => {
+  const php = fs.readFileSync(path.join(process.cwd(), 'wp/empowerms-child/functions.php'), 'utf8');
+  const fn = php.match(/function empower_page_has_motion\(\)\s*\{([\s\S]*?)\n\}/);
+  assert.ok(fn, 'empower_page_has_motion() is gone from the child theme; the reveal gate has no source of truth');
+  assert.match(fn[1], /empower_page_styles\(\)/,
+    'empower_page_has_motion() no longer reads empower_page_styles(). Whatever it reads instead is a second '
+    + 'list of which pages carry the motion layer, and it will drift from the enqueue.');
+  assert.match(fn[1], /empower_style_key\(\)/,
+    'empower_page_has_motion() no longer keys off empower_style_key(), so it cannot be answering the same '
+    + 'question the stylesheet enqueue answers: pages are keyed by slug and other post types by post type');
+  assert.match(php, /add_filter\(\s*'language_attributes'/,
+    'the language_attributes filter is gone; the reveal start state is back to being set by deferred JavaScript '
+    + 'after first paint, which is the defect this whole block exists to prevent');
+});
+
+/* TWO PHOTOGRAPHS WENT MISSING FROM THE LIVE SITE on 2026-08-20, caused by the
+   reveal gate above, and this is the gate that names that failure directly.
+
+   THE DEADLOCK. css/motion.css:23 gives [data-reveal="clip"] a start state of
+   clip-path: inset(0 0 14% 0). With that present from the first frame, on
+   these pages, the image is never requested at all. (The tempting general
+   rule -- "Chromium will not fetch a lazy image inside a clipped element" --
+   is NOT true; two synthetic reproductions including one of this page's own
+   structure load fine. js/reveal.js's header records what is and is not
+   established.) Before the gate moved into the server markup the
+   start state applied only after first paint, so the fetch had already been
+   issued; after, the clip is present from the first frame and the request is
+   never made at all. It does not resolve on scroll and it does not resolve
+   when the element reveals: measured with is-revealed set, opacity 1,
+   transform none and clip-path inset(0px), the <figure> was still 0px tall
+   and the image still unrequested. js/reveal.js now eager-ises those images
+   as its first statement, and its own header carries the full account.
+
+   WHY IT IS NOT ENOUGH THAT layoutInvariants() CAUGHT IT. It did, as a
+   main-height difference, which is a true red with the wrong subject: it
+   points at layout, and it took a per-element diff plus a network log to get
+   from there to "a photograph is missing". It also cannot catch the same
+   defect on an image whose container is already sized by aspect-ratio or
+   which sits beside taller content, where the missing photograph costs the
+   page no height at all.
+
+   AT 390 AND NOT 1440, deliberately. The defect is a function of how far the
+   image sits below the fold, and at 1440 both of the affected images were
+   close enough to the viewport to be fetched anyway: the 1440 run was green
+   throughout while the site was visibly broken on a phone. One width, chosen
+   because it is the one that can fail. */
+test('no converted page is missing a photograph from inside the motion layer', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10,
+    `only ${pages.length} pages carry an exampleUrl; this test would be passing on almost nothing`);
+  const { unloadedRevealImages } = await import('./fidelity-browser.mjs');
+  const results = await unloadedRevealImages(pages.map((p) => p.exampleUrl));
+  const broken = results.filter((r) => r.missing.length > 0)
+    .map((r) => `${r.url}: ${r.missing.join(', ')}`);
+  assert.deepEqual(broken, [],
+    `${broken.length} converted pages render a [data-reveal] image that never loaded:\n${broken.join('\n')}\n`
+    + 'The usual cause is the clip start state suppressing a lazy fetch; js/reveal.js eager-ises those images '
+    + 'and its header explains why. A NEW start state that clips, masks or hides an element containing a lazy '
+    + 'image will reopen this, and it will be invisible at 1440.');
+});
+
+/* --- the motion layer's inventory ----------------------------------------
+   ASKED FOR BY PAOLO ON 2026-08-20, in these words: if we change text or an
+   image in Elementor, will it break the animations?
+
+   The answer is that editing a widget's CONTENT cannot, because data-reveal
+   lives on the widget's wrapper as a Custom Attribute, not in its content.
+   Three other editor actions can, and all three fail silently:
+
+     - deleting a widget or container and adding a replacement, which arrives
+       with an empty Attributes field
+     - editing an html() widget's raw markup, where roughly a quarter of these
+       attributes are baked into the markup rather than carried on the wrapper
+       (worst exposed: landing, education, work, safety)
+     - clearing the Attributes field itself
+
+   None of them produces an error, a layout change or a failing test. The page
+   simply animates one element less. Every other reveal instrument in this
+   suite asks whether the marked-up elements behave; this one asks whether the
+   right elements are still marked up at all.
+
+   THE EXPECTATION IS DERIVED FROM THE TREE THIS REPOSITORY DEPLOYS, not from
+   dist/ and not from a number typed here. dist/ is the wrong baseline for the
+   Loop Grid pages by construction (content-a serves 205 posts where its static
+   counterpart carries 23 authored cards), and a typed number is the failure
+   this repository has already shipped twice. page.mjs's own sections() is what
+   deployElements() writes to the install, so it is the only baseline that
+   cannot drift from what is deployed.
+
+   MEASURED BEFORE BEING BELIEVED: all seventeen pages match exactly on all
+   three counts today, with no exemption for any page, loop pages included. */
+for (const page of [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl)) {
+  test(`the converted ${page.name} page still carries every reveal attribute this repository deploys`, { concurrency: 1 }, async () => {
+    const { sections } = await import(`./elementor/pages/${page.name}/page.mjs`);
+    const { revealInventory, treeRevealInventory } = await import('./fidelity-browser.mjs');
+    const expected = treeRevealInventory(sections());
+    assert.ok(expected.reveal > 0,
+      `elementor/pages/${page.name}/page.mjs builds a tree with no data-reveal attributes at all; `
+      + 'either the page genuinely has no motion (in which case this test should not cover it) or '
+      + 'treeRevealInventory() has stopped matching the shape the factory emits');
+
+    const [live] = await revealInventory([page.exampleUrl]);
+    assert.deepEqual(
+      { reveal: live.reveal, group: live.group, entrance: live.entrance },
+      expected,
+      `${page.name}'s live motion inventory does not match the tree this repository deploys.\n`
+      + `  expected ${JSON.stringify(expected)}\n  live     ${JSON.stringify({ reveal: live.reveal, group: live.group, entrance: live.entrance })}\n`
+      + 'FEWER live than expected means attributes have been lost on the install, and the usual cause is an '
+      + 'edit made in the Elementor editor: a deleted-and-replaced widget arrives with an empty Attributes '
+      + 'field, and editing an html() widget\'s markup can drop an attribute baked into it. MORE live than '
+      + 'expected means the install has been edited to add motion the repository does not know about, which '
+      + 'the next deploy of this page will silently destroy, because deployElements() replaces _elementor_data '
+      + 'wholesale. Either way the install and this repository have diverged and one of them has to win.\n'
+      + '  `reveal` is the animation, `group` is the stagger, `entrance` is the above-the-fold choreography.');
+
+    /* The loop half, deliberately coarse. A Loop Grid renders one template N
+       times, so an exact number here would be a function of how many posts
+       the install happens to hold, which is not this test's business. What it
+       can say, and what matters, is that the template has not lost its
+       attributes altogether: every loop item template in this build carries
+       at least one, so zero reveals inside a rendered loop is always wrong. */
+    if (live.loops > 0) {
+      assert.ok(live.inLoop > 0,
+        `${page.name} renders ${live.loops} Loop Grid(s) but not one card inside them carries a data-reveal `
+        + 'attribute. Every loop item template in this build carries at least one, so the template has lost '
+        + 'them: check the elementor_library post for this page\'s loop item, which is deployed separately '
+        + 'from the page itself and so is not restored by redeploying the page.');
+    }
+  });
+}
+
+/* treeRevealInventory() is the expectation half of the test above, so a bug in
+   it weakens that gate silently in whichever direction it is wrong. It has
+   already had one: the first version counted the valued forms
+   (`data-reveal|rise`, `data-reveal="rise"`) and then SUBTRACTED the group and
+   entrance totals, on the assumption those had been swept up by the first
+   pattern. They had not, so every page came out short by exactly its group
+   count plus its entrance count, and the live comparison read as a real
+   divergence on all seventeen pages at once. Seventeen simultaneous failures
+   is the tell: it indicts the measurement, not the thing measured.
+
+   The four shapes below are the four this build actually emits, and the third
+   and fourth are the ones that broke. */
+test('treeRevealInventory counts every shape the factory emits, and tells the three attributes apart', async () => {
+  const { treeRevealInventory } = await import('./fidelity-browser.mjs');
+  const one = (settings) => [{ elType: 'widget', settings, elements: [] }];
+
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'data-reveal|rise' })),
+    { reveal: 1, group: 0, entrance: 0 }, 'valued attribute in an Elementor _attributes string');
+  assert.deepEqual(treeRevealInventory(one({ html: '<a class="tp-back" data-reveal="rise">x</a>' })),
+    { reveal: 1, group: 0, entrance: 0 }, 'valued attribute inside an html() widget\'s markup');
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'data-reveal-group|' })),
+    { reveal: 0, group: 1, entrance: 0 },
+    'a bare data-reveal-group in _attributes must count as a group and NOT also as a reveal');
+  assert.deepEqual(treeRevealInventory(one({ html: '<div class="gvc-hero__under" data-reveal-group>x</div>' })),
+    { reveal: 0, group: 1, entrance: 0 },
+    'a bare valueless data-reveal-group in raw markup must still be counted');
+  assert.deepEqual(treeRevealInventory(one({ _attributes: 'aria-labelledby|bio-title\ndata-reveal-entrance|' })),
+    { reveal: 0, group: 0, entrance: 1 }, 'entrance alongside an unrelated attribute in the same string');
+
+  /* Nesting, because the real trees are containers of containers and a walk
+     that only looked at top-level elements would pass every case above. */
+  const nested = [{ elType: 'container', settings: { _attributes: 'data-reveal-entrance|' }, elements: [
+    { elType: 'container', settings: { _attributes: 'data-reveal-group|' }, elements: [
+      { elType: 'widget', settings: { _attributes: 'data-reveal|rise' }, elements: [] },
+      { elType: 'widget', settings: { html: '<figure data-reveal="clip"><img></figure>' }, elements: [] },
+    ] },
+  ] }];
+  assert.deepEqual(treeRevealInventory(nested), { reveal: 2, group: 1, entrance: 1 },
+    'a nested tree must be counted at every depth');
+});
+
+/* --- Elementor's own entrance animations, tuned to this build ------------
+   FOR AFTER HAND-OFF, NOT FOR THIS CONVERSION. Paolo's plan, 2026-08-20:
+   once the site launches this repository stops being the source of truth and
+   Empower maintain the site in Elementor. A new section will be added through
+   the editor, and the only animation the editor OFFERS is Advanced -> Motion
+   Effects -> Entrance Animation. This build's own reveal layer is invisible
+   there: it rides on a custom attribute nobody will guess.
+
+   So the two have to agree, and untouched they do not. Elementor 4.2.2 ships
+   `@keyframes fadeInUp{from{transform:translate3d(0,100%,0)}...}` at
+   `.animated{animation-duration:1.25s}` on the browser's default easing. 100%
+   is the element's OWN height, so a 400px section slides 400px. The house
+   motion is 20px over 600ms on --ease-entrance. css/bridge.css redefines the
+   keyframes so that picking "Fade In Up" in the editor simply IS the house
+   animation, with nothing for anyone to remember.
+
+   WHY THE FIXTURE IS A REAL PAGE ON THE INSTALL. No page in this build uses a
+   native entrance animation, so there is nowhere else the cascade question
+   can be asked at all. elementor/theme-parts/native-animation-probe.mjs
+   carries the full reasoning, including why its containers are 400px tall.
+
+   THE TWO FAILURES THIS EXISTS TO CATCH, neither visible in either stylesheet
+   on its own:
+     - Elementor loads animation CSS on demand, one file per animation. Two
+       @keyframes of one name is last-one-wins with no specificity involved,
+       so if that file ever lands after bridge.css the override silently stops
+       working while every rule a grep would look for is still present.
+     - bridge.css sets a duration on `.animated` and loads last, so the
+       editor's own Animation Duration dropdown could stop having any effect.
+       The `.zzp-slow` container gates that OUTCOME. (It does not gate the
+       :not() exclusion in bridge.css, which measurement showed is defence in
+       depth rather than the thing protecting the dropdown: Elementor's rule
+       is `.animated.animated-slow` at (0,2,0) and wins on specificity
+       regardless. bridge.css's own comment records that correction.) */
+test('a natively-animated Elementor element lands on this build\'s motion values', { concurrency: 1 }, async () => {
+  const { PROBE_SLUG } = await import('./elementor/theme-parts/native-animation-probe.mjs');
+  const { nativeAnimation } = await import('./fidelity-browser.mjs');
+  const base = process.env.INSTALL_BASE_URL ?? 'https://empv2.wpenginepowered.com/';
+  const r = await nativeAnimation(new URL(`${PROBE_SLUG}/`, base).href);
+
+  assert.ok(r.frames > 30, `only ${r.frames} frames sampled; the probe page did not render and nothing below was measured`);
+  assert.ok(r.fadeInUp, 'the .zzp-fadeinup container is not on the probe page; redeploy elementor/theme-parts/native-animation-probe.mjs');
+
+  /* The cascade, named by sheet so a failure says WHICH file won rather than
+     just that a number is wrong. */
+  assert.equal(r.winningFadeInUp?.sheet, 'bridge.css',
+    `the effective @keyframes fadeInUp comes from ${r.winningFadeInUp?.sheet}, not bridge.css. Elementor's own `
+    + 'animation CSS is now loading after the bridge sheet, so every keyframe override in that block is inert '
+    + 'while still being present in the file. Nothing else will report this.');
+  assert.equal(r.winningZoomIn?.sheet, 'bridge.css',
+    `the effective @keyframes zoomIn comes from ${r.winningZoomIn?.sheet}, not bridge.css; see the assertion above`);
+
+  /* Behaviour, not declaration: 20px against 100% of a 400px element. */
+  assert.ok(r.travel.fadeInUp.height > 300,
+    `the fadeInUp probe is only ${r.travel.fadeInUp.height}px tall, so 20px and "100% of its height" are too `
+    + 'close to tell apart and the travel assertion below would prove little. The fixture is meant to be 400px.');
+  assert.ok(r.travel.fadeInUp.travel > 15 && r.travel.fadeInUp.travel < 30,
+    `a natively-animated element travelled ${r.travel.fadeInUp.travel}px, not the house 20px. If it is close to `
+    + `${r.travel.fadeInUp.height} it is running Elementor's own translate3d(0,100%,0) and the override has `
+    + 'stopped winning; a section added in the editor will now slide the full height of itself.');
+
+  assert.equal(r.fadeInUp.duration, '0.6s',
+    `native animation duration is ${r.fadeInUp.duration}, not the house --dur-reveal of 0.6s`);
+  assert.match(r.fadeInUp.easing, /cubic-bezier\(0\.16, 0\.84, 0\.44, 1\)/,
+    `native animation easing is ${r.fadeInUp.easing}, not the house --ease-entrance`);
+
+  /* zoomIn is the photo reveal, the one keyframe with no native counterpart:
+     Elementor's own is scale3d(0.3,0.3,0.3), this build's is a clip-path wipe. */
+  assert.match(r.winningZoomIn.from, /clip-path/,
+    `the effective zoomIn keyframe carries no clip-path (${r.winningZoomIn.from}). That is Elementor's own `
+    + 'scale-from-30% zoom, not this build\'s photograph reveal.');
+
+  /* And the editor's Duration control must still work. */
+  assert.equal(r.slow.duration, '2s',
+    `the Slow duration option produced ${r.slow.duration} instead of Elementor's 2s, so the editor's Animation `
+    + 'Duration dropdown no longer does anything. Something in bridge.css is now out-specifying Elementor\'s '
+    + '`.animated.animated-slow` (0,2,0) rule, or that rule has changed shape on an Elementor upgrade.');
+});
+
+/* THE HEADER RENDERED 727px TALL ON EVERY PAGE LOAD AND THEN COLLAPSED TO
+   137px, and the suite was green throughout. Reported by Paolo 2026-08-20 as
+   "the menu appears fully expanded before closing", with a screenshot.
+
+   src/_shared/header-2.html ships the five dropdown panels and the search
+   panel OPEN, in normal flow, by design: that is js/dropdown.js's and
+   theme-js/search.js's progressive-enhancement contract, and it is what keeps
+   the navigation reachable when those scripts do not load. Each script closes
+   its own panels as it runs. Both are deferred, so both ran AFTER first paint
+   (measured on the homepage: paint 1336ms, gates 1397ms), and in between
+   every visitor saw the whole mega menu laid out down the page.
+
+   WHY NOTHING CAUGHT IT. Every header assertion here reads the settled page,
+   and the settled page was always right. "the five desktop dropdown panels
+   ship open without JavaScript and close with it" is the closest existing
+   test and it passes identically on the broken and the fixed page: 5 without
+   JS, 0 with. The defect was purely a window, and a suite with no temporal
+   instrument cannot have an opinion about one. This is the third time that
+   sentence has been written today.
+
+   THE FIX IS AN INLINE HEAD SCRIPT, not a hard-coded closed state, and the
+   docblock in the child theme's functions.php records why: <noscript> only
+   covers JavaScript being disabled, and the content at stake here is the
+   navigation, so the failure that mattered was a script 404ing with JS ON.
+   An inline script inverts both failure modes and a 4s timeout catches the
+   404 case. Verified against all three paths before this gate was written:
+   JS disabled leaves 5 panels and 14 nav links reachable, aborting both
+   scripts restores the panels after the timeout, and a normal load still
+   opens one panel on hover and the search panel on click. */
+test('the header never renders its panels open before its scripts close them', { concurrency: 1 }, async () => {
+  const { headerSettle } = await import('./fidelity-browser.mjs');
+  const url = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const r = await headerSettle(url);
+
+  assert.ok(r.frames > 30, `only ${r.frames} frames sampled; .em-header was never found and nothing below was measured`);
+  assert.ok(r.restHeight > 60 && r.restHeight < 300,
+    `the header settled at ${r.restHeight}px, which is not a plausible resting height; the comparison below `
+    + 'would be measuring against a broken page');
+  assert.equal(r.panelFrames, 0,
+    `the dropdown panels were laid out on ${r.panelFrames} frames before js/dropdown.js closed them. The inline `
+    + 'head script in functions.php sets data-dropdown="pending", and css/bridge.css hides the panels while that '
+    + 'value is present; one of the two is missing, or the script has stopped running before first paint.');
+  assert.equal(r.searchFrames, 0,
+    `the search panel was laid out on ${r.searchFrames} frames before theme-js/search.js closed it; see above, `
+    + 'the same inline script sets data-search="pending"');
+  /* The number a visitor actually experiences. Generous multiplier on
+     purpose: this is meant to catch a 5x jump, not police a few pixels of
+     font-loading reflow. */
+  assert.ok(r.maxHeight < r.restHeight * 1.5,
+    `the header peaked at ${r.maxHeight}px against a resting ${r.restHeight}px. That is the visible jump this `
+    + 'gate exists to prevent.');
+});
+
+/* --- what a shared link looks like ---------------------------------------
+   EVERY CONVERTED PAGE SHARED AS A BARE GREY BOX, found by the SEO audit on
+   2026-08-21. All 18 carried og:title and twitter:card and none carried
+   og:image, and twitter:card was set to "summary_large_image" -- a format
+   whose whole purpose is to promise an image that was not there.
+
+   EXACTLY ONE, NOT AT LEAST ONE, and that is the assertion that matters.
+   All in One SEO owns the rest of the Open Graph block and today emits no
+   image; the child theme adds one at wp_head priority 20. If AIOSEO is ever
+   configured with a default image, the page silently gains a SECOND og:image,
+   the scrapers pick one of the two and nobody can predict which. A
+   greater-than-zero check would sail straight past that. */
+test('every converted page offers exactly one share image, and it resolves', { concurrency: 1 }, async () => {
+  const pages = [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.exampleUrl);
+  assert.ok(pages.length > 10, `only ${pages.length} pages carry an exampleUrl`);
+  const stamp = Date.now();
+  const wrong = [];
+  const seen = new Set();
+
+  for (const [i, page] of pages.entries()) {
+    const url = new URL(page.exampleUrl);
+    url.searchParams.set('empower_cb', `og-${stamp}-${i}`);
+    const html = await fetchConverted(url.href);
+    const images = [...html.matchAll(/<meta\s+property="og:image"\s+content="([^"]*)"/g)].map((m) => m[1]);
+    if (images.length !== 1) {
+      wrong.push(`${page.name}: ${images.length} og:image tags`);
+      continue;
+    }
+    seen.add(images[0]);
+    /* twitter:image too: the card format is summary_large_image on every page,
+       and X reads twitter:image in preference to og:image when both exist. */
+    if (!/<meta\s+name="twitter:image"\s+content="/.test(html)) wrong.push(`${page.name}: no twitter:image`);
+  }
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} page(s) have the wrong number of share images:\n${wrong.join('\n')}\n`
+    + 'Two og:image tags usually means AIOSEO has been given a default image of its own and the theme\'s '
+    + 'wp_head block in functions.php should be removed; zero means that block has stopped running.');
+
+  assert.equal(seen.size, 1, `expected one shared default image across all pages, saw ${seen.size}: ${[...seen].join(', ')}`);
+  /* The tag can be perfectly formed and point at a 404, which is the same
+     grey box to anyone sharing the link. */
+  const res = await fetch([...seen][0], { redirect: 'follow' });
+  assert.equal(res.status, 200, `the share image ${[...seen][0]} returns ${res.status}`);
+  const bytes = Number(res.headers.get('content-length') ?? 0);
+  assert.ok(bytes > 5000, `the share image is only ${bytes} bytes, which is not a 1200x630 card`);
+});
+
+/* --- what the front page claims to BE ------------------------------------
+   THE HOMEPAGE TELLS EVERY SCRAPER IT IS AN ARTICLE, and carries two
+   timestamps to prove it. The 2026-08-21 SEO audit recorded this as "og:type
+   is article on the HOME page; should be website. AIOSEO setting." It is not
+   a setting, and establishing that is the reason this comment is long.
+
+   All in One SEO 5.0.0.1 decides the tag in getObjectType(), and the order is
+   what matters:
+     1. is_home() AND show_on_front === 'posts'  ->  homePage->objectType
+     2. is_post_type_archive()                   ->  'website'
+     3. the post's own og_object_type meta, if it is not 'default'
+     4. the dynamic per-post-type option for this post type
+     5. 'article'
+   This install has show_on_front=page and page_on_front=20588, so branch 1
+   NEVER RUNS. Which means the setting a person would go looking for, in
+   Social Networks > Facebook > Home Page > Object Type, ALREADY READS
+   "website" and has no effect on anything. Someone can open that screen,
+   find it already correct, and leave believing the page is fixed. Branch 4
+   is what fires: aioseo_options_dynamic carries {"objectType":"article"} for
+   the `page` post type, so every page on the install claims to be an article.
+
+   THERE IS NO FILTER ON og:type. The only hook AIOSEO offers over this block
+   is aioseo_facebook_tags, which receives the assembled tag array.
+
+   AND THE TAG IS NOT THE WHOLE DEFECT. AIOSEO adds article:section,
+   article:tag, article:published_time, article:modified_time,
+   article:publisher and article:author whenever og:type is "article", and it
+   adds them BEFORE that filter runs. A fix that sets og:type and stops there
+   ships a front page that calls itself a website and still carries an
+   article's publication timestamps. Both halves are asserted below: the
+   og:type line on its own is a mechanism assertion wearing a property's
+   clothes.
+
+   TWO-SIDED, and that is the half this project has already shipped without
+   once. A filter that stripped article:* unconditionally would satisfy every
+   assertion about the front page while silently stripping the tags off all
+   490 blog posts, where they are correct and are what a share card reads to
+   date the piece. The post below is the excluded set, checked from outside.
+
+   NOW EVERY PAGE, NOT JUST THE FRONT ONE, on Paolo's 2026-08-27 call. The
+   fifteen other converted pages, the unconverted Beaver campaign pages and the
+   legacy pages all emitted og:type=article with a pair of article:* timestamps
+   for the same branch-4 reason, and it is wrong on all of them: a page is not
+   a dated piece of writing. The `person` bios get "profile" rather than
+   "website", which is the Open Graph type for a person and the honest answer
+   for a page that IS somebody.
+
+   THREE PREDICATES, NOT ONE, because WordPress answers differently for three
+   things that all look like pages: is_singular('page') for an ordinary page,
+   is_home() for /updates/ (the posts page, where every singular check returns
+   false), and is_singular('person') for a bio.
+
+   LEFT ALONE, and checked rather than assumed: category and date archives emit
+   NO og:type at all, and the Open Graph spec defines a missing type as
+   "website", so they are already right. Author archives already emit
+   "profile" without help from us. */
+test('every page shares as a website, a bio as a profile, and a blog post still as an article', { concurrency: 1 }, async () => {
+  const origin = new URL(process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/').origin;
+  const stamp = Date.now();
+
+  /* Read off the delivered page, never off the option: the option that looks
+     like it governs this is already set to the right value and governs
+     nothing at all on this install. */
+  const read = async (path, key) => {
+    const html = await fetchConverted(`${origin}${path}?empower_cb=ogt-${stamp}-${key}`);
+    return {
+      path,
+      type: (html.match(/<meta\s+property="og:type"\s+content="([^"]*)"/) ?? [, ''])[1],
+      article: [...html.matchAll(/<meta\s+property="(article:[a-z_]+)"/g)].map((m) => m[1]).sort(),
+    };
+  };
+
+  /* DERIVED FROM THE REGISTER, not hand-written, for the reason this project
+     has already been bitten by twice: a sweep with a typed-out page list stops
+     covering the page somebody adds next and reports success while doing it. */
+  const registered = [...PAGE_REGISTER, ...EXCLUDED_PAGES]
+    .filter((p) => p.exampleUrl)
+    .map((p) => new URL(p.exampleUrl).pathname);
+  assert.ok(registered.length > 10, `only ${registered.length} pages carry an exampleUrl`);
+
+  /* /updates/ IS NOT is_singular('page'), and that is the trap in this fix.
+     It is the posts page, so WordPress answers is_home() for it and every
+     singular check returns false; it needs its own branch or it keeps the
+     wrong tag while its fifteen neighbours are corrected. */
+  const shouldBeWebsite = [...new Set([...registered, '/updates/'])];
+
+  const wrong = [];
+  for (const [i, path] of shouldBeWebsite.entries()) {
+    const r = await read(path, `w${i}`);
+    if (r.type !== 'website') wrong.push(`${path}: og:type="${r.type}", expected website`);
+    if (r.article.length) wrong.push(`${path}: still carries ${r.article.join(', ')}`);
+  }
+
+  /* A BIO IS A PERSON, NOT A DATED PIECE OF WRITING, and "profile" is the
+     Open Graph type for exactly that. article:published_time on a bio is a
+     statement about when the person was published, which is nonsense a share
+     card will happily print.
+
+     THE POST TYPE DECIDES, AND THAT SPLITS THE TWO GRANT CALLEN URLS. This
+     test asserted both were profiles and contradicted its own register sweep,
+     which was right to complain: /grant-callen/ is the converted team-bio
+     TEMPLATE and is a `page`, so it is a website; /person/grant-callen/ is the
+     CPT entry and is the bio, so it is a profile. Keying on what a page
+     renders rather than on what it is would need a second slug map for one
+     page that is slated for deletion at launch, and the profile signal already
+     lands in the right place without it: the template page's canonical points
+     at the CPT bio (see empower_canonical_overrides). */
+  const bio = await read('/person/grant-callen/', 'p0');
+  if (bio.type !== 'profile') wrong.push(`/person/grant-callen/: og:type="${bio.type}", expected profile`);
+  if (bio.article.length) wrong.push(`/person/grant-callen/: still carries ${bio.article.join(', ')}`);
+
+  /* A second bio, so this is a claim about the `person` CPT rather than about
+     one entry in it. */
+  const bio2 = await read('/person/kienna-horn/', 'p1');
+  if (bio2.type !== 'profile') wrong.push(`/person/kienna-horn/: og:type="${bio2.type}", expected profile`);
+
+  /* THE UNCONVERTED SIDE, and it is here on purpose. og:type="article" is
+     wrong on a Beaver campaign page for exactly the reason it is wrong on a
+     converted one, so scoping this to the converted register would have been
+     arbitrary. It is also the assertion that would have caught the
+     ProfilePress dequeue shipping scoped to nothing: a guard keyed on the
+     converted set behaves differently here, and only looking here shows it. */
+  const beaver = await read('/2025-tax-calculator/', 'b0');
+  if (beaver.type !== 'website') wrong.push(`an unconverted Beaver page shares as og:type="${beaver.type}"`);
+  if (beaver.article.length) wrong.push(`an unconverted Beaver page still carries ${beaver.article.join(', ')}`);
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} page(s) share as the wrong Open Graph type:\n${wrong.join('\n')}\n`
+    + 'empower_og_object_type() in the child theme decides this, and aioseo_facebook_tags applies it. '
+    + 'AIOSEO adds the article:* tags before that filter runs, so dropping them is part of the same fix.');
+
+  /* THE EXCLUDED SET, checked from outside. A filter that returned "website"
+     unconditionally, or stripped article:* everywhere, would satisfy every
+     assertion above while silently taking the correct tag off all 490 posts,
+     where it is what a share card dates the piece from. */
+  const post = await read('/kyle-jackson-a-fathers-footsteps/', 'post');
+  assert.equal(post.type, 'article',
+    `a blog post now shares as og:type="${post.type}". The fix has widened past pages and bios and taken the `
+    + 'correct tag off all 490 posts.');
+  assert.ok(post.article.includes('article:published_time'),
+    `a blog post has lost its article:* metadata (it carries ${post.article.join(', ') || 'none'}). Those tags `
+    + 'are correct on a post and are what a share card dates the piece from.');
+});
+
+/* --- shortening 490 auto-generated descriptions -------------------------
+   EVERY BLOG POST DESCRIBES ITSELF IN 291 TO 374 CHARACTERS, against the
+   roughly 160 Google shows. There are 490 of them and they were never
+   written: All in One SEO generates them at request time from post_content,
+   which is why the first sentence of the article IS the description, cut
+   wherever the character limit lands.
+
+   NOTHING IS STORED, and that took a wrong reading to establish. Read through
+   AIOSEO's own model, 473 of the 490 have an empty description and the other
+   17 hold thirteen characters or fewer; read off the delivered page, every
+   one of them carries 291 to 374. The generated value is never persisted.
+   Two consequences, both good: a write here cannot overwrite anything a
+   person typed, and the rollback record is the empty set. Two documents,
+   storage and output, and only one of them was what the audit measured.
+
+   79 OF THEM OPEN BY REPEATING THEIR OWN TITLE, because the article body
+   begins with the headline as a heading. Those descriptions spend their first
+   40 to 60 characters restating the line printed directly above them in the
+   search result. stripTitleEcho() is what removes that, and it is the single
+   largest improvement in the set.
+
+   THE ONE RULE THIS MUST NOT BREAK is Empower's: nothing invented. So
+   shorten() never composes a sentence. Every string it proposes is a literal
+   prefix of the post's own copy, cut at a boundary, and `describes` asserts
+   exactly that over every fixture below. A generator that paraphrased would
+   read better and would be the wrong tool for copy somebody else owns.
+
+   THREE TIERS, AND THE TIER IS PART OF THE PROPOSAL. `sentence` ends on a
+   full stop and needs a glance; `clause` is cut at a comma or a dash and
+   reads as unfinished, so it needs a reader; `manual` proposes nothing at all
+   because the post's opening sentence is longer than the whole budget and any
+   mechanical cut would land mid-thought. Labelling them is what lets the
+   review be proportionate instead of uniform. Measured over the corpus on
+   2026-08-27: 281 sentence, 72 clause, 137 manual. */
+test('splitSentences does not mistake an abbreviated title for the end of a sentence', async () => {
+  const { splitSentences } = await import('./elementor/post-seo.mjs');
+
+  /* The real failure, from the corpus: "On this episode of the Empower
+     Podcast, State Rep. Otis Anthony joins Grant..." was cut after "State
+     Rep." and proposed as a 50-character description. Mississippi politics
+     supplies Rep., Sen., Gov. and Lt. in quantity, so this is not an edge
+     case here, it is most of the corpus. */
+  assert.deepEqual(
+    splitSentences('On this episode, State Rep. Otis Anthony joins Grant. It ran long.'),
+    ['On this episode, State Rep. Otis Anthony joins Grant.', 'It ran long.'],
+  );
+  assert.deepEqual(
+    splitSentences('Dr. Clay Routledge joins us. Gov. Reeves did not.'),
+    ['Dr. Clay Routledge joins us.', 'Gov. Reeves did not.'],
+  );
+  /* A single initial, which is the other way a full stop appears mid-name. */
+  assert.deepEqual(splitSentences('J. Robertson wrote it. Twice.'), ['J. Robertson wrote it.', 'Twice.']);
+  /* And the abbreviation must not swallow a genuine sentence end when the
+     abbreviation is the last word before it. */
+  assert.deepEqual(splitSentences('He is a state rep. Nobody disputes that.'), ['He is a state rep.', 'Nobody disputes that.']);
+});
+
+test('stripTitleEcho removes a headline the body repeats, and leaves prose that merely starts the same way', async () => {
+  const { stripTitleEcho } = await import('./elementor/post-seo.mjs');
+
+  assert.equal(
+    stripTitleEcho('Sen. Jeremy England: Neighbors Before Opponents Politics works best when we remember.', 'Sen. Jeremy England: Neighbors Before Opponents'),
+    'Politics works best when we remember.',
+  );
+  /* The echo is not always verbatim: the post title carries a year the body
+     omits. Matching on a contiguous run of the title's words rather than on
+     the whole title is what covers this, and it is why the corpus figure went
+     from 79 exact echoes to a larger set. */
+  assert.equal(
+    stripTitleEcho('Capitol Chat: Sine Die Lawmakers returned to Jackson.', '2026 Capitol Chat: Sine Die'),
+    'Lawmakers returned to Jackson.',
+  );
+  /* THE EXCLUDED CASE, and the one that makes this safe to run over 490 posts
+     unattended. A body whose opening genuinely IS the article, sharing a word
+     or two with the title, must come back untouched: eating the first clause
+     of a real sentence would be silent and would ship. */
+  const prose = 'Mississippi lawmakers passed the bill on Tuesday after a long debate.';
+  assert.equal(stripTitleEcho(prose, 'Mississippi passes school choice'), prose);
+  assert.equal(stripTitleEcho(prose, 'A completely unrelated headline'), prose);
+});
+
+test('shorten proposes only the post\'s own words, never more than 160 characters, and says which rule it used', async () => {
+  const { shorten, MAX } = await import('./elementor/post-seo.mjs');
+
+  const cases = [
+    {
+      why: 'two whole sentences fit',
+      post_title: 'Neighbors Before Opponents',
+      body: 'Politics works best when we remember we are neighbors before we are opponents. But in an age of polarization, is that still possible? In this episode Grant sits down with the senator.',
+      tier: 'sentence',
+    },
+    {
+      why: 'the opening sentence is too long, but breaks at a comma inside the budget',
+      post_title: 'Charter Schools Outperform Districts',
+      body: 'The Mississippi Department of Education has released results of the initial administration of the 2026 third-grade reading assessment, and five of the six Mississippi charter schools outperformed their districts.',
+      tier: 'clause',
+    },
+    {
+      why: 'one long sentence with no boundary anywhere inside the budget',
+      post_title: 'A Flagship of Hope',
+      body: 'When Tony Yarber talks about the future of Midtown Public Charter he does not just talk about students passing tests or earning the grades that a state accountability model happens to reward in any given year.',
+      tier: 'manual',
+    },
+  ];
+
+  for (const c of cases) {
+    const r = shorten(c);
+    assert.equal(r.tier, c.tier, `"${c.why}" produced tier ${r.tier}: ${r.description}`);
+    if (c.tier === 'manual') {
+      assert.equal(r.description, '', 'a manual row must propose nothing at all rather than a bad cut');
+      continue;
+    }
+    assert.ok(r.description.length <= MAX, `"${c.why}" proposed ${r.description.length} characters`);
+    assert.ok(r.description.length >= 70, `"${c.why}" proposed only ${r.description.length} characters`);
+
+    /* NOTHING INVENTED. The proposed string, with whitespace normalised, must
+       appear verbatim in the post's own copy. This is Empower's rule applied
+       to a search snippet, and it is the assertion that makes a bulk pass
+       over somebody else's writing defensible at all. */
+    const flat = (s) => s.replace(/\s+/g, ' ').trim();
+    assert.ok(flat(c.body).includes(flat(r.description)),
+      `"${c.why}" proposed words that are not in the post:\n  ${r.description}`);
+  }
+
+  /* The two tiers are told apart by how they end, and that is the whole
+     reason a reviewer treats them differently. */
+  assert.match(shorten(cases[0]).description, /[.!?]$/, 'a sentence-tier row must end on terminal punctuation');
+  assert.doesNotMatch(shorten(cases[1]).description, /[.!?]$/, 'a clause-tier row ends mid-sentence; if it ends on a full stop it should have been tier sentence');
+});
+
+/* The proposal itself, as committed. Generated by elementor/harvest-post-seo.mjs
+   against the install and checked in so that what Empower is being shown is in
+   version control rather than in somebody's downloads folder.
+
+   THE COUNTS ARE ASSERTED AS A TOTAL, NOT PER TIER. A per-tier count would go
+   red every time a post is published, which is a gate that trains people to
+   edit the number; the invariants below are the ones that must hold whatever
+   the corpus does. */
+test('the committed post-description proposal is internally consistent', () => {
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'));
+  assert.ok(rows.length > 400, `the proposal holds only ${rows.length} rows`);
+
+  const ids = new Set(rows.map((r) => r.id));
+  assert.equal(ids.size, rows.length, 'the proposal repeats a post id');
+
+  const wrong = [];
+  for (const r of rows) {
+    if (!['sentence', 'clause', 'manual', 'written', 'unchanged'].includes(r.tier)) wrong.push(`${r.id}: unknown tier "${r.tier}"`);
+    if (r.tier === 'manual') {
+      if (r.description !== '') wrong.push(`${r.id}: a manual row proposes "${r.description}"`);
+      continue;
+    }
+    /* A post whose whole body is one short sentence already serves that
+       sentence, so the proposal is byte-identical to what is live and writing
+       it changes nothing. It is a real state, not a defect, and it is the only
+       row exempt from "must be shorter than what is live". */
+    if (r.tier === 'unchanged') {
+      if (r.length !== r.before) wrong.push(`${r.id}: tier unchanged but ${r.length} characters against ${r.before} live`);
+      continue;
+    }
+    if (r.description.length > 160) wrong.push(`${r.id}: ${r.description.length} characters`);
+    if (r.description.length < 70) wrong.push(`${r.id}: only ${r.description.length} characters`);
+    if (r.tier === 'sentence' && !/[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier sentence but does not end on a full stop`);
+    if (r.tier === 'clause' && /[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier clause but ends on a full stop`);
+    if (r.tier === 'written' && !/[.!?]$/.test(r.description)) wrong.push(`${r.id}: tier written but does not end on a full stop`);
+    /* THE POINT OF THE EXERCISE, stated for the right set. Every proposal
+       must fit inside what Google shows; and where the live description
+       overruns that, the proposal must also be shorter than it.
+       NOT EVERY ROW IS A SHORTENING, which the first version of this rule got
+       wrong and two posts proved. Post 17962 is a gallery of photographs with
+       no prose, so AIOSEO generates nothing and it serves ZERO characters;
+       17179 is one short line and serves 59. For those a written description
+       is an addition, and demanding it be shorter than nothing is demanding it
+       not exist. */
+    /* A run of spaces, or a non-breaking one, means the body text was
+       assembled wrong rather than that the copy is odd. The live example was a
+       pull-quote glued onto the article with a &nbsp; between them, which
+       survived the harvester's whitespace collapse because the collapse ran
+       BEFORE entity decoding and so never saw it as whitespace at all. */
+    if (/\u00A0|\s\s/.test(r.description)) {
+      wrong.push(`${r.id}: the proposal carries a non-breaking or doubled space, so the body text was assembled wrong`);
+    }
+    if (r.description.length > 160) wrong.push(`${r.id}: ${r.description.length} characters, over the 160 Google shows`);
+    if (r.before > 160 && r.description.length >= r.before) {
+      wrong.push(`${r.id}: proposal is not shorter than the ${r.before} characters live today`);
+    }
+  }
+  assert.deepEqual(wrong, [], `${wrong.length} row(s) in the proposal are wrong:\n${wrong.slice(0, 20).join('\n')}`);
+
+  /* THE ASSERTION THAT WOULD HAVE CAUGHT A HALF-BUILT PROPOSAL. `before` is
+     the length of the description the page serves today, and -1 means the page
+     could not be read. Every summary over this file treats -1 as "nothing to
+     save", so a harvest that was rate-limited produces a proposal that looks
+     complete and understates the problem: two runs of the same script over the
+     same 490 posts reported 76,110 and 18,511 characters removed, because the
+     second run had 362 pages refused and recorded each refusal as data.
+     Nothing errored either time. */
+  const unread = rows.filter((r) => r.before < 0);
+  assert.ok(unread.length <= rows.length * 0.02,
+    `${unread.length} of ${rows.length} rows have no reading of what the page serves today. The harvest was `
+    + 'rate-limited and recorded each refusal as -1, which every total over this file counts as zero. '
+    + 'Re-run elementor/harvest-post-seo.mjs at a lower concurrency.');
+});
+
+/* THE 137 THE SHORTENER COULD NOT DO ARE WRITTEN BY HAND, and hand-writing is
+   where Empower's no-invented-statistics rule stops being automatic. A
+   mechanical proposal is a literal run of the post's own words, so it cannot
+   state a figure the post does not; a written one can, and a plausible wrong
+   number in a search result is worse than a long right one. Nobody reviewing
+   137 descriptions will catch a transposed figure -- they will catch a clumsy
+   sentence long before that -- so it is checked rather than reviewed.
+
+   RUNS OFF THE COMMITTED PROPOSAL, not off the install, which is why the
+   written rows carry a prefix of the post's own text. Without that the rule
+   could only be enforced at generation time, on a machine with SSH, by
+   whoever happened to re-run the harvester. */
+test('every hand-written description states no figure the post does not', async () => {
+  const { writtenProblems } = await import('./elementor/harvest-post-seo.mjs');
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'))
+    .filter((r) => r.tier === 'written');
+  assert.ok(rows.length > 100, `only ${rows.length} written rows; the overlay is not being applied`);
+
+  const problems = rows.flatMap((r) => {
+    /* The KEY, not a non-empty value. One post is a gallery of photographs
+       with no prose at all, so its body is legitimately empty and its
+       description can only be justified by its title -- which is what
+       writtenProblems() checks against, title and body together. Requiring a
+       non-empty body would have excluded the one row with the least to check
+       it against. */
+    assert.ok('body' in r, `post ${r.id} is tier written but carries no body field, so nothing can be checked against it`);
+    return writtenProblems({ id: r.id, description: r.description, body: r.body, title: r.post_title });
+  });
+  assert.deepEqual(problems, [], `${problems.length} hand-written description(s) break the rules:\n${problems.join('\n')}`);
+});
+
+/* The overlay and the mechanical ceiling have to describe the same set. A row
+   in the overlay that the shortener can now handle would be a hand-written
+   description silently overriding a generated one; a manual row missing from
+   the overlay is the gap this whole pass exists to close, and it would sit in
+   the proposal claiming nothing needs doing. */
+test('the hand-written overlay covers exactly the posts the shortener cannot do', () => {
+  const overlay = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions-written.json', 'utf8'));
+  const rows = JSON.parse(fs.readFileSync('elementor/approval/post-descriptions.json', 'utf8'));
+
+  const writtenIds = new Set(rows.filter((r) => r.tier === 'written').map((r) => String(r.id)));
+  const overlayIds = new Set(Object.keys(overlay));
+
+  assert.deepEqual([...overlayIds].filter((id) => !writtenIds.has(id)), [],
+    'the overlay names posts that are not tier written in the proposal');
+  assert.deepEqual([...writtenIds].filter((id) => !overlayIds.has(id)), [],
+    'the proposal has written rows the overlay does not name');
+  assert.equal(rows.filter((r) => r.tier === 'manual').length, 0,
+    'some posts still propose nothing at all; every one of them needs a line in the overlay');
+  assert.equal(rows.filter((r) => r.tier === 'clause').length, 0,
+    'some posts are still mechanical clause cuts, which end mid-sentence; every one needs a line in the overlay');
+
+  /* THE OVERLAY MUST ONLY OVERRIDE CUTS THAT DID NOT READ AS FINISHED. A
+     written description replacing a clean sentence-boundary cut would be
+     hand-written copy quietly displacing the post's own words, which is the
+     one thing the mechanical tier exists to avoid. */
+  const overreach = rows.filter((r) => r.tier === 'written' && !['manual', 'clause'].includes(r.replaced));
+  assert.deepEqual(overreach.map((r) => `${r.id} replaced ${r.replaced}`), [],
+    'the overlay overrides rows the shortener had already handled cleanly');
+});
+
+/* NOTHING MAY BE WRITTEN TO THE INSTALL WITHOUT AN APPROVAL RECORD. This is
+   client-facing copy on 490 pages and the deploy script that already exists
+   for the sixteen converted pages overwrites without asking. The gate is a
+   file, not a flag and not a habit: deployPostSeo() reads
+   elementor/approval/post-descriptions-approved.json and refuses if it is
+   absent, so the default state of a fresh checkout is "cannot write". A flag
+   would be one keystroke away from being passed by somebody who had not read
+   this; a missing file cannot be typed past. */
+test('the post description deploy refuses to run without a recorded approval', async () => {
+  const { approvalProblems, digestRows } = await import('./elementor/deploy-post-seo.mjs');
+  const rows = [{ id: 1, url: '/a/', tier: 'sentence', description: 'x'.repeat(120) }];
+  const approval = { approvedIds: [1], approvedBy: 'Empower', date: '2026-08-28', digest: digestRows(rows) };
+
+  assert.match(approvalProblems({ rows, approval: null }).join(' '), /no approval record/i);
+  assert.deepEqual(approvalProblems({ rows, approval }), []);
+
+  /* AND IT MUST BE THE SAME COPY THAT WAS APPROVED. An approval naming ids
+     only would let the proposal be regenerated afterwards and written under an
+     approval nobody gave for that wording, which is the failure mode that
+     matters most: the ids would all still match. The digest is over the
+     copy, so a single character moves it. */
+  const changed = [{ id: 1, url: '/a/', tier: 'sentence', description: 'y'.repeat(120) }];
+  assert.match(approvalProblems({ rows: changed, approval }).join(' '), /changed since it was approved/i);
+
+  /* An approval with no digest at all is not an approval of any particular
+     wording, so it is refused rather than accepted leniently. */
+  assert.match(
+    approvalProblems({ rows, approval: { approvedIds: [1], approvedBy: 'Empower', date: '2026-08-28' } }).join(' '),
+    /records no digest/i,
+  );
+
+  /* A row nobody approved must not travel with the ones that were. */
+  const extra = [...rows, { id: 2, url: '/b/', tier: 'sentence', description: 'z'.repeat(120) }];
+  assert.match(
+    approvalProblems({ rows: extra, approval: { ...approval, digest: digestRows(extra) } }).join(' '),
+    /not in the approval/i,
+  );
+
+  /* A manual row proposes nothing, so writing one would blank a description
+     that is at least serving today. Refused explicitly rather than left to
+     the empty string doing something harmless-looking. */
+  const manual = [{ id: 3, url: '/c/', tier: 'manual', description: '' }];
+  assert.match(
+    approvalProblems({ rows: manual, approval: { approvedIds: [3], approvedBy: 'Empower', date: '2026-08-28', digest: digestRows(manual) } }).join(' '),
+    /proposes no description/i,
+  );
+});
+
+/* --- pages that must never be found --------------------------------------
+   THREE INTERNAL PAGES WERE IN THE PUBLIC SITEMAP when the SEO audit ran:
+   the native-animation test fixture, a dead measurement spike, and the
+   campaign landing template. The fixture has to stay PUBLISHED for its own
+   gate to fetch it, so drafting it is not available.
+
+   BOTH SWITCHES, because shipping one without the other is the classic
+   mistake: a sitemap exclusion does not stop a page being indexed if anything
+   links to it, and a noindex does not stop the page advertising itself in the
+   sitemap. functions.php drives both from one list, empower_hidden_slugs().
+
+   THE NOINDEX HALF NEEDED AIOSEO'S OWN FILTER. A core `wp_robots` filter was
+   written first and did nothing at all: AIOSEO replaces WordPress's robots tag
+   with one it builds itself, so the three pages still shipped
+   `max-image-preview:large` with no noindex in it. Only measuring the live tag
+   caught that, which is why this test reads the tag rather than the setting. */
+test('the internal pages are noindexed and out of the sitemap, and the real ones are not', { concurrency: 1 }, async () => {
+  const base = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const origin = new URL(base).origin;
+  const hidden = ['zz-native-animation-probe', 'zz-spike-markup', 'landing'];
+  const stamp = Date.now();
+  const wrong = [];
+
+  const robotsOf = async (slug, i) => {
+    const res = await fetch(`${origin}/${slug}/?empower_cb=nx-${stamp}-${i}`);
+    const html = await res.text();
+    return (html.match(/<meta name="robots" content="([^"]*)"/) ?? [, ''])[1];
+  };
+
+  for (const [i, slug] of hidden.entries()) {
+    const robots = await robotsOf(slug, i);
+    if (!/\bnoindex\b/.test(robots)) wrong.push(`/${slug}/ is not noindexed (robots: "${robots}")`);
+  }
+  /* The other half of the assertion, and the half that stops this passing by
+     noindexing the whole site: a real page must NOT be caught by the list. */
+  for (const [i, slug] of ['quality-education', 'who-we-are'].entries()) {
+    const robots = await robotsOf(slug, 100 + i);
+    if (/\bnoindex\b/.test(robots)) wrong.push(`/${slug}/ IS noindexed and must not be (robots: "${robots}")`);
+  }
+
+  const sitemap = await (await fetch(`${origin}/page-sitemap.xml?empower_cb=sm-${stamp}`)).text();
+  const listed = [...sitemap.matchAll(/<loc><!\[CDATA\[([^\]]*)/g)].map((m) => m[1]);
+  assert.ok(listed.length > 30, `the page sitemap lists only ${listed.length} URLs; it did not render properly`);
+  for (const slug of hidden) {
+    if (listed.some((u) => new URL(u).pathname === `/${slug}/`)) wrong.push(`/${slug}/ is still in page-sitemap.xml`);
+  }
+
+  assert.deepEqual(wrong, [],
+    `${wrong.length} problem(s) with the hidden-page set:\n${wrong.join('\n')}\n`
+    + 'Both effects come from empower_hidden_slugs() in the child theme: aioseo_robots_meta for the tag, '
+    + 'aioseo_sitemap_exclude_posts for the sitemap.');
+});
+
+/* THE TOP BAR ATE 73px OF A PHONE SCREEN. Reported by Paolo 2026-08-21 from a
+   390px screenshot: the strapline and the email address are a flex row with
+   flex-wrap, so below the width where they stop fitting side by side they
+   became two stacked lines at the very top of every page.
+
+   600px, AND THE NUMBER IS MEASURED. Stepping the viewport down in 5px
+   increments, the bar holds one line at 585px and wraps at 580px. 600 is the
+   first breakpoint the build already uses above that point.
+
+   THE EMAIL WAS THE ONLY mailto ON THE PAGE, checked before removing it: the
+   footer carries none. It does carry a "Contact Us" link, so a phone visitor
+   still has a route. That is the fact that makes this safe, and it is why the
+   assertion below is about the bar rather than about contact being reachable.
+
+   BOTH HALVES ARE ASSERTED. css/header-2.css hides the anchor; on the install
+   the flex child is an Elementor wrapper, so css/bridge.css has to hide that
+   too or a zero-width column keeps the row's 24px gap and pushes the strapline
+   12px off centre. `items` is what catches the second half. */
+test('the top bar drops its email on a phone and keeps it on a desktop', { concurrency: 1 }, async () => {
+  const { utilityBar } = await import('./fidelity-browser.mjs');
+  const url = process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/';
+  const bar = await utilityBar(url, [1440, 601, 600, 390]);
+
+  assert.ok(bar[1440], '.em-utility__bar is not on the page at all');
+  assert.equal(bar[1440].emailShown, true, 'the email has gone from the desktop top bar, where it belongs');
+  assert.equal(bar[1440].items, 2, `the desktop bar should carry both halves; it has ${bar[1440].items}`);
+
+  /* Either side of the boundary, so the rule cannot drift to a width that
+     leaves the wrap it exists to prevent. */
+  assert.equal(bar[601].emailShown, true, 'the email is hidden at 601px, one pixel wider than the rule should reach');
+  assert.equal(bar[600].emailShown, false, 'the email is still shown at 600px, so the breakpoint has moved');
+
+  assert.equal(bar[390].emailShown, false, 'the email is back on a phone');
+  assert.equal(bar[390].items, 1,
+    `the phone bar still has ${bar[390].items} flex items. The anchor is hidden but its Elementor wrapper is `
+    + 'not, so the row keeps a zero-width column and its gap; that is the :has() rule in css/bridge.css.');
+  assert.ok(bar[390].height <= 50,
+    `the top bar is ${bar[390].height}px at 390px. It was 73px before this fix and should now be one line.`);
+});
+
+/* --- the search listing copy --------------------------------------------
+   elementor/seo.mjs carries 34 titles and descriptions and NOTHING CHECKED
+   ANY OF IT. Written by a session that ended before committing; committed on
+   Paolo's instruction as 61f76bc after a hand check, and a hand check is not
+   a gate. Its own docblock states targets precise enough to test, which is
+   the whole reason these exist: the file tells you what correct means, so
+   correctness should not depend on whoever edits it next remembering.
+
+   WHY THE BANDS ARE THE FILE'S OWN NUMBERS AND NOT THE USUAL ADVICE. The
+   title band is 45-60 rather than the commonly quoted 50-60 because a bio
+   title is "<name>, <role>" and the longest names leave no room for a role;
+   the file argues that case and these assertions enforce the argument it
+   made, not a number from a blog post.
+
+   NOT TESTABLE AND DELIBERATELY NOT FAKED: that the copy is drawn from the
+   page's own approved text and invents no figure. That is Empower's rule and
+   a human reading; asserting a proxy for it would be worse than admitting the
+   gap. */
+test('every search listing holds the targets seo.mjs sets for itself', async () => {
+  const { PAGE_SEO, PERSON_SEO, ALL_SEO, BRAND_SUFFIX, fullTitle } = await import('./elementor/seo.mjs');
+
+  assert.equal(Object.keys(PAGE_SEO).length, 16, 'expected 16 converted-page listings');
+  assert.equal(Object.keys(PERSON_SEO).length, 13, 'expected 13 person listings');
+  assert.equal(Object.keys(ALL_SEO).length, 29, 'ALL_SEO should merge to 29; a key collides between the two');
+  assert.equal(BRAND_SUFFIX.length, 22, `the brand suffix is ${BRAND_SUFFIX.length} characters, and the title band is calculated around 22`);
+
+  /* THE BANDS ARE ASSERTED AS AN EXACT SET, NOT AS AN EMPTY ONE, because
+     three entries are deliberately outside them. Empower returned the
+     approval sheet on 2026-08-21 with edits that do not fit, and Paolo's
+     decision was that the returned document wins: their wording ships and
+     the band records the exception. Writing that as a skip-list would let
+     the band go quiet; writing it as an exact set means a FOURTH violation
+     goes red, and so does an exemption that stops being needed, which is
+     the failure this repository has already shipped twice with hand-written
+     page lists.
+
+     What each one costs, so the list can be argued with rather than merely
+     obeyed:
+       gina-metzger 64 and patrick-miller-2 66 truncate inside the brand
+       suffix, i.e. " - Empower Missi...". Name and role, the two halves
+       someone actually searched for, are both intact.
+       patrick-miller-2's 164-character description is the one with a real
+       cost: Google cuts it a few characters before the full stop. Dropping
+       the redundant "Dr. Patrick Miller is " opener would bring it to 142,
+       and that remains the fix if Empower would rather not be clipped.
+       capitol-chat at 137 is three characters of wasted snippet width and
+       nothing else. It is short because Empower took Wil Ervin's name out
+       of it. */
+  const OVER_LONG_TITLES = ['/person/gina-metzger/ (64)', '/person/patrick-miller-2/ (66)'];
+  const OUT_OF_BAND_DESCS = ['/capitol-chat/ (137)', '/person/patrick-miller-2/ (164)'];
+
+  const long = [], short = [], badDesc = [];
+  for (const path of Object.keys(ALL_SEO)) {
+    const title = fullTitle(path);
+    const desc = ALL_SEO[path].description;
+    if (title.length > 60) long.push(`${path} (${title.length})`);
+    if (title.length < 45) short.push(`${path} (${title.length}): ${title}`);
+    if (desc.length < 140 || desc.length > 160) badDesc.push(`${path} (${desc.length})`);
+  }
+  assert.deepEqual(long.sort(), [...OVER_LONG_TITLES].sort(),
+    `the set of titles over 60 characters is not the approved set.\nGot:      ${long.join(', ')}\n`
+    + `Expected: ${OVER_LONG_TITLES.join(', ')}\n`
+    + 'A new entry here truncates in a search result. An entry that has DISAPPEARED means the copy now '
+    + 'fits and the exemption above should be deleted with it.');
+  assert.deepEqual(short, [],
+    `${short.length} title(s) under 45 characters, wasting result width:\n${short.join('\n')}`);
+  assert.deepEqual(badDesc.sort(), [...OUT_OF_BAND_DESCS].sort(),
+    `the set of descriptions outside 140-160 characters is not the approved set.\nGot:      ${badDesc.join(', ')}\n`
+    + `Expected: ${OUT_OF_BAND_DESCS.join(', ')}\n`
+    + 'Under 140 wastes the snippet; over 160 is cut mid-sentence. Both are exempted by path, not by band.');
+
+  /* Duplicate descriptions are always wrong: two pages claiming the same
+     thing is the signal Google uses to decide one of them is not worth
+     indexing separately. */
+  const byDesc = new Map();
+  for (const [path, entry] of Object.entries(ALL_SEO)) {
+    byDesc.set(entry.description, [...(byDesc.get(entry.description) ?? []), path]);
+  }
+  const dupDesc = [...byDesc.values()].filter((paths) => paths.length > 1);
+  assert.deepEqual(dupDesc, [], `duplicate descriptions:\n${dupDesc.map((p) => p.join(' + ')).join('\n')}`);
+
+  /* Duplicate TITLES are asserted as an exact set rather than forbidden,
+     because exactly one is legitimate and known: Grant Callen has both the
+     converted template page and his CPT bio, which is the duplicate the
+     canonical filter in the child theme resolves. Forbidding duplicates
+     outright would fail on a state the build has deliberately chosen;
+     allowing any would let a real collision through. */
+  const byTitle = new Map();
+  for (const path of Object.keys(ALL_SEO)) {
+    byTitle.set(fullTitle(path), [...(byTitle.get(fullTitle(path)) ?? []), path]);
+  }
+  const dupTitle = [...byTitle.values()].filter((paths) => paths.length > 1).map((paths) => paths.sort());
+  assert.deepEqual(dupTitle, [['/grant-callen/', '/person/grant-callen/']],
+    'the only legitimate duplicate title is the Grant Callen pair, which the aioseo_canonical_url filter in '
+    + `the child theme resolves. Got:\n${JSON.stringify(dupTitle)}`);
+
+  assert.equal(fullTitle('/not-a-page/'), null, 'fullTitle() should return null for a path it does not carry');
+});
+
+/* COVERAGE, DERIVED FROM THE REGISTER AND FROM THE THEME'S OWN HIDDEN LIST,
+   so that adding an eighteenth converted page goes red here rather than
+   shipping without a description. A hand-written exemption for /landing/ was
+   the obvious way to write this and is exactly the failure this repository
+   has shipped twice: the exclusion is read out of empower_hidden_slugs() in
+   functions.php instead, so a page that stops being hidden immediately starts
+   demanding copy. */
+test('every converted page has a search listing, unless the theme hides it', async () => {
+  const { PAGE_SEO } = await import('./elementor/seo.mjs');
+  const php = fs.readFileSync(path.join(process.cwd(), 'wp/empowerms-child/functions.php'), 'utf8');
+  const block = php.match(/function empower_hidden_slugs\(\)\s*\{[\s\S]*?return array\(([^)]*)\)/);
+  assert.ok(block, 'empower_hidden_slugs() is gone from the child theme; this test cannot derive its exclusions');
+  const hidden = [...block[1].matchAll(/'([^']+)'/g)].map((m) => `/${m[1]}/`);
+  assert.ok(hidden.length > 0, 'empower_hidden_slugs() parsed to an empty list');
+
+  const converted = [...PAGE_REGISTER, ...EXCLUDED_PAGES]
+    .filter((p) => p.exampleUrl)
+    .map((p) => new URL(p.exampleUrl).pathname);
+  assert.ok(converted.length > 10, `only ${converted.length} converted pages found; the register did not load`);
+
+  const missing = converted.filter((p) => !PAGE_SEO[p] && !hidden.includes(p));
+  const extra = Object.keys(PAGE_SEO).filter((p) => !converted.includes(p));
+
+  assert.deepEqual(missing, [],
+    `${missing.length} converted page(s) have no search listing and are not hidden by the theme:\n  `
+    + `${missing.join('\n  ')}\nAdd an entry to PAGE_SEO in elementor/seo.mjs, or add the slug to `
+    + 'empower_hidden_slugs() if the page should not be found at all.');
+  assert.deepEqual(extra, [],
+    `${extra.length} PAGE_SEO entr(ies) point at a path that is not a converted page:\n  ${extra.join('\n  ')}`);
+});
+
+/* THE LIVE HALF, and it is the one the pure tests structurally cannot do: a
+   path resolving to a real post is not knowable from a file. deploy-seo.mjs
+   throws on an unresolved path, but only when somebody runs it, and it has
+   never been run: the copy is committed and deliberately undeployed until
+   Empower approve the wording. So the day a slug moves, nothing would say so
+   until a deploy that might be weeks away, and the error would arrive with
+   the copy half written to the install.
+
+   PERSON COVERAGE IS DERIVED FROM THE INSTALL, not from a count typed here.
+   The bios are CPT entries; there is no page directory to walk and no
+   register row, so the only honest source for "who exists" is the install
+   itself. Publish one more person and this goes red naming them.
+
+   THAT DERIVATION IS WHAT MAKES THE 2026-08-21 REMOVAL SAFE. Empower
+   returned the approval sheet with five rows emptied (Wil Ervin, Brett
+   Kittredge, Steven Randle, Katie Elliott, Christopher Koopman), Paolo's
+   decision was to drop their listings AND set their posts to draft, and this
+   assertion is the thing that keeps the two halves in step: it reads who is
+   published rather than trusting a number, so if any of the five is
+   republished without their listing coming back, this goes red naming them.
+   The reverse case, a listing with no published post, is caught by the
+   url_to_postid pass above. */
+test('every search listing points at a real post, and no published person is missing one', { concurrency: 1 }, async () => {
+  const { ALL_SEO, PERSON_SEO } = await import('./elementor/seo.mjs');
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const origin = new URL(process.env.HOME_URL ?? 'https://empv2.wpenginepowered.com/').origin;
+
+  /* One wp eval for every path, and the ids read back on the node side. Never
+     captured into a remote shell variable: wpe.mjs documents at length how a
+     WP-CLI value glued to a PHP deprecation notice becomes the next command's
+     argument, and this repository has lost time to it twice. */
+  const paths = Object.keys(ALL_SEO);
+  const php = paths.map((p) => `echo url_to_postid("${origin}${p}"), "\\n";`).join('');
+  const ids = stripNotices(await wpe(`wp eval '${php}'`))
+    .split('\n').map((line) => parseInt(line.trim(), 10));
+
+  assert.equal(ids.length, paths.length,
+    `asked for ${paths.length} ids and got ${ids.length} lines back; the wp eval output did not parse`);
+  const unresolved = paths.filter((p, i) => !Number.isInteger(ids[i]) || ids[i] === 0);
+  assert.deepEqual(unresolved, [],
+    `${unresolved.length} search listing(s) point at a path with no post on the install:\n  `
+    + `${unresolved.join('\n  ')}\nA slug has moved, and deploy-seo.mjs would refuse to run.`);
+
+  /* The inverse: a person who exists and has no listing would simply never be
+     noticed, because nothing else enumerates them. */
+  const slugs = stripNotices(await wpe('wp post list --post_type=person --post_status=publish --field=name --format=csv'))
+    .split('\n').map((s) => s.trim()).filter((s) => s && s !== 'name');
+  assert.ok(slugs.length > 10, `only ${slugs.length} published people found on the install; the query did not work`);
+
+  const uncovered = slugs.map((s) => `/person/${s}/`).filter((p) => !PERSON_SEO[p]);
+  assert.deepEqual(uncovered, [],
+    `${uncovered.length} published person page(s) have no search listing:\n  ${uncovered.join('\n  ')}\n`
+    + 'Add them to PERSON_SEO in elementor/seo.mjs. Their bios do carry an auto-generated description, but it '
+    + 'is the opening 350-420 characters of the biography, which Google cuts mid-sentence.');
+});
+
+/* --- the legacy duplicates that competed with the converted pages --------
+
+   THE PROBLEM THESE REDIRECTS SOLVE was invisible to every gate in this file
+   until 2026-08-21, because it is not a defect in any page. Sixteen converted
+   pages got approved titles and descriptions, and twelve legacy pages sat
+   beside them answering the same queries: all indexable, all SELF-canonical,
+   all in page-sitemap.xml, several on older and better-established URLs. Each
+   page was individually correct. The site was competing with itself.
+
+   THREE OF THE TWELVE ARE DELIBERATELY STILL THERE and this test asserts they
+   still return 200, which is the unusual half. /become-an-ambassador/ serves
+   live Gravity Form 37 and /become-an-advocate-for-change/ serves form 41,
+   while the converted /ambassadors/ carries no form at all: a 301 from the
+   working signup onto the form-shaped design would end ambassador signups and
+   report success doing it. /learn-more/ is the target of five campaign rules,
+   one of them a printed QR code. A future tidy-up that "finishes the job" by
+   redirecting those three is the expensive mistake here, so the assertion is
+   written to stop it rather than to leave it to a comment.
+
+   ONE HOP, NOT JUST A 301. Four existing rules landed on pages that this work
+   then redirected again, and a chain passes any check that only asks "does it
+   redirect". The hop count is the assertion. */
+test('the legacy duplicates redirect in one hop, and the pages with forms do not', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+  const { REDIRECTS, REPOINT, MUST_STAY_DISABLED, DELIBERATELY_NOT_REDIRECTED } =
+    await import('./elementor/redirects.mjs');
+
+  /* Sources and their repointed rules together: both must land in one hop. */
+  const hops = [...REDIRECTS, ...REPOINT.map((r) => ({ from: r.from, to: r.to }))];
+  const wrong = [];
+  for (const { from, to } of hops) {
+    const res = await fetch(origin + from, { redirect: 'manual' });
+    const loc = res.headers.get('location');
+    const landed = loc ? new URL(loc, origin).pathname : null;
+    if (res.status !== 301 || landed !== to) {
+      wrong.push(`${from} -> ${res.status} ${landed ?? '(no location)'}, expected 301 ${to}`);
+      continue;
+    }
+    /* The destination must be the END of the chain, not another rule. */
+    const onward = await fetch(origin + to, { redirect: 'manual' });
+    if (onward.status !== 200) {
+      wrong.push(`${from} -> ${to} -> ${onward.status}: the destination is not final, this is a chain`);
+    }
+  }
+  assert.deepEqual(wrong, [],
+    `${wrong.length} legacy redirect(s) wrong:\n  ${wrong.join('\n  ')}\n`
+    + 'Run node elementor/deploy-redirects.mjs, or fix elementor/redirects.mjs.');
+
+  /* The three that must NOT be redirected, and why is in redirects.mjs. */
+  const broken = [];
+  for (const { path, why } of DELIBERATELY_NOT_REDIRECTED) {
+    const res = await fetch(origin + path, { redirect: 'manual' });
+    if (res.status !== 200) broken.push(`${path} now returns ${res.status}, and it must stay 200: ${why}`);
+  }
+  assert.deepEqual(broken, [],
+    `${broken.length} page(s) that must NOT be redirected have been:\n  ${broken.join('\n  ')}`);
+
+  /* The loaded guns: three existing rules are the exact reverse of three of
+     the redirects above, and enabling any of them makes both pages
+     unreachable. They read as harmless in the plugin's own list screen. */
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+  const ids = MUST_STAY_DISABLED.map((r) => r.id).join(',');
+  const live = stripNotices(await wpe(
+    `wp eval 'global $wpdb; foreach ( $wpdb->get_results( "SELECT id, status FROM {$wpdb->prefix}redirection_items `
+    + `WHERE id IN (${ids})" ) as $r ) { echo $r->id, "=", $r->status, "\\n"; }'`,
+  )).split('\n').map((l) => l.trim()).filter(Boolean);
+  const armed = live.filter((l) => !l.endsWith('=disabled'));
+  assert.deepEqual(armed, [],
+    `${armed.length} reverse redirect rule(s) are no longer disabled: ${armed.join(', ')}\n`
+    + MUST_STAY_DISABLED.map((r) => `  id ${r.id}: ${r.rule} loops with ${r.loopsWith}`).join('\n')
+    + '\nEnabling one of these makes both pages unreachable.');
+});
+
+/* AIOSEO CANNOT SEE THE REDIRECTION PLUGIN, so the nine redirected pages stayed
+   in page-sitemap.xml after the redirects went live: still `publish`, still
+   advertised, every one of them an instruction to crawl a URL that bounces.
+   empower_redirected_slugs() in the child theme hands them to AIOSEO's own
+   exclude filter.
+
+   THE PHP LIST AND THE JS LIST ARE THE SAME NINE STRINGS in two files, which is
+   the drift this repository keeps getting bitten by, so the first assertion
+   reads the PHP function's source and compares it to redirects.mjs. Adding a
+   tenth redirect without adding it to the theme goes red here rather than
+   quietly leaving it in the sitemap. */
+test('the redirected pages leave the sitemap', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+  const { REDIRECTS } = await import('./elementor/redirects.mjs');
+  const { readFile } = await import('node:fs/promises');
+
+  const php = await readFile('./wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.match(/function empower_redirected_slugs\(\)\s*\{\s*return array\(([\s\S]*?)\);/);
+  assert.ok(fn, 'empower_redirected_slugs() not found in the child theme; the sitemap exclusion is gone');
+  const phpSlugs = [...fn[1].matchAll(/'([^']+)'/g)].map((m) => m[1]).sort();
+  const jsSlugs = REDIRECTS.map((r) => r.from.replace(/^\/|\/$/g, '')).sort();
+  assert.deepEqual(phpSlugs, jsSlugs,
+    'empower_redirected_slugs() in functions.php disagrees with REDIRECTS in elementor/redirects.mjs.\n'
+    + `  php: ${phpSlugs.join(', ')}\n  js : ${jsSlugs.join(', ')}\n`
+    + 'Two files holding one list; a redirect missing from the PHP stays in the sitemap.');
+
+  const xml = await (await fetch(`${origin}/page-sitemap.xml`)).text();
+  const listed = REDIRECTS.map((r) => r.from).filter((p) => xml.includes(p));
+  assert.deepEqual(listed, [],
+    `${listed.length} redirected page(s) are still in page-sitemap.xml:\n  ${listed.join('\n  ')}\n`
+    + 'The sitemap is telling Google to crawl URLs that immediately redirect. Deploy the theme, then flush '
+    + '(wp page-cache flush && wp cdn-cache flush): AIOSEO caches the sitemap.');
+});
+
+/* --- wp/ship.mjs / comments must not reach the wire ---------------------- */
+
+/* Measured cold on 2026-08-27, mobile 412x823 / Slow 4G / 4x CPU, against
+   the homepage on empv2: css/bridge.css is 443 KB on disk and 141 KB over
+   the wire, render-blocking, on EVERY converted page. 94% of its bytes are
+   the explanatory comments this repository writes on purpose. The same
+   rules with those comments removed are 4.6 KB gzipped.
+
+   The comments are not the problem: they are the reason the bridge is
+   maintainable, and they stay in the repository. What is wrong is that the
+   deploy is a plain rsync of the source, so documentation written for a
+   reader is paid for by every visitor. wp/ship.mjs stages a stripped copy
+   and the CSS passes of syncTheme() read from the stage.
+
+   Note what this can and cannot prove. That the stripped bytes render the
+   same page is a browser question, asserted below through the CSSOM rather
+   than by re-implementing a CSS parser here: a hand-rolled comment scanner
+   checked against a hand-rolled comment scanner proves only that the same
+   author made the same mistake twice. */
+
+test('stripCss drops a block comment and keeps the rule that followed it', async () => {
+  const { stripCss } = await import('./wp/ship.mjs');
+  const out = stripCss('/* why this exists */\n.a{color:red}\n');
+  assert.ok(!out.includes('why this exists'), `the comment survived: ${JSON.stringify(out)}`);
+  assert.ok(out.includes('.a{color:red}'), `the rule did not survive: ${JSON.stringify(out)}`);
+});
+
+/* The failure mode a naive /\/\*[\s\S]*?\*\// has, and the reason this is a
+   scanner and not a regex. `content` is the only property in CSS whose value
+   is arbitrary author text, and this build uses it (the orange rule motif,
+   the chevrons). A stray comment opener inside one would make the regex eat
+   everything up to the next real close, silently deleting whatever sat
+   between them. */
+test('stripCss leaves a comment opener alone when it sits inside a quoted value', async () => {
+  const { stripCss } = await import('./wp/ship.mjs');
+  const src = '.a::before{content:"/*"}\n.b{color:blue}\n';
+  const out = stripCss(src);
+  assert.ok(out.includes('content:"/*"'), `the quoted value was altered: ${JSON.stringify(out)}`);
+  assert.ok(out.includes('.b{color:blue}'), `the rule after the quoted opener was eaten: ${JSON.stringify(out)}`);
+});
+
+test('buildShipped stages every shipped stylesheet with no comment left in it', async () => {
+  const { buildShipped, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-'));
+  try {
+    buildShipped({ out });
+    let seen = 0;
+    for (const dir of SHIP_CSS_DIRS) {
+      for (const f of fs.readdirSync(path.join(out, dir)).filter((n) => n.endsWith('.css'))) {
+        const css = fs.readFileSync(path.join(out, dir, f), 'utf8');
+        assert.ok(!css.includes('/*'), `${dir}/${f} still ships a comment`);
+        seen += 1;
+      }
+    }
+    assert.ok(seen > 20, `expected the build's stylesheets, staged ${seen}`);
+    const bridge = fs.readFileSync(path.join(out, 'wp/empowerms-child/css/bridge.css'), 'utf8');
+    assert.ok(!bridge.includes('/*'), 'bridge.css still ships a comment');
+    assert.ok(bridge.length < 60_000,
+      `bridge.css staged at ${bridge.length} bytes; its rules are around 26 KB, so the comments are still in it`);
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+/* rsync -a compares size and mtime, and empower_asset_ver() keys ?ver= on the
+   SERVER's filemtime. A stage built with fresh mtimes therefore re-transfers
+   every stylesheet on every deploy and busts every visitor's cache each time,
+   whether or not a single byte of CSS changed. Carrying the source's mtime
+   across keeps both properties: unchanged CSS neither moves nor re-versions. */
+test('buildShipped gives each staged stylesheet its source file mtime', async () => {
+  const { buildShipped } = await import('./wp/ship.mjs');
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-'));
+  try {
+    buildShipped({ out });
+    const src = fs.statSync('css/site.css').mtimeMs;
+    const staged = fs.statSync(path.join(out, 'css/site.css')).mtimeMs;
+    assert.equal(Math.round(staged), Math.round(src),
+      'the staged copy carries its own build time, so every deploy re-uploads and re-versions unchanged CSS');
+  } finally {
+    fs.rmSync(out, { recursive: true, force: true });
+  }
+});
+
+/* The gate that makes the rest of this matter. stripCss can be perfect and
+   the install still receives the commented source, because the deploy is
+   what reaches it. Same shape as the bridge.css protection test above: read
+   the arguments syncTheme ITSELF issues, not a helper's, because the call
+   site is the thing that runs. */
+test('the css passes syncTheme issues read from the shipped stage, not the repository source', async () => {
+  const { SHIP_DIR, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const issued = [];
+  const dest = await syncTheme({
+    run: (cmd, args) => { issued.push(args); return Promise.resolve({ stdout: '', stderr: '' }); },
+    config: { host: 'host', key: 'key-unused', root: '/root' },
+  });
+
+  /* rsync's own argument order is the only reliable key here: the source is
+     the second-to-last argument and the destination the last. Matching on
+     "an argument ending in tokens/" instead finds pass one's own
+     `--exclude /tokens/` and reads that as the source. */
+  const sourceFor = (dir) => {
+    const pass = issued.find((args) => args.at(-1) === `host:${dest}/${dir}/`);
+    assert.ok(pass, `syncTheme issued no pass delivering ${dir}/ at all`);
+    return pass.at(-2);
+  };
+
+  for (const dir of SHIP_CSS_DIRS) {
+    assert.equal(sourceFor(dir), `${SHIP_DIR}/${dir}/`,
+      `${dir}/ is synced straight from the repository, so its comments still reach every visitor`);
+  }
+
+  /* The bridge pass shares its destination with the css/ pass, so it is found
+     by its source instead: it is the last thing syncTheme issues. */
+  assert.equal(issued.at(-1).at(-2), `${SHIP_DIR}/wp/empowerms-child/css/`,
+    'bridge.css is synced straight from the repository, and it is the largest render-blocking file on every page');
+
+  /* js/, assets/ and patterns/ are not CSS and are not staged: a stage that
+     quietly swallowed them would be a much larger change than this one. */
+  assert.equal(sourceFor('js'), 'js/',
+    'js/ is no longer synced from the repository root, so the stage has grown past CSS');
+});
+
+/* The correctness question, put to a real CSS parser rather than to a second
+   copy of the code under test. Chromium drops comments when it parses, so a
+   source stylesheet and its stripped copy must serialise to identical rule
+   text; any rule stripCss damaged shows up as a difference or as a rule the
+   browser refused to parse at all. */
+test('every shipped stylesheet parses to the same rules after stripping, read back through the CSSOM', async () => {
+  const { stripCss, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const sheets = [...SHIP_CSS_DIRS.flatMap((dir) => fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.css'))
+    .map((f) => path.join(dir, f))), 'wp/empowerms-child/css/bridge.css'];
+  assert.ok(sheets.length > 20, `expected the build's stylesheets, found ${sheets.length}`);
+
+  const { chromium } = await import('playwright');
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    for (const sheet of sheets) {
+      const src = fs.readFileSync(sheet, 'utf8');
+      const [before, after] = await page.evaluate(([a, b]) => {
+        const serialise = (css) => {
+          const s = new CSSStyleSheet();
+          s.replaceSync(css);
+          return [...s.cssRules].map((r) => r.cssText).join('\n');
+        };
+        return [serialise(a), serialise(b)];
+      }, [src, stripCss(src)]);
+      assert.ok(before.length > 0, `${sheet} parsed to no rules at all, so this test is reading nothing`);
+      assert.equal(after, before, `${sheet} does not parse to the same rules after stripping`);
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
+/* --- the header's closed state / the two gaps the 2026-08-20 gate left ----- */
+
+/* Measured cold on 2026-08-27 (mobile 412x823, Slow 4G, 4x CPU) against the
+   deployed homepage, and both of these are the SAME defect the gate above was
+   written for, still costing CLS after it:
+
+   1. #mobile-nav was never gated. The dropdown and search panels are, because
+      js/dropdown.js and theme-js/search.js write "on" into their own root
+      attributes as they run. js/nav.js writes nothing: it only does
+      `panel.hidden = true`. So the mobile panel keeps shipping open until a
+      deferred script runs, and it is ~927px tall. Instrumented: .fp-hero sat
+      at y=1064 until nav.js landed, then jumped to y=137. That single shift
+      scored 0.8335.
+
+   2. The four-second timeout fires BEFORE the scripts arrive on a real slow
+      connection, which is the one case it exists for. The inline script ran
+      at 698ms, the timeout fired at 4,698ms and removed both attributes, and
+      dropdown.js and search.js set them to "on" at 4,975ms. The header went
+      137px -> 266px -> 137px in a 277ms window, scoring 0.1307 twice. The
+      docblock's "four seconds is well past any load this install produces"
+      rests on a 1,397ms measurement that was not made on a cold cache.
+
+   Together: CLS 1.02. With #mobile-nav gated and the clear moved to
+   DOMContentLoaded, measured against the live page through an injected
+   equivalent of both changes: CLS 0.000.
+
+   DOMContentLoaded rather than a longer timeout, because it is not a guess.
+   Deferred scripts run to completion before it fires, so by then every script
+   has either written "on" or failed, and no arithmetic about how slow a
+   connection might be has to be right. */
+
+/* Exported shape, so the browser test below runs the gate this file actually
+   emits rather than a copy of it that can drift. */
+function headerGateScript() {
+  const src = themeFile('functions.php');
+  /* Keyed on the gate's own content, not on its position: functions.php
+     registers three wp_head callbacks, and matching the first one that parses
+     read a different hook entirely and reported the gate as broken. */
+  const block = [...src.matchAll(/add_action\(\s*'wp_head',\s*function \(\) \{[\s\S]*?\}\s*,\s*\d+\s*\);/g)]
+    .map((m) => m[0])
+    .find((b) => b.includes("'pending'"));
+  assert.ok(block, 'no wp_head callback in functions.php emits a pending gate, so the tests below are reading nothing');
+  const parts = [...block.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+  assert.ok(parts.length > 0, 'the wp_head gate emitted no string literal, so this extraction has drifted from the code');
+  return parts.join('').replace(/\\n/g, '\n');
+}
+
+test('the header gate marks the mobile nav panel pending, not only the dropdown and search panels', () => {
+  const gate = headerGateScript();
+  assert.match(gate, /setAttribute\(\s*'data-nav'\s*,\s*'pending'\s*\)/,
+    'the mobile nav panel is not gated, so it ships open until js/nav.js runs and takes ~927px of the page with it');
+});
+
+test('the header gate clears its pending attributes on DOMContentLoaded, not on a fixed timer', () => {
+  const gate = headerGateScript();
+  assert.match(gate, /DOMContentLoaded/,
+    'the gate does not clear on DOMContentLoaded, so how long it waits is a guess about connection speed');
+  assert.doesNotMatch(gate, /setTimeout/,
+    'the gate still clears on a timer: on a cold Slow 4G load the timer fired 277ms before the scripts arrived and cost 0.26 CLS');
+});
+
+test('bridge.css takes the mobile nav panel out of flow while the nav gate is pending', () => {
+  const css = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  assert.match(css, /\[data-nav="pending"\]\s*#mobile-nav\s*\{[^}]*display\s*:\s*none/,
+    'no rule closes #mobile-nav while its gate is pending, so the gate attribute is set and nothing keys on it');
+});
+
+/* The contract the gate exists to protect, exercised rather than described:
+   JavaScript is ON and the script that would close the panel never arrives.
+   The panel must be closed while the page is parsing and OPEN once parsing
+   finishes, because a visitor whose nav script 404s must still have a nav.
+   A gate that closed the panel and never reopened it would pass all three
+   assertions above and silently delete the navigation. */
+test('a nav script that never arrives leaves the mobile panel open, and the gate closes it until then', async () => {
+  const gate = headerGateScript().replace(/^<script>|<\/script>\s*$/g, '');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'navgate-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'page.html'), `<!doctype html><html><head>
+<style>[data-nav="pending"] #mobile-nav{display:none}</style>
+<script>${gate}</script>
+<script defer src="./this-script-never-arrives.js"></script>
+</head><body>
+<div id="mobile-nav" style="height:900px">the navigation</div>
+<script>
+  window.__duringParse = getComputedStyle(document.getElementById('mobile-nav')).display;
+  document.addEventListener('DOMContentLoaded', () => {
+    window.__afterParse = getComputedStyle(document.getElementById('mobile-nav')).display;
+  });
+</script>
+</body></html>`);
+
+    const { chromium } = await import('playwright');
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage();
+      await page.goto(`file://${path.join(dir, 'page.html')}`, { waitUntil: 'load' });
+      const during = await page.evaluate(() => window.__duringParse);
+      const after = await page.evaluate(() => window.__afterParse);
+      assert.equal(during, 'none',
+        'the panel was in flow while the page was still parsing, which is the 927px jump this gate exists to remove');
+      assert.equal(after, 'block',
+        'the panel stayed closed after parsing finished even though no script ever ran: a visitor whose nav script fails now has no navigation at all');
+    } finally {
+      await browser.close();
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+/* --- Elementor's Google Fonts / a family this build never uses ------------ */
+
+/* Measured on the deployed homepage, 2026-08-27: every page requests
+   fonts.googleapis.com/css?family=Inter with eighteen weights and styles. It
+   is render-blocking and it opens two cross-origin connections
+   (fonts.googleapis.com, then fonts.gstatic.com for the files it names).
+
+   Nothing in this build asks for it. The design self-hosts Figtree and
+   Source Sans 3 from tokens/fonts.css; Inter comes from Elementor's own kit,
+   seeded there by UiCore before it was switched off (see the UiCore notes:
+   what it wrote into the kit outlives the plugin). So this is a request for a
+   typeface no visitor will ever see, on the critical path of every page. */
+
+test('no shipped stylesheet declares a font this build does not self-host', async () => {
+  const { stripCss, SHIP_CSS_DIRS } = await import('./wp/ship.mjs');
+  const hosted = new Set(
+    [...fs.readFileSync('tokens/fonts.css', 'utf8').matchAll(/font-family:\s*'([^']+)'/g)].map((m) => m[1]),
+  );
+  assert.ok(hosted.size > 0, 'tokens/fonts.css declared no @font-face family, so this test is reading nothing');
+
+  /* Comments stripped FIRST, and that is the point of doing it here rather
+     than grepping the file. Inter's only appearance in this repository is
+     inside a css/bridge.css comment documenting what Elementor's kit does,
+     and a negative source assertion that matched it would report a font as
+     used when nothing uses it. The same trap turned a style-key gate red
+     against correct code on 2026-08-27. */
+  /* The CSS-wide keywords belong here with the generic families: `revert` is
+     a value, not a typeface, and this list not knowing that was the first
+     thing this test reported. */
+  const generic = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer',
+    'sans-serif', 'serif', 'monospace', 'system-ui',
+    'ui-sans-serif', 'ui-serif', 'ui-monospace', 'cursive', 'fantasy', '-apple-system', 'BlinkMacSystemFont']);
+  const sheets = [...SHIP_CSS_DIRS.flatMap((dir) => fs.readdirSync(dir)
+    .filter((f) => f.endsWith('.css')).map((f) => path.join(dir, f))), 'wp/empowerms-child/css/bridge.css'];
+
+  const named = new Map();
+  for (const sheet of sheets) {
+    const css = stripCss(fs.readFileSync(sheet, 'utf8'));
+    for (const m of css.matchAll(/font-family:\s*([^;}]+)/g)) {
+      for (const raw of m[1].split(',')) {
+        const family = raw.trim().replace(/^["']|["']$/g, '');
+        if (!family || family.startsWith('var(') || generic.has(family)) continue;
+        if (!hosted.has(family)) named.set(family, sheet);
+      }
+    }
+  }
+  assert.deepEqual([...named.keys()].sort(), [],
+    `these families are named by a shipped stylesheet but not self-hosted in tokens/fonts.css: ${[...named].map(([f, s]) => `${f} (${s})`).join(', ')}`);
+});
+
+test('the theme stops Elementor printing Google Fonts', () => {
+  const fn = themeFile('functions.php');
+  assert.match(fn, /add_filter\(\s*'elementor\/frontend\/print_google_fonts'\s*,\s*'__return_false'\s*\)/,
+    'Elementor still prints its kit\'s Google Fonts, so every page opens two cross-origin connections for a typeface nothing uses');
+});
+
+test('the deployed page requests no font from Google', { concurrency: 1 }, async () => {
+  const url = requireSpikeUrl();
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+  const hits = [...html.matchAll(/fonts\.(?:googleapis|gstatic)\.com[^"')\s]*/g)].map((m) => m[0]);
+  assert.deepEqual(hits, [],
+    `the deployed page still reaches Google for fonts: ${hits.slice(0, 3).join(', ')}`);
+});
+
+/* --- wp-user-avatar / a form widget on pages with no form ---------------- */
+
+/* ProfilePress (the wp-user-avatar directory) enqueues select2, flatpickr and
+   its own frontend bundle on every page of this install. Measured cold on the
+   deployed homepage, 2026-08-27: 60 KB across six requests, FIVE of them
+   render-blocking, and the two libraries are a searchable <select> and a date
+   picker. The homepage has neither. Nor does any converted page: the only
+   form-shaped pages in this build are Join Us, and those are Gravity Forms.
+   It is the largest first-party cost left on the page after today's work.
+   
+   SCOPED TO CONVERTED PAGES, deliberately, via empower_style_key(). About
+   thirty campaign pages on this install are still Beaver Builder and have not
+   been looked at; dropping a plugin's assets out from under them to save
+   bytes on a page nobody measured would be trading a known cost for an
+   unknown breakage. Where the key is empty, nothing changes.
+   
+   DEQUEUED BY SRC RATHER THAN BY HANDLE. ProfilePress's handle names are not
+   documented and are not visible from this repository, so a hand-written list
+   of them would be a guess that fails silently the day the plugin renames
+   one. Matching the plugin's own directory in the registered src is a fact
+   about the URL that reaches the browser, which is the thing being removed. */
+
+test('the wp-user-avatar dequeue is scoped to converted pages, not the whole install', () => {
+  const fn = themeFile('functions.php');
+  const block = fn.match(/function empower_drop_unused_plugin_assets[\s\S]*?\n\}/);
+  assert.ok(block, 'empower_drop_unused_plugin_assets was not found in functions.php');
+  /* empower_style_key() ALONE IS NOT A SCOPE, and the first version of this
+     test accepted it as one. The key is the post slug for every singular
+     request, so it is non-empty on the roughly thirty Beaver campaign pages
+     too: a guard written on it reads as "converted pages only" and behaves as
+     "everything except tag archives, date archives and search". Membership of
+     empower_page_styles() is the register, and it is what the reveal gate is
+     already derived from, so "a page this project converted" keeps one
+     definition rather than gaining a second. */
+  assert.match(block[0], /empower_page_styles\(\)/,
+    'the dequeue consults no register, so it strips every page on the install including the unconverted Beaver ones');
+  assert.match(block[0], /wp-user-avatar/,
+    'the dequeue names no plugin directory, so it removes nothing');
+  assert.match(block[0], /->src/,
+    'the dequeue matches on handle names rather than on the registered src, which is a guess that fails silently when the plugin renames one');
+});
+
+test('a converted page loads no wp-user-avatar asset', { concurrency: 1 }, async () => {
+  const url = requireSpikeUrl();
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+  const hits = [...html.matchAll(/[^"']*plugins\/wp-user-avatar\/[^"']*/g)].map((m) => m[0].split('/').pop());
+  assert.deepEqual(hits, [],
+    `the page still loads ProfilePress assets it has no form for: ${hits.join(', ')}`);
+});
+
+/* The other half of that scope, asserted from the outside. A source test can
+   see that the register is consulted; only the install can say whether an
+   unconverted page kept what it was left alone with. This is the test that
+   was missing when the dequeue shipped scoped to nothing, and it is the one
+   that would have caught it: three Beaver pages had silently lost the plugin
+   before anyone looked. */
+test('an unconverted Beaver page keeps the plugin assets the converted pages drop', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    {
+      name: 'a page still built in Beaver Builder',
+      envVar: 'BEAVER_URL',
+      exampleUrl: 'https://empv2.wpenginepowered.com/2025-tax-calculator/',
+    },
+    t,
+  );
+  if (!url) return;
+
+  const res = await fetch(url, { redirect: 'follow' });
+  assert.ok(res.ok, `${url} returned ${res.status}`);
+  const html = await res.text();
+
+  assert.match(html, /fl-builder|fl-node-/,
+    `${url} carries no Beaver Builder markup, so it is not the unconverted page this test needs`);
+  assert.ok(html.includes('plugins/wp-user-avatar'),
+    'an unconverted page lost its ProfilePress assets: the dequeue is running site-wide, not on the register');
 });

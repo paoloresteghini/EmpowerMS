@@ -1,0 +1,529 @@
+/* ==========================================================================
+   SINGLE POST — the closing "More" grid, given the All Content card design
+   ==========================================================================
+
+   WHAT THIS SHEET IS FOR, AND WHAT IT IS NOT.
+
+   /kyle-jackson-a-fathers-footsteps/ and the other 489 posts on this install
+   are NOT converted. They render through a Beaver Themer layout, "Post
+   Singular" (fl-theme-layout post 11272, published), which owns the whole
+   page: the title, the post content, the author callout and the closing "More"
+   grid are all Beaver Builder modules. `wp/empowerms-child/single.php` never
+   draws them; it asks Elementor for a `single` location first, gets nothing
+   for post type `post`, and Beaver's own template_include has already won by
+   then. The proof is on the rendered page: `<body>` carries
+   `fl-theme-builder-singular-post-singular`, and the grid is
+   `.fl-module-post-grid`.
+
+   So this sheet is a REVERSIBLE DRESSING ON LEGACY MARKUP, not a conversion.
+   Paolo's 2026-08-20 instruction was narrow: "can we fix the 'MORE' section at
+   the bottom? Use the same card style as the rest of the 'all content'". The
+   card design it points at is `.cad-card` in css/content-a.css:202-300, which
+   is the signed-off All Content page. Every rule below is that design applied
+   to the class names Beaver already emits. Nothing here changes any markup,
+   any Beaver setting or any post, so converting single posts later deletes
+   this file and loses nothing.
+
+   THE MARKUP IT DRESSES, read off the live page rather than assumed:
+
+       div.fl-post-grid
+         div.fl-post-column                  one per card on this layout
+           div.fl-post-grid-post .has-post-thumbnail?   <- .cad-card
+             a.pcw-post-card-image-link
+               div.pcw-post-card-image       background-image, not an <img>
+             div.pcw-post-card-content
+               a.post-card-content-link      <- .cad-card__body
+                 header.pcw-post-card-header
+                   span.pcw-post-card-category   <- .cad-card__topic
+                   h3.pcw-post-card-title        <- .cad-card__title
+                   span.pcw-post-card-author
+                 section.pcw-post-card-excerpt
+         div.fl-clear
+
+   The `pcw-` prefix is not Beaver's own. It comes from a custom post-grid
+   layout that lives on the install rather than in this repository (no file
+   under wp-content matches it), so the markup is treated here as a fixed
+   input: read, never edited.
+
+   THREE DIFFERENCES FROM .cad-card, all forced by that markup:
+
+   1. NO DATE. `.cad-card__meta` is a topic and a date side by side. This
+      markup emits the date only into a `<meta itemprop="datePublished">`,
+      which is not renderable text, and emits an AUTHOR line instead. So the
+      author takes the date's position and the date's muted treatment, and the
+      meta line is a column rather than a row because the two strings are a
+      caps eyebrow and a sentence rather than two eyebrows. Adding a real date
+      means editing the install-side layout, which is reported rather than done
+      here.
+
+   2. THE PHOTOGRAPH IS A BACKGROUND, NOT AN <img>, so it gets
+      `background-size:cover` in place of `object-fit:cover`. The 3:2 plate,
+      the grey underneath it and the 1.035 hover scale are all
+      css/content-a.css:262-274's own.
+
+      IT IS HIDDEN WHEN THERE IS NO FEATURED IMAGE, and that has to be gated on
+      the POST rather than on the image: the layout writes
+      `style="background-image: url();"` with an empty url for a post with no
+      thumbnail, which is an invalid value, so the declaration is dropped and
+      the computed `background-image` is `none` either way. CSS cannot tell
+      that apart from a card that simply has no rule. What it CAN see is
+      WordPress's own `has-post-thumbnail` class on `.fl-post-grid-post`, which
+      the same render carries, so the empty plate is suppressed from there. On
+      the page this was built against two of the three cards have no featured
+      image, so this is the common case and not an edge one.
+
+   3. THE WHOLE PLATE IS THE CLICK TARGET VIA `.post-card-content-link`, not
+      via the heading. `.cad-card__title a::before{inset:0}` works because the
+      heading's anchor is the card's only link. Here there are TWO anchors per
+      card pointing at the same post, and the heading is not one of them: it is
+      an `<h3>` inside the content anchor. So the overlay goes on that anchor,
+      which is the one carrying the readable accessible name.
+
+      WHAT THIS DOES NOT FIX: the image anchor is still a separate tab stop to
+      the same destination, so every card with a photograph costs two. That is
+      a property of the layout's markup, not of these rules, and no CSS removes
+      a tab stop. Reported.
+
+   WHERE IT LOADS. empower_page_styles()['post'] in functions.php, which
+   empower_style_key() reaches for because a `post` is singular and is not a
+   `page`, the same mechanism the `person` row uses. Single posts only:
+   archives and category pages run the same Beaver post-grid module but are not
+   singular, so empower_style_key() returns '' for them and they keep the plain
+   treatment. That is deliberately narrow, matching the instruction, and this
+   sheet would need no change to cover them.
+
+   NO motion.css. Every `.cad-card` on All Content carries `data-reveal="rise"`
+   and this markup carries no reveal attributes at all, so the motion sheet
+   would be dead weight and its reveal selector would have nothing to bind to.
+   The hover transitions below are therefore declared directly on the elements,
+   which is safe here for exactly the reason it is not safe on a converted
+   page: nothing sets a `transition` on these elements to be replaced. */
+
+/* ============================== 1 · The grid ============================= */
+
+/* Beaver floats `.fl-post-column` and clears with a trailing `.fl-clear`. A
+   grid on the parent makes the floats inert, and `display:contents` on the
+   columns lifts each card into that grid so the track sizing sees cards rather
+   than columns. Column count then comes from the same auto-fill expression All
+   Content uses, with ONE number changed.
+
+   THE MINIMUM TRACK IS 280px, NOT `.cad-cards`'s 300px, and the difference is
+   this page's own width rather than a preference. All Content's grid sits in a
+   1152px container; this one sits in the Beaver row's 960. Three 300px tracks
+   plus two 32px gaps need 964, four pixels more than there is, so auto-fill
+   dropped to TWO columns and stranded the third card on a row of its own.
+   Measured, not predicted: at 1440 the cards came back 464 wide at x 240 and
+   736, with the third at 240 on the next row. At 280 the same three fit (904 of
+   960) and the band reads across in three, which is both what All Content does
+   and what this module did before it was restyled. Nothing below 768 changes:
+   the one and two column counts are set by the `min(100%, ...)` floor rather
+   than by this number. */
+.pcw-post-cards .fl-post-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));
+  gap:clamp(var(--space-5),2.4vw,var(--space-7))}
+
+/* THE MODULE'S NEGATIVE MARGINS HAVE TO GO WITH THE COLUMNS THEY PAIRED WITH.
+   Beaver's own generated CSS for this module is
+   `.fl-node-5d766512dd505 .fl-post-grid{margin-left:-20px;margin-right:-20px}`,
+   which is one half of a gutter: the grid bleeds 20px past its row and each
+   `.fl-post-column` pads 20px back in, so the outer cards line up with the
+   column and the space between them is 40px. `display:contents` on the columns
+   throws away their half of that bargain and leaves the bleed, which at 768
+   put the first card's left edge at x:0, hard against the viewport. Zeroing it
+   hands the gutters to the grid's own `gap`, which is the same clamp
+   `.cad-cards` uses.
+
+   Written with `.fl-module` in the selector so it outweighs Beaver's own
+   `.fl-node-<id>` rule on specificity rather than on load order, which is not
+   this sheet's to control: the module bundle is enqueued by Beaver. */
+.pcw-post-cards.fl-module .fl-post-grid{margin-left:0;margin-right:0}
+.pcw-post-cards .fl-post-column{display:contents}
+.pcw-post-cards .fl-clear{display:none}
+
+/* THE CLEARFIX PSEUDO-ELEMENTS ARE GRID ITEMS, and suppressing them is not
+   tidying. Beaver's base sheet clears the grid's floated columns with
+   `.fl-post-grid::before/::after{content:" ";display:table}`, which costs
+   nothing while the parent is a block box and becomes TWO BLANK CARDS the
+   moment it is a grid: a generated box with a `content` value is a grid item
+   like any other. Measured on the live page before this rule existed, at 1440
+   with three cards and three 312px tracks: `::before` took cell 1, so the
+   first card sat in the SECOND column, the second card finished the row, and
+   the third dropped to a row of its own, with `::after` taking a fourth cell.
+   Both boxes computed 312 x 441.891, exactly a card, which is why the hole
+   read as a layout bug rather than as a stray element.
+
+   `content:none` rather than `display:none`, because it is the content value
+   that generates the box at all. */
+.pcw-post-cards .fl-post-grid::before,
+.pcw-post-cards .fl-post-grid::after{content:none}
+
+/* ============================== 2 · The card ============================= */
+
+/* css/content-a.css:208-210 verbatim, plus the margin and padding resets that
+   Beaver's own base-desktop.css puts on a grid post. */
+.pcw-post-cards .fl-post-grid-post{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  margin:0;padding:0;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-card);
+  background:var(--surface-card)}
+
+/* THE ONLY !important IN THIS SHEET, AND IT IS BEATING A SCRIPT, NOT A RULE.
+   Beaver's post-grid module equalises its cards in JavaScript: it measures the
+   tallest one and writes `style="height: 456.062px"` onto EVERY card in the
+   module, which is a specificity a stylesheet cannot reach any other way.
+
+   Left alone that is not merely redundant beside the grid, it is wrong in the
+   one place the grid gets right. Grid stretches items within THEIR OWN ROW, so
+   a row of three cards is level and a lone card on a half-empty last row is its
+   own height, which is `.cad-cards`'s behaviour on All Content. Beaver's number
+   is global: measured at 768, where the grid is two columns wide, the third
+   card sat alone on the second row and was still forced to the height of the
+   one card in the set that carries a photograph, leaving about 220px of empty
+   plate under its excerpt.
+
+   Handing the height back to the grid also means it keeps working at a width
+   this page was never checked at: the script re-measures on resize, the grid
+   does not need to. */
+.pcw-post-cards .fl-post-grid-post{height:auto !important}
+
+/* The mark again, at card scale: 56 x 4, growing from the bottom-left corner
+   on hover. css/content-a.css:297-300. `z-index:1` because the click overlay
+   below is a positioned pseudo-element on a later sibling and would otherwise
+   paint over it. */
+.pcw-post-cards .fl-post-grid-post::after{
+  content:"";position:absolute;left:0;bottom:0;height:4px;width:0;z-index:1;
+  background:var(--em-orange);
+  transition:width var(--dur) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover::after,
+.pcw-post-cards .fl-post-grid-post:focus-within::after{width:56px}
+
+/* ============================ 3 · The photograph ========================= */
+
+.pcw-post-cards .pcw-post-card-image-link{display:block;line-height:0}
+.pcw-post-cards .fl-post-grid-post:not(.has-post-thumbnail) .pcw-post-card-image-link{
+  display:none}
+.pcw-post-cards .pcw-post-card-image{
+  width:100%;aspect-ratio:3/2;
+  background-size:cover;background-position:center;background-repeat:no-repeat;
+  background-color:var(--surface-subtle);
+  transition:transform var(--dur-slow) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-image{transform:scale(1.035)}
+
+/* ============================== 4 · The copy ============================= */
+
+/* `position:static` is load-bearing: the click overlay two rules down is
+   `inset:0` and must resolve against the CARD. Beaver's base sheet does not
+   position this wrapper today, but the overlay silently shrinking to the copy
+   box is the exact failure this project has already paid for twice, so it is
+   stated rather than relied on. */
+.pcw-post-cards .pcw-post-card-content{
+  position:static;display:flex;flex-direction:column;flex:1 1 auto}
+
+/* .cad-card__body (css/content-a.css:218-219), which on this markup is the
+   anchor itself. */
+.pcw-post-cards .post-card-content-link{
+  display:flex;flex-direction:column;gap:var(--space-4);
+  padding:var(--space-6);flex:1 1 auto;
+  color:inherit;text-decoration:none}
+.pcw-post-cards .post-card-content-link::before{content:"";position:absolute;inset:0}
+.pcw-post-cards .post-card-content-link:focus-visible{
+  outline:3px solid var(--focus-ring);outline-offset:4px;
+  border-radius:var(--radius-xs)}
+
+.pcw-post-cards .pcw-post-card-header{
+  display:flex;flex-direction:column;gap:var(--space-3)}
+
+/* .cad-card__meta + .cad-card__topic (css/content-a.css:276-279). */
+.pcw-post-cards .pcw-post-card-category{
+  font-size:var(--fs-caption);font-weight:var(--fw-semibold);
+  letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--em-orange-ink)}
+
+/* .cad-card__title (css/content-a.css:283-290). The colour transition sits on
+   the heading rather than on an inner anchor because there is no inner
+   anchor. */
+.pcw-post-cards .pcw-post-card-title{
+  margin:0;font-size:var(--fs-h5);line-height:1.3;color:var(--text-strong);
+  transition:color var(--dur) var(--ease-out)}
+.pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-title{color:var(--em-orange-ink)}
+
+/* .cad-card__date's treatment on the string this markup has instead
+   (css/content-a.css:280-281). */
+.pcw-post-cards .pcw-post-card-author{
+  font-size:var(--fs-caption);font-weight:var(--fw-medium);
+  letter-spacing:normal;text-transform:none;
+  color:var(--text-muted)}
+
+.pcw-post-cards .pcw-post-card-excerpt{margin:0}
+.pcw-post-cards .pcw-post-card-excerpt p{
+  margin:0;font-size:var(--fs-body);line-height:1.6;color:var(--text-body)}
+.pcw-post-cards .pcw-post-card-excerpt p:last-child{margin-bottom:0}
+
+/* ========================== 5 · Reduced motion =========================== */
+
+/* css/content-a.css:358-360's own list, translated to these elements. */
+@media (prefers-reduced-motion:reduce){
+  .pcw-post-cards .fl-post-grid-post::after,
+  .pcw-post-cards .pcw-post-card-image,
+  .pcw-post-cards .pcw-post-card-title{transition:none}
+  .pcw-post-cards .fl-post-grid-post:hover .pcw-post-card-image{transform:none}
+}
+
+/* ==========================================================================
+   PART 2 — THE CONVERTED TEMPLATE (2026-08-23)
+   ==========================================================================
+
+   Everything above this line dresses Beaver's markup. Everything below is the
+   Elementor Theme Builder single template that REPLACES it
+   (elementor/theme-parts/post-single.mjs).
+
+   WHY BOTH HALVES STILL SHIP. Part 1 is not dead code yet. Drafting the
+   "Post Singular" Themer layout takes Beaver off the 490 single posts and
+   nothing else: the same Beaver post-grid module still runs on the Posts
+   Archive and the category archives, which are not converted, and the `.pcw-`
+   classes above are what makes those grids look like the rest of the build.
+   Part 1 goes when the archives do, and its header already says so.
+
+   The design is the build's own language rather than a reproduction of the
+   Beaver page, on Paolo's 2026-08-23 call. The roadmap asks for an "Article
+   Template" under Templates to Build and specifies nothing about it, so this
+   is a proposal to be signed off, not a transcription of a signed-off design.
+
+   THE MEASURE IS THE WHOLE POINT. Beaver's version centres the body in a
+   column that runs the full container width, so a 25,362-character post (the
+   longest on this install) sets lines far past the point where the eye loses
+   its place returning to the left edge. Everything here is left-aligned and
+   held to a reading measure, which is the same decision css/team-bio.css:112
+   already makes for bio copy at `max-width:68ch`.
+   ========================================================================== */
+
+.ps-article{padding-block:clamp(var(--space-9),5vw,var(--space-12)) 0}
+
+/* One column, not a grid. The figure is allowed to break out wider than the
+   text; nothing else is. */
+.ps-article__inner{display:flex;flex-direction:column;
+  gap:clamp(var(--space-6),2.5vw,var(--space-8))}
+
+/* ------------------------------ 1 · Head -------------------------------- */
+
+/* CENTRED, on Paolo's 2026-08-23 call after seeing it live: "the title being
+   centered and slightly wider container. More like the original". The Beaver
+   page centred its title, and that is the one thing about it worth keeping.
+
+   ONLY THE HEAD AND THE FIGURE CENTRE. The body copy stays left-aligned below,
+   and that is not an oversight: the median post here is 2,811 characters and
+   the longest is 25,362, and centred running text gives every line a different
+   starting x, so the eye has to hunt for the next line on every return. A
+   centred masthead over left-aligned copy is the normal arrangement for a
+   long-form article, and it is what the original did too.
+
+   NO max-width IN ch ON THIS BOX. It carried `max-width:24ch` for about an
+   hour and clamped the whole head to 203px, breaking "Kyle Jackson: A Father's
+   Footsteps" to one word a line and splitting "Footsteps" across two. The unit
+   is the trap: `ch` is the advance width of "0", roughly HALF an em, and this
+   container inherits the 16px body size, so 24ch is ~203px rather than the
+   ~24-characters-of-headline it reads as. The measure belongs on .ps-title,
+   where the font-size is the headline's own. */
+.ps-head{max-width:100%;text-align:center}
+
+/* Marked from above: 56 x 4, the build's motif, exactly as
+   css/content-a.css:196 sets it. The mark sits on the EYEBROW rather than on
+   the headline because the eyebrow is the first thing in the section; putting
+   it on the <h1> would leave the category line floating above the mark. */
+.ps-eyebrow{position:relative;margin:0 0 var(--space-5);
+  padding-top:calc(var(--space-5) + 4px);
+  display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;
+  gap:var(--space-3);
+  font-family:var(--font-display);font-weight:var(--fw-bold);
+  font-size:var(--fs-eyebrow,.8125rem);letter-spacing:.08em;text-transform:uppercase}
+/* The mark centres with the line it marks. Everywhere else in the build it
+   sits at the left edge because everything under it is left-aligned; here the
+   whole head is centred, and a mark stranded at the far left would read as a
+   stray rule rather than as the motif. */
+.ps-eyebrow::before{content:"";position:absolute;left:50%;top:0;
+  transform:translateX(-50%);
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* --em-orange-ink, never --em-orange: this is normal-size text, and the brand
+   orange measures 3.59:1 on white. css/site.css:28 carries the whole account. */
+.ps-eyebrow__cat{color:var(--em-orange-ink);text-decoration-line:underline;
+  text-decoration-thickness:1px;
+  text-decoration-color:color-mix(in oklab,currentColor 40%,transparent);
+  text-underline-offset:3px}
+.ps-eyebrow__cat:hover{text-decoration-color:currentColor}
+.ps-eyebrow__date{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.ps-eyebrow__sep{color:var(--border-default)}
+
+/* The headline is the page's one piece of display type. Same treatment as the
+   bio page's name (css/team-bio.css:99-100), which is the only other detail
+   screen in the build. */
+/* 26ch of the HEADLINE's own font, not the body's, which is what makes this
+   ~810px rather than the 203px the first attempt produced. Centred by the
+   head's text-align; margin-inline:auto centres the box itself once the
+   measure bites. text-wrap:balance matters more here than anywhere else in
+   the build: a centred two-line headline with one word on the second line is
+   the classic ragged-centre failure. */
+.ps-title{margin:0 auto;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-h1);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue);text-wrap:balance;max-width:26ch}
+
+/* --------------------------- 2 · Photograph ----------------------------- */
+
+/* Wider than the measure, narrower than the container: the photograph is the
+   one element allowed to break the reading column, and it stops well short of
+   full bleed so the page still reads as a document rather than a landing page.
+   95 of the 490 posts have no featured image and render no .ps-figure at all
+   (wp/empowerms-child/inc/post-single.php), so nothing here may assume one. */
+/* CENTRED, on Paolo's 2026-08-23 ask, and the selector is long for the same
+   reason .ps-body's is. Elementor ships
+
+       .elementor .elementor-widget:not(.elementor-widget-text-editor)
+         :not(.elementor-widget-theme-post-content) figure{margin:0}
+
+   at 0,4,1 - each :not() counts its argument - so a plain `.ps-figure` at
+   0,1,0 set max-width perfectly well while its `margin:0 auto` was silently
+   reset to 0 by that rule, and the photograph sat hard left under a centred
+   headline. Diagnosed by reading the computed margin (0px) against the
+   computed max-width (659.052px, which is this rule's own 78ch): one
+   declaration applying and the other not is the signature of being outranked
+   on a single property rather than of a sheet failing to load.
+
+   Worth knowing for the next figure: the two :not()s exempt Text Editor and
+   Post Content widgets, so figures INSIDE Empower's own post content keep
+   their margins and are not affected by any of this. */
+.elementor.elementor .e-con .elementor-widget figure.ps-figure{
+  margin-block:0;margin-inline:auto;max-width:var(--ps-figure, min(100%,960px))}
+.ps-figure__img{display:block;width:100%;height:auto;
+  border-radius:var(--radius-card);background:var(--surface-subtle)}
+.ps-figure__cap{margin:var(--space-3) 0 0;font-size:var(--fs-small,.875rem);
+  line-height:1.5;color:var(--text-muted);max-width:60ch}
+
+/* ------------------------------ 3 · Body -------------------------------- */
+
+/* The class lands on Elementor's theme-post-content WRAPPER, so every rule
+   that reaches the real elements is a descendant selector. Same arrangement,
+   and same reason, as `.tp-bio` on the bio template. */
+/* .elementor AND .elementor-widget, not a bare `.ps-body`. The class lands on
+   the widget's own wrapper, and Elementor gives that wrapper `max-width:100%`
+   at two classes; a single-class rule here loses and the body ran the full
+   1200px container. Measured, not assumed: `.ps-body` computed max-width:100%
+   on the live page while every other rule in this block applied. */
+/* CENTRED COLUMN, LEFT-ALIGNED TEXT, and slightly wider than the 68ch the
+   bio pages use: these are articles rather than biographies, and Paolo asked
+   for a wider container, then on 2026-08-23 called the result still too narrow
+   at 74ch (699px measured live at a 1440 viewport). 880px now, which the
+   1200px container's 1152px content box caps at wide viewports.
+
+   IN PX, NOT ch, BECAUSE ch LIES ABOUT THIS FACE. The body face is condensed,
+   so its `0` is far narrower than its average lowercase letter: 74ch rendered
+   699px, and that line already held about 103 characters, not 74. Measured on
+   the live page with a canvas measureText over the actual computed font, not
+   assumed. Anything written in ch here reads as a character count and is not
+   one, so the widths below say what they mean.
+
+   THE MEASURE IS LONG AND THAT IS THE TRADE. 880px runs past the 45-85
+   characters usually quoted for continuous prose. Two things pay for it: the
+   1.75 line-height on `.ps-body p` below, which is what carries the eye back
+   to the left edge, and the body size bumped up with the width (see the rule
+   below) so the column is not simply more small type per line. If it reads
+   long on a real article rather than in a screenshot, the number to change is
+   this one, alone.
+
+   THE SELECTOR IS THIS LONG BECAUSE ELEMENTOR'S IS. The class lands on the
+   widget's own wrapper, and elementor/assets/css/frontend.min.css ships
+
+       .elementor.elementor .e-con>.elementor-widget{max-width:100%}
+
+   which is 0,4,0: they DOUBLE `.elementor` on purpose to win exactly this kind
+   of fight. Two earlier attempts here lost to it and looked, from the rendered
+   page, like the stylesheet had not loaded at all - `.ps-body` at 0,1,0 and
+   then `.elementor .elementor-widget.ps-body` at 0,3,0, both of them parsed,
+   both matching the element, both silently outranked. The rule below mirrors
+   their shape and adds the class, so it is 0,5,0 and wins on specificity
+   rather than on source order, which is the only thing a child theme can rely
+   on when the plugin is free to reorder its own enqueues. */
+/* THE BODY'S OWN RULES MOVED TO css/prose.css ON 2026-09-02, and the measure
+   that went with them now lives in the theme's bridge stylesheet.
+
+   WHY. This file is install-only: it dresses markup that exists only on
+   WordPress, which is what earns it the right to carry Elementor selectors at
+   all. The reading column stopped being install-only the day /privacy and
+   /terms were built, because those have a static build and wear the same
+   column. Keeping it here would have meant either a second prose design to
+   maintain by hand or an exemption widened by hand, and this repository has
+   been bitten twice by hand-maintained lists.
+
+   WHAT IS LEFT HERE IS EVERYTHING AROUND THE COLUMN: the eyebrow, the title,
+   the photograph and the More grid. Those are a single post's own furniture,
+   they are what a legal page does not have, and two of them still need the
+   Elementor selectors this file is exempt to carry.
+
+   BOTH SHEETS LOAD, IN ORDER, prose then this one — see empower_page_styles()
+   in functions.php. Anything here that needs to beat a rule in prose.css must
+   say so and out-specify it deliberately; nothing does today. */
+
+
+/* ------------------------------- 4 · More ------------------------------- */
+
+.ps-more{padding-block:clamp(var(--space-9),5vw,var(--space-12));
+  margin-top:clamp(var(--space-9),5vw,var(--space-12));
+  border-top:1px solid var(--border-subtle);background:var(--surface-page)}
+.ps-more__head{max-width:62ch;margin-bottom:clamp(var(--space-6),3vw,var(--space-8))}
+.ps-more__title{position:relative;margin:0;padding-top:calc(var(--space-5) + 4px);
+  font-size:var(--fs-h2);line-height:var(--lh-heading);color:var(--text-strong)}
+.ps-more__title::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+/* NOTHING IS DECLARED FOR THE GRID OR ITS CARDS. The Loop Grid carries
+   content-a's own `.cad-cards` class and renders content-a's own card Loop
+   Item template, and functions.php enqueues css/content-a.css on this post
+   type for exactly that reason. A second copy of the card design here is the
+   thing most likely to drift out of step with the signed-off page. */
+
+/* ---------------------- 5 · No lead card in this grid --------------------
+
+   OPTING OUT OF A DELIBERATE RULE, so it is argued rather than just written.
+
+   bridge.css block 49 gives the first item of any `.cad-cards` grid the lead
+   treatment: full width, photograph left, headline right, larger title. That
+   is right on All Content, where each band is a long grid and the lead is the
+   entry point into it. It is wrong here. This grid holds exactly THREE cards
+   in three columns, so a full-width lead leaves two narrow cards on a second
+   row and the block reads as one feature plus an afterthought, rather than as
+   three equal suggestions. Measured on the first render: 1152, 363, 363.
+
+   SCOPED BY `.ps-more`, WHICH COSTS NO REDEPLOY. bridge.css block 49 is
+   `.cad-cards .elementor-loop-container > .e-loop-item:first-of-type` at
+   0,4,0, and bridge.css is enqueued AFTER this sheet, so an equal-specificity
+   override would lose the tie. Prefixing `.ps-more` makes it 0,5,0 and wins on
+   specificity rather than order. The alternative was a second class on the
+   Loop Grid widget, which would have meant rebuilding and redeploying the
+   template for a purely presentational change.
+
+   Every value below is content-a.css's own non-lead value, cited per line, so
+   this is a return to the default rather than a third card design. */
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type{
+  grid-column:auto;
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type > .cad-card{
+  display:flex;                      /* css/content-a.css:214 */
+  flex-direction:column;             /* css/content-a.css:214 */
+  grid-template-columns:none;
+  align-items:stretch;
+  padding:0;
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__body{
+  padding:var(--space-6);            /* css/content-a.css:219 */
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__photo{
+  aspect-ratio:3/2;                  /* css/content-a.css:262 */
+  height:auto;                       /* css/content-a.css:262 */
+}
+.ps-more .cad-cards .elementor-loop-container > .e-loop-item:first-of-type .cad-card__title{
+  font-size:var(--fs-h5);            /* css/content-a.css:283 */
+}
+
+/* The heading sits under a sticky header when a reader jumps to this section,
+   so it needs the same allowance the rest of the build gives an anchor target.
+   `.em-header`'s rendered height plus a little air. */
+.ps-more{scroll-margin-top:100px}

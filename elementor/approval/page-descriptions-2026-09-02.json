@@ -1,0 +1,35 @@
+{
+  "proposed": "2026-09-02",
+  "status": "PROPOSED — not written to the install, not added to PAGE_SEO",
+  "why": "Three pages were converted on 2026-09-02 (contact, privacy-policy, terms). None was in the round Empower approved on 2026-08-21, so all three have an empty wp_aioseo_posts row and AIOSEO generates their description at request time from post_content. On /contact/ that means the meta description and the schema still advertise the superseded street address, because post_content is still the Beaver fallback. These drafts replace that.",
+  "targets": {
+    "title": "45-60 characters INCLUDING the 22-character ' - Empower Mississippi' suffix",
+    "description": "140-160 characters, first ~110 standing alone because that is all a phone shows",
+    "sourcing": "Written from each page's own copy. Nothing invented, no figure that is not on the page."
+  },
+  "pages": [
+    {
+      "path": "/contact/",
+      "postId": 11345,
+      "title": "Contact Us: Send Us a Message",
+      "description": "Send Empower Mississippi a message using the form on this page. We’d love to hear from you. Write to us at 741 Avignon Dr., Suite C, Ridgeland, MS.",
+      "sourcedFrom": "The page's own heading and lead sentence ('We’d love to hear from you! Use the form below to e-mail us.') and the address block.",
+      "note": "THE ADDRESS IS THE OPEN QUESTION. This uses 741 Avignon Dr., Suite C, which is what the signed-off footer carries on every page. The page this replaced said 1000 Northpark Dr. If Empower confirm Northpark is current, this description and the page both change together."
+    },
+    {
+      "path": "/privacy-policy/",
+      "postId": 3,
+      "title": "Privacy Policy and Your Data Choices",
+      "description": "How Empower Mississippi handles information you give us: we do not sell, rent or lease it, and you can opt out of contact or text messages at any time.",
+      "sourcedFrom": "The policy's own first paragraph ('It is our policy not to sell, rent, lease or otherwise distribute that information to anyone'), its opt-out paragraph, and its 'About the Text Message Services and Opting Out' section."
+    },
+    {
+      "path": "/terms/",
+      "postId": 20649,
+      "title": "Terms of Service for Our Website",
+      "description": "The terms that apply when you use the Empower Mississippi website, covering intellectual property, links to other sites, disclaimers and governing law.",
+      "sourcedFrom": "The document's own section headings: Intellectual Property, Links To Other Web Sites, Disclaimer, Governing Law, Changes, Contact Us.",
+      "note": "The document is called three different things across Empower's material (Terms and Conditions, Terms of Service, Terms of Use). This title follows the footer link and the page's own h1."
+    }
+  ]
+}

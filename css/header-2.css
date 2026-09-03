@@ -103,3 +103,26 @@
 @media (max-width:960px){
   .em-header__menu{display:none}
 }
+
+/* THE UTILITY BAR DROPS ITS EMAIL ON A PHONE. Asked for by Paolo 2026-08-21,
+   from a 390px screenshot where the bar had become two stacked centred lines
+   and was eating 73px of the first thing anyone sees.
+
+   600px, AND THE NUMBER IS MEASURED. The bar is a flex row with flex-wrap, so
+   it does not break at a designed width, it breaks whenever the strapline and
+   the address stop fitting side by side: stepping the viewport down in 5px
+   increments, it holds one line at 585px and wraps at 580px. 600 is the first
+   breakpoint the build already uses (css/site.css) above that point, so this
+   borrows an existing number rather than introducing a fourteenth one.
+
+   THE STRAPLINE RE-CENTRES because it is now alone in a row still set to
+   space-between, which would otherwise park it hard left under a centred logo.
+
+   THE EMAIL IS THE ONLY mailto ON THE PAGE, checked rather than assumed: the
+   footer carries none. What it does carry is a "Contact Us" link, so hiding
+   this does not leave a phone visitor with no way to make contact. If that
+   footer link ever goes, this rule is stranding people and should go with it. */
+@media (max-width:600px){
+  .em-utility__link{display:none}
+  .em-utility__bar{justify-content:center}
+}

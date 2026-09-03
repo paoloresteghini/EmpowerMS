@@ -1,4 +1,4 @@
-import { container, heading, text, image, link, html } from '../../factory.mjs';
+import { container, text, image, link, html } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/sections/05-insights.html.
@@ -99,8 +99,8 @@ const row = (r) =>
           cssClass: 'em-article__meta',
           markup: `<span class="em-badge em-badge--outline em-badge--sm">${r.badge}</span> ${r.readTime}`,
         }),
-        heading({ text: r.title, tag: 'h3', cssClass: 'em-article__title' }),
-        text({ markup: `<p>${r.excerpt}</p>`, cssClass: 'em-article__excerpt' }),
+        text({ markup: `<h3 class="em-article__title">${r.title}</h3>` }),
+        text({ markup: `<p class="em-article__excerpt">${r.excerpt}</p>` }),
         html({ markup: `<a class="em-article__more" href="${r.href}">Read more →</a>` }),
       ]),
     ],
@@ -119,17 +119,14 @@ export function section() {
         container(
           { cssClass: 'em-insights__aside', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
-            text({ markup: `<p>${EYEBROW}</p>`, cssClass: 'em-eyebrow', _attributes: 'data-reveal|rise' }),
-            heading({
-              text: HEADLINE,
-              tag: 'h2',
-              _element_id: 'insights-title',
+            text({ markup: `<p class="em-eyebrow">${EYEBROW}</p>`, _attributes: 'data-reveal|rise' }),
+            text({
+              markup: `<h2 id="insights-title">${HEADLINE}</h2>`,
               _attributes: 'data-reveal|rise',
             }),
             container({ cssClass: 'em-rule', content_width: 'full', _attributes: 'aria-hidden|true' }),
             text({
-              markup: `<p>${LEDE}</p>`,
-              cssClass: 'em-insights__lede',
+              markup: `<p class="em-insights__lede">${LEDE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
             link({

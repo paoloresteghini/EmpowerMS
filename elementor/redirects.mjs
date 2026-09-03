@@ -102,8 +102,28 @@ export const MUST_STAY_DISABLED = [
 /* Left alone on purpose, and listed so the next person does not have to work
    out whether they were missed. */
 export const DELIBERATELY_NOT_REDIRECTED = [
-  { path: '/become-an-ambassador/', why: 'live Gravity Form 37; /ambassadors/ has no form' },
-  { path: '/become-an-advocate-for-change/', why: 'live Gravity Form 41; same' },
+  /* THE REASON CHANGED ON 2026-09-02 AND THE VERDICT DID NOT, so both entries
+     are rewritten rather than deleted. /ambassadors/ and /newsletter/ now carry
+     the live forms themselves: form 37 and form 2 respectively, by shortcode,
+     verified rendering on both pages. So "the converted page has no form" is no
+     longer true of either, and this list would be wrong if it still said so.
+
+     WHAT STILL BLOCKS THE REDIRECT IS A DIFFERENT THING: nobody has proved a
+     submission ARRIVES from the converted pages. A page that renders proves the
+     shortcode expanded and nothing more, and the failure this whole list exists
+     to prevent is a redirect that reports success while quietly ending
+     signups. One test submission through each converted page, checked against
+     the entry counts (form 2 at 836, form 37 at 25 when this was written), is
+     what turns these two into redirects. Nobody has sent one, because doing so
+     emails Empower's own staff.
+
+     The other two legacy signup pages are NOT in that position and are not
+     waiting on anything: they serve forms 41 and 43, which exist on no
+     converted page, so redirecting them would lose those routes outright. */
+  { path: '/become-an-ambassador/', why: 'live Gravity Form 37. /ambassadors/ now carries the same form; redirect once one test submission is proved to arrive' },
+  { path: '/join/', why: 'live Gravity Form 2, 836 entries. /newsletter/ now carries the same form; same gate' },
+  { path: '/become-an-advocate-for-change/', why: 'live Gravity Form 41, which no converted page carries; redirecting it would lose the route' },
+  { path: '/join-the-movement/', why: 'live Gravity Form 43, which no converted page carries; same' },
   { path: '/learn-more/', why: 'target of five campaign rules including a printed QR code' },
   { path: '/educationroadmap/', why: 'a distinct resource, not a duplicate' },
   { path: '/commentary/', why: 'a live archive 38 pages deep' },

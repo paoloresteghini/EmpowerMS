@@ -84,41 +84,38 @@ const LEAD = 'Get the latest from Empower Mississippi delivered straight to your
 const SUB = 'From monthly updates to important news from the Capitol, we’ll help you stay informed in '
   + '<strong>five minutes or less</strong>.';
 
-/* Copied element by element from dist/mail-a.html:187-217, including the
-   attribute ORDER and the `novalidate` and `required` boolean attributes.
-   Indentation is the source's too, which costs nothing and makes a future
-   diff against dist/mail-a.html readable. */
-const FORM = `<form class="mla-form" method="post" action="#signup" novalidate>
-        <p class="mla-form__title">Join Our Email List</p>
+/* THE LIVE FORM, NOT A COPY OF ONE, since 2026-09-02.
 
-        <div class="mla-form__row">
-          <div class="em-field em-field--light">
-            <label class="em-field__label" for="mla-first">First name</label>
-            <input class="em-input" type="text" id="mla-first" name="first_name" autocomplete="given-name">
-          </div>
-          <div class="em-field em-field--light">
-            <label class="em-field__label" for="mla-last">Last name</label>
-            <input class="em-input" type="text" id="mla-last" name="last_name" autocomplete="family-name">
-          </div>
-        </div>
+   GRAVITY FORM 2, "Become an Advocate", the live signup behind /join/. It held
+   836 entries when this was written, the third busiest form on the install, and
+   it notifies Joanna and Kienna. Chosen over form 43 ("Stay Informed", 24
+   entries) on 2026-09-02 because it is the route people actually use.
 
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="mla-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
-          <input class="em-input" type="email" id="mla-email" name="email" autocomplete="email" required
-                 aria-describedby="mla-email-hint">
-          <p class="em-field__hint" id="mla-email-hint">We send one email a month, plus legislative updates while the session runs.</p>
-        </div>
+   IT COLLECTS A NAME AND AN EMAIL AND NOTHING ELSE, so the County field this
+   page was approved with is gone. The form never collected it, and a field that
+   posts nowhere is worse than no field. The button says "Submit" because the
+   live form does; the approved design said "Join Our Email List", and changing
+   it is one edit in Gravity Forms and Empower's to make.
 
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="mla-county">County</label>
-          <input class="em-input" type="text" id="mla-county" name="county" autocomplete="address-level2"
-                 aria-describedby="mla-county-hint">
-          <p class="em-field__hint" id="mla-county-hint">Optional. It helps us send you what is happening near you.</p>
-        </div>
+   The page this replaces went on collecting nothing while the legacy page kept
+   the working route, which is the arrangement elementor/redirects.mjs warns
+   about in its own words: pointing a live signup at a form-shaped design "would
+   end ambassador signups and report success while doing it". The design is not
+   the thing that has to survive here; the submissions are.
 
-        <button class="em-btn em-btn--primary em-btn--lg em-btn--block" type="submit">Join Our Email List</button>
-        <p class="mla-form__small">Unsubscribe in one click, any time.</p>
-      </form>`;
+   THE SHORTCODE IS THE ENTIRE CONTENT OF ITS WIDGET, alone and wrapped in
+   nothing, which is what lets Elementor's parse_text_editor() run
+   shortcode_unautop() before do_shortcode() expands it. An html() widget, which
+   is what carried the hand-written form here before, echoes its markup raw and
+   would print the shortcode as literal text on the page.
+
+   `em-gform` IS THE STYLING HOOK AND IT IS SHARED. bridge.css block 77 dresses
+   Gravity Forms' own markup to match this build's fields, and it is keyed on
+   this class so contact, newsletter and ambassador are paid for once rather
+   than three times. Gravity Forms keeps its own stylesheet either way: it is
+   what hides the honeypot field and what carries the validation states this
+   build has no markup for. */
+const FORM_SHORTCODE = '[gravityform id="2" title="false" description="false" ajax="true"]';
 
 export function section() {
   return container(
@@ -142,7 +139,7 @@ export function section() {
           }),
         ]),
         container({ cssClass: 'mla-signup', content_width: 'full', _element_id: 'signup' }, [
-          html({ markup: FORM }),
+          text({ markup: FORM_SHORTCODE, cssClass: 'em-gform' }),
         ]),
       ]),
     ],

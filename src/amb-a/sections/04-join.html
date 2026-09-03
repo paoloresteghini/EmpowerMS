@@ -19,58 +19,77 @@
       <p data-reveal="rise">Getting started is easy. Complete the short interest form below, and Ashley Green, our Director of Outreach, will reach out to answer your questions and help you get connected.</p>
     </div>
 
-    <form class="aba-form" method="post" action="#join" novalidate>
+    <!-- STAND-IN, since 2026-09-02, mirroring Gravity Form 37 field for field.
+         The converted page carries that form itself, by shortcode; this is here
+         so the page can be reviewed, and it collects nothing.
+
+         IT ASKS DIFFERENT QUESTIONS FROM THE FORM THIS PAGE WAS APPROVED WITH,
+         and that is the trade Paolo took on 2026-09-02. The approved design
+         asked for a county, four "how would you like to get involved" ticks and
+         a free-text note to Ashley. The live ambassador form asks for a phone
+         number, a city and ZIP, and which ONE of Education, Work or Justice you
+         care about. None of the approved extras exists on it, and a field that
+         posts nowhere is worse than no field.
+
+         WHAT THAT COSTS, said plainly so nobody rediscovers it: the page no
+         longer collects how somebody wants to help, or anything they wanted to
+         say. If Empower want those back, they are fields to add in Gravity
+         Forms, where the 25 existing entries and the notification to Ashley
+         live. That is their edit, not this build’s. -->
+    <form class="aba-form" method="post" action="#join" novalidate data-placeholder="form">
       <div class="aba-form__row">
         <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-first">First name<span class="em-field__req" aria-hidden="true">*</span></label>
+          <label class="em-field__label" for="aba-first">First<span class="em-field__req" aria-hidden="true">*</span></label>
           <input class="em-input" type="text" id="aba-first" name="first_name" autocomplete="given-name" required>
         </div>
         <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-last">Last name<span class="em-field__req" aria-hidden="true">*</span></label>
+          <label class="em-field__label" for="aba-last">Last<span class="em-field__req" aria-hidden="true">*</span></label>
           <input class="em-input" type="text" id="aba-last" name="last_name" autocomplete="family-name" required>
         </div>
       </div>
 
       <div class="aba-form__row">
         <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
+          <label class="em-field__label" for="aba-email">Email<span class="em-field__req" aria-hidden="true">*</span></label>
           <input class="em-input" type="email" id="aba-email" name="email" autocomplete="email" required>
         </div>
         <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-county">County</label>
-          <input class="em-input" type="text" id="aba-county" name="county" autocomplete="address-level2">
+          <label class="em-field__label" for="aba-phone">Phone</label>
+          <input class="em-input" type="tel" id="aba-phone" name="phone" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="aba-form__row">
+        <div class="em-field em-field--light">
+          <label class="em-field__label" for="aba-city">City<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="text" id="aba-city" name="city" autocomplete="address-level2" required>
+        </div>
+        <div class="em-field em-field--light">
+          <label class="em-field__label" for="aba-zip">ZIP / Postal Code<span class="em-field__req" aria-hidden="true">*</span></label>
+          <input class="em-input" type="text" id="aba-zip" name="zip" autocomplete="postal-code" required>
         </div>
       </div>
 
       <fieldset class="aba-form__set">
-        <legend class="aba-form__legend">How would you like to get involved?</legend>
-        <p class="aba-form__hint">Tick as many as you like. Nothing here commits you to anything.</p>
+        <legend class="aba-form__legend">My Issue Area:<span class="em-field__req" aria-hidden="true">*</span></legend>
         <div class="aba-form__checks">
           <div class="aba-check">
-            <input type="checkbox" id="aba-way-story" name="ways" value="story">
-            <label for="aba-way-story">Share my story</label>
+            <input type="checkbox" id="aba-area-education" name="issue_area" value="Education">
+            <label for="aba-area-education">Education</label>
           </div>
           <div class="aba-check">
-            <input type="checkbox" id="aba-way-events" name="ways" value="events">
-            <label for="aba-way-events">Attend events and Capitol Days</label>
+            <input type="checkbox" id="aba-area-work" name="issue_area" value="Work">
+            <label for="aba-area-work">Work</label>
           </div>
           <div class="aba-check">
-            <input type="checkbox" id="aba-way-connect" name="ways" value="connect">
-            <label for="aba-way-connect">Connect others with the research</label>
-          </div>
-          <div class="aba-check">
-            <input type="checkbox" id="aba-way-grow" name="ways" value="grow">
-            <label for="aba-way-grow">Help grow the network</label>
+            <input type="checkbox" id="aba-area-justice" name="issue_area" value="Justice">
+            <label for="aba-area-justice">Justice</label>
           </div>
         </div>
       </fieldset>
 
-      <div class="em-field em-field--light">
-        <label class="em-field__label" for="aba-message">Anything you would like Ashley to know?</label>
-        <textarea class="em-textarea" id="aba-message" name="message" rows="4"></textarea>
-      </div>
-
-      <button class="em-btn em-btn--primary em-btn--lg" type="submit">Join the Ambassador Network</button>
+      <button class="em-btn em-btn--primary em-btn--lg" type="submit">Submit</button>
+      <p class="aba-form__note" role="note">This is a stand-in for the live Gravity Form. It collects nothing. The converted page carries the real form, so every field and the button are copied from it rather than designed here.</p>
     </form>
   </div>
 </section>

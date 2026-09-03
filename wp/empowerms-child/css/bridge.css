@@ -7761,9 +7761,10 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * it too. */
 .elementor.elementor .e-con > .elementor-widget.ps-body{max-width:min(100%,880px);margin-inline:auto}
 
-/* 77. GRAVITY FORM 3 ON THE CONTACT PAGE.
+/* 77. THE LIVE GRAVITY FORMS THIS BUILD RENDERS.
  *
- * The one live form this build renders. It is NOT rebuilt as markup: it holds
+ * Three of them: form 3 on /contact/ (3,116 entries), form 2 on /newsletter/
+ * (836) and form 37 on /ambassadors/ (25). It is NOT rebuilt as markup: it holds
  * 3,116 entries, notifies the admin and renders its own confirmation, and
  * elementor/pages/contact/02-form.mjs records why replacing it with a
  * form-shaped design would be the most expensive mistake available on this
@@ -7775,8 +7776,12 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * plus the validation and error states this build has no markup for. Turning
  * its stylesheet off would show a bot trap to every human visitor. Everything
  * below therefore layers on top of GF's own rules rather than replacing them,
- * and is scoped to `.ct-form` so it cannot reach any other form on the install
- * — the ambassador and newsletter forms on the legacy pages are untouched.
+ * and is scoped to `.em-gform`, a class this build puts on the widget that holds
+ * the shortcode. THAT SCOPE IS THE POINT: it cannot reach any other form on the
+ * install, so the four legacy signup pages keep rendering exactly as they did,
+ * and it is one class rather than three page-named ones, so contact, newsletter
+ * and ambassador are paid for once. Rescoped from `.ct-form` on 2026-09-02 when
+ * the second and third forms arrived.
  *
  * SELECTORS ARE QUALIFIED WITH .ct-form AND A GF CLASS, which puts them at
  * 0,2,0 or better against GF's own 0,1,0 and 0,2,0 rules. bridge.css is not
@@ -7788,14 +7793,14 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * The list bullets and indent are GF's to remove and it does; what is left here
  * is the gap, because GF's own spacing is tuned for its default theme rather
  * than for this one. */
-.ct-form .gform_wrapper .gform_fields{
+.em-gform .gform_wrapper .gform_fields{
   display:grid;
   gap:clamp(var(--space-5),2vw,var(--space-6));
 }
 
 /* Labels match .em-field__label exactly (components/components.css:101), so a
  * visitor moving between this form and the newsletter page sees one design. */
-.ct-form .gform_wrapper .gfield_label{
+.em-gform .gform_wrapper .gfield_label{
   font-family:var(--font-display);
   font-weight:var(--fw-semibold);
   font-size:var(--fs-small);
@@ -7806,7 +7811,7 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 /* GF renders the required marker as its own span. Same orange as
  * .em-field__req, and the asterisk stays decorative: the input's own `required`
  * attribute is what a screen reader announces. */
-.ct-form .gform_wrapper .gfield_required{
+.em-gform .gform_wrapper .gfield_required{
   color:var(--em-orange);
   margin-left:2px;
 }
@@ -7825,7 +7830,7 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  *
  * and `:not()` contributes its ARGUMENT's specificity, so each of those six
  * attribute selectors counts as a class. That rule is 0,7,1. The plain
- * `.ct-form .gform_wrapper input[type="email"]` this block started with is
+ * `.em-gform .gform_wrapper input[type="email"]` this block started with is
  * 0,3,1 and was outranked without a word from anywhere: every input on the page
  * rendered 37px tall with 5px of padding while the textarea, which that rule
  * does not target, was correctly 12px 14px. Two controls in one form disagreeing
@@ -7837,8 +7842,8 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * Same repair as css/post-single.css made against Elementor's doubled
  * `.elementor.elementor`, and the same family as the tag-keyed reset at 0,4,1
  * that cost the landing page its figure margin. */
-.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]),
-.ct-form .gform_wrapper textarea{
+.em-gform .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]),
+.em-gform .gform_wrapper textarea{
   width:100%;
   font-family:var(--font-body);
   font-size:var(--fs-body);
@@ -7849,8 +7854,8 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
   padding:12px 14px;
   transition:border-color var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out);
 }
-.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):hover,
-.ct-form .gform_wrapper textarea:hover{
+.em-gform .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):hover,
+.em-gform .gform_wrapper textarea:hover{
   border-color:var(--blue-400);
 }
 
@@ -7859,28 +7864,28 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * indicator for the whole of Phase 2B: the rule was keyed on the element
  * CARRYING the class rather than the element that RECEIVES focus. Every control
  * in this form is named here for that reason, including the submit. */
-.ct-form .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):focus-visible,
-.ct-form .gform_wrapper textarea:focus-visible,
-.ct-form .gform_wrapper .gform_button:focus-visible{
+.em-gform .gform_legacy_markup_wrapper input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=button]):not([type=image]):not([type=file]):focus-visible,
+.em-gform .gform_wrapper textarea:focus-visible,
+.em-gform .gform_wrapper .gform_button:focus-visible{
   outline:none;
   box-shadow:var(--shadow-focus);
   border-color:var(--em-blue);
 }
 
-.ct-form .gform_wrapper textarea{
+.em-gform .gform_wrapper textarea{
   resize:vertical;
   min-height:11rem;
 }
 
 /* The name field is GF's two-up grid. Its own row gap is 0, which reads as one
  * field split rather than two fields, so it gets the same gap as the rest. */
-.ct-form .gform_wrapper .ginput_complex{
+.em-gform .gform_wrapper .ginput_complex{
   gap:clamp(var(--space-5),2vw,var(--space-6));
 }
 
 /* Sub-labels (First, Last) are the only labels on this form GF sets below the
  * input. They stay where GF puts them and only take the build's caption type. */
-.ct-form .gform_wrapper .gform-field-label--type-sub{
+.em-gform .gform_wrapper .gform-field-label--type-sub{
   font-family:var(--font-body);
   font-size:var(--fs-caption);
   color:var(--text-muted);
@@ -7890,12 +7895,12 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * (components/components.css). `align-self:start` rather than a width, so it is
  * as wide as its label at every breakpoint, like every other primary action in
  * the build. */
-.ct-form .gform_wrapper .gform_footer{
+.em-gform .gform_wrapper .gform_footer{
   margin:0;
   padding:0;
   display:flex;
 }
-.ct-form .gform_wrapper .gform_button{
+.em-gform .gform_wrapper .gform_button{
   align-self:start;
   font-family:var(--font-display);
   font-weight:var(--fw-bold);
@@ -7915,7 +7920,7 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
   cursor:pointer;
   transition:background var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out);
 }
-.ct-form .gform_wrapper .gform_button:hover{
+.em-gform .gform_wrapper .gform_button:hover{
   background:var(--orange-600,var(--em-orange));
   border-color:var(--orange-600,var(--em-orange));
 }
@@ -7923,11 +7928,73 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 /* The confirmation GF swaps in after a successful send. It replaces the form
  * in place, so without this it lands as unstyled body text where a designed
  * form used to be. */
-.ct-form .gform_confirmation_message{
+.em-gform .gform_confirmation_message{
   padding:var(--space-6);
   border-radius:var(--radius-card);
   background:var(--surface-tint);
   font-size:var(--fs-lead);
   line-height:1.6;
   color:var(--text-strong);
+}
+
+/* 77b. THE TWO FORMS ON A DARK GROUND, AND THE PLATE THAT LEFT WITH ONE OF THEM.
+ *
+ * css/mail-a.css:47 puts the background, the radius, the padding and the shadow
+ * on `.mla-form` — the <form> ELEMENT itself, not on the container around it.
+ * That is a perfectly good arrangement for a hand-written form and it is why
+ * the plate disappeared the moment Gravity Forms replaced that element: the
+ * converted page kept `.mla-signup`, which carries nothing but a scroll margin,
+ * and the whole navy panel went with the markup it was painted on.
+ *
+ * SEEN, NOT REASONED ABOUT. The deploy reported success and the form rendered
+ * correctly; what the page actually showed was white labels on white, because
+ * the rules below were written for a navy ground that was no longer there.
+ * Measured afterwards: `.mla-signup` background rgba(0, 0, 0, 0).
+ *
+ * So the plate is restated here on the widget that now holds the form, with the
+ * same five declarations css/mail-a.css:47-53 makes. They are duplicated on
+ * purpose: the static build still uses the hand-written form and still needs
+ * its own copy, and the two are checked against each other by test.mjs. */
+.mla-signup .em-gform{
+  background:var(--surface-navy);
+  border-radius:var(--radius-card);
+  padding:clamp(24px,3.5vw,44px);
+  box-shadow:var(--shadow-md);
+}
+
+/* THE LABELS, ON BOTH OF THE FORMS THAT SIT ON A DARK GROUND.
+ *
+ * Block 77 sets label colour for a form on white, because contact is on white.
+ * The other two are not, and they are dark for two DIFFERENT reasons, which is
+ * why this rule names two scopes rather than one:
+ *
+ *   .mla-signup   the newsletter form is its own navy plate, painted just above
+ *   .aba-join     the ambassador form has no plate at all; it sits directly on
+ *                 a navy SECTION (css/amb-a.css:121)
+ *
+ * The static build handles both with `.em-field--light` on each field, and with
+ * `color:var(--white)` on the ambassador legend. Gravity Forms emits no such
+ * hook and will not be given one, so the dark ancestor is the selector.
+ *
+ * BOTH WERE FOUND BY LOOKING, AND NEITHER WOULD HAVE FAILED A TEST. The
+ * newsletter shipped white-on-white for one deploy and the ambassador form
+ * navy-on-navy for the next, because a colour is not something census() or the
+ * box sweep compares, and both pages left the gated register when they took
+ * live forms. Measured after each: label rgb(0, 60, 80) against a section of
+ * rgb(0, 60, 80).
+ *
+ * `label` AND NOT `.gfield_label`, deliberately. Gravity Forms labels the field
+ * with .gfield_label, its sub-fields (First, Last, City, ZIP) with a modifier
+ * class, and each checkbox choice with a bare <label> carrying no class at all.
+ * Naming the class would have left the three issue-area choices dark, which is
+ * exactly the half-fix this file keeps warning about. */
+.mla-signup .em-gform .gform_wrapper label,
+.aba-join .em-gform .gform_wrapper label{
+  color:var(--white);
+}
+/* Sub-labels stay quieter than the field label they belong to, matching
+   `.em-field--light .em-field__hint` in components/components.css:106. */
+.mla-signup .em-gform .gform_wrapper .gform-field-label--type-sub,
+.aba-join .em-gform .gform_wrapper .gform-field-label--type-sub{
+  color:var(--text-inverse-muted);
 }

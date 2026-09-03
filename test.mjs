@@ -3236,34 +3236,98 @@ test('every Ambassador reading carries the roadmap copy verbatim', () => {
   }
 });
 
-test('both Join Us tabs are built around a real form, not a picture of one', () => {
+/* The two Join Us pages that are CONVERTED carry a live Gravity Form; the two
+   that were not chosen still carry the design they were reviewed as. Since
+   2026-09-02 those are two different contracts, so they are two tests.
+
+   dist/mail-a.html and dist/amb-a.html are the converted pair. Derived from the
+   Elementor page directories rather than named here, so a page converted later
+   moves between the two contracts on its own. */
+const CONVERTED_JOIN = JOINPAGES.filter(
+  p => existsSync(`elementor/pages/${p.out.replace('dist/', '').replace('.html', '')}/page.mjs`));
+const UNCONVERTED_JOIN = JOINPAGES.filter(p => !CONVERTED_JOIN.includes(p));
+
+test('the unconverted Join Us readings are built around a real form, not a picture of one', () => {
   /* These two tabs are the only ones in the roadmap that end on an instruction
      rather than a paragraph: "Insert signup form on webpage" and "Include
      interest form for joining the ambassador program". A page that draws a
      field and a button without a <form> around them satisfies a screenshot and
-     nothing else. */
-  for (const { out, html } of JOINPAGES) {
+     nothing else.
+
+     This is the contract these readings were REVIEWED against and it is
+     unchanged. The converted pair answers to the live forms instead. */
+  assert.equal(UNCONVERTED_JOIN.length, 2,
+    `expected two unconverted Join Us readings, found ${UNCONVERTED_JOIN.length}`);
+  for (const { out, html } of UNCONVERTED_JOIN) {
     assert.match(html, /<form[^>]*method="post"/, `${out} has no posting form`);
 
-    /* Every control is labelled. A placeholder is not a label and neither is a
-       heading that happens to sit above the field. */
     const ids = [...html.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map(m => m[1]);
     assert.ok(ids.length >= 4, `${out} has ${ids.length} form controls, expected at least four`);
     for (const id of ids) {
       assert.ok(html.includes(`for="${id}"`), `${out}: the ${id} control has no label bound to it`);
     }
 
-    /* The email field is a real email input, required, and autocompletes. */
     const email = html.match(/<input[^>]*type="email"[^>]*>/);
     assert.ok(email, `${out} has no email input`);
     assert.match(email[0], /\srequired/, `${out}: the email field is not required`);
     assert.match(email[0], /autocomplete="email"/, `${out}: the email field has no autocomplete token`);
 
-    /* And the submit is the page's one orange action. */
     const submit = html.match(/<button[^>]*type="submit"[^>]*>/);
     assert.ok(submit, `${out} has no submit button`);
     assert.match(submit[0], /em-btn--primary/,
       `${out}: the form's submit is not the page's orange action`);
+  }
+});
+
+test('each converted Join Us page mirrors the live Gravity Form it now carries', () => {
+  /* THE CONVERTED PAGES STOPPED BEING A DESIGN DECISION ABOUT FIELDS on
+     2026-09-02. /newsletter/ carries Gravity Form 2, the live signup that holds
+     836 entries and notifies Joanna and Kienna; /ambassadors/ carries form 37,
+     25 entries, notifying Ashley. Both were read off wp_gf_form_meta.
+
+     The static build cannot run Gravity Forms, so it carries a stand-in, and
+     the only thing worth asserting about a stand-in is that it does not lie:
+     the fields it shows are the fields the visitor will actually meet, and it
+     says on the page that it collects nothing. Contact carries the identical
+     contract for the identical reason. */
+  const LIVE_FIELDS = {
+    'dist/mail-a.html': { form: 2, labels: ['First', 'Last', 'Email'], absent: ['County'] },
+    'dist/amb-a.html': {
+      form: 37,
+      labels: ['First', 'Last', 'Email', 'Phone', 'City', 'ZIP / Postal Code', 'Education', 'Work', 'Justice'],
+      absent: ['County', 'Share my story', 'Help grow the network'],
+    },
+  };
+  assert.equal(CONVERTED_JOIN.length, 2,
+    `expected two converted Join Us pages, found ${CONVERTED_JOIN.length}`);
+
+  for (const { out, html } of CONVERTED_JOIN) {
+    const spec = LIVE_FIELDS[out];
+    assert.ok(spec, `${out} is converted but this test does not know which form it carries`);
+    const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+    for (const label of spec.labels) {
+      assert.ok(main.includes(`>${label}<`) || main.includes(`>${label}<span`),
+        `${out} does not offer the "${label}" field that Gravity Form ${spec.form} asks for`);
+    }
+    /* Both directions. A stand-in that GAINED a field would promise something
+       the live form never collects, which is the failure that actually reaches
+       a visitor: they type it and it goes nowhere. */
+    for (const label of spec.absent) {
+      assert.ok(!main.includes(`>${label}<`),
+        `${out} still offers "${label}", which Gravity Form ${spec.form} does not collect`);
+    }
+
+    assert.match(html, /data-placeholder="form"/, `${out}: the stand-in carries no placeholder mark`);
+    assert.match(html, /stand-in for the live Gravity Form/,
+      `${out}: nothing on the page tells a reader the form collects nothing`);
+    assert.ok(!/action="(https?:)?\/\//.test(html), `${out}: the stand-in posts somewhere`);
+    assert.match(html, /<form[^>]*method="post"/, `${out} has no posting form`);
+
+    const ids = [...main.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map(m => m[1]);
+    for (const id of ids) {
+      assert.ok(main.includes(`for="${id}"`), `${out}: the ${id} control has no label bound to it`);
+    }
   }
 });
 

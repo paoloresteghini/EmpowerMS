@@ -105,63 +105,40 @@ const SAY_1 = 'Join a growing network of Mississippians committed to creating mo
 const SAY_2 = 'Getting started is easy. Complete the short interest form below, and Ashley Green, our '
   + 'Director of Outreach, will reach out to answer your questions and help you get connected.';
 
-/* Copied element by element from dist/amb-a.html:279-331, including the
-   attribute ORDER and the `novalidate` and `required` boolean attributes.
-   Indentation is the source's too, which costs nothing and makes a future
-   diff against dist/amb-a.html readable. */
-const FORM = `<form class="aba-form" method="post" action="#join" novalidate>
-      <div class="aba-form__row">
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-first">First name<span class="em-field__req" aria-hidden="true">*</span></label>
-          <input class="em-input" type="text" id="aba-first" name="first_name" autocomplete="given-name" required>
-        </div>
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-last">Last name<span class="em-field__req" aria-hidden="true">*</span></label>
-          <input class="em-input" type="text" id="aba-last" name="last_name" autocomplete="family-name" required>
-        </div>
-      </div>
+/* THE LIVE FORM, NOT A COPY OF ONE, since 2026-09-02.
 
-      <div class="aba-form__row">
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-email">Email address<span class="em-field__req" aria-hidden="true">*</span></label>
-          <input class="em-input" type="email" id="aba-email" name="email" autocomplete="email" required>
-        </div>
-        <div class="em-field em-field--light">
-          <label class="em-field__label" for="aba-county">County</label>
-          <input class="em-input" type="text" id="aba-county" name="county" autocomplete="address-level2">
-        </div>
-      </div>
+   GRAVITY FORM 37, "I'm Interested in Becoming An Ambassador", the live form
+   behind /become-an-ambassador/. 25 entries, notifying Ashley Green, who is
+   still on the roster (checked, not assumed). Chosen over form 41 on
+   2026-09-02: the two are duplicates with identical fields, and 37 is the one
+   on the nav-level page and the more used. Which of the two Empower keep is an
+   operational question that outlives this build.
 
-      <fieldset class="aba-form__set">
-        <legend class="aba-form__legend">How would you like to get involved?</legend>
-        <p class="aba-form__hint">Tick as many as you like. Nothing here commits you to anything.</p>
-        <div class="aba-form__checks">
-          <div class="aba-check">
-            <input type="checkbox" id="aba-way-story" name="ways" value="story">
-            <label for="aba-way-story">Share my story</label>
-          </div>
-          <div class="aba-check">
-            <input type="checkbox" id="aba-way-events" name="ways" value="events">
-            <label for="aba-way-events">Attend events and Capitol Days</label>
-          </div>
-          <div class="aba-check">
-            <input type="checkbox" id="aba-way-connect" name="ways" value="connect">
-            <label for="aba-way-connect">Connect others with the research</label>
-          </div>
-          <div class="aba-check">
-            <input type="checkbox" id="aba-way-grow" name="ways" value="grow">
-            <label for="aba-way-grow">Help grow the network</label>
-          </div>
-        </div>
-      </fieldset>
+   IT ASKS DIFFERENT QUESTIONS FROM THE APPROVED DESIGN. The design asked for a
+   county, four "how would you like to get involved" ticks and a note to Ashley.
+   The live form asks for a phone number, a city and ZIP, and one issue area.
+   None of the approved extras exists on it. Adding them back is a Gravity Forms
+   edit, where the entries and the notification live, not a change here.
 
-      <div class="em-field em-field--light">
-        <label class="em-field__label" for="aba-message">Anything you would like Ashley to know?</label>
-        <textarea class="em-textarea" id="aba-message" name="message" rows="4"></textarea>
-      </div>
+   The page this replaces went on collecting nothing while the legacy page kept
+   the working route, which is the arrangement elementor/redirects.mjs warns
+   about in its own words: pointing a live signup at a form-shaped design "would
+   end ambassador signups and report success while doing it". The design is not
+   the thing that has to survive here; the submissions are.
 
-      <button class="em-btn em-btn--primary em-btn--lg" type="submit">Join the Ambassador Network</button>
-    </form>`;
+   THE SHORTCODE IS THE ENTIRE CONTENT OF ITS WIDGET, alone and wrapped in
+   nothing, which is what lets Elementor's parse_text_editor() run
+   shortcode_unautop() before do_shortcode() expands it. An html() widget, which
+   is what carried the hand-written form here before, echoes its markup raw and
+   would print the shortcode as literal text on the page.
+
+   `em-gform` IS THE STYLING HOOK AND IT IS SHARED. bridge.css block 77 dresses
+   Gravity Forms' own markup to match this build's fields, and it is keyed on
+   this class so contact, newsletter and ambassador are paid for once rather
+   than three times. Gravity Forms keeps its own stylesheet either way: it is
+   what hides the honeypot field and what carries the validation states this
+   build has no markup for. */
+const FORM_SHORTCODE = '[gravityform id="37" title="false" description="false" ajax="true"]';
 
 export function section() {
   return container(
@@ -186,7 +163,7 @@ export function section() {
           text({ markup: `<p>${SAY_1}</p>`, _attributes: 'data-reveal|rise' }),
           text({ markup: `<p>${SAY_2}</p>`, _attributes: 'data-reveal|rise' }),
         ]),
-        html({ markup: FORM }),
+        text({ markup: FORM_SHORTCODE, cssClass: 'em-gform' }),
       ]),
     ],
   );

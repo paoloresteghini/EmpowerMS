@@ -51,7 +51,7 @@ export function section() {
     [
       container({ cssClass: 'em-container ct-body__grid', content_width: 'full' }, [
         container({ cssClass: 'ct-form', content_width: 'full' }, [
-          text({ markup: FORM_SHORTCODE }),
+          text({ markup: FORM_SHORTCODE, cssClass: 'em-gform' }),
         ]),
         container(
           { cssClass: 'ct-details', content_width: 'full', _attributes: 'data-reveal-group|' },

@@ -425,14 +425,6 @@ export const PAGE_REGISTER = [
      real load-failure gate here too: a 404 shares the 6 chrome census
      elements, and 6 is under the 12 that minShared:11 demands, so the suite
      goes red on the census, not the box sweep. */
-  {
-    name: 'mail-a',
-    envVar: 'MAIL_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/newsletter/',
-    staticFile: 'dist/mail-a.html',
-    minShared: 11,
-    minBoxes: 38,
-  },
   /* amb-a: Task 13, the seventh page built class-in-markup from the start,
      and the build's second form page. Its own floors, measured 2026-08-18
      against dist/amb-a.html alone (no live side, served locally the same way
@@ -487,14 +479,6 @@ export const PAGE_REGISTER = [
      is the real load-failure gate here too: a 404 shares the 6 chrome census
      elements, and 6 is under the 13 that minShared:12 demands, so the suite
      goes red on the census, not the box sweep. */
-  {
-    name: 'amb-a',
-    envVar: 'AMB_A_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/ambassadors/',
-    staticFile: 'dist/amb-a.html',
-    minShared: 12,
-    minBoxes: 43,
-  },
   /* epic-a: Task 14, the eighth page built class-in-markup from the start, and
      the build's first converted scroll-driven animation. Its own floors,
      measured 2026-08-18 against dist/epic-a.html alone (no live side, served
@@ -1260,6 +1244,21 @@ export const PAGE_REGISTER = [
    four of them), so leaving it out here would mean writing its path by hand
    somewhere else, which is the failure this field exists to prevent. */
 export const EXCLUDED_PAGES = [
+  {
+    name: 'mail-a',
+    exampleUrl: 'https://empv2.wpenginepowered.com/newsletter/',
+    reason: 'the live page renders Gravity Form 2 (836 entries) where dist/mail-a.html carries a '
+      + 'review stand-in that collects nothing, so every control key differs by construction. '
+      + 'Left the gated register on 2026-09-02 when the form was wired in; test.mjs holds the '
+      + 'stand-in to that form field for field instead, which is the guard that matters here',
+  },
+  {
+    name: 'amb-a',
+    exampleUrl: 'https://empv2.wpenginepowered.com/ambassadors/',
+    reason: 'the live page renders Gravity Form 37 (25 entries, notifying Ashley Green) where '
+      + 'dist/amb-a.html carries a review stand-in that collects nothing. Same shape as mail-a '
+      + 'and contact, and the same replacement guard in test.mjs',
+  },
   {
     name: 'contact',
     exampleUrl: 'https://empv2.wpenginepowered.com/contact/',

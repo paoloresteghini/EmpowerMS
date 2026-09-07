@@ -1,0 +1,63 @@
+DRAFT REPLY to Kienna Horn, "Re: SEO", 2026-08-21. Not sent.
+
+Four queries. Every one of them is a place where two of Empower's own documents
+disagree, so none can be resolved from this end. Evidence for each is in
+elementor/seo.mjs and elementor/apply-roster.mjs.
+
+---
+
+Hi Kienna,
+
+All of that is in. Patrick and Gina's new titles and bios are live, Wil Ervin is
+off the staff page, and Capitol Chat now uses your rewritten sentence. I also
+picked up three things from the Team tab that were missing on our side: Ashley
+Green and Kristin Vance Richards had no job title stored at all, so their cards
+were rendering without one, and your own title was still "Communications
+Manager". All three now match the roadmap.
+
+Four things I want you to confirm rather than guess at.
+
+1. The fellows list. Your two documents name different people, and I don't want
+   to pick one:
+
+     The SEO sheet you approved lists  Conor Norris, Matt Ladner,
+                                       Donald Nielsen, Joe Bishop-Henchman
+     The roadmap's Team tab lists      Conor Norris, Matt Ladner,
+                                       Christopher Koopman, J. Robertson,
+                                       Rebekah Staples
+
+   Only Norris and Ladner appear on both. Two of the roadmap's five have never
+   been published on your website (J. Robertson is saved as private, and Rebekah
+   Staples has no entry at all), which makes me think the Team tab's fellows list
+   may just be older than the rest of the page. Which five, or four, should the
+   site show?
+
+2. Joanna's surname. The Team tab's name column says Joanna Pevey; the bio in
+   the next column, and the search listing you approved, both say Joanna Polk.
+   Which would she like on the site?
+
+3. Gina's search description. Her new title is in the heading, but the
+   description underneath still opens "Executive Vice President at Empower
+   Mississippi, overseeing day-to-day operations and every Empower event."
+   Shall I change that opener to "Chief Administrative Officer at Empower
+   Mississippi"? It stays within the length Google shows.
+
+4. The bio pages for the people who have left. Five URLs now return "not found":
+
+     empowerms.org/person/wil-ervin-3/
+     empowerms.org/person/brett-kittredge/
+     empowerms.org/person/steven-randle/
+     empowerms.org/person/katieelliott/
+     empowerms.org/person/christopher-koopman/
+
+   If any are linked from press coverage, old newsletters or social posts, it
+   would be better to send those visitors to the team page than to a dead end.
+   Point them at empowerms.org/team/, or leave them? Wil's is the one I would
+   most expect to be linked from elsewhere, since he hosted the show.
+
+One last thing, no action needed: we still don't have headshots for the team
+pages, and 21 of the 22 photos already in your media library have no alt text on
+them, which screen readers and Google both use.
+
+Thanks,
+Paolo

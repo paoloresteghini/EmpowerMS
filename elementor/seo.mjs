@@ -30,6 +30,36 @@
    test-elementor.mjs asserts that correspondence against the install rather
    than against this count.
 
+   FOUR OF THE FIVE ARE CONFIRMED; THE FELLOWS ARE A SEPARATE MESS. Kienna
+   Horn's covering email says she "removed the SEO biography recommendations for
+   team members who are no longer with Empower", which settles Wil Ervin, Brett
+   Kittredge, Steven Randle and Katie Elliott: all four were staff.
+
+   It does not settle Christopher Koopman, and checking why turned up a wider
+   disagreement. Empower's two documents name DIFFERENT sets of contributing
+   fellows, contradicting each other on three of five in both directions:
+
+     this sheet, approved 2026-08-21   Norris, Ladner, Nielsen, Bishop-Henchman
+     roadmap Team tab, ex. 2026-08-23  Norris, Ladner, Koopman, Robertson, Staples
+
+   So the sheet keeps two fellows the roadmap does not list, and the roadmap
+   lists three the sheet does not. It is NOT a policy of "fellows get no
+   listing": the other four fellows kept theirs, which is what makes emptying
+   Koopman's row look person-specific rather than categorical.
+
+   The install agrees with neither. J. Robertson is `private` and Rebekah
+   Staples has no `person` entry at all, so two of the roadmap's five have never
+   been published on Empower's own site; Koopman is `draft` only because this
+   repo drafted him. The published fellows are Norris, Ladner, Nielsen and
+   Bishop-Henchman, which is the sheet's set exactly.
+
+   Read together that points at the roadmap's fellows table being the stale
+   half - it still lists people Empower's website never published - while its
+   STAFF half is freshly edited and demonstrably right. Not acted on either way.
+   Publishing somebody is how this build puts a person back on the roster, and
+   it needs Empower to say so. Reversible in one command each:
+   `wp post update 13310 611 --post_status=publish` plus rows back in here.
+
    TARGETS (checked by test-elementor.mjs, not by eye):
      title       45-60 characters INCLUDING the " - Empower Mississippi"
                  suffix, which is 22 of them. Over 60 truncates; under 45

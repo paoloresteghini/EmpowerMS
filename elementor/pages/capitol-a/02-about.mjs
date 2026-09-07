@@ -4,15 +4,15 @@ import { container, text } from '../../factory.mjs';
    block (lines 211-224). Every class, string and attribute below is read
    from that file, not typed from memory.
 
-   THE EM DASH IN THE CLAIM PARAGRAPH IS APPROVED COPY, NOT SOMETHING THIS
-   BUILD WRITES. "the action under the dome—all in under five minutes" is
-   dist/capitol-a.html's own text; this repo's rule against em dashes governs
-   what this build writes, not what already-approved copy says, the same
-   distinction every earlier page's own sourced-copy comment records.
-
-   WIL ERVIN IS NOT A LINK, matching dist/capitol-a.html's own comment at
-   that file's line 201 and this build's standing rule (his bio page does
-   not exist; only the CEO's is built). Nothing here adds one.
+   THE CLAIM PARAGRAPH NO LONGER NAMES ANYBODY, and no longer carries an em
+   dash. Both changes are Empower's, made in one edit on 2026-08-21: Wil Ervin
+   leaves at the end of the month, and Kienna Horn rewrote the sentence to be
+   general, replacing the dash with a comma as she did it. The string is hers
+   verbatim from the roadmap's suggested edit. The comment this replaces
+   explained that the dash was approved copy the build must not "fix", and that
+   Wil Ervin's name was deliberately not a link because his bio page did not
+   exist. Neither question survives the rewrite; what remains is that CLAIM is
+   still sourced text, not typed here.
 
    Structural decisions:
 
@@ -45,7 +45,7 @@ import { container, text } from '../../factory.mjs';
 
 const HEADLINE = 'The Capitol Moves Fast. We Help You Keep Up.';
 const P1 = 'Capitol Chat is Empower Mississippi’s weekly insider update on what’s happening at the Mississippi State Capitol during the legislative session.';
-const CLAIM = 'Each week, Senior Vice President Wil Ervin breaks down the biggest developments and highlights the action under the dome—all in under five minutes.';
+const CLAIM = 'Each week, we break down the biggest developments and highlight the action under the dome, all in under five minutes.';
 const P3 = 'Get the context you need to understand what’s happening, why it matters, and what to watch next.';
 const WHERE = 'Listen and subscribe wherever you get your podcasts.';
 

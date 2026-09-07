@@ -92,10 +92,24 @@ function deployElements(postId, elements, templateType) {
     `wp post meta update ${postId} _elementor_edit_mode builder`,
     `wp post meta update ${postId} _elementor_template_type ${templateType}`,
     `wp post meta update ${postId} _elementor_version ${ELEMENTOR_VERSION}`,
-    /* The brief names this `wp elementor flush-css`. `wp help elementor` on
-       empv2 lists the subcommand as `flush_css` (underscore); `flush-css`
-       is not registered and would fail. Corrected here with that evidence. */
-    'wp elementor flush_css',
+    /* NO `wp elementor flush_css` HERE, as of 2026-09-07. It used to be the
+       last line of this script, which meant one full CSS regeneration PER
+       DOCUMENT WRITTEN: elementor/deploy-round1.mjs writes five documents and
+       so flushed six times (five here, one of its own at the end) on an
+       install with ~490 posts. That run took over twenty minutes, nearly all
+       of it in flushes that the next write invalidated anyway.
+
+       Flushing is now the CALLER's job, once, after all of its writes. That is
+       not a relaxation: a deploy that does not flush fails as a subset of
+       itself, so every entry point must still do it, and a test asserts that
+       every one of them does rather than asserting it here. Checked when this
+       moved: deploy-photography.mjs and theme-parts/deploy.mjs were flushing
+       only the page cache and were relying on this line, so both gained an
+       Elementor flush in the same change.
+
+       KEEP THE UNDERSCORE. `wp help elementor` on empv2 registers `flush_css`;
+       `flush-css`, which the original brief named, is not a subcommand and
+       fails. That evidence moved to the callers with the command. */
   ].join('\n');
 
   return wpe(script);

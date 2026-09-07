@@ -1,7 +1,13 @@
 import { section as hero } from './01-hero.mjs';
 import { section as solutions } from './02-solutions.mjs';
 import { section as foundations } from './03-foundations.mjs';
-import { section as stories } from './04-stories.mjs';
+import {
+  section as stories,
+  loopItem as storyMini,
+  leadLoopItem as storyLead,
+  STORIES_LOOP_ITEM_POST_ID,
+  LEAD_LOOP_ITEM_POST_ID,
+} from './04-stories.mjs';
 import { section as insights } from './05-insights.mjs';
 import { section as joinus } from './06-joinus.mjs';
 
@@ -31,3 +37,17 @@ import { section as joinus } from './06-joinus.mjs';
 export const POST_ID = 20588;
 
 export const sections = () => [hero(), solutions(), foundations(), stories(), insights(), joinus()];
+
+/* The stories section's two Loop Item templates, as [postId, elements] pairs,
+   in the same shape content-a/page.mjs and team-a/page.mjs use and for the same
+   reason: pairing each tree with its own post id HERE means a deploy loop
+   cannot write the lead card into the mini's template. That failure would not
+   error and would not fail a structural test; it would render the stories
+   column as two full-width lead cards and the featured slot as a mini.
+
+   The homepage had no loopItems() export before 2026-09-04 because it had only
+   one template and it was deployed by hand. It has two now. */
+export const loopItems = () => [
+  [STORIES_LOOP_ITEM_POST_ID, storyMini()],
+  [LEAD_LOOP_ITEM_POST_ID, storyLead()],
+];

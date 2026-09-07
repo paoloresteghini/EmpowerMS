@@ -20,7 +20,11 @@ import { POST_ID as podcastAPostId, sections as podcastASections } from './eleme
 import { section as finalHero } from './elementor/pages/final/01-hero.mjs';
 import { section as finalSolutions } from './elementor/pages/final/02-solutions.mjs';
 import { section as finalFoundations } from './elementor/pages/final/03-foundations.mjs';
-import { section as finalStories, loopItem as finalStoriesLoopItem, STORIES_CATEGORY_ID, STORIES_LOOP_ITEM_POST_ID } from './elementor/pages/final/04-stories.mjs';
+import {
+  section as finalStories, loopItem as finalStoriesLoopItem,
+  leadLoopItem as finalStoriesLeadItem,
+  STORIES_CATEGORY_ID, STORIES_LOOP_ITEM_POST_ID, LEAD_LOOP_ITEM_POST_ID,
+} from './elementor/pages/final/04-stories.mjs';
 import { section as finalInsights } from './elementor/pages/final/05-insights.mjs';
 import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
@@ -1576,7 +1580,17 @@ test('every decorative photograph on the homepage is hidden from the accessibili
      (child-classroom-tablet) is decorative in the foundations panels and
      MEANINGFUL in the insights rows, and an attachment has exactly one alt
      text. So the rule is aria-hidden on the widget, and the count is what this
-     checks: three decorative backgrounds in foundations, one aside in the hero.
+     checks: three decorative backgrounds in foundations, and however many the
+     hero has.
+
+     THE HERO HAS NONE AS OF 2026-09-07, and that is not a hole in this test.
+     Its aside used to be a 336px square tucked over the main photograph's TOP
+     corner and was decorative; Empower's round-1 row 1 kept the tuck, moved it
+     to the BOTTOM corner and enlarged it, and put a recognisable landmark in it
+     that takes real alt text. The
+     equality below still does work at zero: it fails if the hero gains an
+     aria-hidden that no alt="" in the source justifies, which is the direction
+     that would silently hide a meaningful photograph from a screen reader.
 
      Counting rather than spot-checking, because the failure mode is a fourth
      panel added later with no aria-hidden, which no spot check would see. */
@@ -1585,7 +1599,10 @@ test('every decorative photograph on the homepage is hidden from the accessibili
 
   const heroDecorative = decorativeInSource('src/final/sections/01-hero.html');
   const foundationsDecorative = decorativeInSource('src/current-2/sections/03-foundations.html');
-  assert.ok(heroDecorative > 0 && foundationsDecorative > 0, 'the source partials carry no decorative images, so this test proves nothing');
+  /* Only foundations still needs the vacuity guard: it is the section whose
+     decorative set is supposed to be non-empty, so an empty one there means the
+     regex has stopped matching rather than that the design changed. */
+  assert.ok(foundationsDecorative > 0, 'the foundations partial carries no decorative images, so this test proves nothing');
 
   const hidden = (tree) => (JSON.stringify(tree).match(/aria-hidden\|true/g) || []).length;
   assert.equal(hidden(finalHero()), heroDecorative,
@@ -1594,7 +1611,7 @@ test('every decorative photograph on the homepage is hidden from the accessibili
     'the foundations section hides a different number of images than the source marks decorative');
 });
 
-test('the homepage stories mapping keeps the authored story and loops only the placeholders', () => {
+test('the homepage stories mapping carries every string the loop does not supply', () => {
   const flat = JSON.stringify(finalStories());
   const source = fs.readFileSync('src/sections/04-stories.html', 'utf8');
 
@@ -1605,9 +1622,18 @@ test('the homepage stories mapping keeps the authored story and loops only the p
      strings are expected to disappear, so they are excluded here by name; every
      other string in the partial is still checked. */
   const REPLACED_BY_THE_LOOP = [
-    '“Community story pull-quote — auto-populated from the latest Community Stories.”',
-    'Name · Jackson, MS',
-    'Name · Tupelo, MS',
+    /* Every string the partial writes that the Loop Grid supplies at render
+       time instead. Rewritten 2026-09-07 when the cards stopped carrying a
+       pull-quote line: the old entries named copy that no longer exists in the
+       partial, and a stale exemption is worse than none, because it exempts
+       nothing while looking like it still guards something. */
+    'Headline of the newest Community Story (auto-populated), with that story’s own photograph.',
+    'Community story headline (auto-populated)',
+    /* NOT replaced by the loop: MOVED INTO it. 'Featured story' is the lead
+       card's eyebrow and the lead card is a Loop Item template now, so the
+       string is no longer anywhere in section(). Asserted against
+       leadLoopItem() below instead. */
+    'Featured story',
   ];
   const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
     .map(m => m[1].trim())
@@ -1617,15 +1643,97 @@ test('the homepage stories mapping keeps the authored story and loops only the p
     assert.ok(flat.includes(s.replace(/"/g, '\\"')), `stories mapping is missing: ${s.slice(0, 48)}`);
   }
 
-  /* The half that matters most on this section: a real named Mississippian's
-     quote is authored content and must NOT be inside the loop, or the homepage
-     replaces her words with whatever is newest. */
-  assert.ok(flat.includes('Jodi Berry'), 'the authored featured story lost its attribution');
-  assert.ok(flat.includes('blockquote'), 'the featured quote is no longer a blockquote');
-  const heroCardIdx = flat.indexOf('Jodi Berry');
-  const loopIdx = flat.indexOf('loop-grid');
-  assert.ok(heroCardIdx !== -1 && loopIdx !== -1 && heroCardIdx < loopIdx,
-    'the authored lead card is not ahead of the loop grid, so the loop may have swallowed it');
+  /* INVERTED 2026-09-04. This block used to assert the opposite: that Jodi
+     Berry's name and her <blockquote> survived conversion outside the loop.
+     Empower asked for the card to auto-populate, and the reason the old
+     assertion has to go rather than be relaxed is that it was guarding the
+     defect: a hand-typed name next to a queried photograph is exactly the
+     pairing that made the card wrong. */
+  assert.ok(!flat.includes('Jodi Berry'), 'a hand-authored name is back beside a queried photograph');
+  assert.ok(!flat.includes('blockquote'), 'narrative prose is being presented as a quotation again');
+
+  /* The eyebrow moved from the section into the lead Loop Item template. Without
+     this the exemption above would let it be deleted outright and the exemption
+     list would still pass, which is the failure mode a named-exemption list has:
+     it cannot tell "moved" from "gone". */
+  assert.ok(JSON.stringify(finalStoriesLeadItem()).includes('Featured story'),
+    'the lead card lost its eyebrow when it moved into the loop item template');
+});
+
+test('the homepage stories section runs two grids over one query without repeating a story', () => {
+  /* Both grids read Community Stories newest-first. The mini grid must start
+     where the lead grid stops, or the newest story renders twice on one screen
+     in two different card shapes, which reads as a duplicate-content bug rather
+     than a query one and fails no structural assertion. */
+  const flat = JSON.stringify(finalStories());
+  const grids = flat.match(/"widgetType":"loop-grid"/g) || [];
+  assert.equal(grids.length, 2, 'the stories section no longer carries exactly two loop grids');
+
+  assert.ok(flat.includes(`"template_id":${LEAD_LOOP_ITEM_POST_ID}`), 'the lead grid does not point at the lead template');
+  assert.ok(flat.includes(`"template_id":${STORIES_LOOP_ITEM_POST_ID}`), 'the mini grid does not point at the mini template');
+  assert.notEqual(LEAD_LOOP_ITEM_POST_ID, STORIES_LOOP_ITEM_POST_ID,
+    'both grids point at the same Loop Item template, so one card shape is rendering in both slots');
+
+  /* Read each grid's OWN settings rather than regexing the flattened tree: the
+     two grids differ only in numbers, and a regex over the whole section would
+     happily compare the lead's page size with the lead's own offset. */
+  const grid = (templateId) => {
+    const found = [];
+    const walk = (node) => {
+      if (Array.isArray(node)) return node.forEach(walk);
+      if (!node || typeof node !== 'object') return;
+      if (node.settings?.template_id === templateId) found.push(node.settings);
+      walk(node.elements);
+    };
+    walk(finalStories());
+    assert.equal(found.length, 1, `expected exactly one loop grid for template ${templateId}, found ${found.length}`);
+    return found[0];
+  };
+
+  const leadGrid = grid(LEAD_LOOP_ITEM_POST_ID);
+  const miniGrid = grid(STORIES_LOOP_ITEM_POST_ID);
+
+  assert.equal(Number(miniGrid.post_query_offset), Number(leadGrid.posts_per_page),
+    'the mini grid offset does not equal the lead grid page size, so a story is skipped or shown twice');
+  assert.equal(leadGrid.post_query_orderby, miniGrid.post_query_orderby,
+    'the two grids order differently, so "the next two" is not relative to the lead card');
+  assert.equal(leadGrid.post_query_order, miniGrid.post_query_order, 'the two grids sort in opposite directions');
+  assert.deepEqual(leadGrid.post_query_include_term_ids, miniGrid.post_query_include_term_ids,
+    'the two grids read different categories, so the offset does not skip the lead story');
+});
+
+test('neither story loop item renders a generated excerpt', () => {
+  /* THIS GUARDS A DEFECT THAT REACHED THE LIVE SITE, twice, in opposite ways.
+     With post-excerpt's default settings the tag is invalid on these posts (all
+     27 have an empty post_excerpt) and renders nothing, so the card silently
+     lost a line. With apply_to_post_content on, the generated excerpt arrives
+     carrying a BYLINE, and the live mini card read "Written by Ashley Green
+     Originally from Utah, Amanda came to Mississippi..." beside a photograph of
+     Amanda: one person credited next to a picture of another, which is the
+     defect Empower reported in the first place.
+
+     The byline is not reproducible from wp-cli (apply_filters("the_excerpt", ...)
+     returns the clean sentence), so whatever injects it is gated on loop context
+     and was never identified. An unlocated filter is not something to build a
+     card on, so the tag is gone from both templates rather than tuned.
+
+     If Empower ever write real post_excerpt values, the tag can come back with
+     apply_to_post_content OFF: that branch returns $post->post_excerpt verbatim
+     and never touches the content filters. Until then, absent. */
+  for (const [name, tree] of [['mini', finalStoriesLoopItem()], ['lead', finalStoriesLeadItem()]]) {
+    const flat = decodeURIComponent(JSON.stringify(tree));
+    assert.ok(!flat.includes('post-excerpt'),
+      `the ${name} loop item carries a post-excerpt tag again; on this install that renders either nothing or somebody else's byline`);
+    assert.ok(!flat.includes('apply_to_post_content'),
+      `the ${name} loop item is asking for the generated excerpt again`);
+    assert.ok(flat.includes('post-title'),
+      `the ${name} loop item no longer renders the post title, which is the only per-post text it has left`);
+  }
+});
+
+test('the stories lead loop item defers Elementor element caching', () => {
+  assert.ok(JSON.stringify(finalStoriesLeadItem()).includes('"_element_cache":"yes"'),
+    'the lead loop item container will be served from Elementor\'s shared element cache');
 });
 
 test('the homepage stories loop queries Community Stories, not the whole site', () => {
@@ -1710,11 +1818,12 @@ test('the homepage hero photographs resolve through the shared media map, not ty
      structural test still passes. So the ids and urls live in one map and the
      sections read from it, which this test holds by checking the hero's two
      images against the map rather than against literals. */
+  /* Names are the hero's CURRENT photographs (changed 2026-09-07 for Empower's
+     round-1 row 1); the SHAPE is what this holds, not the particular files. */
   const flat = JSON.stringify(finalHero());
-  assert.ok(flat.includes(String(PHOTOS['father-children-field'].id)),
-    'the hero is not using the mapped attachment id for father-children-field');
-  assert.ok(flat.includes(PHOTOS['children-running-parent'].url),
-    'the hero is not using the mapped url for children-running-parent');
+  assert.ok(flat.includes(String(PHOTOS['family-three-generations'].id)), 'hero is not using the mapped id for family-three-generations');
+  assert.ok(flat.includes(PHOTOS['vicksburg-bridge-sunrise'].url), 'hero is not using the mapped url for vicksburg-bridge-sunrise');
+  /* and every entry in the map is a well-formed, self-consistent install fact: */
 
   for (const [name, entry] of Object.entries(PHOTOS)) {
     assert.ok(Number.isInteger(entry.id) && entry.id > 0, `${name} has no attachment id`);
@@ -2749,7 +2858,7 @@ test('deployPage writes the Elementor data through a temporary file on the insta
   }
 });
 
-test('deployPage sets edit mode, template type and version, then flushes the Elementor CSS cache', async () => {
+test('deployPage sets edit mode, template type and version', async () => {
   const { tmpDir, capturePath } = withCapturingSsh('deploy-meta-');
   const originalPath = process.env.PATH;
   process.env.PATH = tmpDir + ':' + originalPath;
@@ -2761,15 +2870,61 @@ test('deployPage sets edit mode, template type and version, then flushes the Ele
     /* 4.2.2 is what is actually running on empv2 (Task 2's capture), not
        the plan's original 4.2.1 pin: see docs/elementor/schema-4.2.2.md. */
     assert.match(script, /wp post meta update 42 _elementor_version 4\.2\.2/);
-    /* The brief names this step `wp elementor flush-css`. The command WP-CLI
-       actually registers on this install is `flush_css` (underscore), read
-       from `wp help elementor` on empv2; `flush-css` is not a subcommand and
-       would fail. Corrected here with that evidence. */
-    assert.match(script, /wp elementor flush_css/);
+    /* NO LONGER ASSERTS A FLUSH HERE. deployElements() stopped flushing per
+       document on 2026-09-07 (its own comment carries why); flushing is the
+       entry point's job now, and the test below asserts that every entry point
+       does it. Asserting it at this layer is what allowed two scripts to sit
+       there flushing nothing: they never called this function directly, so a
+       green test here said nothing about them. */
+    assert.doesNotMatch(script, /wp elementor flush_css/,
+      'deployElements is flushing per document again; that is one full CSS regeneration per document written');
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+/* THE INVARIANT THAT ACTUALLY MATTERS, and the one nothing checked before
+   2026-09-07: a deploy that does not flush fails as a subset of itself, so
+   every script that writes Elementor documents must flush the Elementor CSS
+   cache once it is done.
+
+   It is asserted over the FILES rather than by running them, because running
+   them writes to the install. That is a weaker check than executing each one
+   and watching the commands go past, and it is the strongest one available
+   without a live write; it is still enough to catch the failure it was written
+   for. Two of these scripts (deploy-photography.mjs and theme-parts/deploy.mjs)
+   were flushing only the WordPress page cache and inheriting the Elementor
+   flush from deployElements(), and no test noticed, because the only assertion
+   about flushing was pointed at a function they never called directly.
+
+   The list is DERIVED by reading the directory, not typed. A hand-written page
+   list is exactly how a sweep in this repository once passed while checking
+   almost nothing, and a new deploy script is precisely the thing that would be
+   forgotten. */
+test('every deploy entry point flushes the Elementor CSS cache after writing', () => {
+  const entryPoints = [
+    ...fs.readdirSync('elementor')
+      .filter((f) => f.startsWith('deploy-') && f.endsWith('.mjs'))
+      .map((f) => path.join('elementor', f)),
+    path.join('elementor', 'theme-parts', 'deploy.mjs'),
+  ];
+  assert.ok(entryPoints.length >= 8, `only ${entryPoints.length} deploy entry points found; this sweep has stopped finding them`);
+
+  const writes = /deployPage\(|deployLoopItem\(|deployThemePart\(/;
+  let checked = 0;
+  for (const file of entryPoints) {
+    const src = fs.readFileSync(file, 'utf8');
+    /* Only scripts that actually write a document need a flush. A script that
+       merely reads, or one that writes options rather than Elementor data, is
+       not in scope and should not be forced to flush for nothing. */
+    const body = src.replace(/\/\*[\s\S]*?\*\//g, '');
+    if (!writes.test(body)) continue;
+    checked += 1;
+    assert.match(body, /wp elementor flush_css/,
+      `${file} writes Elementor documents but never flushes the Elementor CSS cache, so its pages keep serving the previous version's rules`);
+  }
+  assert.ok(checked >= 5, `only ${checked} document-writing deploy scripts were checked; the detection regex has stopped matching`);
 });
 
 /* withCapturingSsh() above only inspects the script deployPage() sends, never
@@ -2853,7 +3008,11 @@ test('deployPage still resolves when every wp-cli step genuinely succeeds', asyn
   try {
     const out = await deployPage(42, [podcastHero()]);
     assert.match(out, /Success.*_elementor_edit_mode builder/);
-    assert.match(out, /Success.*flush_css/);
+    /* The flush moved out of deployElements() on 2026-09-07 and belongs to the
+       entry point now, so this end-to-end run must NOT see one: what it is
+       testing is that a mid-script failure aborts the deploy, and the flush was
+       never part of that. */
+    assert.doesNotMatch(out, /flush_css/);
   } finally {
     process.env.PATH = originalPath;
     fs.rmSync(tmpDir, { recursive: true, force: true });

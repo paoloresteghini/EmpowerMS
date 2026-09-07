@@ -41,7 +41,7 @@ export function section() {
     [
       container(
         { cssClass: 'sb-stories__band', content_width: 'full', _attributes: 'data-reveal|clip' },
-        [image({ ...photo('video-still-man-outdoors') })],
+        [image({ ...photo('ms-capitol-first-light-wide') })],
       ),
       container({ cssClass: 'em-container', content_width: 'full' }, [
         container(
@@ -57,7 +57,7 @@ export function section() {
             }),
             link({
               label: 'Read Community Stories',
-              href: '/latest',
+              href: '/community-stories',
               cssClass: 'em-btn em-btn--primary em-btn--lg',
               _attributes: 'data-reveal|rise',
             }),

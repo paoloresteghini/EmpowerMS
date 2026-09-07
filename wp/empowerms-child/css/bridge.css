@@ -575,6 +575,51 @@
   display:contents;
 }
 
+/* ---------- The lead story card became a Loop Grid too, 2026-09-04 ----------
+ * Same defect shape as the column above, one level out. homepage.css:258 is
+ * `.em-stories__feature{display:grid;grid-template-columns:1.35fr 1fr}` and it
+ * is written for exactly two children: the lead card and the column of minis.
+ * The lead card is now rendered by a Loop Grid (Empower asked for it to
+ * auto-populate; final/04-stories.mjs carries the whole argument), so the
+ * element sitting in the 1.35fr track is a loop-grid WIDGET, with the widget
+ * container, the loop container and the loop item stacked between it and
+ * .em-stories__lead-card. Left alone, the card is a great-grandchild of the
+ * grid and the 256px/1fr photograph-and-body split inside it has nothing to
+ * push against.
+ *
+ * display:contents on the four wrappers puts .em-stories__lead-card back in
+ * the 1.35fr track, which is the structure homepage.css:259 was written
+ * against.
+ *
+ * SCOPED TO .em-stories__lead-loop, THE CLASS ON THE WIDGET, and not to
+ * `.em-stories__feature .elementor-widget-container`. The looser selector
+ * would also match the mini column's own loop wrappers, which are already
+ * handled by the block above; today both want display:contents so it would
+ * look harmless, and it would silently take over the sibling column's repair
+ * the moment either one needs to differ. Two grids in one section, two
+ * separately named repairs.
+ *
+ * `> .elementor-widget-loop-grid` is not used here: the class IS on the widget,
+ * so the bare class selector is the widget, and a child combinator would be
+ * describing a position that class-in-markup already fixed. */
+.elementor .em-stories__lead-loop,
+.elementor .em-stories__lead-loop .elementor-widget-container,
+.elementor .em-stories__lead-loop .elementor-loop-container,
+.elementor .em-stories__lead-loop .e-loop-item{
+  display:contents;
+}
+
+/* The excerpt paragraph inside the lead card. text() puts its markup inside a
+ * widget wrapper, so homepage.css's `.em-stories__lead-headline` (a class on the
+ * WIDGET here, not on a <p> in this file's markup) lands on the wrapper and the
+ * <p> Elementor generates inside it keeps the editor's own margins. Same shape
+ * as the `.elementor .em-stories__attr p` exception further down this file, and
+ * kept for the same reason: the dynamic tag supplies the element, so there is
+ * no authored <p> for the class to move onto. */
+.elementor .em-stories__lead-headline p{
+  margin:0;
+}
+
 /* ---------- Form controls: DELETED 2026-08-15, the competitor is gone -------
  * The rule was `.elementor input.em-input, .elementor textarea.em-textarea,
  * .elementor select.em-select{font-family:var(--font-body);
@@ -2255,7 +2300,7 @@
  * this install, and the standing instruction is not to ship a page that
  * depends on it.
  *
- * podcast-a's repair (bridge.css:1313) moves the "last of several siblings"
+ * podcast-a's repair (bridge.css:1358) moves the "last of several siblings"
  * logic up to the WRAPPERS with `:not(:last-child)`, on the argument that
  * after conversion the widgets are the siblings the build's rule was written
  * about. That argument holds only while each widget contains exactly its own
@@ -2300,8 +2345,8 @@
  * a definite height; their defect was class-on-wrapper and their repair targets
  * the <img>):
  *   `.fp-hero__media`, `.fp-hero__aside`       homepage,    bridge.css:429-435
- *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2016-2018
- *   `.ta-hero__media`                          team-a,      bridge.css:2198-2200
+ *   `.sb-station__media`, `.sb-stories__band`  solutions-b, bridge.css:2061-2018
+ *   `.ta-hero__media`                          team-a,      bridge.css:2243-2200
  *   (line ranges read off the file today; the repricing document cites the
  *   first two as 403-419 and 1999-2000, which are the comment start and the
  *   selector list without their declaration.)
@@ -3316,7 +3361,7 @@
  * is 0,1,0 and the kit's `.elementor-kit-20547 button` is 0,1,1
  * (post-20547.css, 2698 bytes, fetched and read rather than assumed: its only
  * control rule covers button, input[type=button], input[type=submit] and
- * .elementor-button, and nothing else). bridge.css:830-860 restates .em-btn
+ * .elementor-button, and nothing else). bridge.css:875-860 restates .em-btn
  * base, --md, --lg and --inverse for native buttons, and says at :811-813 that
  * those were the only modifiers a native button used at the time. That was
  * true then. This page is the first native use of --primary, so nothing in
@@ -3325,7 +3370,7 @@
  * THE SIZE HALF IS PAOLO'S DECISION, taken 2026-08-18: restore 19px. It is a
  * THREE-way contest and the third party is ours. css/site.css:66
  * `.em-btn--primary.em-btn--lg{font-size:19px}` (0,2,0) is one of the
- * reversible WCAG overrides and beats the kit's 15px; bridge.css:852-855's
+ * reversible WCAG overrides and beats the kit's 15px; bridge.css:897-855's
  * `.elementor button.em-btn--lg{font-size:var(--fs-body)}` (0,2,1) then beats
  * BOTH and rendered 17px. So an accessibility decision was being undone by
  * this project's own bridge rather than by Elementor, which is why it needed
@@ -7126,7 +7171,7 @@ body .wpautoterms-footer a:focus-visible{
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
  * search.js:15), along with the assertion whose message carries the same
- * stale number (test-elementor.mjs:1500), so the reference and its target
+ * stale number (test-elementor.mjs:1504), so the reference and its target
  * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
@@ -7150,7 +7195,7 @@ body .wpautoterms-footer a:focus-visible{
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:3372 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:3530 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the

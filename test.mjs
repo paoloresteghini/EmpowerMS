@@ -156,9 +156,35 @@ test('section copy uses curly quotes in prose, not straight ASCII quotes', () =>
   }
 });
 
-test('stories attributes Jodi Berry with city', () => {
-  assert.match(html, /Jodi Berry/);
-  assert.match(html, /Sumrall, MS/);
+/* WAS 'stories attributes Jodi Berry with city' until 2026-09-04, asserting the
+   authored lead card. Empower's round-1 feedback replaced that card with the
+   newest Community Story, because the authored version paired her named quote
+   with a stock photograph of a different person. The test is inverted rather
+   than deleted: the thing now worth guarding is that no hand-authored person is
+   named in this card again, since the photograph beside it is whatever the
+   query returns and cannot be made to match a name typed here. */
+test('the stories lead card names no hand-authored person', () => {
+  /* Comments stripped first. The partial explains in a comment WHY the name and
+     the blockquote are gone, and a test reading raw HTML would find them there
+     and fail on its own documentation. Both assertions are about what the page
+     renders. */
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const feature = rendered.slice(rendered.indexOf('em-stories__feature'), rendered.indexOf('em-stories__col'));
+  assert.doesNotMatch(feature, /Jodi Berry|Sumrall, MS/,
+    'the lead card names a person again; the photograph beside it comes from the query and will not be them');
+  assert.match(feature, /auto-populated/,
+    'the lead card no longer declares that it is auto-populated');
+});
+
+/* The prose in these posts is written ABOUT the subject, not BY them (checked on
+   the install: no post_excerpt, no pull-quote field, only narrative body copy).
+   Setting it in <blockquote> would attribute a writer's sentence to the person
+   photographed, which is a worse version of the defect this section just fixed. */
+test('the stories section quotes nobody it cannot attribute', () => {
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const section = rendered.slice(rendered.indexOf('em-stories__feature'), rendered.indexOf('em-insights'));
+  assert.doesNotMatch(section, /<blockquote/,
+    'a blockquote is back in the auto-populated stories section');
 });
 
 test('insights lists three content rows', () => {

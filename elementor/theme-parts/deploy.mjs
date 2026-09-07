@@ -48,6 +48,7 @@ import { searchArchivePart, SEARCH_ARCHIVE_POST_ID, SEARCH_ARCHIVE_CONDITIONS } 
 import { searchResultItem, SEARCH_RESULT_ITEM_POST_ID } from './search-result-item.mjs';
 import { deployThemePart, deployLoopItem, setConditions } from '../deploy.mjs';
 import { flushPageCache } from '../../fidelity.mjs';
+import { wpe } from '../../wpe.mjs';
 
 /* Keyed by the exact document type string deployThemePart()'s third
  * argument (`location`, a known misnomer, see elementor/deploy.mjs's own
@@ -119,6 +120,13 @@ async function main() {
   /* Without this, a browser or fetchConverted() check run immediately after
    * this script can see a page cached from before the redeploy: the same
    * stale-read trap README.md and fidelity.mjs both document elsewhere. */
+  /* The Elementor CSS flush is separate from the page-cache flush and this
+   * script did neither until 2026-09-07: it flushed the page cache only, and
+   * inherited the CSS flush from deployElements(), which no longer does one per
+   * document. A theme part whose CSS is not regenerated renders with the
+   * previous version's rules, which looks like a deploy that did not land. */
+  await wpe('wp elementor flush_css');
+  console.log('Elementor CSS flushed.');
   await flushPageCache();
   console.log('Page cache flushed.');
 }

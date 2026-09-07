@@ -261,8 +261,14 @@
 .em-stories__lead-card>img{width:100%;height:100%;object-fit:cover;min-height:336px}
 .em-stories__lead-body{padding:var(--space-9) var(--space-8);display:flex;flex-direction:column;
   justify-content:center}
-.em-stories__lead-body blockquote{margin:0 0 var(--space-6)}
-.em-stories__lead-body blockquote p{margin:0;font-family:var(--font-display);
+/* Was `.em-stories__lead-body blockquote p` until 2026-09-04, and briefly an
+   excerpt slot after that. The card is auto-populated and the posts carry no
+   quotation to set, so this holds the post TITLE in the weight the design gave
+   the quote. final/04-stories.mjs records why the excerpt is not used.
+   --fs-h3 is the original size, restored: a title is about as long as the
+   pull-quote this was drawn for, unlike the generated excerpt that briefly
+   replaced it and needed h4 to fit. */
+.em-stories__lead-headline{margin:0;font-family:var(--font-display);
   font-weight:var(--fw-semibold);font-size:var(--fs-h3);line-height:1.4;
   letter-spacing:var(--ls-heading);color:var(--text-strong)}
 
@@ -432,12 +438,16 @@
 .em-join__way:hover .em-join__wash,
 .em-join__way:focus-within .em-join__wash{opacity:.26;transform:scale(1.04)}
 /* Per-photo, because the two sources need different handling to read as the
-   same treatment. The community photo is a tall frame whose subject sits low,
-   so the crop is pulled down to the ball and the grass rather than to a
-   cropped torso. The workshop photo is already light and would disappear into
-   a white panel, so it is darkened a touch instead of made more opaque. */
-.em-join__wash--community{object-position:center 62%}
-.em-join__wash--work{object-position:center 40%;filter:grayscale(.45) brightness(.9) contrast(1.1)}
+   same treatment. Both are portrait frames re-used from earlier in the page so
+   the wash costs no extra download (test: "the join us washes reuse photos the
+   page already loads"), and both are cropped hard to a wide box, so the
+   object-position picks which horizontal band survives. The shop portrait is
+   framed to the subject rather than the shelves behind her. The product still is
+   light and would disappear into a white panel, so it is darkened a touch
+   instead of made more opaque. Retuned 2026-09-03 with the photographs
+   they now name; the previous values were set for two files that are gone. */
+.em-join__wash--community{object-position:center 34%}
+.em-join__wash--work{object-position:center 38%;filter:grayscale(.45) brightness(.9) contrast(1.1)}
 @media (prefers-reduced-motion:reduce){
   .em-join__wash{transition:opacity var(--dur) var(--ease-out)}
   .em-join__way:hover,.em-join__way:focus-within{transform:none}

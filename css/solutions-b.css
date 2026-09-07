@@ -70,7 +70,15 @@
   width:3px;margin-inline:auto;border-radius:var(--radius-pill)}
 
 /* ============================= 2 · The track ============================== */
-.sb-track{padding:0 0 clamp(var(--space-11),6vw,var(--space-14));
+/* The bottom padding is the navy gap between the LAST station's photograph
+   (Public Safety) and the section that follows. Empower round 1, row 6: "add
+   just a bit more blue space under the photo to give the page a bit of
+   breathing room before the next section". Raised one step on the spacing
+   scale, 64/120 to 80/160, rather than by a typed pixel value.
+   It is the SECTION's padding and not a margin on the last station, because a
+   margin there would collapse differently once .sb-stations is a grid and
+   would not paint navy. */
+.sb-track{padding:0 0 clamp(var(--space-12),7vw,var(--space-15));
   background:var(--surface-navy-deep);color:var(--text-inverse)}
 
 .sb-track__head{margin:0 0 clamp(var(--space-9),4vw,var(--space-12));text-align:center;
@@ -124,7 +132,12 @@ html:not([data-reveal="on"]) .sb-station__node{transform:scale(1);opacity:1}
    and there are three of them. */
 .sb-station__media{border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg);
   aspect-ratio:5/4;border:1px solid var(--border-inverse);
-  max-width:400px;justify-self:start}
+  /* width:100% is load-bearing. justify-self:start stops the figure stretching
+     to its grid column, and its only content is an img at width:100%, so
+     without a width of its own the figure resolves to 3px and aspect-ratio and
+     max-width never apply: all three photographs render as a 1x0 sliver.
+     Found 2026-09-03 by measuring, not by looking. */
+  width:100%;max-width:400px;justify-self:start}
 .sb-station:nth-child(2) .sb-station__media{justify-self:end}
 .sb-station__media img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 32%}
 

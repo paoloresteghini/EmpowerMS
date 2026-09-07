@@ -127,15 +127,26 @@ export function section() {
         container({ cssClass: 'fp-hero__stack', content_width: 'full' }, [
           container(
             { cssClass: 'fp-hero__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-            [image({ ...photo('father-children-field') })],
+            [image({ ...photo('family-three-generations') })],
           ),
           container(
             {
               cssClass: 'fp-hero__aside',
               content_width: 'full',
-              _attributes: 'data-reveal|rise\naria-hidden|true',
+              /* NO aria-hidden ANY MORE, 2026-09-07. Note 4 above describes a
+                 336px square tucked over the main photograph's corner, which was
+                 decoration and was hidden from the accessibility tree on purpose.
+                 Empower's round-1 row 1 kept that tuck and only moved it to the
+                 BOTTOM corner, larger: the position changed, the overlay did not.
+                 What makes it content is the PICTURE. It is now a recognisable
+                 Mississippi landmark that a screen reader user has no other route
+                 to, rather than a texture. Its
+                 attachment was imported WITH alt text (Paolo approved the
+                 sentence on 2026-09-07), so the widget emits a real alt and
+                 hiding the subtree would throw it away. */
+              _attributes: 'data-reveal|rise',
             },
-            [image({ ...photo('children-running-parent') })],
+            [image({ ...photo('vicksburg-bridge-sunrise') })],
           ),
         ]),
       ]),

@@ -44,7 +44,14 @@
   background:var(--white);
   border-radius:var(--radius-md);
   padding:clamp(16px,2vw,28px) clamp(20px,2.4vw,34px);
-  width:clamp(200px,22vw,320px);
+  /* 2026-09-04, Empower round 1 row 8: "Make logo larger". Raised one step
+     from clamp(200px,22vw,320px). The plate is a white box on a navy hero and
+     it is the container that carries the width; the img inside is width:100%,
+     so this scales the plate and the mark together and the padding around the
+     mark keeps its proportion. The MOBILE width below is deliberately left
+     alone: at 44vw the plate is already the widest thing in that layout, and
+     the feedback screenshot is the desktop hero. */
+  width:clamp(240px,26vw,380px);
 }
 .epa-hero__mark img{display:block;width:100%;height:auto}
 

@@ -13,3 +13,9 @@ wb-new.jpeg
 node_modules/
 .snapshots/
 .ship/
+
+# Throwaway probe scripts and their output. These are the one-off wp-cli
+# queries and page dumps a live-install investigation leaves behind; they name
+# post ids and install state that go stale within the day.
+scratchpad/
+__pycache__/

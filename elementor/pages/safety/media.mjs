@@ -65,11 +65,49 @@
  * converted until somebody imports it. `safety` is unaffected.
  */
 
+/* 2026-09-04: THIS PAGE IS THE ONE THAT COULD NOT USE THE SHOOT.
+ *
+ * `*Professional Photos` contains no public safety photography at all, and
+ * Kienna's handover invited using the Work frames here instead, "where they fit
+ * our rehabilitation and second-chances work". Those frames are a real
+ * warehouse floor with identifiable people on it, and this page's stories
+ * section is headed "Voices of Safer Communities", carrying named accounts of
+ * addiction, prison and reentry (Kyle Jackson, Kayla Hulett, Tyler Wilson). A
+ * photograph of an identifiable worker directly above those stories tells the
+ * reader that person has a conviction. Nobody in the build can verify that, and
+ * the invitation was thematic rather than a statement about consent, so the
+ * page was held rather than filled that way.
+ *
+ * BOTH PHOTOGRAPHS ARE LICENSED STOCK, from the folder Empower supplied for
+ * exactly this ("we may need to supplement that page with stock photography, so
+ * I've also included a folder of organized stock photos we already have
+ * licenses for"):
+ *
+ *   police-lights           Stock Photos/Public Safety. That folder holds ONE
+ *                           file. It is an object, not a person, so it makes no
+ *                           claim about anybody.
+ *   ms-river-bridge-sunrise Stock Photos/Landscape & Capitol. The stories band
+ *                           is the only image in that section, and it sits above
+ *                           three named people's stories, so it had to be a
+ *                           photograph with NO PEOPLE IN IT. A place cannot be
+ *                           mistaken for one of the people described below it.
+ *
+ * These two are the only stock in the converted build, and the standing rule
+ * they respect is the one the All Content work established: a stock photograph
+ * never sits beside a named person's headline. Here it sits above the section,
+ * as furniture, and shows a river.
+ *
+ * THEY ARE ALSO THE SHARPEST BAND IN THE BUILD, at a true 2.0x, because the
+ * stock originals are 5000px+ while `*Professional Photos/Highlights` is capped
+ * at 1024px. The other three story bands (education, work, solutions-b) ship at
+ * 0.72x for that reason. This folder may be able to fix them too.
+ */
+
 import { PHOTOS as FINAL_PHOTOS } from '../final/media.mjs';
 
 const PHOTOS = {
-  'grandparents-grandchild': FINAL_PHOTOS['grandparents-grandchild'],
-  'father-children-field': FINAL_PHOTOS['father-children-field'],
+  'police-lights': FINAL_PHOTOS['police-lights'],
+  'ms-river-bridge-sunrise': FINAL_PHOTOS['ms-river-bridge-sunrise'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

@@ -70,21 +70,21 @@ const CUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 
 const PANELS = [
   {
-    photo: 'child-classroom-tablet',
+    photo: 'student-hand-raised',
     href: '/quality-education',
     title: 'Quality Education',
     promise: 'You want to know your child has every opportunity to succeed.',
     solution: 'We’re advancing practical education solutions that expand educational opportunity, empower parents, and help every child reach their full potential.',
   },
   {
-    photo: 'worker-workshop-bw',
+    photo: 'warehouse-worker-pallet',
     href: '/meaningful-work',
     title: 'Meaningful Work',
     promise: 'Working hard should open doors, not leave you struggling to get ahead.',
     solution: 'We’re advancing workforce solutions that connect more Mississippians to meaningful careers, strengthen our workforce, and create more opportunities to succeed.',
   },
   {
-    photo: 'grandparents-grandchild',
+    photo: 'advocate-capitol-portrait',
     href: '/public-safety',
     title: 'Public Safety',
     promise: 'You should feel safe in the community you call home.',

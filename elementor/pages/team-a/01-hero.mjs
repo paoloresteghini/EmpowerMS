@@ -109,7 +109,7 @@ export function section() {
         container({ cssClass: 'ta-hero__aside', content_width: 'full' }, [
           container(
             { cssClass: 'ta-hero__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-            [image({ ...photo('children-running-parent') })],
+            [image({ ...photo('two-advocates-portrait') })],
           ),
         ]),
       ]),

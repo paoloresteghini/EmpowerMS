@@ -81,10 +81,10 @@ const CLOSE = 'They share one thing in common: a desire to help create more oppo
    describe the photographs (young-man-portrait-bw is a classroom, in colour),
    so nothing here should be inferred from a name. */
 const CELLS = [
-  { modifier: 'aba-mosaic__cell--1', photo: 'worker-workshop-bw' },
-  { modifier: 'aba-mosaic__cell--2', photo: 'young-man-portrait-bw' },
-  { modifier: 'aba-mosaic__cell--3', photo: 'video-still-man-outdoors' },
-  { modifier: 'aba-mosaic__cell--4', photo: 'classroom-students' },
+  { modifier: 'aba-mosaic__cell--1', photo: 'hands-with-product-sq' },
+  { modifier: 'aba-mosaic__cell--2', photo: 'worksheet-overhead' },
+  { modifier: 'aba-mosaic__cell--3', photo: 'maker-with-laptop' },
+  { modifier: 'aba-mosaic__cell--4', photo: 'advocate-portrait-blue' },
 ];
 
 const cell = (c) =>

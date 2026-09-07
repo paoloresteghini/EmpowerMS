@@ -91,6 +91,12 @@ const PHOTOS = {
     id: 20600,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/student-library.jpg',
   },
+  'advocate-outdoors': FINAL_PHOTOS['advocate-outdoors'],
+  'advocates-capitol-rail': FINAL_PHOTOS['advocates-capitol-rail'],
+  'shop-owner-standing': FINAL_PHOTOS['shop-owner-standing'],
+  'teacher-at-whiteboard': FINAL_PHOTOS['teacher-at-whiteboard'],
+  'teacher-with-student': FINAL_PHOTOS['teacher-with-student'],
+  'warehouse-worker-aisle': FINAL_PHOTOS['warehouse-worker-aisle'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

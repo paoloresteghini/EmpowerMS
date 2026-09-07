@@ -64,7 +64,7 @@ const PODCAST_MARKUP = `<a class="em-podcast em-insights__podcast" href="/podcas
 
 const ROWS = [
   {
-    photo: 'child-classroom-tablet',
+    photo: 'gift-boxes-detail',
     badge: 'Article',
     readTime: '4 min read',
     title: 'Article headline — auto-populated from the blog',
@@ -80,7 +80,7 @@ const ROWS = [
     href: '/research',
   },
   {
-    photo: 'classroom-students',
+    photo: 'teacher-student-desk',
     badge: 'Community Story',
     readTime: '3 min read',
     title: 'Community story title — auto-populated',

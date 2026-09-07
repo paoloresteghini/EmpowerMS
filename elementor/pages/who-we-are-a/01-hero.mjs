@@ -150,7 +150,7 @@ export function section() {
         container({ cssClass: 'wa-hero__stack', content_width: 'full' }, [
           container(
             { cssClass: 'wa-hero__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-            [image({ ...photo('grandparents-grandchild') })],
+            [image({ ...photo('advocates-capitol-rail') })],
           ),
           container(
             {
@@ -158,7 +158,7 @@ export function section() {
               content_width: 'full',
               _attributes: 'data-reveal|clip',
             },
-            [image({ ...photo('student-library'), _attributes: 'aria-hidden|true' })],
+            [image({ ...photo('teacher-with-student'), _attributes: 'aria-hidden|true' })],
           ),
         ]),
       ]),

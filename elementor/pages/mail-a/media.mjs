@@ -50,6 +50,7 @@ import { PHOTOS as FINAL_PHOTOS } from '../final/media.mjs';
 const PHOTOS = {
   'esa-email-mockup': FINAL_PHOTOS['esa-email-mockup'],
   'children-running-parent': FINAL_PHOTOS['children-running-parent'],
+  'teacher-yellow-portrait': FINAL_PHOTOS['teacher-yellow-portrait'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

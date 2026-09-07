@@ -79,6 +79,9 @@ import { PHOTOS as FINAL_PHOTOS } from '../final/media.mjs';
 const PHOTOS = {
   'girl-writing-bw': FINAL_PHOTOS['girl-writing-bw'],
   'worker-workshop-bw': FINAL_PHOTOS['worker-workshop-bw'],
+  'worker-labelling-wide': FINAL_PHOTOS['worker-labelling-wide'],
+  'worker-sorting-table': FINAL_PHOTOS['worker-sorting-table'],
+  'apprentice-at-the-machine-wide': FINAL_PHOTOS['apprentice-at-the-machine-wide'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

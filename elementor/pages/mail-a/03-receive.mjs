@@ -160,7 +160,7 @@ export function section() {
         ]),
         container(
           { cssClass: 'mla-receive__figure', content_width: 'full', _attributes: 'data-reveal|clip' },
-          [image({ ...photo('children-running-parent') })],
+          [image({ ...photo('teacher-yellow-portrait') })],
         ),
       ]),
     ],

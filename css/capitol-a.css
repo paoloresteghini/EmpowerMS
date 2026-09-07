@@ -71,7 +71,7 @@
 
 .cca-hero__action{margin:0}
 
-/* ---- The triptych, where the Capitol photography will go ---- */
+/* ---- The triptych, three frames from a Capitol Chat recording ---- */
 
 .cca-triptych{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
   gap:var(--space-5);list-style:none;
@@ -80,14 +80,16 @@
 /* 3:2 and short on purpose. A tall placeholder is a void; a letterbox reads as a
    slot. The first one carries the caption so the row explains itself without
    repeating the same words three times. */
-.cca-plate{display:grid;place-items:center;aspect-ratio:3/2;
-  padding:var(--space-4);text-align:center;
-  border:2px dashed var(--border-default);border-radius:var(--radius-media);
-  background:repeating-linear-gradient(135deg,
-    rgba(0,60,80,.05) 0 10px, rgba(0,60,80,0) 10px 20px)}
-.cca-plate span{font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
-  text-transform:uppercase;color:var(--text-muted)}
+/* Filled with real Capitol Chat photography 2026-09-04; the dashed hatched
+   placeholder styling this carried until then is gone, not commented out.
+   `> *` is here for the converted build, not the static one: under Elementor a
+   widget wrapper sits between the plate and its <img>, and without a height on
+   that wrapper the image has nothing to fill. In the static build `> *` IS the
+   img, so the rule is harmless there and one declaration serves both. */
+.cca-plate{aspect-ratio:3/2;overflow:hidden;border-radius:var(--radius-media);
+  box-shadow:var(--shadow-lg)}
+.cca-plate > *{display:block;width:100%;height:100%}
+.cca-plate img{display:block;width:100%;height:100%;object-fit:cover}
 
 @media (max-width:720px){
   .cca-triptych{grid-template-columns:minmax(0,1fr)}

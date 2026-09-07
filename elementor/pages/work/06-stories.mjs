@@ -203,7 +203,7 @@ export function section() {
     [
       container(
         { cssClass: 'sol-stories__band', content_width: 'full', _attributes: 'data-reveal|clip' },
-        [image({ ...photo('worker-workshop-bw') })],
+        [image({ ...photo('apprentice-at-the-machine-wide') })],
       ),
       container({ cssClass: 'em-container', content_width: 'full' }, [
         container(

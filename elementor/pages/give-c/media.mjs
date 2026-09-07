@@ -61,6 +61,8 @@ import { PHOTOS as FINAL_PHOTOS } from '../final/media.mjs';
 const PHOTOS = {
   'child-classroom-tablet': FINAL_PHOTOS['child-classroom-tablet'],
   'children-running-parent': FINAL_PHOTOS['children-running-parent'],
+  'teacher-with-student-45': FINAL_PHOTOS['teacher-with-student-45'],
+  'worker-packing-smiling': FINAL_PHOTOS['worker-packing-smiling'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

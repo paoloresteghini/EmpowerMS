@@ -70,19 +70,19 @@ const CUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 
 const DOORS = [
   {
-    photo: 'child-classroom-tablet',
+    photo: 'classroom-small-group',
     href: '/quality-education',
     title: 'Quality Education',
     body: 'Helping every child access the education they need to reach their full potential.',
   },
   {
-    photo: 'worker-workshop-bw',
+    photo: 'worker-at-bench',
     href: '/meaningful-work',
     title: 'Meaningful Work',
     body: 'Removing barriers so more Mississippians can find meaningful work and build lasting prosperity.',
   },
   {
-    photo: 'grandparents-grandchild',
+    photo: 'advocates-capitol-hall',
     href: '/public-safety',
     title: 'Public Safety',
     body: 'Creating safer communities where families and opportunity can thrive.',

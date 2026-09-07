@@ -211,7 +211,7 @@ export function section() {
     [
       container(
         { cssClass: 'sol-stories__band', content_width: 'full', _attributes: 'data-reveal|clip' },
-        [image({ ...photo('family-outdoors-park') })],
+        [image({ ...photo('classroom-group-wide') })],
       ),
       container({ cssClass: 'em-container', content_width: 'full' }, [
         container(

@@ -89,7 +89,7 @@ export function section() {
         container({ cssClass: 'epa-work__body', content_width: 'full' }, [
           container(
             { cssClass: 'epa-work__figure', content_width: 'full', _attributes: 'data-reveal|clip' },
-            [image({ ...photo('worker-workshop-bw') })],
+            [image({ ...photo('warehouse-worker-aisle-43') })],
           ),
           container(
             { cssClass: 'epa-work__prose', content_width: 'full', _attributes: 'data-reveal-group|' },

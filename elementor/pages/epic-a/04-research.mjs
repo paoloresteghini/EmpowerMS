@@ -152,7 +152,7 @@ const CMS_NOTE = 'The newest report in this focus area. The area name and photog
 const AREAS = [
   {
     id: 'area-education',
-    photo: 'child-classroom-tablet',
+    photo: 'teacher-smartboard',
     name: 'Quality Education',
     href: 'https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/',
     title: 'Charter Schools Outperform Districts on 3rd Grade Reading Test Initial Results',
@@ -160,7 +160,7 @@ const AREAS = [
   },
   {
     id: 'area-work',
-    photo: 'video-still-man-outdoors',
+    photo: 'hands-with-product',
     name: 'Meaningful Work',
     href: 'https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/',
     title: 'New Empower Mississippi Report Highlights Growth in Labor Force Participation Rate',
@@ -168,7 +168,7 @@ const AREAS = [
   },
   {
     id: 'area-safety',
-    photo: 'grandparents-grandchild',
+    photo: 'advocates-outside-capitol',
     name: 'Public Safety',
     href: 'https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/',
     title: 'Empower releases report on violent crime in Mississippi',

@@ -111,6 +111,10 @@ const PHOTOS = {
     id: 20604,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/epic-logo.png',
   },
+  'warehouse-worker-aisle-43': FINAL_PHOTOS['warehouse-worker-aisle-43'],
+  'teacher-smartboard': FINAL_PHOTOS['teacher-smartboard'],
+  'hands-with-product': FINAL_PHOTOS['hands-with-product'],
+  'advocates-outside-capitol': FINAL_PHOTOS['advocates-outside-capitol'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

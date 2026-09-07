@@ -109,6 +109,9 @@ const PHOTOS = {
     id: 20610,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/family-outdoors-park.jpg',
   },
+  'students-working-quietly': FINAL_PHOTOS['students-working-quietly'],
+  'teacher-small-group-wide': FINAL_PHOTOS['teacher-small-group-wide'],
+  'classroom-group-wide': FINAL_PHOTOS['classroom-group-wide'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

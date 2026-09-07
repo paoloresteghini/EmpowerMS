@@ -1,4 +1,5 @@
 import { container, text, link, html } from '../../factory.mjs';
+import { photo } from './media.mjs';
 
 /* Source of truth: dist/capitol-a.html, the <section class="cca-hero"> block
    (lines 181-200). Every class, string and attribute below is read from that
@@ -73,10 +74,27 @@ const HEADLINE = 'What’s Happening Under the Dome?';
 const EYEBROW = 'Capitol Chat';
 const LEDE = 'Get quick, straightforward updates on the legislation, debates, and decisions shaping Mississippi during the legislative session.';
 
+/* THE PHOTOGRAPHS STAY INSIDE THE MARKUP STRING, and that is the whole reason
+   this section is still one html() widget after being filled on 2026-09-04.
+   Point 5 above explains what breaks if the plates become a container tree:
+   `.cca-plate:not(:first-child){display:none}` inside the 720px media query
+   goes inert, because each <li> would become the only child of its own widget
+   wrapper, and all three plates would render on a phone where the design shows
+   one. Turning the plates into image() widgets would do exactly that, so the
+   photographs are plain <img> tags in this string instead.
+   The urls are still READ FROM THE MEDIA MAP rather than typed, which is the
+   part that matters: final/media.mjs's header gives the reason ("an id typed at
+   each point of use is the same install fact written five times").
+   The two silent plates keep alt="" AND aria-hidden, matching the source
+   partial: they are a decorative continuation of the first. */
+const PLATES = [
+  { photo: 'capitol-chat-flags', alt: 'Two men seated for a Capitol Chat recording, with United States and Mississippi flags behind them' },
+  { photo: 'capitol-chat-interview', alt: '' },
+  { photo: 'capitol-chat-desk', alt: '' },
+];
+
 const TRIPTYCH = `<ul class="cca-triptych" data-reveal-group>
-      <li class="cca-plate" data-placeholder="photo" data-reveal="rise"><span>Capitol photography to come</span></li>
-      <li class="cca-plate" data-placeholder="photo" data-reveal="rise" aria-hidden="true"></li>
-      <li class="cca-plate" data-placeholder="photo" data-reveal="rise" aria-hidden="true"></li>
+${PLATES.map(p => `      <li class="cca-plate" data-reveal="rise"${p.alt ? '' : ' aria-hidden="true"'}><img src="${photo(p.photo).url}" alt="${p.alt}" width="742" height="494" loading="lazy" decoding="async"></li>`).join('\n')}
     </ul>`;
 
 export function section() {
@@ -106,7 +124,7 @@ export function section() {
             }),
             container(
               { cssClass: 'cca-hero__action', content_width: 'full', _attributes: 'data-reveal|rise' },
-              [link({ label: 'Listen Now', href: '/podcast', cssClass: 'em-btn em-btn--primary em-btn--lg' })],
+              [link({ label: 'Listen Now', href: '#library-title', cssClass: 'em-btn em-btn--primary em-btn--lg' })],
             ),
           ],
         ),

@@ -69,7 +69,7 @@ const FORM_MARKUP = `<form class="em-newsletter__form" action="#" method="post">
 
 const WAYS = [
   {
-    photo: 'children-running-parent',
+    photo: 'shop-owner-portrait',
     wash: 'em-join__wash--community',
     title: 'Bring it home',
     body: 'Take the conversation about opportunity to the place you already know best — your school board, your church, your street. We hand you what you need to start it.',
@@ -77,7 +77,7 @@ const WAYS = [
     label: 'Become an ambassador',
   },
   {
-    photo: 'worker-workshop-bw',
+    photo: 'gift-boxes-detail',
     wash: 'em-join__wash--work',
     title: 'Fund the work',
     body: 'Your support puts research, advocacy and follow-through behind the solutions on this page — and keeps them in front of the people who decide.',

@@ -163,7 +163,7 @@ const arrowSvg = () =>
 
 const STATIONS = [
   {
-    photo: 'child-classroom-tablet',
+    photo: 'classroom-small-group-54',
     href: '/solutions/education',
     title: 'Quality Education',
     promise: 'Every child deserves the opportunity to learn, grow, and reach their full potential.',
@@ -171,7 +171,7 @@ const STATIONS = [
     cue: 'Explore Quality Education',
   },
   {
-    photo: 'worker-workshop-bw',
+    photo: 'worker-at-bench-54',
     href: '/solutions/work',
     title: 'Meaningful Work',
     promise: 'Every Mississippian should have the opportunity to build a meaningful career and create a better future.',
@@ -179,7 +179,7 @@ const STATIONS = [
     cue: 'Explore Meaningful Work',
   },
   {
-    photo: 'grandparents-grandchild',
+    photo: 'advocates-capitol-hall-54',
     href: '/solutions/safety',
     title: 'Public Safety',
     promise: 'Opportunity grows when people feel safe in the places they live, work, and raise their families.',

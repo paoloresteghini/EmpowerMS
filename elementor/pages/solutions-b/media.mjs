@@ -100,6 +100,11 @@ const PHOTOS = {
     id: 20597,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/video-still-man-outdoors.jpg',
   },
+  'advocates-in-conversation-wide': FINAL_PHOTOS['advocates-in-conversation-wide'],
+  'classroom-small-group-54': FINAL_PHOTOS['classroom-small-group-54'],
+  'worker-at-bench-54': FINAL_PHOTOS['worker-at-bench-54'],
+  'advocates-capitol-hall-54': FINAL_PHOTOS['advocates-capitol-hall-54'],
+  'ms-capitol-first-light-wide': FINAL_PHOTOS['ms-capitol-first-light-wide'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

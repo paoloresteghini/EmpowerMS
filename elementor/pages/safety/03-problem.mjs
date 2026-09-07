@@ -132,7 +132,7 @@ export function section() {
             ]),
             container(
               { cssClass: 'sol-problem__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-              [image({ ...photo('grandparents-grandchild') })],
+              [image({ ...photo('police-lights') })],
             ),
           ],
         ),

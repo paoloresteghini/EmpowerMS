@@ -86,6 +86,11 @@ const PHOTOS = {
     id: 20597,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/video-still-man-outdoors.jpg',
   },
+  'shop-owner-counter': FINAL_PHOTOS['shop-owner-counter'],
+  'hands-with-product-sq': FINAL_PHOTOS['hands-with-product-sq'],
+  'worksheet-overhead': FINAL_PHOTOS['worksheet-overhead'],
+  'maker-with-laptop': FINAL_PHOTOS['maker-with-laptop'],
+  'advocate-portrait-blue': FINAL_PHOTOS['advocate-portrait-blue'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

@@ -107,7 +107,7 @@ export function section() {
         container({ cssClass: 'da-hero__stack', content_width: 'full' }, [
           container(
             { cssClass: 'da-hero__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-            [image({ ...photo('classroom-students') })],
+            [image({ ...photo('school-leader-crest') })],
           ),
         ]),
       ]),

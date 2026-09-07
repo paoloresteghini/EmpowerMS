@@ -157,13 +157,13 @@ export function section() {
           ]),
           container({ cssClass: 'wa-people__frames', content_width: 'full' }, [
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('young-man-portrait-bw'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('shop-owner-standing'), _attributes: 'aria-hidden|true' }),
             ]),
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('girl-writing-bw'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('warehouse-worker-aisle'), _attributes: 'aria-hidden|true' }),
             ]),
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('student-library'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('advocate-outdoors'), _attributes: 'aria-hidden|true' }),
             ]),
           ]),
         ],

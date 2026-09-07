@@ -118,10 +118,10 @@ export function section() {
         ]),
         container({ cssClass: 'gvc-matters__figures', content_width: 'full' }, [
           container({ cssClass: 'gvc-figure', content_width: 'full' }, [
-            image({ ...photo('child-classroom-tablet') }),
+            image({ ...photo('teacher-with-student-45') }),
           ]),
           container({ cssClass: 'gvc-figure', content_width: 'full' }, [
-            image({ ...photo('children-running-parent') }),
+            image({ ...photo('worker-packing-smiling') }),
           ]),
         ]),
       ]),

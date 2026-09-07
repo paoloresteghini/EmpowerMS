@@ -156,7 +156,7 @@ export function section() {
             ]),
             container(
               { cssClass: 'sol-problem__media', content_width: 'full', _attributes: 'data-reveal|clip' },
-              [image({ ...photo('girl-writing-bw') })],
+              [image({ ...photo('worker-sorting-table') })],
             ),
           ],
         ),

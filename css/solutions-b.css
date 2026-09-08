@@ -73,12 +73,31 @@
 /* The bottom padding is the navy gap between the LAST station's photograph
    (Public Safety) and the section that follows. Empower round 1, row 6: "add
    just a bit more blue space under the photo to give the page a bit of
-   breathing room before the next section". Raised one step on the spacing
-   scale, 64/120 to 80/160, rather than by a typed pixel value.
+   breathing room before the next section". First raised one step on the
+   spacing scale, 64/120 to 80/160; Empower looked at that on the install and
+   asked for "30px more space", so this is the second pass.
+
+   THE 30px IS A TYPED OFFSET ON TOP OF THE SCALE, deliberately, and it is the
+   one place in this file that departs from the token scale. Row 6's first pass
+   moved a step because "a bit more" is a judgement; this ask is a number, and a
+   number is only honoured if it arrives at every width. Widening the vw term
+   instead was tried and rejected: 9.5vw is +30px at 1200 but +36px at 1440 and
+   +42px at 1684, so the one width Empower measured would have been the only one
+   that got what they asked for.
+
+   Written OUTSIDE the clamp so the original ramp is still legible and the
+   request can be removed in one edit if it is later folded into the scale.
+
+   MEASURE THIS AT REST, NOT MID-REVEAL. The last station carries data-reveal
+   "rise", so a probe that reads the gap before the animation settles sees the
+   photograph still translated down and reports ~19px less blue than there is.
+   That reading was taken once and briefly written up here as an overflow, which
+   it is not: with the transform neutralised the visible band equals the padding.
+
    It is the SECTION's padding and not a margin on the last station, because a
    margin there would collapse differently once .sb-stations is a grid and
    would not paint navy. */
-.sb-track{padding:0 0 clamp(var(--space-12),7vw,var(--space-15));
+.sb-track{padding:0 0 calc(clamp(var(--space-12),7vw,var(--space-15)) + 30px);
   background:var(--surface-navy-deep);color:var(--text-inverse)}
 
 .sb-track__head{margin:0 0 clamp(var(--space-9),4vw,var(--space-12));text-align:center;

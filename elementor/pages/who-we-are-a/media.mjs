@@ -92,6 +92,21 @@ const PHOTOS = {
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/08/student-library.jpg',
   },
   'advocate-outdoors': FINAL_PHOTOS['advocate-outdoors'],
+  /* The people band's three frames, 2026-09-07. Their alt was written by
+     `wp media import --alt` at creation and read straight back off the install:
+       20708 "Two people talking at an event, one in a navy suit with a flag
+              lapel pin"
+       20709 "A woman in an orange top in conversation beside Empower
+              Mississippi banners"
+       20707 "Two men talking in front of a board marking ten years of Empower
+              Mississippi"
+     Recorded here because these three are the only photographs on this page
+     whose attachment alt is the alt a visitor gets: every other frame on this
+     page is either meaningful with a sentence that predates this build, or
+     decorative and suppressed at the widget. */
+  'event-conversation-anniversary': FINAL_PHOTOS['event-conversation-anniversary'],
+  'event-conversation-atrium': FINAL_PHOTOS['event-conversation-atrium'],
+  'event-conversation-banners': FINAL_PHOTOS['event-conversation-banners'],
   'advocates-capitol-rail': FINAL_PHOTOS['advocates-capitol-rail'],
   'shop-owner-standing': FINAL_PHOTOS['shop-owner-standing'],
   'teacher-at-whiteboard': FINAL_PHOTOS['teacher-at-whiteboard'],

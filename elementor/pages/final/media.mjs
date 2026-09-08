@@ -123,6 +123,24 @@ export const PHOTOS = {
     id: 20659,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/classroom-small-group-54.jpg',
   },
+  /* Imported 2026-09-07 for Empower round 1 row 4, from the "Team General"
+     folder Kienna linked. Ids and urls read back off the install by
+     import-photography.mjs, not composed from the filenames. Unlike everything
+     else in this map these are EVENT CANDIDS of identifiable Empower people,
+     and who-we-are-a uses them as content with real alt rather than as
+     decoration; 04-people.mjs records why the aria-hidden came off. */
+  'event-conversation-anniversary': {
+    id: 20707,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/event-conversation-anniversary.jpg',
+  },
+  'event-conversation-atrium': {
+    id: 20708,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/event-conversation-atrium.jpg',
+  },
+  'event-conversation-banners': {
+    id: 20709,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/event-conversation-banners.jpg',
+  },
   'gift-boxes-detail': {
     id: 20660,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/gift-boxes-detail.jpg',

@@ -187,16 +187,20 @@
 .wa-people__grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
   gap:clamp(var(--space-9),5vw,var(--space-13));align-items:center}
 
-.wa-people h2{margin:0 0 var(--space-6);text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);
+/* space-8, not the space-6 this carried until 2026-09-07. The gap it leaves is
+   the one the removed .wa-people__list used to provide: the list sat between
+   heading and button with `margin:0 0 var(--space-8)`, so taking it out left
+   the button 40px closer than the block was drawn. The rhythm belongs to the
+   column, not to whichever element happens to be last, so it moves here rather
+   than becoming a margin-top on the button. */
+.wa-people h2{margin:0 0 var(--space-8);text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);
   font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
 
-/* What the team page holds, listed rather than described — the roadmap gives
-   three items and no prose, and three items are a list. */
-.wa-people__list{margin:0 0 var(--space-8);padding:0;list-style:none;display:grid;gap:var(--space-3)}
-.wa-people__list li{position:relative;padding-left:var(--space-7);font-size:var(--fs-body);
-  color:var(--text-body)}
-.wa-people__list li::before{content:"";position:absolute;left:0;top:.62em;
-  width:14px;height:2px;border-radius:1px;background:var(--em-orange)}
+/* The three-item list that stood here ("Staff headshots & bios / Board
+   headshots / Fellow headshots") was struck out by Empower on 2026-09-07,
+   round 1 row 4. Its rules are DELETED rather than commented out: the markup
+   that used them is gone from both the partial and the Elementor builder, and
+   a selector with nothing to match is not documentation. */
 
 /* Three portraits at three heights. The stagger is what stops a row of
    headshots reading as a stock grid. */

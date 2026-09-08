@@ -120,11 +120,14 @@ import { photo } from './media.mjs';
 
 const HEADLINE = 'Meet the people behind Empower Mississippi.';
 
-const LIST = `<ul class="wa-people__list">
-        <li>Staff headshots &amp; bios</li>
-        <li>Board headshots</li>
-        <li>Fellow headshots</li>
-      </ul>`;
+/* NO LIST WIDGET. A `<ul class="wa-people__list">` of three items stood between
+   the heading and the button until 2026-09-07, when Empower struck it out in
+   round 1 row 4. Removing it removes a text() widget from this container, which
+   is worth saying out loud on this page: note 6 below repairs the frames by
+   container position, and note 7 describes the heading widget. Neither depends
+   on how many children .wa-people__copy has, and bridge.css's own rule here is
+   `.wa-people__copy > .em-btn`, addressed by class rather than by index, so
+   nothing downstream shifts. Checked before deleting rather than assumed. */
 
 export function section() {
   return container(
@@ -147,7 +150,6 @@ export function section() {
               markup: `<h2 id="people-title">${HEADLINE}</h2>`,
               _attributes: 'data-reveal|rise',
             }),
-            text({ markup: LIST, _attributes: 'data-reveal|rise' }),
             link({
               label: 'Team, Board &amp; Fellows',
               href: '/about/team',
@@ -155,15 +157,28 @@ export function section() {
               _attributes: 'data-reveal|rise',
             }),
           ]),
+          /* NO aria-hidden ON ANY OF THE THREE, 2026-09-07. It was there because
+             the previous photographs were decoration: people Empower works for,
+             standing in for a team page that did not exist. Empower's own event
+             photography replaced them in round 1 row 4, and the heading above
+             this container says “Meet the people behind Empower Mississippi”, so
+             these frames now carry the section's subject rather than its texture.
+
+             THAT MAKES THE ATTACHMENT ALT LOAD-BEARING. The image widget has no
+             alt control and reads the attachment, so hiding the subtree would
+             throw away the only sentence a screen reader would get. All three
+             were imported WITH `--alt` on 2026-09-07 (Paolo approved the
+             wording first) and read back off the install; media.mjs records the
+             three sentences next to their ids. */
           container({ cssClass: 'wa-people__frames', content_width: 'full' }, [
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('shop-owner-standing'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('event-conversation-atrium') }),
             ]),
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('warehouse-worker-aisle'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('event-conversation-banners') }),
             ]),
             container({ content_width: 'full', _attributes: 'data-reveal|clip' }, [
-              image({ ...photo('advocate-outdoors'), _attributes: 'aria-hidden|true' }),
+              image({ ...photo('event-conversation-anniversary') }),
             ]),
           ]),
         ],

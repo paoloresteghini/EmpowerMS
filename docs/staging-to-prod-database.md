@@ -79,7 +79,13 @@ Every one of these is a number typed into a deploy script:
 | Podcast | 133 | podcast library loop |
 | Capitol Chat | 135 | capitol-a library |
 | Bill Summaries | 124 | content-a topic filter |
-| **Research & Reports** | **not created yet** | homepage card 2, content-a band-research, EPIC ×3 |
+| **Research & Reports** | **156**, created 2026-09-09 | homepage card 2, content-a band-research, EPIC ×3 |
+
+**Research & Reports must be recreated on production at cutover.** Run
+`node elementor/apply-research-category.mjs --apply` against prod. It is written
+for exactly this: the list is SLUGS, not ids, so it resolves against whatever
+install it runs on, it creates the term only if absent, and `wp post term add`
+is additive so re-running is safe. Prod will mint its own term id, NOT 156.
 
 Worth considering before creating the new one: query by SLUG rather than id
 wherever Elementor allows it, so the next migration is cheaper. Not yet checked
@@ -114,6 +120,27 @@ wpautoterms plugin's terms URL pointing at the page that replaced it.
   (who-we-are-a = 20601, epic = 20605, and so on). Slugs on the install differ
   from the repo's page names: `/solutions/` not `/solutions-b/`, `/who-we-are/`
   not `/who-we-are-a/`, `/epic/` not `/epic-a/`.
+
+## empv2 is not a current mirror of production
+
+Found 2026-09-09 while resolving Kienna's research list. One of her six posts
+does not exist on empv2 under any slug or title, but returns 200 on
+empowerms.org: live id 20555, published **2026-08-13**. Counts confirm it:
+
+    live empowerms.org   496 published posts
+    empv2                490 published posts  (+413 archived)
+
+So the clone predates mid-August and Empower have kept publishing since.
+
+**This inverts the obvious cutover plan.** Pushing empv2's database to
+production would destroy the newer content. The cutover has to go the other way:
+apply the theme, the Elementor page trees and templates, the media, and the
+taxonomy to production's own database. Which means every id coupling in the list
+above gets re-resolved there, and none of empv2's numbers travel.
+
+It also means a script that resolves by SLUG (like
+`apply-research-category.mjs`) is the right shape for anything that has to run
+twice, and a script that writes ids is not.
 
 ## Open, raised by Kienna 2026-09-07
 

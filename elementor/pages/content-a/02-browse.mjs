@@ -1,4 +1,5 @@
 import { container, text, html, loopGrid } from '../../factory.mjs';
+import { TERMS } from '../../terms.mjs';
 import { BAND_TYPES, LOOP_ITEM_POST_IDS } from './loop-item.mjs';
 
 /* Source of truth: src/content-a/sections/02-browse.html and its built form at
@@ -251,9 +252,8 @@ const EMPTY_STATE = '<p class="cad-empty" role="status">Nothing here yet. Bill s
    Utils::render_html_attributes() escapes the value on output. */
 const CMS_NOTE = 'One band per content type, newest first. In WordPress each band is a Loop Grid '
   + 'filtered to its own type; the loop item template MUST emit data-type and data-topic from the '
-  + 'post’s terms, because the filter bar above is CSS over those attributes. Empower’s '
-  + 'WordPress has no Research & Reports category yet — that band needs one creating, or the '
-  + 'query narrowing by hand.';
+  + 'post’s terms, because the filter bar above is CSS over those attributes. '
+  + 'Research & Reports became a real category on 2026-09-09, so all four bands now query one; Empower tick it when they publish a report.';
 
 /* The four bands, in the source's own order, each with the copy read off its
    own <section class="cad-band"> and the query decided above.
@@ -267,37 +267,41 @@ const BANDS = [
     id: 'band-article',
     title: 'Articles',
     blurb: 'Explore the latest ideas, insights, and updates on the issues shaping opportunity in Mississippi.',
-    query: { post_query_include: 'terms', post_query_include_term_ids: ['48'] },
+    query: () => ({ post_query_include: 'terms', post_query_include_term_ids: [String(TERMS.empower)] }),
   },
   {
     type: 'story',
     id: 'band-story',
     title: 'Community Stories',
     blurb: 'Meet the people behind the issues and see how policy and opportunity impact real lives across Mississippi.',
-    query: { post_query_include: 'terms', post_query_include_term_ids: ['9'] },
+    query: () => ({ post_query_include: 'terms', post_query_include_term_ids: [String(TERMS['community-stories'])] }),
   },
   {
     type: 'research',
     id: 'band-research',
     title: 'Research &amp; Reports',
     blurb: 'Explore Mississippi-specific research, data, and policy solutions designed to turn ideas into action.',
-    /* Manual selection, the second option the band's own data-cms-note names.
-       The four ids are the four posts dist/content-a.html already shows in this
-       band, resolved off the install by slug on 2026-08-19:
-         20396  empower-ms-releases-2025-impact-report
-         19392  2024-impact-report-celebrating-10-years-of-service-in-mississippi
-         19110  new-empower-mississippi-report-highlights-growth-in-labor-force...
-         16545  empower-releases-report-on-violent-crime-in-mississippi
-       Written newest first for a reader's benefit; the order that reaches the
-       page is the orderby's, which still applies under by_id. */
-    query: { post_query_post_type: 'by_id', post_query_posts_ids: ['20396', '19392', '19110', '16545'] },
+    /* A REAL CATEGORY QUERY SINCE 2026-09-09, and the note above this file's
+       BANDS array records what it used to be: a manual selection of four post
+       ids, because "Empower's WordPress has no Research & Reports category yet".
+       Now it has one. Kienna Horn went through the site herself and sent the
+       list, elementor/apply-research-category.mjs created the category and
+       tagged them, and she maintains it by ticking the box when she publishes.
+
+       This band is why the category exists, and it is the third thing it fixes:
+       the homepage insights card and epic-a's three "most recent report" slots
+       were frozen lists too, and disagreed with these four. One of the old four
+       is deliberately gone: Empower do not count Impact Reports as research.
+
+       The id is READ FROM THE INSTALL, not typed. terms.mjs explains why. */
+    query: () => ({ post_query_include: 'terms', post_query_include_term_ids: [String(TERMS['research-reports'])] }),
   },
   {
     type: 'press',
     id: 'band-press',
     title: 'Press Releases',
     blurb: 'Get the latest news, announcements, and updates from Empower Mississippi.',
-    query: { post_query_include: 'terms', post_query_include_term_ids: ['22'] },
+    query: () => ({ post_query_include: 'terms', post_query_include_term_ids: [String(TERMS.news)] }),
   },
 ];
 
@@ -345,7 +349,7 @@ function band({ type, id, title, blurb, query }) {
         columns_mobile: 1,
         posts_per_page: BAND_POSTS_PER_PAGE,
         post_query_post_type: 'post',
-        ...query,
+        ...query(),
         /* "newest first" is the band's own data-cms-note, stated rather than
            left to fall through to Group_Control_Query's defaults, which happen
            to be the same two values today. */

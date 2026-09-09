@@ -37,6 +37,7 @@ import { deployPage } from './deploy.mjs';
 import { POST_ID, sections } from './pages/content-a/page.mjs';
 import { syncTheme } from '../wp/sync.mjs';
 import { wpe } from '../wpe.mjs';
+import { resolveTerms } from './terms.mjs';
 import { pathToFileURL } from 'node:url';
 
 /* Exported and pure, because this is the function that decides whether a live
@@ -58,13 +59,24 @@ export async function main(argv = process.argv.slice(2)) {
     return 1;
   }
 
-  console.error('1/3 syncing theme files (css/content-a.css changed)...');
+  /* BEFORE sections(), because the four bands read their category ids out of
+     terms.mjs and the module's defaults are empv2's. On this install nothing
+     changes and the run says so; on production every id is different and
+     deploying the defaults would publish four bands querying the wrong
+     categories, or nothing at all, with no error. terms.mjs has the reasoning. */
+  console.error('1/4 resolving category term ids off the install...');
+  const terms = await resolveTerms({ host: 'empv2' });
+  console.error(terms.changed.length
+    ? `  ${terms.changed.length} differed from the defaults: ${terms.changed.join(', ')}`
+    : `  all ${terms.count} match the defaults in terms.mjs`);
+
+  console.error('2/4 syncing theme files (css/content-a.css changed)...');
   await syncTheme();
 
-  console.error(`2/3 deploying the page tree into ${POST_ID}...`);
+  console.error(`3/4 deploying the page tree into ${POST_ID}...`);
   await deployPage(POST_ID, sections());
 
-  console.error('3/3 flushing...');
+  console.error('4/4 flushing...');
   await wpe('wp elementor flush_css && wp cache flush && wp page-cache flush');
 
   console.error('\nDone. Verify with:');

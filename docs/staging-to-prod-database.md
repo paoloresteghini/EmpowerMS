@@ -50,9 +50,18 @@ repo as data.
 ### Elementor Loop Item templates  [post ids, referenced BY id]
 
 - **20704** homepage stories lead card
-- **20589** homepage stories mini card
+- **20589** homepage stories mini card (its title is "Homepage Community Story
+  mini", NOT what the key suggests; a guessed title makes `--ensure` create a
+  duplicate and leave the page on the original)
+- **20710/20711/20712** the three homepage insights rows, created 2026-09-09
 - **20642** single post template, serves all 490 posts
 - **11272** Beaver single, drafted
+
+**Run `node elementor/loop-templates.mjs --ensure` on production at cutover.**
+It resolves by TITLE and creates only what is missing, so it is safe to repeat.
+Every deploy then calls `resolveTemplates()` before building a tree;
+deploy-round1.mjs and deploy-content-a.mjs already do, and round1 throws rather
+than deploying if a template is absent.
 
 Page trees reference these by id. They are posts, so prod will give them
 different ids, and `final/page.mjs` pairs each tree with its own id precisely so

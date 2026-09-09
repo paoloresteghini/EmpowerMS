@@ -7171,7 +7171,7 @@ body .wpautoterms-footer a:focus-visible{
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
  * search.js:15), along with the assertion whose message carries the same
- * stale number (test-elementor.mjs:1504), so the reference and its target
+ * stale number (test-elementor.mjs:1508), so the reference and its target
  * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
@@ -8042,4 +8042,131 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 .mla-signup .em-gform .gform_wrapper .gform-field-label--type-sub,
 .aba-join .em-gform .gform_wrapper .gform-field-label--type-sub{
   color:var(--text-inverse-muted);
+}
+
+/* ---------- The insights row title is a heading widget, so its class is on the
+ * wrapper and the <h3> inside is Elementor's ------------------------------
+ * Added 2026-09-09, with the three insights rows.
+ *
+ * WHY heading() AT ALL, when this build's standing rule is text() carrying a
+ * bare element and never heading(). That rule exists so authored markup travels
+ * intact. There is no authored markup here: the title comes from the query, so
+ * there is nothing to carry. A text() widget with a dynamic editor renders the
+ * title into a bare div, which drops the <h3> and the document outline with it.
+ * heading() keeps the real element. The trade is that Elementor puts the
+ * cssClass on the widget WRAPPER, which is the class-on-wrapper defect this
+ * build already prices, and here it is visible rather than theoretical:
+ *
+ *   .em-article__title   (the wrapper div)   20px, the design's size
+ *   h3.elementor-heading-title (inside)      26px, Elementor's default
+ *
+ * Measured on the deployed homepage, not reasoned about. Every typographic
+ * property components.css:160 sets was landing on a div that contains the text
+ * rather than on the element that renders it, so the titles shipped a third
+ * larger than drawn.
+ *
+ * `font:inherit` rather than restating the values. The wrapper already holds
+ * the right family, size, weight and line-height, because .em-article__title is
+ * on it; pulling them down is one declaration that cannot drift from
+ * components.css, where restating --fs-h4 here would be a second copy to keep
+ * in step. letter-spacing and colour are not part of the `font` shorthand, so
+ * they are named. margin is zeroed because the wrapper carries the row's own
+ * `margin:0 0 var(--space-3)` and an h3's user-agent margin would double it.
+ *
+ * 0,4,0, which clears Elementor's own `.elementor-widget-heading
+ * .elementor-heading-title` at 0,2,0 without an !important. */
+.elementor .em-insights__row .em-article__title .elementor-heading-title{
+  font:inherit;
+  letter-spacing:inherit;
+  color:inherit;
+  margin:0;
+}
+
+/* ---------- The insights row's meta line and its Read more link -----------
+ * Added 2026-09-09 with the three insights Loop Grids. Both halves are the same
+ * defect wearing different clothes: the class is on the widget or container
+ * WRAPPER, and Elementor styles what is inside it.
+ *
+ * 1. THE META LINE BECAME A CENTRED COLUMN. It is a container now rather than
+ *    one html() widget, because half of it is authored (the badge names the
+ *    row's own query) and half comes from the post, and __dynamic__ replaces a
+ *    whole setting so the two cannot share a widget. components.css:159 makes
+ *    `.em-article__meta` a flex row, but it does not name flex-direction, and
+ *    Elementor's `.e-con{flex-direction:var(--flex-direction)}` defaults every
+ *    container to a column at the same specificity and later in the cascade.
+ *    Measured live: direction column, align-items center, the badge sitting at
+ *    x=1094 in a 492px column that starts at 887. Left as it was, the badge and
+ *    the date stacked and centred themselves under a left-aligned title.
+ *
+ *    Named for THIS block rather than for `.em-article__meta` generally: the
+ *    class is used on cards elsewhere that are still authored markup, where the
+ *    element really is a <p> and needs none of this.
+ *
+ * 2. READ MORE KEPT ELEMENTOR'S BUTTON. link() puts the class on the wrapper
+ *    and hands the anchor `.elementor-button`, which is why it shipped as a
+ *    green pill with 17px 40px of padding instead of the orange text link
+ *    components.css:163 draws. epic-a/04-research.mjs note 4 predicted exactly
+ *    this and avoided link() by using html() with a real anchor; that route is
+ *    closed here, because the href comes from the query and html() cannot carry
+ *    a dynamic tag.
+ *
+ *    Joins the existing `all:unset` group's shape rather than inventing one,
+ *    but NOT its `.em-btn` half: that rule adds position:absolute;inset:0 to
+ *    keep a padded pill clickable, and this is a text link in flow. The wrapper
+ *    carries the colour, font and inline-flex from components.css:163, so the
+ *    anchor only has to stop fighting it and inherit. */
+.elementor .em-insights__row .em-article__meta{
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+}
+.elementor .em-insights__row .em-article__more a.elementor-button{
+  all:unset;
+  display:inline-flex;
+  align-items:center;
+  gap:8px; /* components.css:163 */
+  color:inherit;
+  font:inherit;
+  letter-spacing:inherit;
+  text-transform:inherit;
+  cursor:pointer;
+}
+
+/* ---------- ...and `margin-top:auto` on Read more finally resolves ---------
+ * Third half of the same block, found by comparing the two builds rather than
+ * by looking at the live page alone, which is the only way this one shows up.
+ *
+ * components.css:163 gives `.em-article__more` `margin-top:auto`, for card
+ * grids where the CTA should sit on a common baseline whatever the copy above
+ * it does. In the static build that declaration does nothing here: the row's
+ * right-hand column is a plain <div>, a block box, and an auto top margin on a
+ * block child computes to 0. Measured: title bottom to link top, 14px.
+ *
+ * Converted, that column is an Elementor container, so it is a FLEX column, and
+ * an auto margin in a flex container absorbs the free space instead. The link
+ * dropped to the bottom of a row whose height is set by the 184x172 thumbnail,
+ * about 70px below the title. Nothing in this repository changed to cause it;
+ * the declaration simply started applying.
+ *
+ * IT ONLY BECAME VISIBLE WHEN THE EXCERPT WENT. With the excerpt filling the
+ * column there was little free space to absorb, so the same rule moved the link
+ * a few pixels. Removing a paragraph made a dormant declaration load-bearing,
+ * which is worth recording: the defect was introduced weeks before the change
+ * that revealed it.
+ *
+ * Scoped to this row rather than unsetting the declaration in components.css,
+ * because the bottom-alignment it exists for is still wanted on the card grids
+ * that are genuinely equal-height. */
+.elementor .em-insights__row .em-article__more{
+  margin-top:0;
+}
+
+/* AND the title's own bottom margin, restated because Elementor zeroes widget
+ * margins inside its containers and homepage.css:315's
+ * `.em-insights__row .em-article__title{margin:0 0 var(--space-3)}` loses.
+ * Without it the two repairs above cancel out into a 0px gap where the static
+ * build measures 14px: neutralising the auto margin removed the accidental
+ * space and nothing was left to supply the intended one. */
+.elementor .em-insights__row .em-article__title{
+  margin:0 0 var(--space-3); /* homepage.css:315 */
 }

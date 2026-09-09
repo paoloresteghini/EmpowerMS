@@ -25,7 +25,11 @@ import {
   leadLoopItem as finalStoriesLeadItem,
   STORIES_CATEGORY_ID, STORIES_LOOP_ITEM_POST_ID, LEAD_LOOP_ITEM_POST_ID,
 } from './elementor/pages/final/04-stories.mjs';
-import { section as finalInsights } from './elementor/pages/final/05-insights.mjs';
+import {
+  section as finalInsights,
+  loopItem as finalInsightsRow,
+  LOOP_ITEM_KEYS as FINAL_INSIGHTS_KEYS,
+} from './elementor/pages/final/05-insights.mjs';
 import { section as finalJoinUs } from './elementor/pages/final/06-joinus.mjs';
 import { POST_ID as finalPostId, sections as finalSections } from './elementor/pages/final/page.mjs';
 import { PHOTOS } from './elementor/pages/final/media.mjs';
@@ -1758,20 +1762,52 @@ test('the homepage stories loop item defers Elementor element caching', () => {
 test('the homepage insights mapping carries the section class and its copy', () => {
   const flat = JSON.stringify(finalInsights());
   const source = fs.readFileSync('src/sections/05-insights.html', 'utf8');
-  const strings = [...source.matchAll(/>([^<>{}]{1,})</g)]
+
+  /* THE ASIDE ONLY, since 2026-09-09. The rows used to be authored and every
+     string in this partial had to appear in the section tree; now each row is a
+     Loop Grid, so its copy lives in a loop item TEMPLATE and its title and date
+     live nowhere in this repository at all. Those are example content in the
+     static build, showing what the query returns, the same way content-a's
+     cards are real posts standing in for a query.
+
+     Splitting the assertion rather than loosening it: the aside is still
+     authored word for word, and a regression there would otherwise hide behind
+     a test that had been taught to expect misses. */
+  const aside = source.slice(0, source.indexOf('em-insights__rows'));
+  const strings = [...aside.matchAll(/>([^<>{}]{1,})</g)]
     .map(m => m[1].trim())
     .filter(s => s && !s.startsWith('@'));
-  assert.ok(strings.length > 0, 'no copy found in the source partial');
+  assert.ok(strings.length > 4, 'no copy found in the insights aside');
   for (const s of strings) {
-    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `insights mapping is missing: ${s.slice(0, 48)}`);
+    assert.ok(flat.includes(s.replace(/"/g, '\\"')), `insights aside mapping is missing: ${s.slice(0, 48)}`);
   }
-  /* Deliberately NOT a Loop Grid, and the test says so, so that a later pass
-     adding one has to change this line and read the reason. The middle row is a
-     research report and the install has no Research & Reports category, so any
-     query chosen for it today would be a guess rendering plausible wrong
-     content on the homepage. */
-  assert.ok(!flat.includes('loop-grid'),
-    'the insights section grew a Loop Grid; the research row still has no category to query');
+
+  /* The rows' own authored copy, checked against the templates that carry it.
+     The badge is the only thing a row says for itself: it names the query, so a
+     badge on the wrong template mislabels real content, which is worse than a
+     missing string and is invisible on the page. */
+  const badges = { insightsArticle: 'Article', insightsResearch: 'Research', insightsStory: 'Community Story' };
+  for (const key of FINAL_INSIGHTS_KEYS) {
+    const item = JSON.stringify(finalInsightsRow(key));
+    assert.ok(item.includes(`>${badges[key]}<`), `${key}'s template does not carry the badge ${badges[key]}`);
+    assert.ok(item.includes('Read more'), `${key}'s template lost its Read more link`);
+    assert.ok(item.includes('"_element_cache":"yes"'),
+      `${key} will be served from Elementor's shared element cache on every iteration`);
+  }
+  /* THREE Loop Grids since 2026-09-09, one per row, and this line is the one
+     the old note asked a later pass to come and change. It used to read
+     "deliberately NOT a Loop Grid ... the install has no Research & Reports
+     category, so any query chosen for it today would be a guess rendering
+     plausible wrong content on the homepage". The category exists now
+     (elementor/apply-research-category.mjs, from Kienna Horn's own list), so
+     the guess is gone and all three rows query one.
+
+     The count is what is checked. Two rows looping and one still authored would
+     be the worst state of the three: a placeholder sitting between two real
+     cards reads as a mistake rather than as a design. */
+  const loopGrids = (flat.match(/loop-grid/g) || []).length;
+  assert.equal(loopGrids, 3,
+    `expected three insights Loop Grids, one per row, found ${loopGrids}`);
 });
 
 test('the homepage join-us form stays a real form element', () => {

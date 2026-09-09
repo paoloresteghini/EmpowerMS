@@ -308,12 +308,20 @@
 .em-insights__rows{display:flex;flex-direction:column}
 .em-insights__row{display:grid;grid-template-columns:184px 1fr;gap:var(--space-8);
   padding:var(--space-7) 0;border-bottom:1px solid var(--border-subtle)}
-.em-insights__row:first-child{padding-top:0}
-.em-insights__row:last-child{border-bottom:0;padding-bottom:0}
+/* MODIFIER CLASSES, NOT :first-child / :last-child, changed 2026-09-09 when the
+   three rows became Loop Grids. Each row is now the only item its own grid
+   renders, so both pseudo-classes match ALL THREE: every row would lose its top
+   padding and its bottom border at once. That is the position-dependent
+   selector cost this conversion keeps paying, and the fix is the same one the
+   rest of the build uses, a class that travels with the element rather than a
+   rule about where the element sits. */
+.em-insights__row--first{padding-top:0}
+.em-insights__row--last{border-bottom:0;padding-bottom:0}
 .em-insights__row>img{width:184px;height:172px;object-fit:cover;border-radius:var(--radius-media)}
 .em-insights__row .em-article__meta{margin:0 0 var(--space-4);gap:var(--space-4)}
 .em-insights__row .em-article__title{margin:0 0 var(--space-3);max-width:26ch}
-.em-insights__row .em-article__excerpt{margin:0 0 var(--space-4);max-width:52ch}
+/* No .em-article__excerpt rule: the rows carry no excerpt since 2026-09-09.
+   05-insights.mjs records why the tag is unusable on this install. */
 .em-insights__row .em-article__more{text-decoration:none}
 
 /* ---------- Join Us ----------

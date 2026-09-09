@@ -188,14 +188,36 @@ test('the stories section quotes nobody it cannot attribute', () => {
 });
 
 test('insights lists three content rows', () => {
-  const rows = html.match(/class="em-insights__row"/g) || [];
+  /* Matches the class as a TOKEN, because two of the three now also carry
+     em-insights__row--first / --last. Those modifiers replaced :first-child and
+     :last-child on 2026-09-09: each row is a Loop Grid of one on the converted
+     page, so both pseudo-classes matched all three rows at once. */
+  const rows = html.match(/class="em-insights__row(?: [^"]*)?"/g) || [];
   assert.equal(rows.length, 3);
 });
 
-test('insights preserves CMS placeholder copy verbatim', () => {
-  assert.match(html, /Article headline — auto-populated from the blog/);
-  assert.match(html, /Research title — auto-populated from EPIC/);
-  assert.match(html, /Community story title — auto-populated/);
+/* WAS 'insights preserves CMS placeholder copy verbatim' until 2026-09-09, and
+   it asserted the three titles read "Article headline — auto-populated from the
+   blog" and its two siblings. That copy was a placeholder describing what the
+   rows were meant to become, and it was live on Empower's homepage for weeks.
+   Round 1 row 3 asked for the real thing, and the rows are Loop Grids now.
+
+   Inverted rather than deleted, for the same reason the stories lead card's
+   test was: the thing worth guarding is that placeholder copy never comes back,
+   because it is indistinguishable from real content to every structural check
+   and only a human reading the page can see it is a description of itself. */
+test('the insights rows carry no placeholder copy', () => {
+  /* Scoped to the rows, NOT the page. The stories band above deliberately says
+     "auto-populated" in its own slot labels, and 04-stories' test requires that
+     word, so a page-wide assertion here would fight it. */
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const start = rendered.indexOf('em-insights__rows');
+  const rows = rendered.slice(start, rendered.indexOf('</section>', start));
+  assert.ok(start > 0 && rows.length > 200, 'could not isolate the insights rows');
+  assert.doesNotMatch(rows, /auto-populated/i,
+    'an insights row describes itself as auto-populated again; that is placeholder copy, not content');
+  assert.doesNotMatch(rows, /min read/i,
+    'a read time is back on an insights row; nothing on this install computes one, so it is invented');
 });
 
 test('join us newsletter is a real form with a labelled input', () => {
@@ -735,7 +757,7 @@ test('process steps cascade as one group', () => {
 
 test('insights rows cascade as one group', () => {
   assert.match(html, /<div class="em-insights__rows" data-reveal-group>/);
-  const revealed = html.match(/<article class="em-insights__row" data-reveal="rise">/g) || [];
+  const revealed = html.match(/<article class="em-insights__row(?: [^"]*)?" data-reveal="rise">/g) || [];
   assert.equal(revealed.length, 3, `expected 3 revealing rows, found ${revealed.length}`);
 });
 

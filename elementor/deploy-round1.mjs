@@ -71,6 +71,8 @@
  */
 
 import { deployPage, deployLoopItem } from './deploy.mjs';
+import { resolveTerms } from './terms.mjs';
+import { resolveTemplates } from './loop-templates.mjs';
 import { POST_ID, sections, loopItems } from './pages/final/page.mjs';
 import { POST_ID as CAPITOL_A_POST_ID, sections as capitolASections } from './pages/capitol-a/page.mjs';
 import { POST_ID as SOLUTIONS_B_POST_ID, sections as solutionsBSections } from './pages/solutions-b/page.mjs';
@@ -103,22 +105,48 @@ export async function main(argv = process.argv.slice(2)) {
     return 1;
   }
 
-  console.error('1/4 syncing theme (homepage.css, epic-a.css, solutions-b.css, bridge.css)...');
+  /* FIRST, and before anything calls sections() or loopItems(). Both read ids
+     out of terms.mjs and loop-templates.mjs, whose defaults are empv2's, and a
+     deploy that skips this publishes those defaults. On this install they
+     match and the run says so; on production every one of them differs and the
+     homepage would ship three Loop Grids pointing at the wrong templates and
+     querying the wrong categories, with no error anywhere. */
+  console.error('1/5 resolving category and template ids off the install...');
+  const terms = await resolveTerms({ host: 'empv2' });
+  console.error(terms.changed.length
+    ? `  categories differ: ${terms.changed.join(', ')}`
+    : `  all ${terms.count} categories match the defaults`);
+  const tpl = await resolveTemplates({ host: 'empv2' });
+  if (tpl.missing.length) {
+    throw new Error(
+      `loop item templates absent from the install: ${tpl.missing.join(', ')}. `
+      + 'Run `node elementor/loop-templates.mjs --ensure` first.'
+    );
+  }
+  console.error(tpl.changed.length
+    ? `  templates differ: ${tpl.changed.join(', ')}`
+    : `  all ${tpl.count} loop templates match the defaults`);
+
+  /* Recomputed AFTER resolution. The list built at the top of main() is only
+     used for the explain message, which must not touch the install. */
+  const resolvedTemplates = loopItems();
+
+  console.error('2/5 syncing theme (homepage.css, epic-a.css, solutions-b.css, bridge.css)...');
   await syncTheme();
 
-  for (const [id, elements] of templates) {
-    console.error(`2/4 writing loop item template ${id}...`);
+  for (const [id, elements] of resolvedTemplates) {
+    console.error(`3/5 writing loop item template ${id}...`);
     await deployLoopItem(id, elements);
   }
 
-  console.error(`3/4 deploying the homepage tree into ${POST_ID}...`);
+  console.error(`4/5 deploying the homepage tree into ${POST_ID}...`);
   await deployPage(POST_ID, sections());
-  console.error(`3/4 deploying capitol-a into ${CAPITOL_A_POST_ID} (row 11, the Listen Now href)...`);
+  console.error(`4/5 deploying capitol-a into ${CAPITOL_A_POST_ID} (row 11, the Listen Now href)...`);
   await deployPage(CAPITOL_A_POST_ID, capitolASections());
-  console.error(`3/4 deploying solutions-b into ${SOLUTIONS_B_POST_ID} (row 7, the stories href)...`);
+  console.error(`4/5 deploying solutions-b into ${SOLUTIONS_B_POST_ID} (row 7, the stories href)...`);
   await deployPage(SOLUTIONS_B_POST_ID, solutionsBSections());
 
-  console.error('4/4 flushing...');
+  console.error('5/5 flushing...');
   await wpe('wp elementor flush_css && wp cache flush && wp page-cache flush');
 
   console.error('\nDone. VERIFY THE RENDER, not the deploy: what this run changes is');

@@ -8,7 +8,12 @@ import {
   STORIES_LOOP_ITEM_POST_ID,
   LEAD_LOOP_ITEM_POST_ID,
 } from './04-stories.mjs';
-import { section as insights } from './05-insights.mjs';
+import {
+  section as insights,
+  loopItem as insightsRow,
+  LOOP_ITEM_KEYS as INSIGHTS_KEYS,
+} from './05-insights.mjs';
+import { TEMPLATE_IDS } from '../../loop-templates.mjs';
 import { section as joinus } from './06-joinus.mjs';
 
 /* The homepage's composition contract: which sections it carries, and in what
@@ -50,4 +55,11 @@ export const sections = () => [hero(), solutions(), foundations(), stories(), in
 export const loopItems = () => [
   [STORIES_LOOP_ITEM_POST_ID, storyMini()],
   [LEAD_LOOP_ITEM_POST_ID, storyLead()],
+  /* The three insights rows, 2026-09-09. Their ids come from
+     loop-templates.mjs rather than constants in the section module, because an
+     elementor_library id belongs to one install and these have to be created
+     again on production. Built from the section's own key list so a row added
+     there cannot be forgotten here: the pairing IS the safety, per the note
+     above about writing one card into another's template. */
+  ...INSIGHTS_KEYS.map(key => [TEMPLATE_IDS[key], insightsRow(key)]),
 ];

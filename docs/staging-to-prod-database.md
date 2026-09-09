@@ -117,13 +117,32 @@ wpautoterms plugin's terms URL pointing at the page that replaced it.
 
 ## Open, raised by Kienna 2026-09-07
 
-**Bulk redirects for archived content.** Empower have archived a large amount of
-older content, particularly blog posts more than five years old, and she wants
-to know whether the old URLs can be redirected in bulk or need doing one at a
-time. Not yet investigated. The first question is what "archived" means on their
-install: still present as drafts or trash, or gone entirely. That decides
-whether the old URL list can be read out of the database or has to come from
-Search Console or the old sitemap.
+**Bulk redirects for archived content.** Empower archived a large amount of older
+content and want the old URLs not to be dead ends. ANSWERED 2026-09-09: they are
+a custom post STATUS, `archived`, and there are **413** of them:
+
+    post_type=post, by status:   publish 490,  archived 413
+
+They are still rows in `wp_posts` with their slugs intact, so the full old-URL
+list comes out of the database and needs nothing from Kienna or Search Console.
+(There is also an `Archived` term in a `post_status` TAXONOMY, term 147, with
+zero posts. Red herring, not the mechanism.)
+
+THEY ALREADY 404 ON THE LIVE SITE, not just on empv2. Checked 2026-09-09:
+`/providing-a-fresh-start/` and `/first-step-act-provides-second-chance/` both
+return a hard 404 on empowerms.org and on empv2, body "That page has moved or
+never existed". So this is not a risk the new site introduces; it is a problem
+Empower already have, and most of these URLs will already have been dropped by
+Google. Redirects still help anyone following an old link from a bookmark, a
+newsletter or another site. Recommendation given: category-level 301s
+rather than a blanket redirect to the homepage, because a few hundred unrelated
+URLs pointing at one page is treated as a soft 404 and helps nobody. Every
+archived post still carries its categories, so each can go to its matching
+solution page with All Content as the catch-all. Search Console access would let
+the handful with real traffic or backlinks be mapped individually.
+
+Migration note: these 413 redirects are database state like everything else on
+this list.
 
 Related and already known: 41 legacy Beaver pages still render on empv2, 13 of
 them with live forms, and a `?cb=` cache buster hides redirects when testing.

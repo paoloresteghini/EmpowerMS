@@ -1,4 +1,4 @@
-import { container, text, html, image, link } from '../../factory.mjs';
+import { container, text, image, link } from '../../factory.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: dist/epic-a.html, the <section class="epa-research"> block
@@ -76,17 +76,19 @@ import { photo } from './media.mjs';
       would pay it twice. That decision is measured, not reasoned; the numbers
       are in bridge.css's own comment.
 
-   4. `.epa-area__latest` IS AN html() WIDGET CARRYING A REAL <a href>, the same
-      shape and the same reason as team-a's `.ta-jump` and solutions-b's
-      `.sb-more`. link() would put the class on the widget WRAPPER and hand the
-      anchor Elementor's `.elementor-button` chrome, which the existing
+   4. `.epa-area__latest` IS A SHORTCODE NOW, not an html() widget carrying a
+      typed <a href>. See note 8; what note 4 used to say about link() still
+      holds and is why the shortcode, rather than a Loop Grid, renders it.
+
+      link() would put the class on the widget WRAPPER and hand the anchor
+      Elementor's `.elementor-button` chrome, which the existing
       `.elementor .em-btn a.elementor-button{all:unset}` group does not reach:
       that group is named to `.em-btn`, and this is not one.
 
-      The two `data-cms` attributes are authored INSIDE the string, on the real
-      <a>, matching source. They are the build's own marker for a field that
-      comes from a query, and a wrapper-level attribute would move the marker off
-      the element it describes.
+      The two `data-cms` attributes are still written INSIDE the string, on the
+      real <a>, matching source. They are the build's own marker for a field
+      that comes from a query, and a wrapper-level attribute would move the
+      marker off the element it describes.
 
       What it costs: the link stops being retargetable from Elementor's own
       panel. Same cost `.mla-receive__back`, `.wa-jump`, `.ta-jump` and
@@ -136,43 +138,66 @@ import { photo } from './media.mjs';
       three (20581, child-classroom-tablet) was not previously in the decisions
       document at all and was added by this task. media.mjs records each against
       docs/elementor/phase2b/2026-08-18-alt-text-decisions.md. Nothing is written
-      to the install. */
+      to the install.
+
+   8. THE THREE REPORTS COME FROM A QUERY, 2026-09-09, and this is the last of
+      the three places on the site that held a hand-written list of research.
+      The homepage insights band and content-a's Research band went first; this
+      one waited on the same thing they did, a Research & Reports category
+      existing at all, and it now does (created from Kienna Horn's own list).
+
+      Each panel's `data-cms-note` had ALREADY CLAIMED this since the static
+      build: "only this title, its href and the date below it come from a
+      query". It was not true. The three titles were typed, and one of them
+      (Charter Schools, June 2026) is not on Empower's own list of reports, so
+      the page named a post as its newest research report that Empower does not
+      count as research.
+
+      WHAT IT IS NOT: a Loop Grid. The full argument is in
+      wp/empowerms-child/inc/epic-research.php's docblock, measured against
+      Elementor Pro's own source on the install. In short, the query is "in
+      Research & Reports AND in this focus area", Elementor collapses two
+      categories into one OR, so the query has to be PHP either way; and once
+      it is PHP, a Loop Grid adds four wrappers inside a flex column, a fourth
+      Loop Item template to create at cutover, and STILL needs a shortcode for
+      the anchor, because of what note 4 says about link().
+
+      SO THE PANEL IS UNCHANGED ABOVE THE FOLD. The photograph and the area
+      name are design and stay authored widgets; the label, the link and the
+      date are one text() widget holding one shortcode. The rendered DOM is the
+      static build's, element for element.
+
+      THE LABEL MOVED INTO PHP with the other two. An area with no tagged
+      report renders nothing at all rather than "Most recent report" over a
+      gap. All three carry one today; the empty case is one untick away. */
 
 const TITLE = 'Research Designed to Lead Somewhere';
 const LEAD = 'Explore reports, data, policy briefs, and practical recommendations on the issues shaping '
   + 'opportunity in Mississippi.';
 
-/* Copied from dist/epic-a.html:297 and its two siblings, which repeat the same
-   sentence verbatim on all six CMS-marked elements. Held once rather than typed
-   three times, because six identical strings that must stay identical are six
-   chances to drift. */
-const CMS_NOTE = 'The newest report in this focus area. The area name and photograph beside it are authored; '
-  + 'only this title, its href and the date below it come from a query.';
+/* The CMS note moved to wp/empowerms-child/inc/epic-research.php, which is now
+   the only place that writes these two elements. It was held here as a constant
+   for the same reason it is held as a constant there: six identical strings
+   that must stay identical are six chances to drift. */
 
 const AREAS = [
   {
     id: 'area-education',
+    area: 'education',
     photo: 'teacher-smartboard',
     name: 'Quality Education',
-    href: 'https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/',
-    title: 'Charter Schools Outperform Districts on 3rd Grade Reading Test Initial Results',
-    date: 'June 24, 2026',
   },
   {
     id: 'area-work',
+    area: 'work',
     photo: 'hands-with-product',
     name: 'Meaningful Work',
-    href: 'https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/',
-    title: 'New Empower Mississippi Report Highlights Growth in Labor Force Participation Rate',
-    date: 'January 16, 2025',
   },
   {
     id: 'area-safety',
+    area: 'safety',
     photo: 'advocates-outside-capitol',
     name: 'Public Safety',
-    href: 'https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/',
-    title: 'Empower releases report on violent crime in Mississippi',
-    date: 'December 8, 2022',
   },
 ];
 
@@ -187,13 +212,12 @@ const area = (a) =>
     [
       image({ ...photo(a.photo), cssClass: 'epa-area__photo' }),
       text({ markup: `<h3 class="epa-area__name">${a.name}</h3>` }),
-      text({ markup: '<p class="epa-area__latest-label">Most recent report</p>' }),
-      html({
-        markup: `<a class="epa-area__latest" data-cms="field" data-cms-note="${CMS_NOTE}" href="${a.href}">${a.title}</a>`,
-      }),
-      text({
-        markup: `<p class="epa-area__date" data-cms="field" data-cms-note="${CMS_NOTE}">${a.date}</p>`,
-      }),
+      /* The label, the report link and its date, all three from one shortcode.
+         See note 8 above and wp/empowerms-child/inc/epic-research.php. The
+         widget's content is the BARE shortcode on its own line, which is the
+         shape Elementor's shortcode_unautop() pass is built for; nesting it
+         inside an authored element risks it coming back wrapped in a <p>. */
+      text({ markup: `[empower_epic_latest_report area="${a.area}"]` }),
     ],
   );
 

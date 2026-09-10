@@ -3093,13 +3093,25 @@ test('no EPIC reading invents a statistic to decorate itself', () => {
 });
 
 test('every EPIC report link is a real empowerms.org post', () => {
-  /* The index on all three readings is real content, not lorem headlines. The
-     three posts below were pulled from the WordPress REST API on 2026-08-07 —
-     one per focus area, each the most recent report carrying that category. */
+  /* The index on all three readings is real content, not lorem headlines.
+
+     THESE ARE NOW THE QUERY'S OWN ANSWER, not a hand-picked set. epic-a's three
+     panels became a query on 2026-09-09 (elementor/pages/epic-a/04-research.mjs
+     note 8), and the three below are what it returns: the newest post carrying
+     Research & Reports AND the focus area, read off the install on the day. Two
+     of the three CHANGED at that point, which is the whole reason the query
+     exists — the old education slot was Charter Schools (June 2026), a post
+     Empower's own list of reports does not include, and the old safety slot was
+     a 2022 release the list also drops.
+
+     What this test can and cannot see: it holds the three readings to the same
+     answer, so a change made to one is made to all three. It cannot ask the
+     install whether the answer is still current — that gate lives in
+     test-elementor.mjs, against the deployed page. */
   const REPORTS = [
-    'https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/',
+    'https://empowerms.org/how-much-does-private-school-really-cost-in-mississippi/',
     'https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/',
-    'https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/',
+    'https://empowerms.org/how-bad-is-crime-in-mississippi/',
   ];
   for (const { out, html } of EPICPAGES) {
     for (const href of REPORTS) {

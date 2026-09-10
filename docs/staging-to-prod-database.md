@@ -82,9 +82,9 @@ Every one of these is a number typed into a deploy script:
 | --- | --- | --- |
 | Press Releases | 22 | content-a band-press |
 | Community Stories | 9 | homepage stories loop, content-a band-story |
-| Education | 7 | (EPIC per-area, once built) |
-| Work | 28 | (EPIC per-area, once built) |
-| Justice | 29 | (EPIC per-area, once built) |
+| Education | 7 | EPIC per-area (by SLUG, no id) |
+| Work | 28 | EPIC per-area (by SLUG, no id) |
+| Justice | 29 | EPIC per-area (by SLUG, no id) |
 | Podcast | 133 | podcast library loop |
 | Capitol Chat | 135 | capitol-a library |
 | Bill Summaries | 124 | content-a topic filter |
@@ -96,9 +96,32 @@ for exactly this: the list is SLUGS, not ids, so it resolves against whatever
 install it runs on, it creates the term only if absent, and `wp post term add`
 is additive so re-running is safe. Prod will mint its own term id, NOT 156.
 
-Worth considering before creating the new one: query by SLUG rather than id
-wherever Elementor allows it, so the next migration is cheaper. Not yet checked
-whether its Loop Grid control accepts slugs.
+**Its Loop Grid control does NOT accept slugs**, checked 2026-09-10 by reading
+Elementor Pro on empv2 rather than guessing: `Elementor_Post_Query::
+build_terms_query()` resolves the saved value with `get_term_by(
+'term_taxonomy_id', $id )` (query-control/classes/elementor-post-query.php:242).
+So the id stays, and resolveTerms() is the answer for every band.
+
+TWO THINGS THAT CAME OUT OF READING THAT FILE, both of which change what this
+page has to say:
+
+1. **The number Elementor stores is a `term_taxonomy_id`, not a `term_id`.**
+   elementor/terms.mjs now resolves that column. All ten categories have the two
+   equal on empv2, so the change is a measured no-op here; if they diverge on
+   production, the old query would have handed every band a plausible number
+   pointing at the wrong category, with nothing reporting it.
+
+2. **EPIC's three report slots need no id at all.** They became a query on
+   2026-09-09 and they are NOT a Loop Grid: Elementor collapses two categories
+   in one taxonomy into an OR, and the question here is "Research & Reports AND
+   this focus area", so it is a shortcode with its own SQL
+   (wp/empowerms-child/inc/epic-research.php), resolving every slug at render
+   time. Nothing about it is coupled to an install's numbering, and it ships
+   with the theme sync rather than needing a step of its own. It does depend on
+   the category existing: without it the three panels render nothing, silently,
+   so `apply-research-category.mjs --apply` must run BEFORE epic-a is deployed
+   to production. elementor/deploy-epic-research.mjs refuses to write until the
+   install can answer the query.
 
 ### Gravity Forms  [form ids, and real user data]
 

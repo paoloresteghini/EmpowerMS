@@ -1970,9 +1970,12 @@ const TEAM_STAFF = [
   ['Forest Thigpen', 'Senior Advisor', 'forest-thigpen'],
 ];
 
+/* Roadmap (6), 2026-09-10. Christopher Koopman (Fellow on Regulation &
+   Innovation) was here until then and is still on empowerms.org/team/; the
+   roadmap is newer and drops him, and the roadmap is the spec. He is `draft` on
+   the install already, so the CPT and this list now agree. */
 const TEAM_FELLOWS = [
   ['J. Robertson', 'Fellow on Criminal Justice Reform'],
-  ['Christopher Koopman', 'Fellow on Regulation & Innovation'],
   ['Conor Norris', 'Fellow on Entrepreneurship'],
   ['Matt Ladner', 'Fellow on Education'],
   ['Rebekah Staples', 'Fellow on Work'],

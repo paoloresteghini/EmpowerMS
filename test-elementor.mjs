@@ -5726,17 +5726,24 @@ test('the team-a roster is driven by the person post type', { concurrency: 1 }, 
   assert.deepEqual([...new Set(roster.staff.map((p) => p.more))], ['Read bio'],
     'not every card carries the "Read bio" line');
 
-  /* THE BOARD IS STILL HAND-WRITTEN, and its placeholder note moved with it.
-     04-board.mjs note 6 records why none of these eight can be a Loop Grid:
-     none has a `person` entry on the install. */
+  /* THE BOARD IS STILL HAND-WRITTEN. 04-board.mjs note 6 records why none of
+     these eight can be a Loop Grid: none has a `person` entry on the install. */
   assert.ok(roster.board.length >= 5, `found ${roster.board.length} board names`);
-  assert.ok(roster.pendingInBoard,
-    'the .ta-pending placeholder note is not in the board section. It moved there on 2026-08-20 '
-    + 'because staff and fellows now carry real photographs and the board is the last placeholder; '
-    + 'if it has gone back up to the staff head it is describing sections that no longer have '
-    + 'placeholders.');
-  assert.match(roster.pending, /board/i,
-    'the placeholder note no longer names the board, which is the only section it is still true of');
+
+  /* AND ITS PLACEHOLDER NOTE IS GONE, 2026-09-10. The line was build
+     scaffolding whose own rule (css/team-a.css, .ta-pending) was "it comes out
+     with the last placeholder", and the board WAS the last placeholder: these
+     eight now carry Empower's own crops. Asserted as absent rather than
+     deleted quietly, because the failure this replaces is the opposite one, a
+     note left behind naming photographs that have arrived. It is still in the
+     STATIC build, where staff and fellows are genuinely still monograms. */
+  assert.equal(roster.pending, null,
+    `the converted page is still showing a .ta-pending note, reading ${JSON.stringify(roster.pending)}. `
+    + 'Every section on it carries real photographs now, so the note names nothing that is missing. '
+    + 'teamRoster() returns null when the element is absent, which is the passing value.');
+  assert.equal(roster.pendingInBoard, false,
+    'the board section is still carrying the placeholder note, which came out when its eight '
+    + 'headshots landed');
 });
 
 /* --- fidelity-browser.mjs / the person Single template ------------------- */

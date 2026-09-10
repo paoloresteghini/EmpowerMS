@@ -6750,13 +6750,14 @@ body .wpautoterms-footer a:focus-visible{
  * <img> inside it is not clipped by anything. Every fellow's headshot rendered
  * as a small square inside a dashed circle.
  *
- * `.ta-disc--roll` IS DELIBERATELY NOT TOUCHED. It is the 44px board variant
- * (css/team-a.css:78), and the board section is still eight hand-written names
- * with monogram tiles, because none of those eight has a `person` entry on the
- * install (elementor/pages/team-a/04-board.mjs note 6). Its dashed edge is
- * still a true statement about a real placeholder, and the `.ta-pending` line
- * above it now says so. These selectors cannot reach it: they are scoped to
- * `.ta-disc` carrying an <img>, and the board's discs carry text. */
+ * `.ta-disc--roll` IS GONE, 2026-09-10, and this paragraph used to explain why
+ * it was deliberately left alone: it was the 44px board variant, the board was
+ * still eight hand-written names with monogram tiles, and its dashed edge was a
+ * true statement about a real placeholder. The board carries Empower's own
+ * headshots now, the class has no markup left anywhere, and its one rule went
+ * with it. Block 79 is the repair its replacement needs. Kept as a note rather
+ * than deleted because a reader coming to this block from the old markup should
+ * find out where it went. */
 .ta-disc:has(img){
   border:0;
   overflow:hidden;
@@ -8205,4 +8206,32 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 .elementor .epa-area > .elementor-widget-text-editor{
   display:flex;
   flex-direction:column;
+}
+
+
+/* ---------- 79. team-a: the board's headshots are square on the install ----
+ * `.ta-roll__photo` is eight 44px circular headshots in the board roll, added
+ * 2026-09-10 in place of the monogram tiles block 58 used to describe.
+ *
+ * THEY ARE RAW <img> INSIDE ONE html() WIDGET, not image() widgets, so none of
+ * the wrapper-and-child machinery blocks 56 to 58 exist for applies here: the
+ * class is on the real element and every declaration lands. Every declaration
+ * except one.
+ *
+ * MEASURED, static build against the install, all eight:
+ *
+ *     borderRadius   static 999px      live 0px
+ *     box            44 x 44 on both, objectFit cover on both
+ *
+ * Elementor's own frontend carries `.elementor img{border-radius:0}`, which is
+ * 0,1,1. `.ta-roll__photo` is 0,1,0 and loses. Read off the install with
+ * CSS.getMatchedStylesForNode rather than guessed, because "some reset is
+ * winning" is the kind of explanation that survives being wrong.
+ *
+ * The circle is the whole shape of the element: at 44px a square headshot in a
+ * pill-shaped row does not read as a slightly different style, it reads as an
+ * unstyled image. Two classes, 0,2,0, which beats the reset without needing
+ * !important. */
+.elementor .ta-roll__photo{
+  border-radius:var(--radius-pill);    /* css/team-a.css, .ta-roll__photo */
 }

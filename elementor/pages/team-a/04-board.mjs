@@ -56,38 +56,71 @@ import { container, text, html } from '../../factory.mjs';
       (wp/empowerms-child/inc/person-loop.php), and it is their content
       decision to make.
 
-   7. `.ta-pending` LIVES HERE NOW. It was the staff section's third head
-      paragraph until 2026-08-20 and 02-staff.mjs's note 5 records the move.
-      css/team-a.css:137's own comment sets the rule the move follows: "Build
-      scaffolding, not client copy: this line names what is missing so the
-      monogram tiles are never mistaken for a design decision... It comes out
-      with the last placeholder." Staff and fellows now carry real
-      photographs from the media library, so this section holds the last
-      placeholders on the page and the line belongs above them.
+   7. `.ta-pending` IS GONE, 2026-09-10, and that is the line doing exactly what
+      it was written to do rather than an omission. It moved here from the staff
+      head on 2026-08-20 (02-staff.mjs's note 5), and css/team-a.css:137's own
+      comment set the terms: "Build scaffolding, not client copy: this line
+      names what is missing so the monogram tiles are never mistaken for a
+      design decision... It comes out with the last placeholder."
 
-      THE WORDING CHANGED WITH THE MOVE, because the old line named three
-      sections ("staff, fellow and board headshots") of which two are no
-      longer true, and a scaffolding note that overstates what is missing is
-      the same failure as one that understates it. It now names the board
-      alone. It is still build scaffolding and still comes out entirely when
-      Empower supply these eight. */
+      The board was the last placeholder. Staff and fellows already carried real
+      photographs from the `person` CPT; these eight now carry Empower's own
+      board crops, so there is nothing left on the converted page for the line
+      to name and it comes out whole.
+
+      IT STAYS IN THE STATIC BUILD, reworded, and the two are not in conflict.
+      dist/team-a.html still draws staff and fellows as monogram tiles, because
+      the static build has no CPT to read and no photographs for those fourteen
+      people; the note there now names staff and fellows alone. The rule is the
+      same in both: name what is actually missing, in the build where it is
+      actually missing. */
 
 const HEADLINE = 'Board of Directors';
-const PENDING = 'Placeholder portraits: board headshots to be supplied by Empower.';
 
 const BOARD = [
-  { initials: 'AP', name: 'Abb Payne', role: 'Chairman' },
-  { initials: 'GG', name: 'Gerard Gibert', role: 'Treasurer' },
-  { initials: 'GC', name: 'Grant Callen', role: null },
-  { initials: 'SD', name: 'Sunny Desai', role: null },
-  { initials: 'BD', name: 'Betsy Dowell', role: null },
-  { initials: 'LL', name: 'Lex Lindsey', role: null },
-  { initials: 'MS', name: 'Marie Sanderson', role: null },
-  { initials: 'GW', name: 'George Williams', role: null },
+  { photo: 'abb-payne', name: 'Abb Payne', role: 'Chairman' },
+  { photo: 'gerard-gibert', name: 'Gerard Gibert', role: 'Treasurer' },
+  { photo: 'grant-callen', name: 'Grant Callen', role: null },
+  { photo: 'sunny-desai', name: 'Sunny Desai', role: null },
+  { photo: 'betsy-dowell', name: 'Betsy Dowell', role: null },
+  { photo: 'lex-lindsey', name: 'Lex Lindsey', role: null },
+  { photo: 'marie-sanderson', name: 'Marie Sanderson', role: null },
+  { photo: 'george-williams', name: 'George Williams', role: null },
 ];
 
+/* THE HEADSHOTS ARE THEME ASSETS, NOT MEDIA LIBRARY ATTACHMENTS, and that is
+   the one decision in this file worth arguing.
+ *
+ * This build's standing rule is that photographs are image() widgets fed from
+ * the media library, so Empower can change them in wp-admin (epic-a's
+ * 04-research.mjs note 2 states it). That rule does not reach here, because the
+ * whole roll is ONE html() widget: the eight names, the two officer roles and
+ * the <ul>/<li> semantics are authored markup already. A board member leaving
+ * means editing a name in this file and deploying. A photograph that Empower
+ * could swap in wp-admin, sitting beside a name they cannot, would be an
+ * inconsistency rather than a convenience: the two always change together.
+ *
+ * So they ship the way the logo does, through wp/sync.mjs's FROM_ROOT, which
+ * rsyncs assets/ into the theme. `wp-content/themes/empowerms-child/assets/` is
+ * the path elementor/import-photography.mjs already reads from, and a root
+ * relative src resolves on empv2 and on production without a per-install id or
+ * a cutover step, which is what eight more attachment ids would have cost
+ * (docs/staging-to-prod-database.md).
+ *
+ * THE FILES ARE EMPOWER'S OWN CROPS, lifted from empowerms.org/board/ on
+ * 2026-09-10, downscaled to 132px for a 44px box. Their page pairs each
+ * photograph with its own name in its own markup, and that pairing is the only
+ * thing that identifies them: `Betsy-Acklen-...` sits under "Betsy Dowell" (a
+ * former name), `G-Gilbert-...` under "Gerard Gibert" (their misspelling), and
+ * Grant Callen's file is called `2`.
+ *
+ * ALT IS EMPTY AND aria-hidden STAYS, carried over from the monograms these
+ * replace. `.ta-roll__name` is the very next element, so a described photograph
+ * would have a screen reader announce every board member twice. */
+const THEME_ASSETS = '/wp-content/themes/empowerms-child/assets/headshots';
+
 const rollItem = (b) => `      <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">${b.initials}</span>
+        <img class="ta-roll__photo" src="${THEME_ASSETS}/${b.photo}.jpg" width="132" height="132" loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">${b.name}</span>${b.role ? `
         <span class="ta-roll__role">${b.role}</span>` : ''}
       </li>`;
@@ -111,10 +144,6 @@ export function section() {
           [
             text({
               markup: `<h2 id="board-title">${HEADLINE}</h2>`,
-              _attributes: 'data-reveal|rise',
-            }),
-            text({
-              markup: `<p class="ta-pending">${PENDING}</p>`,
               _attributes: 'data-reveal|rise',
             }),
           ],

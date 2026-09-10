@@ -71,7 +71,14 @@
   border-radius:var(--radius-pill);border:2px dashed var(--border-inverse);
   font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
   letter-spacing:.02em;color:var(--orange-300)}
-.ta-disc--roll{width:44px;height:44px;border-color:var(--blue-300);color:var(--blue-600)}
+/* The board roll carries real photographs now (2026-09-10). Same 44px box the
+   monogram held, so the row rhythm below is untouched, and the same pill radius
+   so it still reads as a disc. `object-fit:cover` is belt and braces rather than
+   a crop: every file is already square, because Empower's own board page crops
+   them square and those are the files this build ships. A future headshot that
+   is not square will be centre-cropped rather than squashed. */
+.ta-roll__photo{width:44px;height:44px;flex:0 0 auto;
+  border-radius:var(--radius-pill);object-fit:cover;display:block}
 
 /* =============================== 1 · Hero ================================= */
 /* Same gradient the About pages open on, so arriving here from Who We Are is

@@ -127,7 +127,6 @@
 
 /* The roadmap's own note about the ordering, kept because it explains an order
    the page cannot otherwise justify. */
-.ta-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
 
 /* Build scaffolding, not client copy: this line names what is missing so the
    monogram tiles are never mistaken for a design decision. It carries the same

@@ -5633,11 +5633,14 @@ const requireTeamAUrl = () => process.env.TEAM_A_URL
         If that stops working, fellows appear in Our Team with a photograph and
         a "Read bio" line, which looks entirely correct.
 
-     2. THE ORDER. The page tells the visitor, out loud in its own `.ta-note`,
-        "In alphabetical order by last name". WordPress cannot express that
-        ordering, so person-loop.php computes it. If that regresses to
-        WP_Query's default the page silently starts lying to the reader, and
-        every element on it still carries every correct class.
+     2. THE ORDER. person-loop.php computes an alphabetical-by-surname order
+        that WordPress cannot express. Until 2026-09-10 the page also said so
+        out loud in a `.ta-note`, and Empower asked for that line to go (round
+        1, row 5). The line going does NOT make the order optional: a roster of
+        colleagues in no discernible order reads as an accident. What it does
+        is remove the reader's only way of noticing a regression, so this gate
+        matters MORE now than it did when the page carried the note, and it
+        also checks the line has not come back.
 
      3. THE LEDGER'S HAIRLINE. `.ta-ledger__row:last-child` matches EVERY row
         once each row is the only child of its own loop item.
@@ -5685,12 +5688,14 @@ test('the team-a roster is driven by the person post type', { concurrency: 1 }, 
     const sorted = [...keys].sort();
     assert.deepEqual(keys, sorted,
       `the ${label} are not in alphabetical order by last name: rendered ${JSON.stringify(keys)}. `
-      + `The page promises this order in its own visible note (${JSON.stringify(roster.note)}), and it `
-      + 'comes from empower_person_groups(), not from WP_Query.');
+      + 'It comes from empower_person_groups(), not from WP_Query, and since 2026-09-10 the page no '
+      + 'longer carries the note that used to make a regression visible to the reader.');
   }
-  assert.match(roster.note, /alphabetical order by last name/i,
-    'the note that this test holds the page to has changed; if the design no longer promises an order, '
-    + 'the ordering code and this assertion should go together');
+  assert.equal(roster.note, null,
+    `the roster is showing a .ta-note again, reading ${JSON.stringify(roster.note)}. teamRoster() reads `
+    + 'it with a helper that returns null when the element is absent, so null is the passing value. Empower asked for '
+    + '"In alphabetical order by last name" to be removed in round 1, row 5. The ORDER is still '
+    + 'required and is asserted above; only the visible line went.');
 
   /* 3. THE LEDGER'S HAIRLINE: the last row alone. */
   const borders = roster.fellows.map((f) => f.borderBottom);

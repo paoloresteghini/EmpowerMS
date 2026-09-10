@@ -46,11 +46,18 @@
  * title to not start with "Fellow" moves them into Our Team, which is visible
  * on the page rather than silent.
  *
- * THE ORDER IS ALPHABETICAL BY LAST NAME, AND THE PAGE SAYS SO OUT LOUD.
- * css/team-a.css:130 and the section's own `.ta-note` carry the line "In
- * alphabetical order by last name", which dist/team-a.html's own comment
- * records as the roadmap's rule, already corrected there for the one place the
- * roadmap slips. WordPress cannot express that ordering: `orderby => title`
+ * THE ORDER IS ALPHABETICAL BY LAST NAME. The page used to say so out loud, in
+ * a `.ta-note` reading "In alphabetical order by last name", which the roadmap
+ * asked for and dist/team-a.html's own comment records (already corrected for
+ * the one place the roadmap's own list slips). Empower asked for that line to
+ * be removed on 2026-09-10, round 1 row 5.
+ *
+ * THE SORT DID NOT GO WITH IT, and that is a decision rather than an oversight:
+ * the order was never here because the note promised it, the note was here
+ * because a roster of colleagues in no discernible order reads as an accident.
+ * What the removal costs is the reader's ability to notice a regression, so the
+ * gate in test-elementor.mjs matters more now, not less. WordPress cannot
+ * express that ordering: `orderby => title`
  * sorts on the whole post_title, which is first-name order, and on this
  * install it is worse than that, because two entries are titled "Dr. Kristin
  * Vance Richards" and "Dr. Patrick Miller" and would both sort under D.

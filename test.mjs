@@ -1933,10 +1933,12 @@ const TEAM_COPY = [
   'We know the promise of Mississippi because we’ve built our lives here. And we know the challenges, because our state only truly thrives when hard work leads to earned success for every family in every neighborhood.',
   'Our staff, board members, and fellows are committed to creating a path to generational prosperity for Mississippi’s children, workers, and families. Together, we’ve built the state’s leading public policy organization by advancing practical solutions that expand opportunity and help Mississippi reach its full potential.',
 
-  /* The roadmap's own group headings, and its own note about the ordering. */
+  /* The roadmap's own group headings. Its note about the ordering, "In
+     alphabetical order by last name", was asserted here until 2026-09-10;
+     Empower asked for the line to go (round 1, row 5). The ORDER did not go
+     with it, and is still asserted against the install in test-elementor.mjs. */
   'Contributing Fellows',
   'Board of Directors',
-  'In alphabetical order by last name',
 
   /* The founder's bio paragraph is NOT asserted here. Empower asked on
      2026-08-05 for every card on The Roster to be the same size, which took the

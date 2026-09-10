@@ -54,10 +54,19 @@ import { LOOP_ITEM_POST_IDS } from './loop-item.mjs';
       short version is that neither of the two things this section needs can be
       said in Elementor's query control at all. There is no taxonomy on
       `person`, so nothing in the data separates staff from fellows; and the
-      order the design asks for out loud, in a `.ta-note` a visitor reads ("In
-      alphabetical order by last name"), is not one WP_Query can express, since
-      `orderby => title` sorts on the whole title and would put both of this
-      roster's "Dr." entries under D.
+      surname order is not one WP_Query can express, since `orderby => title`
+      sorts on the whole title and would put both of this roster's "Dr."
+      entries under D.
+
+      THE PAGE USED TO SAY THE ORDER OUT LOUD, in a `.ta-note` reading "In
+      alphabetical order by last name". Empower asked for that line to go
+      (round 1, row 5) and it has. THE SORT STAYS. It was never there because
+      the note promised it; the note was there because a roster of colleagues
+      in no discernible order reads as an accident, and that is still true with
+      the line gone. What changes is that a regression would now be quiet
+      rather than a visible contradiction, which is why the gate in
+      test-elementor.mjs keeps asserting the order and now also asserts the
+      line is absent.
 
       `post_query_post_type: 'person'` IS STILL SET HERE even though the hook
       sets it again. It is what makes the widget's own panel show the right
@@ -83,13 +92,12 @@ import { LOOP_ITEM_POST_IDS } from './loop-item.mjs';
       deleted, and reworded to name only what is actually still missing. See
       04-board.mjs.
 
-      The `.ta-note` line above it STAYS, and it is now a promise this page
-      keeps by construction rather than by hand: inc/person-loop.php sorts on
-      the surname, so the order cannot drift out of agreement with the note the
-      way a hand-written list can. */
+      The `.ta-note` line that used to sit above it is GONE, removed for
+      Empower's round-1 row 5. It said "In alphabetical order by last name",
+      which was true and stayed true by construction; they simply did not want
+      the page explaining its own filing to the reader. */
 
 const STAFF_HEAD = 'Our Team';
-const NOTE = 'In alphabetical order by last name';
 
 /* The query id inc/person-loop.php hooks. Exported so the behavioural gate in
    test-elementor.mjs asserts against the same string this file deploys rather
@@ -112,10 +120,6 @@ export function section() {
           [
             text({
               markup: `<h2 id="staff-title">${STAFF_HEAD}</h2>`,
-              _attributes: 'data-reveal|rise',
-            }),
-            text({
-              markup: `<p class="ta-note">${NOTE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
           ],

@@ -98,7 +98,6 @@
 .tc-staff__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-11))}
 .tc-staff h2{margin:0;text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
   font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
-.tc-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
 /* Build scaffolding, not client copy. Carries the same dashed edge as the
    tiles it explains, and comes out with the last placeholder. */
 .tc-pending{display:inline-block;margin:var(--space-5) 0 0;

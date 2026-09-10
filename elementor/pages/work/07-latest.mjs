@@ -80,24 +80,21 @@ const HEAD = 'The Latest on Meaningful Work';
 const LEDE = 'Explore the latest research, ideas, and policies shaping Mississippi’s workforce and '
   + 'creating more opportunities to succeed.';
 
-/* Verbatim from dist/work.html:361-377, attribute order included. */
-const STUBS = '<ul class="sol-stubs" data-cms="loop" data-cms-note="Latest articles and research for this solution area, newest three, mixed types. A Loop Grid narrowed to this area." data-reveal-group>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Article</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/labor-day-a-call-to-strengthen-mississippis-workforce/">Labor Day: A Call to Strengthen Mississippi’s Workforce</a>\n'
-  + '    <span class="sol-stub__date">August 30, 2024</span>\n'
-  + '  </li>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Research</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/empower-mississippi-releases-new-research-to-help-determine-why-more-mississippians-arent-in-the-workforce/">Empower Mississippi Releases New Research to Help Determine Why More Mississippians Aren’t in the Workforce</a>\n'
-  + '    <span class="sol-stub__date">August 13, 2024</span>\n'
-  + '  </li>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Article</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/new-law-expands-prison-work-release-programs/">New Law Expands Prison Work Release Programs</a>\n'
-  + '    <span class="sol-stub__date">May 30, 2024</span>\n'
-  + '  </li>\n'
-  + '</ul>';
+/* THE THREE STUBS ARE A QUERY NOW, 2026-09-10, and this band's own
+   `data-cms` note always said they should be: "Latest articles and research
+   for this solution area, newest three, mixed types. A Loop Grid narrowed to
+   this area." They were a hand-written list frozen since the static build.
+
+   NOT A LOOP GRID, for the two reasons wp/empowerms-child/inc/solution-latest.php
+   argues: the kind label ("Research" or "Article") is not a term on the post
+   but whether it carries Research & Reports at all, and both the title and the
+   date are bare styled elements that a link() widget would wrap in Elementor's
+   button chrome.
+
+   THE WIDGET IS text() AND NOT html(). Widget_Html::render() prints its setting
+   with no shortcode pass at all; Widget_Text_Editor::render() runs
+   shortcode_unautop() then do_shortcode(). inc/content-loop.php's docblock
+   carries the evidence. */
 
 /* Verbatim from dist/work.html:379. */
 const MORE = '<p class="sol-latest__more">'
@@ -121,7 +118,7 @@ export function section() {
             text({ markup: `<p>${LEDE}</p>`, _attributes: 'data-reveal|rise' }),
           ],
         ),
-        html({ markup: STUBS }),
+        text({ markup: '[empower_solution_latest area="work"]' }),
         html({ markup: MORE }),
       ]),
     ],

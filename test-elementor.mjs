@@ -7501,6 +7501,69 @@ test('the legacy duplicates redirect in one hop, and the pages with forms do not
    reads the PHP function's source and compares it to redirects.mjs. Adding a
    tenth redirect without adding it to the theme goes red here rather than
    quietly leaving it in the sitemap. */
+/* --- inc/archived-redirects.php / the 413 dead ends ---------------------- */
+
+/* EMPOWER ARCHIVED 413 POSTS by giving them a custom `archived` status. The
+   posts stayed in wp_posts with their slugs intact and the status is not
+   public, so every one of those URLs returned a 404: 413 dead ends, several
+   with years of inbound links behind them.
+
+   WHY THIS IS ONE RULE AND NOT 413 REDIRECT ROWS is argued in
+   wp/empowerms-child/inc/archived-redirects.php. The short version: these are
+   not 413 judgements, they are one rule applied 413 times, and as a rule it
+   also covers the 414th post Empower archive.
+
+   WHAT THIS TEST OWNS. The mapping is Kienna Horn's (issue area to its solution
+   page, everything else to All Content), and the rule that implements it can
+   fail in two directions that both look fine from the outside: it can stop
+   firing, putting every one of those URLs back to a 404, or it can start firing
+   on something it should not, which would shadow a live page that happens to
+   share a slug. A SAMPLE is checked rather than all 413, because 413 sequential
+   fetches is minutes of wall clock for a linear increase in confidence; the
+   sample is spread across the list rather than taken from the head, so a
+   failure confined to one era of the archive still shows up. */
+test('every archived post redirects instead of 404ing', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+
+  const slugs = stripNotices(await wpe(
+    `wp db query "SELECT post_name FROM wp_posts WHERE post_type='post' AND post_status='archived'" --skip-column-names`
+  )).split('\n').map((s) => s.trim()).filter(Boolean);
+
+  assert.ok(slugs.length > 300,
+    `only ${slugs.length} archived posts came back from the install; 413 were counted on 2026-09-10. `
+    + 'Either the status was renamed or the query stopped working, and in both cases this test would '
+    + 'otherwise pass while checking almost nothing.');
+
+  /* The four destinations the mapping can produce. Anything else means the
+     category-to-page table has been edited without this test being told. */
+  const DESTINATIONS = new Set(['/quality-education/', '/meaningful-work/', '/public-safety/', '/all-content/']);
+
+  const step = Math.max(1, Math.floor(slugs.length / 20));
+  const sample = slugs.filter((_, i) => i % step === 0).slice(0, 20);
+  const wrong = [];
+  for (const [i, slug] of sample.entries()) {
+    const probe = new URL(`${origin}/${slug}/`);
+    probe.searchParams.set('empower_cb', `archived-${i}`);
+    const res = await fetch(probe.href, { redirect: 'manual' });
+    const loc = res.headers.get('location');
+    const landed = loc ? new URL(loc, origin).pathname : null;
+    if (res.status !== 301 || !DESTINATIONS.has(landed)) {
+      wrong.push(`/${slug}/ -> ${res.status} ${landed ?? '(no location)'}`);
+    }
+  }
+  assert.deepEqual(wrong, [],
+    `${wrong.length} of ${sample.length} sampled archived posts did not 301 to one of the four `
+    + `destinations:\n  ${wrong.join('\n  ')}\nA 404 means inc/archived-redirects.php has stopped `
+    + 'firing (check functions.php still requires it); a 200 means the `archived` status became public, '
+    + 'which is a content decision this build should not be redirecting around.');
+});
+
 test('the redirected pages leave the sitemap', { concurrency: 1 }, async (t) => {
   const url = requirePageUrl(
     { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },

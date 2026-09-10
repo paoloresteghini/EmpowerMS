@@ -90,24 +90,21 @@ const HEAD = 'The Latest on Education';
 const LEDE = 'Stay up to date on the ideas, policies, and conversations shaping education in '
   + 'Mississippi and the work underway to create more opportunity for every student.';
 
-/* Verbatim from dist/education.html:366-382, attribute order included. */
-const STUBS = '<ul class="sol-stubs" data-cms="loop" data-cms-note="Latest articles and research for this solution area, newest three, mixed types. A Loop Grid narrowed to this area." data-reveal-group>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Research</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/">Charter Schools Outperform Districts on 3rd Grade Reading Test Initial Results</a>\n'
-  + '    <span class="sol-stub__date">June 24, 2026</span>\n'
-  + '  </li>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Research</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/empower-ms-releases-2025-impact-report/">Empower MS Releases 2025 Impact Report</a>\n'
-  + '    <span class="sol-stub__date">March 2, 2026</span>\n'
-  + '  </li>\n'
-  + '  <li class="sol-stub" data-reveal="rise">\n'
-  + '    <span class="sol-stub__kind">Article</span>\n'
-  + '    <a class="sol-stub__title" href="https://empowerms.org/education-is-economic-development-why-business-leaders-should-support-house-bill/">Education Is Economic Development: Why Business Leaders Should Support House Bill</a>\n'
-  + '    <span class="sol-stub__date">February 5, 2026</span>\n'
-  + '  </li>\n'
-  + '</ul>';
+/* THE THREE STUBS ARE A QUERY NOW, 2026-09-10, and this band's own
+   `data-cms` note always said they should be: "Latest articles and research
+   for this solution area, newest three, mixed types. A Loop Grid narrowed to
+   this area." They were a hand-written list frozen since the static build.
+
+   NOT A LOOP GRID, for the two reasons wp/empowerms-child/inc/solution-latest.php
+   argues: the kind label ("Research" or "Article") is not a term on the post
+   but whether it carries Research & Reports at all, and both the title and the
+   date are bare styled elements that a link() widget would wrap in Elementor's
+   button chrome.
+
+   THE WIDGET IS text() AND NOT html(). Widget_Html::render() prints its setting
+   with no shortcode pass at all; Widget_Text_Editor::render() runs
+   shortcode_unautop() then do_shortcode(). inc/content-loop.php's docblock
+   carries the evidence. */
 
 /* Verbatim from dist/education.html:384. */
 const MORE = '<p class="sol-latest__more">'
@@ -131,7 +128,7 @@ export function section() {
             text({ markup: `<p>${LEDE}</p>`, _attributes: 'data-reveal|rise' }),
           ],
         ),
-        html({ markup: STUBS }),
+        text({ markup: '[empower_solution_latest area="education"]' }),
         html({ markup: MORE }),
       ]),
     ],

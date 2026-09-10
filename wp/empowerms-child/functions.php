@@ -20,6 +20,8 @@ require_once get_stylesheet_directory() . '/inc/search-loop.php';
 require_once get_stylesheet_directory() . '/inc/post-single.php';
 require_once get_stylesheet_directory() . '/inc/archive.php';
 require_once get_stylesheet_directory() . '/inc/epic-research.php';
+require_once get_stylesheet_directory() . '/inc/archived-redirects.php';
+require_once get_stylesheet_directory() . '/inc/solution-latest.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and

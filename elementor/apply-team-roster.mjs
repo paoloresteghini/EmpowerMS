@@ -44,6 +44,17 @@
  * whole of the undo. They may well be former fellows Empower simply stopped
  * listing, which is not the same as people who were never here.
  *
+ * AND ONE BIO, added 2026-09-10 after Kienna Horn asked for it: her bio still
+ * called her Polk five times over, in the roadmap as well as on the install,
+ * and "any references to Polk are changed to Joanna Pevey" was the instruction.
+ * Taken as: the full name once, the surname alone thereafter, which is what the
+ * prose is shaped for. A literal replacement of every "Polk" would have written
+ * "Joanna Joanna Pevey is the Executive Assistant".
+ *
+ * IT IS NOT A REWRITE. The bio carries a subject-verb slip of Empower's own
+ * ("Polk supports the CEO, keep projects and commitments on track") and this
+ * leaves it alone. Their copy is theirs; the name was the ask.
+ *
  * IDEMPOTENT. Every action is stated as a target state, checked first, and
  * skipped when it already holds. Safe to re-run, and it must be re-run against
  * production at cutover: see docs/staging-to-prod-database.md. Production's own
@@ -101,6 +112,42 @@ export const CREATE = {
   position_title: 'Fellow on Work',
   headshot_title: 'thumbnail_IMG_0443',
 };
+
+/* Surname corrections inside a person's own bio. Ordered: the full name first,
+   so the bare-surname rule that follows cannot turn "Joanna Polk" into "Joanna
+   Joanna Pevey". Applied only when the OLD name still appears, so a re-run is a
+   no-op and a hand-edit in wp-admin is never overwritten. */
+export const BIO_FIXES = [
+  {
+    slug: 'joanna-polk-2',
+    replacements: [['Joanna Polk', 'Joanna Pevey'], ['Polk', 'Pevey']],
+  },
+];
+
+export function applyReplacements(content, replacements) {
+  let out = content;
+  for (const [from, to] of replacements) out = out.split(from).join(to);
+  return out;
+}
+
+/* Written through a temp file on the install rather than as a shell argument.
+   A bio holds curly quotes and apostrophes, and elementor/deploy.mjs's header
+   records why a quoted heredoc plus a temp file is the shape that survives the
+   gateway. `set -e` and the EXIT trap are copied from there for the same
+   reason: an abort mid-script must still remove the file. */
+export async function writeBio(postId, content, run = wpe) {
+  const suffix = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const tmp = `/tmp/empower_bio_${suffix}`;
+  const heredoc = `EMPOWER_BIO_${suffix}`;
+  await run([
+    'set -e',
+    `trap 'rm -f ${tmp}' EXIT`,
+    `cat > ${tmp} <<'${heredoc}'`,
+    content,
+    heredoc,
+    `wp post update ${postId} --post_content="$(cat ${tmp})"`,
+  ].join('\n'));
+}
 
 export async function readPeople(run = wpe) {
   const slugs = [...ACTIONS.map(a => a.slug), ...RENAMES.map(r => r.slug), CREATE.slug];
@@ -166,12 +213,26 @@ export async function main(argv = process.argv.slice(2), run = wpe) {
     );
   }
 
+  /* The bios are read here rather than in plan(), because plan() is pure and a
+     bio is a second round trip per person. */
+  const bioWork = [];
+  for (const fix of BIO_FIXES) {
+    const person = found.get(fix.slug);
+    if (!person) { console.log(`  absent    ${fix.slug.padEnd(22)} bio fix has no person to apply to`); continue; }
+    const content = await run(`wp post get ${person.id} --field=post_content`);
+    const next = applyReplacements(content, fix.replacements);
+    if (next === content) { console.log(`  already   ${fix.slug.padEnd(22)} bio carries no old name`); continue; }
+    const changed = fix.replacements.filter(([from]) => content.includes(from)).map(([from, to]) => `${from} -> ${to}`);
+    console.log(`  bio       ${fix.slug.padEnd(22)} ${changed.join(', ')}`);
+    bioWork.push({ slug: fix.slug, id: person.id, content: next });
+  }
+
   const todo = steps.filter(s => ['status', 'rename', 'create'].includes(s.kind));
   if (!argv.includes('--apply')) {
-    console.log(`\n${todo.length} action(s) pending. Nothing is written without --apply.`);
+    console.log(`\n${todo.length + bioWork.length} action(s) pending. Nothing is written without --apply.`);
     return;
   }
-  if (!todo.length) {
+  if (!todo.length && !bioWork.length) {
     console.log('\nNothing to do; the roster already matches.');
     return;
   }
@@ -208,6 +269,11 @@ export async function main(argv = process.argv.slice(2), run = wpe) {
       console.log('    a title and a photograph. Empower to supply, or the ledger link reads thin.');
     }
   }
+  for (const b of bioWork) {
+    await writeBio(b.id, b.content, run);
+    console.log(`  ${b.slug}: bio rewritten (${b.content.length} chars)`);
+  }
+
   console.log('\nRe-run to confirm: every line should read "already".');
 }
 

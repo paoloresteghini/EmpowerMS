@@ -47,6 +47,10 @@ const PHOTOS = {
     id: 20720,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-guest-with-mic.jpg',
   },
+  'podcast-cover': {
+    id: 20723,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-cover.jpg',
+  },
   'podcast-interview-on-set': {
     id: 20721,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-interview-on-set.jpg',

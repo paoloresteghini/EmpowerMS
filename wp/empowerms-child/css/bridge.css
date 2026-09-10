@@ -7110,57 +7110,18 @@ body .wpautoterms-footer a:focus-visible{
   display:contents;
 }
 
-/* ---------- 64. the fellows ledger: give the bio link its underline back
- *            ----------
- * css/team-a.css's `.ta-ledger__link` is the anchor around a contributing
- * fellow's name, added 2026-08-20 on Paolo's call after a link audit found
- * that the five fellows' `person` singles existed and nothing on the site
- * reached them. That file's own block carries the design reasoning; this one
- * exists because the rule it wrote does not win.
+/* ---------- 64. the fellows ledger's bio link: GONE, 2026-09-10 ----------
+ * This block gave `.ta-ledger__link` its underline back, because Elementor's
+ * `.elementor a{text-decoration:none}` is 0,1,1 and beat the page sheet's
+ * 0,1,0. Kienna Horn asked on 2026-09-10 for the fellows to read as a name and
+ * a photograph with no individual bio, so inc/person-loop.php stopped wrapping
+ * the name in an anchor and the class has no markup left anywhere. Its rules
+ * went from css/team-a.css in the same pass.
  *
- * WHAT BEATS IT. Elementor's `frontend.min.css` (4.2.2 on this install)
- * declares `.elementor a{box-shadow:none;text-decoration:none}`. That is
- * 0,1,1 against `.ta-ledger__link`'s 0,1,0, so the underline is removed no
- * matter what the page sheet says, and load order is irrelevant. Read off
- * the live page rather than reasoned about: matching every rule in every
- * stylesheet against the real element returned exactly three that touch
- * text-decoration, and Elementor's is the only one that removes it.
- *
- * WHY THAT MATTERS MORE THAN IT LOOKS. The decision Paolo took was to link
- * the NAME rather than the row, precisely so the link would be visible; a
- * name that is clickable and looks like plain text is the silently-clickable
- * outcome the row was rejected for, arrived at by accident. The screenshot
- * after the first deploy showed exactly that: five names, no affordance.
- *
- * `.elementor a.ta-ledger__link` is 0,2,1 and wins on specificity. The
- * `.elementor` ancestor is real here and was checked rather than assumed
- * (`el.matches('.elementor a')` is true): the loop item's own wrapper
- * carries it, `<div class="elementor elementor-20636 e-loop-item ...">`.
- * Note this is the OPPOSITE of the situation inside the header, where block
- * 63's display:contents means no `.elementor` ancestor survives and this
- * pattern silently fails to match. In a loop item it survives, because
- * nothing collapses the loop wrapper.
- *
- * EVERY LONGHAND THE SHORTHAND COVERS HAS TO MOVE HERE, not just the line.
- * The first version of this block set `text-decoration-line` alone, on the
- * reasoning that the page sheet's colour and thickness were uncontested.
- * That was wrong, and the render said so: the underline came back at
- * `text-decoration-color: rgb(255,255,255)` rather than the 45% mix
- * css/team-a.css asks for. `text-decoration:none` is a SHORTHAND, so it sets
- * line, colour, style and thickness together, and at 0,1,1 it outranks the
- * page sheet on all four. A higher-specificity shorthand does not lose its
- * longhands one at a time; it wins them all. So the three the design cares
- * about are declared here, where they can win.
- *
- * `text-underline-offset` stays in css/team-a.css, and that is not an
- * oversight: it is NOT part of the text-decoration shorthand, so Elementor's
- * rule never touches it and the page sheet holds it uncontested. Colour,
- * hover, focus ring and transition stay there too, for the same reason. */
-.elementor a.ta-ledger__link{
-  text-decoration-line:underline;
-  text-decoration-thickness:1px;
-  text-decoration-color:color-mix(in oklab,currentColor 45%,transparent);
-}
+ * Kept as a note rather than deleted outright: the underline was itself a
+ * repair for a defect that is still true of every other anchor this build puts
+ * inside Elementor, and a reader arriving here from the old markup should find
+ * out where it went rather than nothing at all. */
 
 /* ---------- 71. header search: the overlay panel, closed-by-default and
  *            the 400px override ----------
@@ -8234,4 +8195,53 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
  * !important. */
 .elementor .ta-roll__photo{
   border-radius:var(--radius-pill);    /* css/team-a.css, .ta-roll__photo */
+}
+
+/* ---------- 80. the fellows' discs: block 58's height never won ----------
+ * Block 58 gave `.ta-disc img` `width:100%;height:100%;object-fit:cover` so a
+ * headshot fills its 52px pill. Two of the four fellows proved it has never
+ * worked. Measured on the install, image box against its 52x52 wrapper:
+ *
+ *     Matt Ladner       1011x1011 source    52 x 52    looks right
+ *     Conor Norris       300x300  source    52 x 52    looks right
+ *     J. Robertson       940x1024 source    52 x 57    4px too tall
+ *     Rebekah Staples    768x1024 source    52 x 69    17px too tall
+ *
+ * 52 x 1024/940 is 56.6 and 52 x 1024/768 is 69.3, which is what `height:auto`
+ * gives. The two that look right look right only because a square source is
+ * 52x52 either way, which is why this survived from the day the ledger became a
+ * Loop Grid until the day a fellow with a portrait headshot was added.
+ *
+ * THE FIX IS A RATIO, NOT A HEIGHT, and it took three attempts to get there.
+ * Both wrong ones are recorded because each looked obviously right:
+ *
+ *   1. "Elementor's `.elementor-widget-container` sits between `.ta-disc` and
+ *      the img, so the percentage has an auto-height parent." Walking the real
+ *      ancestor chain on the install found no such element. The img's parent IS
+ *      the 52px grid.
+ *   2. "`.elementor img{height:auto}` is 0,1,1 and ties with `.ta-disc img`, so
+ *      order decides." Raising it to `.elementor .ta-disc img` at 0,2,1 changed
+ *      nothing: the rule was confirmed present in the browser's own stylesheet
+ *      list, at higher specificity, and the image still computed 56.64px.
+ *
+ * So `height:100%` is winning the cascade and resolving to auto anyway, which
+ * means the containing block is not offering a definite height to resolve
+ * against. Rather than keep arguing with percentage resolution on a grid item,
+ * the box is given its shape directly: `aspect-ratio:1` with `width:100%` makes
+ * a 52px-wide item 52px tall by construction, and `object-fit:cover` then has a
+ * square box to crop into. Nothing here depends on what any ancestor computes.
+ *
+ * THE LESSON IS THE THREE ATTEMPTS. Two plausible mechanisms, both stated with
+ * confidence, both wrong, and the measurement was the same each time. A rule
+ * that produces the right number for a reason nobody can name is still worth
+ * less than one that cannot depend on the reason at all.
+ *
+ * `.ta-portrait` is the same shape one size up and currently measures correct,
+ * because every staff headshot on this install is 4:5 like its frame. Same
+ * latent defect, NOT touched here: a rule that changes nothing measurable is a
+ * rule nobody can check. If a staff portrait of another shape ever lands, copy
+ * this block. */
+.elementor .ta-disc img{
+  aspect-ratio:1;
+  height:auto;
 }

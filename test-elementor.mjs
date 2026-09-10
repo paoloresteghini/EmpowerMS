@@ -5979,21 +5979,35 @@ test('every person the roster lists is linked to their bio', { concurrency: 1 },
   const hrefs = [...html.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]);
   const distinct = [...new Set(hrefs)];
 
-  /* A floor rather than an equality, because a link to someone not in the
-     roster is a different question from the roster failing to link someone. */
-  assert.ok(distinct.length >= published,
-    `/team/ links only ${distinct.length} distinct person page(s), and the install publishes ${published} `
-    + 'people. Someone in the roster is rendering without a link to their bio.');
+  /* THE STAFF LINK, THE FELLOWS DO NOT, since 2026-09-10. Kienna Horn asked for
+     the fellows to lose their individual bios and read as name and photograph,
+     the way the board does. So the floor here is the STAFF count, not every
+     published person: `published` still counts both, and expecting a link for
+     each would now fail by design.
 
-  /* The fellows ledger, on its own. It carried ZERO links until 2026-08-20. */
+     A floor rather than an equality, because a link to someone not in the
+     roster is a different question from the roster failing to link someone. */
+  const staffCount = published - fellows;
+  assert.ok(distinct.length >= staffCount,
+    `/team/ links only ${distinct.length} distinct person page(s), and the install publishes ${staffCount} `
+    + `staff (${published} people, of whom ${fellows} are fellows and are no longer linked). Someone in the `
+    + 'staff roster is rendering without a link to their bio.');
+
+  /* The fellows ledger, on its own, and the assertion is now the OPPOSITE of
+     what it was between 2026-08-20 and 2026-09-10. It carried zero links, then
+     one per fellow after a link audit found their singles unreachable, and now
+     zero again because Empower answered that audit the other way. Asserted
+     rather than dropped: a link coming back means the shortcode has been
+     reverted, which is a change to what the client asked for and should not
+     happen quietly. */
   const ledgerAt = html.indexOf('ta-ledger');
   assert.ok(ledgerAt > 0, 'no .ta-ledger on /team/, so the fellows section is not rendering at all');
   const ledger = html.slice(ledgerAt);
   const ledgerLinks = [...new Set([...ledger.matchAll(/href="([^"]*\/person\/[^"]*)"/g)].map((m) => m[1]))];
-  assert.ok(ledgerLinks.length >= fellows,
-    `the fellows ledger links ${ledgerLinks.length} bio(s) and the install publishes ${fellows} contributing fellows. The `
-    + 'ledger rows carry no "read bio" affordance, so a fellow whose name is not a link is a bio page '
-    + 'nothing on the site reaches.');
+  assert.deepEqual(ledgerLinks, [],
+    `the fellows ledger links ${ledgerLinks.length} bio page(s): ${JSON.stringify(ledgerLinks)}. Empower asked `
+    + 'on 2026-09-10 for the fellows to be a name and a photograph with no individual bio, so a link here '
+    + 'means inc/person-loop.php\'s empower_person_row_text has been reverted.');
 
   const broken = [];
   for (const href of distinct) {

@@ -1,0 +1,21 @@
+Subject: Podcast filter, and a couple of small things
+
+Hi Kienna,
+
+The podcast filter isn't broken. Only 9 of your 66 episodes are tagged with a
+guest type, 3 in each of the three groups, so ticking any box takes the list from
+66 down to 3. Tag the rest and it will behave. Nothing for us to fix.
+
+Also:
+
+- Podcast hero: two of the three photos you listed were the same file, and the
+  third was the show's cover artwork, so I picked three others from the same
+  folder. Happy to swap if you'd rather have different ones.
+
+- Rebekah Staples has no bio anywhere, so her page is a name and a photo. Could
+  you send a short one?
+
+- Joanna's bio still says Polk throughout, though her name now shows as Pevey.
+
+Thanks,
+Paolo

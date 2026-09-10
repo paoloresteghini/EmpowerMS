@@ -135,7 +135,7 @@ export function section() {
                   content_width: 'full',
                   _attributes: 'data-reveal|rise\naria-hidden|true',
                 },
-                [image({ ...photo('podcast-interview-on-set') })],
+                [image({ ...photo('podcast-cover') })],
               ),
               container(
                 {

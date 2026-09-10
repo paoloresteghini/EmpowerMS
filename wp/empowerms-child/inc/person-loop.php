@@ -353,28 +353,28 @@ add_shortcode( 'empower_person_row_text', function () {
 		return '';
 	}
 
-	/* THE NAME IS A LINK, AND ONLY THE NAME. Paolo's call, 2026-08-20, after an
-	 * audit found that the five contributing fellows had real bio pages that
-	 * nothing on the site linked to: the staff cards above carry a visible
-	 * "Read bio" and are clickable, and the ledger carried no affordance of any
-	 * kind, so those five singles were reachable only by typing the URL.
+	/* THE NAME IS NOT A LINK, 2026-09-10, and it used to be. Kienna Horn asked
+	 * for the fellows to lose their individual bios and read "name and photo,
+	 * similar to how we're displaying the Board", which also answered the open
+	 * question of what to do about Rebekah Staples, who has no bio anywhere.
 	 *
-	 * WHY NOT THE WHOLE ROW, which is what the staff cards do. Two reasons, and
-	 * the second is the one that decided it. `.ta-ledger__row` IS the three
-	 * column grid (`grid-template-columns:auto minmax(0,1fr) auto`,
-	 * css/team-a.css:221-226) and every rule it has keys on that, so making the
-	 * row an anchor puts an element between `.ta-ledger` and its grid. And a row
-	 * that is silently clickable with no affordance is worse for a reader than
-	 * one that is not clickable at all: the name carrying the link is the thing
-	 * a screen reader announces as the destination, and it is visibly a link
-	 * rather than a surprise.
+	 * WHAT THAT REVERSES. Paolo added the link on 2026-08-20 after an audit
+	 * found the fellows' `person` singles existed and nothing on the site
+	 * reached them. The audit's finding still stands; Empower's answer to it is
+	 * the other one, which is theirs to give: the singles are no longer content
+	 * this page is trying to reach.
 	 *
-	 * The name is escaped exactly as before; only the wrapper is new. */
-	$name = '<span class="ta-ledger__name">' . esc_html( get_the_title( $post_id ) ) . '</span>';
-	$permalink = get_permalink( $post_id );
-	$out = $permalink
-		? '<a class="ta-ledger__link" href="' . esc_url( $permalink ) . '">' . $name . '</a>'
-		: $name;
+	 * THE PAGES ARE NOT DELETED. Each fellow is still a published `person`, so
+	 * the roster still has a photograph and a name to render, and
+	 * /person/<slug>/ still resolves for anyone holding the URL. Only the
+	 * affordance goes. Deleting the posts would take the fellows off the page
+	 * altogether, which is the opposite of what was asked.
+	 *
+	 * THE FIELD STAYS. "Fellow on Education" is what distinguishes one fellow
+	 * from the next, and the board rows it is being made to match carry a role
+	 * of their own for the two officers. Flagged to Kienna rather than assumed
+	 * silently; one line takes it out if she wants only the name. */
+	$out = '<span class="ta-ledger__name">' . esc_html( get_the_title( $post_id ) ) . '</span>';
 
 	$field = trim( (string) get_post_meta( $post_id, 'position_title', true ) );
 	if ( '' !== $field ) {

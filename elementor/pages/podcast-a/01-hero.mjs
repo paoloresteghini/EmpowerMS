@@ -127,7 +127,7 @@ export function section() {
                   content_width: 'full',
                   _attributes: 'data-reveal|rise',
                 },
-                [image({ ...photo('podcast-studio-portrait') })],
+                [image({ ...photo('podcast-guest-with-mic') })],
               ),
               container(
                 {
@@ -135,7 +135,7 @@ export function section() {
                   content_width: 'full',
                   _attributes: 'data-reveal|rise\naria-hidden|true',
                 },
-                [image({ ...photo('podcast-studio-interview') })],
+                [image({ ...photo('podcast-interview-on-set') })],
               ),
               container(
                 {
@@ -143,7 +143,7 @@ export function section() {
                   content_width: 'full',
                   _attributes: 'data-reveal|rise\naria-hidden|true',
                 },
-                [image({ ...photo('podcast-studio-camera') })],
+                [image({ ...photo('podcast-studio-wide') })],
               ),
             ],
           ),

@@ -20,19 +20,41 @@
  *
  * ALT COMES FROM THE ATTACHMENT HERE, because image() has no alt control and
  * renders whatever `_wp_attachment_image_alt` holds. So:
- *   podcast-studio-portrait  carries a sentence, written at import time.
- *   podcast-studio-interview and podcast-studio-camera carry NONE. They were
- *   imported with no --alt flag, not with an empty one, because their frames
- *   are aria-hidden in both builds and their only use is decorative. That is
- *   the shape epic-a/media.mjs records for epic-logo.
+ *   podcast-guest-with-mic  carries a sentence, written at import time.
+ *   podcast-interview-on-set and podcast-studio-wide carry NONE, because their
+ *   frames are aria-hidden in both builds and their only use is decorative.
+ *   That is the shape epic-a/media.mjs records for epic-logo.
+ *
+ * THE THREE CHANGED ON 2026-09-10, Empower's round 1 row 9. What they had asked
+ * for could not be built as written: of the three files their feedback linked,
+ * two were the same photograph and the third was the show's square cover
+ * ARTWORK, which is a graphic and not a photograph of anything. The folder they
+ * linked holds ten files, so the swap was made from that rather than from the
+ * three references, and the cover art was left alone.
+ *
+ * THE TALL FRAME TOOK A SINGLE SUBJECT, and that is the decision worth
+ * recording. Every photograph in the folder is a landscape 4:3 of two people
+ * sitting apart, and the frame is 4:5. Cropping any of them to portrait falls
+ * BETWEEN the two people and beheads both; that was built and looked at before
+ * it was rejected. The crop is offset to one person instead, which is a picture
+ * the frame can hold.
  */
 
 import { PHOTOS as FINAL_PHOTOS } from '../final/media.mjs';
 
 const PHOTOS = {
-  'podcast-studio-portrait': FINAL_PHOTOS['podcast-studio-portrait'],
-  'podcast-studio-interview': FINAL_PHOTOS['podcast-studio-interview'],
-  'podcast-studio-camera': FINAL_PHOTOS['podcast-studio-camera'],
+  'podcast-guest-with-mic': {
+    id: 20720,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-guest-with-mic.jpg',
+  },
+  'podcast-interview-on-set': {
+    id: 20721,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-interview-on-set.jpg',
+  },
+  'podcast-studio-wide': {
+    id: 20722,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/podcast-studio-wide.jpg',
+  },
 };
 
 export function photo(name) {

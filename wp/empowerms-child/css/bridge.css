@@ -8170,3 +8170,39 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 .elementor .em-insights__row .em-article__title{
   margin:0 0 var(--space-3); /* homepage.css:315 */
 }
+
+/* ---------- 78. EPIC's report panels: one widget where three flex items were --
+ * epic-a's three "Most recent report" slots became a query on 2026-09-09, and
+ * the label, the link and the date are now one shortcode inside ONE text-editor
+ * widget (wp/empowerms-child/inc/epic-research.php). Before that they were three
+ * separate widgets, so all three were flex items of `.epa-area`, which is a flex
+ * column (css/epic-a.css:250).
+ *
+ * WHAT CHANGED WITHOUT ANY RULE CHANGING. A flex item is blockified, so
+ * `.epa-area__latest`'s own `display:inline-flex` (:276) rendered as `flex` and
+ * the anchor filled the 360px column. Inside a widget wrapper it is an
+ * inline-level box again, sitting on a line box: shrink-to-fit width, and the
+ * strut adds a pixel above it.
+ *
+ * MEASURED AT 1200px, static build against the install, all three panels:
+ *
+ *                        static      live, no rule    live, with this rule
+ *   panel height         577         578              577
+ *   link top (in panel)  409         410              409
+ *   link width, safety   360         248              360
+ *   date top, safety     445         448              445
+ *
+ * The 112px is the whole visible one: "How bad is crime in Mississippi?" is
+ * short enough not to wrap, so the anchor stopped at the end of its text. It
+ * carries no background, so what moves is the hover underline and the pointer
+ * target, not a painted edge. The other two titles wrap and reach 360 anyway,
+ * which is why two of the three panels look identical and one does not.
+ *
+ * ONE RULE FOR BOTH TEXT WIDGETS IN THE PANEL, rather than reaching for the
+ * shortcode's widget with :has(). The other one holds the <h3> area name, is an
+ * only child, and stretches to 360 either way; the numbers above were taken with
+ * this selector as written and match the static build on every probe. */
+.elementor .epa-area > .elementor-widget-text-editor{
+  display:flex;
+  flex-direction:column;
+}

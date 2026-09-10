@@ -91,6 +91,29 @@ const PHOTOS = {
   'worksheet-overhead': FINAL_PHOTOS['worksheet-overhead'],
   'maker-with-laptop': FINAL_PHOTOS['maker-with-laptop'],
   'advocate-portrait-blue': FINAL_PHOTOS['advocate-portrait-blue'],
+
+  /* Imported 2026-09-10 for Empower round 1, rows 13 and 14. Cut from the files
+     Kienna supplied in Drive, to the shape each slot's own `aspect-ratio`
+     asks for rather than to the shape the file arrived in. Alt written
+     into the attachment at import time by
+     elementor/import-photography.mjs, which is the only way it can reach
+     an image() widget. */
+  'two-women-in-conversation': {
+    id: 20719,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/two-women-in-conversation.jpg',
+  },
+  'mentor-with-student': {
+    id: 20715,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/mentor-with-student.jpg',
+  },
+  'speaker-at-microphone': {
+    id: 20717,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/speaker-at-microphone.jpg',
+  },
+  'panel-on-stage': {
+    id: 20716,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/panel-on-stage.jpg',
+  },
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

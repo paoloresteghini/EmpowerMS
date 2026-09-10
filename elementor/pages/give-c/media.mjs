@@ -63,6 +63,18 @@ const PHOTOS = {
   'children-running-parent': FINAL_PHOTOS['children-running-parent'],
   'teacher-with-student-45': FINAL_PHOTOS['teacher-with-student-45'],
   'worker-packing-smiling': FINAL_PHOTOS['worker-packing-smiling'],
+  'maker-with-laptop': FINAL_PHOTOS['maker-with-laptop'],
+
+  /* Imported 2026-09-10 for Empower round 1, rows 15. Cut from the files
+     Kienna supplied in Drive, to the shape each slot's own `aspect-ratio`
+     asks for rather than to the shape the file arrived in. Alt written
+     into the attachment at import time by
+     elementor/import-photography.mjs, which is the only way it can reach
+     an image() widget. */
+  'students-in-classroom': {
+    id: 20718,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/students-in-classroom.jpg',
+  },
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

@@ -84,7 +84,7 @@ export function section() {
         ]),
         container(
           { cssClass: 'mla-about__mock', content_width: 'full', _attributes: 'data-reveal|clip' },
-          [image({ ...photo('esa-email-mockup') })],
+          [image({ ...photo('email-newsletters-mockup') })],
         ),
       ]),
     ],

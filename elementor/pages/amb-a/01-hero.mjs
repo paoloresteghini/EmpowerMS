@@ -124,7 +124,7 @@ export function section() {
         ]),
         container(
           { cssClass: 'aba-hero__figure', content_width: 'full', _attributes: 'data-reveal|clip' },
-          [image({ ...photo('shop-owner-counter') })],
+          [image({ ...photo('two-women-in-conversation') })],
         ),
       ]),
     ],

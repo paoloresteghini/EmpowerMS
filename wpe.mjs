@@ -5,7 +5,29 @@ import { installConfig } from './install.mjs';
    the line that closes its array dump. Matched with the "PHP: " allowed to
    appear mid-line, because WP-CLI values arrive with the notice glued onto the
    end of them. The timestamp in the pattern is what keeps a legitimate line
-   that merely says "PHP" from being eaten. */
+   that merely says "PHP" from being eaten.
+
+   THIS ONLY CLEANS WHAT wpe() RETURNS TO NODE, AND THAT LIMIT HAS COST TIME
+   TWICE, in two different sessions on 2026-08-20, with the identical error
+   message. Every WP-CLI call on this install emits a PHP deprecation notice,
+   and it is glued onto the value, so a value captured by the REMOTE shell
+   never passes through this function and arrives dirty:
+
+       A=$(wp post create ... --porcelain)      # A is "20634\nPHP: 2026-..."
+       wp post term set $A elementor_library_type loop-item
+       # Error: Invalid taxonomy PHP:.
+
+   THE FAILURE MODE IS THE EXPENSIVE PART, not the error. Under `set -e` the
+   script aborts at the SECOND command, so the create has already happened: the
+   post exists, untermed, and a naive retry of the whole script creates a
+   duplicate. Both sessions that hit this had to list before retrying to find
+   out how many posts they had actually made.
+
+   SO: never capture a WP-CLI value into a remote shell variable. Create in one
+   wpe() call, read the id back on the NODE side (`wp post list --format=csv`,
+   which comes back through this function), then pass it as a literal into the
+   next call. That is the same discipline the slug rename established for
+   reading a slug back rather than trusting the flag that set it. */
 const NOTICE = /PHP: \d{4}-\d{2}-\d{2} [\s\S]*?\n\)\]/g;
 
 export function stripNotices(raw) {

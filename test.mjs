@@ -156,20 +156,68 @@ test('section copy uses curly quotes in prose, not straight ASCII quotes', () =>
   }
 });
 
-test('stories attributes Jodi Berry with city', () => {
-  assert.match(html, /Jodi Berry/);
-  assert.match(html, /Sumrall, MS/);
+/* WAS 'stories attributes Jodi Berry with city' until 2026-09-04, asserting the
+   authored lead card. Empower's round-1 feedback replaced that card with the
+   newest Community Story, because the authored version paired her named quote
+   with a stock photograph of a different person. The test is inverted rather
+   than deleted: the thing now worth guarding is that no hand-authored person is
+   named in this card again, since the photograph beside it is whatever the
+   query returns and cannot be made to match a name typed here. */
+test('the stories lead card names no hand-authored person', () => {
+  /* Comments stripped first. The partial explains in a comment WHY the name and
+     the blockquote are gone, and a test reading raw HTML would find them there
+     and fail on its own documentation. Both assertions are about what the page
+     renders. */
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const feature = rendered.slice(rendered.indexOf('em-stories__feature'), rendered.indexOf('em-stories__col'));
+  assert.doesNotMatch(feature, /Jodi Berry|Sumrall, MS/,
+    'the lead card names a person again; the photograph beside it comes from the query and will not be them');
+  assert.match(feature, /auto-populated/,
+    'the lead card no longer declares that it is auto-populated');
+});
+
+/* The prose in these posts is written ABOUT the subject, not BY them (checked on
+   the install: no post_excerpt, no pull-quote field, only narrative body copy).
+   Setting it in <blockquote> would attribute a writer's sentence to the person
+   photographed, which is a worse version of the defect this section just fixed. */
+test('the stories section quotes nobody it cannot attribute', () => {
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const section = rendered.slice(rendered.indexOf('em-stories__feature'), rendered.indexOf('em-insights'));
+  assert.doesNotMatch(section, /<blockquote/,
+    'a blockquote is back in the auto-populated stories section');
 });
 
 test('insights lists three content rows', () => {
-  const rows = html.match(/class="em-insights__row"/g) || [];
+  /* Matches the class as a TOKEN, because two of the three now also carry
+     em-insights__row--first / --last. Those modifiers replaced :first-child and
+     :last-child on 2026-09-09: each row is a Loop Grid of one on the converted
+     page, so both pseudo-classes matched all three rows at once. */
+  const rows = html.match(/class="em-insights__row(?: [^"]*)?"/g) || [];
   assert.equal(rows.length, 3);
 });
 
-test('insights preserves CMS placeholder copy verbatim', () => {
-  assert.match(html, /Article headline — auto-populated from the blog/);
-  assert.match(html, /Research title — auto-populated from EPIC/);
-  assert.match(html, /Community story title — auto-populated/);
+/* WAS 'insights preserves CMS placeholder copy verbatim' until 2026-09-09, and
+   it asserted the three titles read "Article headline — auto-populated from the
+   blog" and its two siblings. That copy was a placeholder describing what the
+   rows were meant to become, and it was live on Empower's homepage for weeks.
+   Round 1 row 3 asked for the real thing, and the rows are Loop Grids now.
+
+   Inverted rather than deleted, for the same reason the stories lead card's
+   test was: the thing worth guarding is that placeholder copy never comes back,
+   because it is indistinguishable from real content to every structural check
+   and only a human reading the page can see it is a description of itself. */
+test('the insights rows carry no placeholder copy', () => {
+  /* Scoped to the rows, NOT the page. The stories band above deliberately says
+     "auto-populated" in its own slot labels, and 04-stories' test requires that
+     word, so a page-wide assertion here would fight it. */
+  const rendered = html.replace(/<!--[\s\S]*?-->/g, '');
+  const start = rendered.indexOf('em-insights__rows');
+  const rows = rendered.slice(start, rendered.indexOf('</section>', start));
+  assert.ok(start > 0 && rows.length > 200, 'could not isolate the insights rows');
+  assert.doesNotMatch(rows, /auto-populated/i,
+    'an insights row describes itself as auto-populated again; that is placeholder copy, not content');
+  assert.doesNotMatch(rows, /min read/i,
+    'a read time is back on an insights row; nothing on this install computes one, so it is invented');
 });
 
 test('join us newsletter is a real form with a labelled input', () => {
@@ -709,7 +757,7 @@ test('process steps cascade as one group', () => {
 
 test('insights rows cascade as one group', () => {
   assert.match(html, /<div class="em-insights__rows" data-reveal-group>/);
-  const revealed = html.match(/<article class="em-insights__row" data-reveal="rise">/g) || [];
+  const revealed = html.match(/<article class="em-insights__row(?: [^"]*)?" data-reveal="rise">/g) || [];
   assert.equal(revealed.length, 3, `expected 3 revealing rows, found ${revealed.length}`);
 });
 
@@ -931,7 +979,7 @@ test('Our Solutions opens the landing page and its dropdown holds only the pages
   const panel = header2.match(/<div class="em-header__menu" id="drop-solutions"[\s\S]*?<\/div>/)[0];
   const links = [...panel.matchAll(/<a href="([^"]+)">([^<]*?)<span>/g)].map(m => m[2]);
   assert.deepEqual(links,
-    ['Quality Education', 'Meaningful Work', 'Public Safety', 'Research (EPIC)'],
+    ['Quality Education', 'Meaningful Work', 'Safe Communities', 'Research (EPIC)'],
     'the Our Solutions dropdown is not the four pages beneath the landing page');
   const markup = header2.replace(/<!--[\s\S]*?-->/g, '');
   assert.ok(!markup.includes('Solutions Center'),
@@ -1225,12 +1273,42 @@ test('every page has exactly one h1 and no skipped heading levels', () => {
    loses its action fails, and so does one of these two if it grows one. */
 const NO_PRIMARY = ['dist/content-a.html', 'dist/content-b.html'];
 
+/* GIVE-C HAS ITS ONE ORANGE ACTION AND IT IS NOT AN em-btn. From 2026-09-11 the
+   action on the donate page is Gravity Form 4's own submit button, which
+   bridge.css already fills orange (.em-gform .gform_wrapper .gform_button,
+   background var(--em-orange)). It exists only on the live page: this file
+   draws a dashed marker where the form goes, because a static hand-off cannot
+   run a shortcode and must not draw a submit control with nothing behind it.
+
+   NOT ADDED TO NO_PRIMARY, which would say the page has no action at all and is
+   false. Listed separately so that the distinction is in the file rather than
+   in somebody's memory, and so a future page that genuinely loses its action
+   still fails. The live half is asserted in test-elementor.mjs, which reads the
+   rendered button's own value. */
+const PRIMARY_IS_A_LIVE_FORM_BUTTON = ['dist/give-c.html'];
+
 test('one orange filled button per page', () => {
   for (const { out, html } of ALLPAGES) {
     const primaries = html.match(/em-btn--primary/g) || [];
-    const expected = NO_PRIMARY.includes(out) ? 0 : 1;
+    const expected = NO_PRIMARY.includes(out) || PRIMARY_IS_A_LIVE_FORM_BUTTON.includes(out) ? 0 : 1;
     assert.equal(primaries.length, expected,
       `${out}: brand rule is one orange action per view, expected ${expected}, found ${primaries.length}`);
+  }
+});
+
+test('the page whose orange action is a live form button still has one, and knows where', () => {
+  /* The risk in the exception above is that it becomes a way of having no
+     action at all and nobody noticing. So the static file is held to carrying
+     the slot the live button appears in, and to saying so in the marker's own
+     note, which is what a reviewer reads instead of the button. */
+  for (const out of PRIMARY_IS_A_LIVE_FORM_BUTTON) {
+    const html = ALLPAGES.find(p => p.out === out).html;
+    assert.ok(html.includes('gvc-slot'),
+      `${out} is exempt from the orange-button count because its action is inside the form, but it has `
+      + 'no slot for the form either, so the page has no action at all');
+    assert.match(html, /gvc-slot__note[^>]*>[\s\S]*?orange action/,
+      `${out}'s form marker does not tell a reviewer that the orange action is the form's own submit `
+      + 'button. That sentence is the only thing standing in for it in this file.');
   }
 });
 
@@ -1455,8 +1533,8 @@ test('the chooser filters without a script, and every control is a real one', ()
     ['to-review', 'signed-off', 'archived',
      'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
      'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
-     'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing'],
-    'the facets in the rail are not the three statuses and sixteen sets expected');
+     'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing', 'set-contact', 'set-legal'],
+    'the facets in the rail are not the three statuses and eighteen sets expected');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1469,7 +1547,7 @@ test('the chooser filters without a script, and every control is a real one', ()
      visually. And a set ticked behind a shut panel has to announce itself, or the
      page is filtered for a reason nobody can see. */
   assert.match(chooser, /<details class="ch__facet ch__facet--fold">/,
-    'the Set facet is not collapsible, and sixteen rows is longer than the page beside it');
+    'the Set facet is not collapsible, and eighteen rows is longer than the page beside it');
   assert.ok(!/<details class="ch__facet ch__facet--fold" open>/.test(chooser),
     'the Set facet ships open, so folding it buys nothing');
   assert.match(chooser, /<fieldset class="ch__facet__body">\s*\n\s*<legend class="em-visually-hidden">Set<\/legend>/,
@@ -1508,9 +1586,15 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      beside the argument.
 
      Moving a key off this list is the commit that records the decision. */
-  const UNDECIDED = ['content', 'landing'];
+  /* `legal` joined the undecided sets on 2026-09-02. It is undecided in a
+     different sense from the other two: nothing is being chosen between, because
+     the two cards are a privacy policy and a terms document rather than two
+     readings of one brief. What is open is Empower's sign-off on the
+     transcription and on the wording questions the move surfaced, so it carries
+     no pick for the same reason a set awaiting a decision carries none. */
+  const UNDECIDED = ['content', 'landing', 'contact', 'legal'];
   const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 16, `expected sixteen sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 18, `expected eighteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -1821,7 +1905,7 @@ const WHAT_WE_DO_COPY = [
   'Helping every child access the education they need to reach their full potential.',
   'Meaningful Work',
   'Removing barriers so more Mississippians can find meaningful work and build lasting prosperity.',
-  'Public Safety',
+  'Safe Communities',
   'Creating safer communities where families and opportunity can thrive.',
   'View our annual reports:',
   '2025', '2024', '2023', '2022',
@@ -1879,10 +1963,12 @@ const TEAM_COPY = [
   'We know the promise of Mississippi because we’ve built our lives here. And we know the challenges, because our state only truly thrives when hard work leads to earned success for every family in every neighborhood.',
   'Our staff, board members, and fellows are committed to creating a path to generational prosperity for Mississippi’s children, workers, and families. Together, we’ve built the state’s leading public policy organization by advancing practical solutions that expand opportunity and help Mississippi reach its full potential.',
 
-  /* The roadmap's own group headings, and its own note about the ordering. */
+  /* The roadmap's own group headings. Its note about the ordering, "In
+     alphabetical order by last name", was asserted here until 2026-09-10;
+     Empower asked for the line to go (round 1, row 5). The ORDER did not go
+     with it, and is still asserted against the install in test-elementor.mjs. */
   'Contributing Fellows',
   'Board of Directors',
-  'In alphabetical order by last name',
 
   /* The founder's bio paragraph is NOT asserted here. Empower asked on
      2026-08-05 for every card on The Roster to be the same size, which took the
@@ -1892,23 +1978,34 @@ const TEAM_COPY = [
 
 /* Name, title, bio-page slug. Order here is the roadmap's alphabetical-by-last-
    name rule applied literally, which moves Richards above Thigpen; the roadmap
-   itself lists those two the other way round. */
+   itself lists those two the other way round.
+
+   NINE, NOT TEN, SINCE 2026-08-21, and two of the nine changed title in the
+   same edit. Kienna Horn: Wil Ervin "is moving on to another job opportunity at
+   the end of the month, so he'll need to be removed from the staff page along
+   with his bio and any related information", and "Patrick and Gina have both
+   had title and position updates". Gina Metzger's Executive Vice President is
+   now Dr. Patrick Miller's; hers is Chief Administrative Officer. All three
+   changes are read from Empower's own roadmap table, which they edited the same
+   day, not from the SEO sheet that arrived with them. */
 const TEAM_STAFF = [
   ['Grant Callen', 'Founder & CEO', 'grant-callen'],
-  ['Wil Ervin', 'Senior Vice President', 'wil-ervin'],
   ['Ashley Green', 'Director of Outreach', 'ashley-green'],
   ['Kienna Horn', 'Director of Communications', 'kienna-horn'],
   ['Elyse Marcellino', 'Director of Embark', 'elyse-marcellino'],
-  ['Gina Metzger', 'Executive Vice President', 'gina-metzger'],
-  ['Dr. Patrick Miller', 'Vice President of Development', 'patrick-miller'],
+  ['Gina Metzger', 'Chief Administrative Officer', 'gina-metzger'],
+  ['Dr. Patrick Miller', 'Executive Vice President', 'patrick-miller'],
   ['Joanna Pevey', 'Executive Assistant & Development Manager', 'joanna-pevey'],
   ['Dr Kristin Vance Richards', 'Director of Research', 'kristin-vance-richards'],
   ['Forest Thigpen', 'Senior Advisor', 'forest-thigpen'],
 ];
 
+/* Roadmap (6), 2026-09-10. Christopher Koopman (Fellow on Regulation &
+   Innovation) was here until then and is still on empowerms.org/team/; the
+   roadmap is newer and drops him, and the roadmap is the spec. He is `draft` on
+   the install already, so the CPT and this list now agree. */
 const TEAM_FELLOWS = [
   ['J. Robertson', 'Fellow on Criminal Justice Reform'],
-  ['Christopher Koopman', 'Fellow on Regulation & Innovation'],
   ['Conor Norris', 'Fellow on Entrepreneurship'],
   ['Matt Ladner', 'Fellow on Education'],
   ['Rebekah Staples', 'Fellow on Work'],
@@ -1945,7 +2042,7 @@ test('every member of staff appears on every variation, with title and bio link'
       assert.ok(text.includes(title), `${out} is missing ${name}'s title "${title}"`);
       /* The roadmap's section 2: "Each staff photo links to their full bio
          page." One of those pages exists — the CEO's — so every card points at
-         it for review. When the other nine are built this becomes a per-person
+         it for review. When the other eight are built this becomes a per-person
          destination, and `slug` below is the name each one will take. */
       assert.ok(html.includes('href="team-bio.html"'),
         `${out} does not link ${name} to the staff detail screen`);
@@ -1987,7 +2084,7 @@ test('every monogram tile on every team variation is marked as a placeholder', (
         `${out} has an unmarked monogram tile: ${tile.slice(0, 80)}`);
     }
     assert.ok(tiles.length >= TEAM_STAFF.length,
-      `${out} shows ${tiles.length} tiles — every variation gives all ten staff a portrait`);
+      `${out} shows ${tiles.length} tiles — every variation gives all ${TEAM_STAFF.length} staff a portrait`);
     assert.ok(html.includes('Placeholder portraits'),
       `${out} shows placeholder tiles but no longer says so`);
   }
@@ -2063,7 +2160,7 @@ const SOLUTIONS_COPY = [
   'Every Mississippian should have the opportunity to build a meaningful career and create a better future.',
   'We work to connect more people with meaningful work, strengthen Mississippi’s workforce, and advance solutions that help individuals and families build greater stability and opportunity.',
   'Explore Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'Opportunity grows when people feel safe in the places they live, work, and raise their families.',
   'We work to advance practical public safety solutions that promote accountability, improve outcomes, and help build safer, stronger communities across Mississippi.',
   'Explore Safe Communities',
@@ -2277,7 +2374,7 @@ const SAFETY_COPY = [
   /* Sections 6 and 7. */
   'Voices of Safer Communities',
   'Hear from Mississippians whose experiences with crime, justice, reentry, and community leadership show what it takes to build safer, stronger communities.',
-  'The Latest on Public Safety',
+  'The Latest on Safe Communities',
   'Explore the latest research, ideas, and policies shaping public safety, effective justice, and stronger communities across Mississippi.',
 ];
 
@@ -2429,7 +2526,7 @@ test('no solution page carries another solution page’s copy', () => {
      the hero, and the closing feed heading. */
   const EXCLUSIVE = {
     work: ['Work Should Open Doors to Opportunity', 'The Latest on Meaningful Work'],
-    safety: ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Public Safety'],
+    safety: ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Safe Communities'],
     education: ['Every Child Deserves the Opportunity to Succeed', 'The Latest on Education'],
   };
   const tabOf = out =>
@@ -2744,7 +2841,7 @@ const CAPITOL_COPY = [
   /* Section 2, about the show. */
   'The Capitol Moves Fast. We Help You Keep Up.',
   'Capitol Chat is Empower Mississippi’s weekly insider update on what’s happening at the Mississippi State Capitol during the legislative session.',
-  'Each week, Senior Vice President Wil Ervin breaks down the biggest developments and highlights the action under the dome—all in under five minutes.',
+  'Each week, we break down the biggest developments and highlight the action under the dome, all in under five minutes.',
   'Get the context you need to understand what’s happening, why it matters, and what to watch next.',
   'Listen and subscribe wherever you get your podcasts.',
 
@@ -2781,22 +2878,22 @@ test('Capitol Chat is an audio page with one action', () => {
   }
 });
 
-test('Wil Ervin’s name is not a link on either Capitol Chat reading', () => {
-  /* Grant Callen is a link on the podcast pages because his bio is built. Wil
-     Ervin's is not, and Empower asked for exactly this to stop happening: a card
-     or a name that opens somebody else's bio. The check is the whole anchor set,
-     because the failure would come from copying the podcast page's pattern. */
+test('no Capitol Chat reading names Wil Ervin anywhere', () => {
+  /* This test used to say the opposite half of the time: his name had to be on
+     the page and had to NOT be a link, because his bio page did not exist and a
+     visitor clicking it would have landed on somebody else's. Empower closed
+     that question by deletion on 2026-08-21 — he leaves at the end of the month
+     and Kienna Horn rewrote the sentence to be general — so the assertion flips
+     from "present but unlinked" to "absent". Kept rather than deleted because
+     the failure it guards against has not gone away: the copy lives in four
+     places (two static readings, the Elementor module, and this file's own
+     CAPITOL_COPY), and reinstating a departed member of staff by restoring one
+     of them is exactly the mistake nobody would notice. */
   for (const { out, html } of CAPITOLPAGES) {
-    const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
-    for (const inner of anchors) {
-      assert.ok(!/Wil Ervin/.test(inner),
-        `${out} links Wil Ervin's name — his bio page does not exist, so it would open somebody else's`);
-    }
+    assert.ok(!/Wil Ervin/.test(html),
+      `${out} still names Wil Ervin — Empower removed him from the page on 2026-08-21`);
     assert.ok(!html.includes('href="team-bio.html"'),
       `${out} links the CEO's bio from a page hosted by somebody else`);
-    /* And the name is still on the page: not-a-link must not become not-there. */
-    assert.ok(textOf(html).includes('Senior Vice President Wil Ervin'),
-      `${out} has lost the host's name`);
   }
 });
 
@@ -2894,7 +2991,7 @@ test('Capitol Chat filters by session only, and shows no invented topic', () => 
      elsewhere on the page as Our Solutions nav links, which are not the
      invented row label this check is guarding against. */
   const library = html.slice(html.indexOf('<section class="cca-library"'), html.indexOf('</section>', html.indexOf('<section class="cca-library"')));
-  for (const t of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+  for (const t of ['Quality Education', 'Meaningful Work', 'Public Safety', 'Safe Communities']) {
     assert.ok(!library.includes(`>${t}<`),
       `dist/capitol-a.html still labels a row "${t}", which Empower never tagged`);
   }
@@ -2965,7 +3062,7 @@ const EPIC_COPY = [
   'Explore reports, data, policy briefs, and practical recommendations on the issues shaping opportunity in Mississippi.',
   'Quality Education',
   'Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'View Research & Reports',
 ];
 
@@ -3011,7 +3108,7 @@ test('every EPIC reading names the three focus areas above its research index', 
       assert.ok(html.includes(`href="#${id}"`), `${out} never links to #${id}`);
     }
     const hero = html.slice(0, html.indexOf('id="research"'));
-    for (const area of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+    for (const area of ['Quality Education', 'Meaningful Work', 'Safe Communities']) {
       assert.ok(hero.includes(area),
         `${out} does not name ${area} before the research section`);
     }
@@ -3031,13 +3128,25 @@ test('no EPIC reading invents a statistic to decorate itself', () => {
 });
 
 test('every EPIC report link is a real empowerms.org post', () => {
-  /* The index on all three readings is real content, not lorem headlines. The
-     three posts below were pulled from the WordPress REST API on 2026-08-07 —
-     one per focus area, each the most recent report carrying that category. */
+  /* The index on all three readings is real content, not lorem headlines.
+
+     THESE ARE NOW THE QUERY'S OWN ANSWER, not a hand-picked set. epic-a's three
+     panels became a query on 2026-09-09 (elementor/pages/epic-a/04-research.mjs
+     note 8), and the three below are what it returns: the newest post carrying
+     Research & Reports AND the focus area, read off the install on the day. Two
+     of the three CHANGED at that point, which is the whole reason the query
+     exists — the old education slot was Charter Schools (June 2026), a post
+     Empower's own list of reports does not include, and the old safety slot was
+     a 2022 release the list also drops.
+
+     What this test can and cannot see: it holds the three readings to the same
+     answer, so a change made to one is made to all three. It cannot ask the
+     install whether the answer is still current — that gate lives in
+     test-elementor.mjs, against the deployed page. */
   const REPORTS = [
-    'https://empowerms.org/charter-schools-outperform-districts-on-3rd-grade-reading-test-initial-results/',
+    'https://empowerms.org/how-much-does-private-school-really-cost-in-mississippi/',
     'https://empowerms.org/new-empower-mississippi-report-highlights-growth-in-labor-force-participation-rate-outlines-recommendations-for-continued-improvement/',
-    'https://empowerms.org/empower-releases-report-on-violent-crime-in-mississippi/',
+    'https://empowerms.org/how-bad-is-crime-in-mississippi/',
   ];
   for (const { out, html } of EPICPAGES) {
     for (const href of REPORTS) {
@@ -3222,30 +3331,42 @@ test('every Ambassador reading carries the roadmap copy verbatim', () => {
   }
 });
 
-test('both Join Us tabs are built around a real form, not a picture of one', () => {
+/* The two Join Us pages that are CONVERTED carry a live Gravity Form; the two
+   that were not chosen still carry the design they were reviewed as. Since
+   2026-09-02 those are two different contracts, so they are two tests.
+
+   dist/mail-a.html and dist/amb-a.html are the converted pair. Derived from the
+   Elementor page directories rather than named here, so a page converted later
+   moves between the two contracts on its own. */
+const CONVERTED_JOIN = JOINPAGES.filter(
+  p => existsSync(`elementor/pages/${p.out.replace('dist/', '').replace('.html', '')}/page.mjs`));
+const UNCONVERTED_JOIN = JOINPAGES.filter(p => !CONVERTED_JOIN.includes(p));
+
+test('the unconverted Join Us readings are built around a real form, not a picture of one', () => {
   /* These two tabs are the only ones in the roadmap that end on an instruction
      rather than a paragraph: "Insert signup form on webpage" and "Include
      interest form for joining the ambassador program". A page that draws a
      field and a button without a <form> around them satisfies a screenshot and
-     nothing else. */
-  for (const { out, html } of JOINPAGES) {
+     nothing else.
+
+     This is the contract these readings were REVIEWED against and it is
+     unchanged. The converted pair answers to the live forms instead. */
+  assert.equal(UNCONVERTED_JOIN.length, 2,
+    `expected two unconverted Join Us readings, found ${UNCONVERTED_JOIN.length}`);
+  for (const { out, html } of UNCONVERTED_JOIN) {
     assert.match(html, /<form[^>]*method="post"/, `${out} has no posting form`);
 
-    /* Every control is labelled. A placeholder is not a label and neither is a
-       heading that happens to sit above the field. */
     const ids = [...html.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map(m => m[1]);
     assert.ok(ids.length >= 4, `${out} has ${ids.length} form controls, expected at least four`);
     for (const id of ids) {
       assert.ok(html.includes(`for="${id}"`), `${out}: the ${id} control has no label bound to it`);
     }
 
-    /* The email field is a real email input, required, and autocompletes. */
     const email = html.match(/<input[^>]*type="email"[^>]*>/);
     assert.ok(email, `${out} has no email input`);
     assert.match(email[0], /\srequired/, `${out}: the email field is not required`);
     assert.match(email[0], /autocomplete="email"/, `${out}: the email field has no autocomplete token`);
 
-    /* And the submit is the page's one orange action. */
     const submit = html.match(/<button[^>]*type="submit"[^>]*>/);
     assert.ok(submit, `${out} has no submit button`);
     assert.match(submit[0], /em-btn--primary/,
@@ -3253,10 +3374,65 @@ test('both Join Us tabs are built around a real form, not a picture of one', () 
   }
 });
 
+test('each converted Join Us page mirrors the live Gravity Form it now carries', () => {
+  /* THE CONVERTED PAGES STOPPED BEING A DESIGN DECISION ABOUT FIELDS on
+     2026-09-02. /newsletter/ carries Gravity Form 2, the live signup that holds
+     836 entries and notifies Joanna and Kienna; /ambassadors/ carries form 37,
+     25 entries, notifying Ashley. Both were read off wp_gf_form_meta.
+
+     The static build cannot run Gravity Forms, so it carries a stand-in, and
+     the only thing worth asserting about a stand-in is that it does not lie:
+     the fields it shows are the fields the visitor will actually meet, and it
+     says on the page that it collects nothing. Contact carries the identical
+     contract for the identical reason. */
+  const LIVE_FIELDS = {
+    'dist/mail-a.html': { form: 2, labels: ['First', 'Last', 'Email'], absent: ['County'] },
+    'dist/amb-a.html': {
+      form: 37,
+      labels: ['First', 'Last', 'Email', 'Phone', 'City', 'ZIP / Postal Code', 'Education', 'Work', 'Justice'],
+      absent: ['County', 'Share my story', 'Help grow the network'],
+    },
+  };
+  assert.equal(CONVERTED_JOIN.length, 2,
+    `expected two converted Join Us pages, found ${CONVERTED_JOIN.length}`);
+
+  for (const { out, html } of CONVERTED_JOIN) {
+    const spec = LIVE_FIELDS[out];
+    assert.ok(spec, `${out} is converted but this test does not know which form it carries`);
+    const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+    for (const label of spec.labels) {
+      assert.ok(main.includes(`>${label}<`) || main.includes(`>${label}<span`),
+        `${out} does not offer the "${label}" field that Gravity Form ${spec.form} asks for`);
+    }
+    /* Both directions. A stand-in that GAINED a field would promise something
+       the live form never collects, which is the failure that actually reaches
+       a visitor: they type it and it goes nowhere. */
+    for (const label of spec.absent) {
+      assert.ok(!main.includes(`>${label}<`),
+        `${out} still offers "${label}", which Gravity Form ${spec.form} does not collect`);
+    }
+
+    assert.match(html, /data-placeholder="form"/, `${out}: the stand-in carries no placeholder mark`);
+    assert.match(html, /stand-in for the live Gravity Form/,
+      `${out}: nothing on the page tells a reader the form collects nothing`);
+    assert.ok(!/action="(https?:)?\/\//.test(html), `${out}: the stand-in posts somewhere`);
+    assert.match(html, /<form[^>]*method="post"/, `${out} has no posting form`);
+
+    const ids = [...main.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map(m => m[1]);
+    for (const id of ids) {
+      assert.ok(main.includes(`for="${id}"`), `${out}: the ${id} control has no label bound to it`);
+    }
+  }
+});
+
 test('neither Ambassador reading links Ashley Green’s name', () => {
-  /* Same rule as Wil Ervin on the Capitol Chat pages: only the CEO's bio page
-     exists, so a linked name here would open somebody else's. And the name must
-     still be present — not-a-link must not quietly become not-there. */
+  /* The rule Capitol Chat used to carry, and the last page still carrying it:
+     only the CEO's bio page exists, so a linked name here would open somebody
+     else's. And the name must still be present — not-a-link must not quietly
+     become not-there. Capitol Chat's copy of this test flipped to plain absence
+     on 2026-08-21 when Empower took its host's name out of the page; that is a
+     change to who is on the page, not a change to this rule. */
   for (const { out, html } of AMBPAGES) {
     const anchors = [...html.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map(m => m[1]);
     for (const inner of anchors) {
@@ -3369,9 +3545,17 @@ test('no Donate reading collects payment details', () => {
        floor is asserted for the readings that offer a ladder, and The Card is
        asserted to offer none at all. */
     const amounts = [...html.matchAll(/<a class="gv[a-z]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
-    if (out === 'dist/give-d.html') {
+    /* TWO READINGS OFFER NO LADDER OF THEIR OWN, for related but distinct
+       reasons, and both are asserted to offer NONE rather than merely allowed
+       to. give-d copies Empower's form, which reveals its amounts only after a
+       gift type is chosen. give-c had a ladder of six tiles until 2026-09-11
+       and lost it when the real form arrived on the page: the form asks for the
+       amount itself, and a tile that reloads the page to answer a question
+       already on screen is a click spent for nothing. */
+    if (out === 'dist/give-d.html' || out === 'dist/give-c.html') {
       assert.equal(amounts.length, 0,
-        `${out} draws its own amount ladder, and it is a copy of Empower's form, which reveals amounts after the gift type`);
+        `${out} draws its own amount ladder. give-d copies Empower's form, which reveals amounts after `
+        + 'the gift type; give-c carries the real form, which asks for the amount itself');
     } else {
       assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
     }
@@ -3389,9 +3573,14 @@ test('every hand-off link on a Donate page stays on Empower\u2019s donate route'
   for (const { out, html } of GIVEPAGES) {
     const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
     const hrefs = [...body.matchAll(/href="(\/donate[^"]*)"/g)].map(m => m[1]);
-    /* The Card hands off once, from the button under the form; the others also
-       hand off from every tile. */
-    const floor = out === 'dist/give-d.html' ? 1 : 5;
+    /* The Card hands off once, from the button under the form; give-a and
+       give-b also hand off from every tile. give-c hands off NOWHERE and that
+       is the reading rather than an omission: it is the donate route itself and
+       the form is on it, so from 2026-09-11 it has no /donate/ link left to
+       make. What this test still owns for that page is the direction of the
+       assertion below, which fails any /donate link that leaves for somewhere
+       that is not Empower's own route. */
+    const floor = { 'dist/give-d.html': 1, 'dist/give-c.html': 0 }[out] ?? 5;
     assert.ok(hrefs.length >= floor, `${out} has ${hrefs.length} hand-off links`);
     for (const href of hrefs) {
       assert.match(href, /^\/donate\//, `${out} sends a donor to ${href}`);
@@ -3399,52 +3588,154 @@ test('every hand-off link on a Donate page stays on Empower\u2019s donate route'
   }
 });
 
-test('One Screen is the choice, and the choice carries into Empower\u2019s form', () => {
-  /* The reason this reading exists, and the thing a later edit could quietly
-     undo. Empower asked for fewer clicks with the giving form higher up, and the
-     live donate page turned out to be Gravity Forms with the Stripe Payment
-     Element embedded in it. So the answer is not a hand-off and not a second
-     copy of the form: it is the two decisions that cost the clicks, made once,
-     on the first screen, and carried into the form by the URL.
+test('One Screen is the form, and the panel that used to stand in for it is gone', () => {
+  /* THE READING CHANGED ON 2026-09-11 AND THIS TEST IS THE RECORD OF WHY.
 
-     The form itself is deliberately NOT on this page. The Card is the reading
-     that reproduces it field for field; drawing it here as well made the page
-     about the form rather than about the choice. */
+     What it asserted until today: a gift panel in the hero carrying three
+     frequency tiles and six amount tiles, each a link putting the donor's
+     choice into the query string, with the real form somewhere else. That was
+     built on 2026-08-12 and it was the right answer to the question as it then
+     stood, which was "the form is not on this page, so how does the choice
+     reach it?"
+
+     The question stopped standing on 2026-09-10, when Gravity Form 4 went onto
+     this page. With the real form one screen down, the panel was a second set
+     of controls for the same three decisions, and every tile cost a full page
+     reload to answer a question the form below was already asking. Paolo's call
+     on 2026-09-11: remove the panel, and put the form itself where the panel
+     was, in a card overlapping the navy band.
+
+     THE PREFILL MACHINERY IS DELIBERATELY NOT REMOVED WITH THE TILES. Nothing
+     on this page sends ?gift_type= any more, but a campaign email or a printed
+     QR code still can, and form 4 still answers it. See
+     wp/empowerms-child/inc/donate-prepopulate.php. */
   const html = readFileSync('dist/give-c.html', 'utf8');
   const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
 
-  const choice = body.indexOf('class="gvc-give" id="give"');
-  const under = body.indexOf('gvc-hero__under');
-  const matters = body.indexOf('gvc-matters');
-  assert.ok(choice > -1, 'give-c has lost the choice panel');
-  assert.ok(choice < under, 'the choice no longer comes before the copy it was put above');
-  assert.ok(choice < matters, 'the choice now sits below Why Your Gift Matters');
-
-  /* No second rendering of the form, in any shape: neither the field-for-field
-     drawing nor a slot standing in for it. */
-  assert.ok(!body.includes('gvc-drawn') && !body.includes('gvc-slot'),
-    'give-c is showing the form again — that is The Card\u2019s reading');
-  assert.ok(!/<input|<select|<textarea|<button|<label/.test(body),
-    'give-c has grown a real form control');
-
-  /* Every tile carries the choice in the query string. A bare /donate/ link
-     would leave the donor to state the same thing twice, which is the click this
-     reading exists to remove. */
-  const tiles = [...body.matchAll(/<a class="gvc-(?:amount|freq__opt)[^"]*" href="([^"]+)"/g)].map(m => m[1]);
-  assert.equal(tiles.length, 9, `give-c offers ${tiles.length} choices, expected three frequencies and six amounts`);
-  for (const href of tiles) {
-    assert.match(href, /^\/donate\/\?gift_type=/, `${href} carries no gift type`);
+  /* The panel is gone, in every part. Asserted by its own class names rather
+     than by counting links, because a later edit that reinstates one tile
+     should fail here and say which piece came back. */
+  for (const gone of ['gvc-give', 'gvc-freq', 'gvc-ladder', 'gvc-amount', 'gvc-field']) {
+    assert.ok(!body.includes(gone),
+      `give-c still carries .${gone}. The gift panel was removed on 2026-09-11 because the real form `
+      + 'is on this page; a second set of controls for the same three decisions is what it existed to avoid.');
   }
-  /* &amp; in the source, because these hrefs are read out of the built HTML. The
-     five figures carry an amount as well as a type; Other deliberately does not,
-     because the donor is going to type it. */
-  const withAmount = tiles.filter(h => /(?:\?|&amp;|&)amount=\d+/.test(h));
-  assert.equal(withAmount.length, 5, `${withAmount.length} tiles carry an amount, expected five`);
 
-  /* And the panel has to say what the choice does, because the form is not on
-     the page to show it. */
-  assert.match(body, /gvc-give__hand[^>]*>[^<]*donation form/,
-    'the panel no longer says where the choice goes');
+  /* And the sentence that described what the tiles did, which is now false. */
+  assert.ok(!body.includes('Nothing to fill in twice'),
+    'give-c still promises "Nothing to fill in twice", but nothing on the page carries a choice any more');
+
+  const hero = body.indexOf('gvc-hero');
+  const card = body.indexOf('gvc-form__card');
+  const matters = body.indexOf('gvc-matters');
+  assert.ok(card > -1, 'give-c has no form card, so /donate/ cannot take a donation');
+  assert.ok(hero > -1 && hero < card, 'the form card now sits above the hero it is meant to overlap');
+  assert.ok(card < matters, 'the form card has fallen below Why Your Gift Matters');
+
+  /* Still not The Card (give-d), which reproduces the form field for field. */
+  assert.ok(!body.includes('gvc-drawn'),
+    'give-c is drawing the form field by field, which is The Card’s reading');
+
+  /* The slot inside the card is empty of controls. The generic sweep bans a
+     form in main across all four readings and keeps doing so; this pins the
+     reason to the slot itself, so a later edit that fills it in by hand fails
+     with a message that says what is actually wrong. */
+  const slot = body.indexOf('gvc-slot');
+  assert.ok(slot > -1, 'the card has no slot standing for Empower’s form');
+  const region = body.slice(slot, matters > -1 ? matters : body.length);
+  assert.ok(!/<input|<select|<textarea|<button/.test(region),
+    'the form slot has grown real controls; the static file has no endpoint behind it');
+});
+
+test('every in-page link on a Donate reading lands on something that exists', () => {
+  /* The defect this catches actually happened. give-c's closing Donate Today
+     pointed at #give, the gift panel's own id, and the panel was removed on
+     2026-09-11; the link kept working in the sense that nothing errored, and
+     did nothing at all, which is the worst kind of broken on the one button
+     left at the bottom of a donation page.
+
+     Every reading is swept rather than just give-c: a fragment that names
+     nothing is the same defect wherever it appears, and three of these four
+     pages are archived readings that nobody will look at again until somebody
+     does. */
+  for (const { out, html } of GIVEPAGES) {
+    const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+    const fragments = [...html.matchAll(/href="#([^"]+)"/g)].map(m => m[1]);
+    for (const fragment of fragments) {
+      assert.ok(ids.has(fragment),
+        `${out} links to #${fragment}, and no element on the page carries that id`);
+    }
+  }
+});
+
+test('the 501(c)(3) statement survives the panel it used to live in', () => {
+  /* It is a legal statement, not marketing copy, and it is reproduced verbatim
+     from the roadmap. It sat in the gift panel until 2026-09-11; deleting the
+     panel without moving it would have taken a legal line off a page that
+     solicits money, silently. */
+  const html = readFileSync('dist/give-c.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  const card = body.indexOf('gvc-form__card');
+  const legal = body.indexOf('Empower Mississippi Foundation is a 501(c)(3) nonprofit organization');
+  /* Asserted before the comparison below, which is otherwise vacuously true:
+     indexOf returns -1 for a missing card and every real position is above it. */
+  assert.ok(card > -1, 'give-c has no form card, so there is nothing for the statement to be inside');
+  assert.ok(legal > -1, 'give-c has lost the 501(c)(3) statement');
+  assert.ok(legal > card, 'the 501(c)(3) statement is no longer inside the form card');
+});
+
+test('One Screen’s hero sets the headline against the roadmap copy, and carries all of it', () => {
+  /* The two-column hero Paolo chose on 2026-09-11: headline left, every
+     paragraph of the roadmap's opening right, card overlapping below both.
+     The risk in a layout change that moves copy between containers is dropping
+     a paragraph in the move, so all four are asserted present and in order. */
+  const html = readFileSync('dist/give-c.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  const ORDER = [
+    'You want Mississippi to be a place',
+    'So do we.',
+    'That’s why we’re working every day',
+    'When you give, you become part of',
+  ];
+  let at = body.indexOf('gvc-hero__words');
+  assert.ok(at > -1, 'the hero has no words column');
+  for (const line of ORDER) {
+    const next = body.indexOf(line, at);
+    assert.ok(next > -1, `the hero words column is missing, or has reordered, "${line}"`);
+    at = next;
+  }
+});
+test('every Donate query string is one the live form can actually receive', () => {
+  /* The switch that makes the tiles work is Gravity Forms' dynamic population,
+     and it is exact: field 7 is a RADIO whose choice values are the literal
+     strings "One Time Gift", "Monthly Gift" and "Annual Gift". A prepopulated
+     radio whose value matches no choice selects nothing and reports no error,
+     so a wrong slug here is invisible on the page and surfaces only as donors
+     arriving at an unset form.
+
+     The three slugs below are mapped to those exact strings by
+     wp/empowerms-child/inc/donate-prepopulate.php. This test and that file are
+     two halves of one contract; the third half is the parameter name on form 4
+     itself, which elementor/apply-donate-prepopulate.mjs writes.
+
+     Amount is asserted numeric because it lands on field 4, a free-entry PRICE
+     field, and asserted to travel only with one-time because fields 5 and 6 are
+     radio ladders that a typed figure cannot select. */
+  const SLUGS = new Set(['one-time', 'monthly', 'annual']);
+  for (const { out, html } of GIVEPAGES) {
+    const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    for (const [, href] of body.matchAll(/href="(\/donate\/\?[^"]+)"/g)) {
+      const query = new URLSearchParams(href.slice(href.indexOf('?') + 1).replace(/&amp;/g, '&'));
+      const type = query.get('gift_type');
+      assert.ok(SLUGS.has(type), `${out} sends gift_type=${type}, which maps to no choice on form 4`);
+      const amount = query.get('amount');
+      if (amount !== null) {
+        assert.match(amount, /^\d+(?:\.\d{1,2})?$/, `${out} sends amount=${amount} to a price field`);
+        assert.equal(type, 'one-time',
+          `${out} sends an amount with gift_type=${type}, but only the one-time field takes a typed figure`);
+      }
+    }
+  }
 });
 
 test('no Donate reading invents a number', () => {
@@ -3520,6 +3811,29 @@ test('The Card is a drawing of Empower\u2019s form, not a form', () => {
 test('the Donate readings keep both roadmap buttons and fill only the first', () => {
   for (const { out, html } of GIVEPAGES) {
     const buttons = [...html.matchAll(/<a class="em-btn([^"]*)"[^>]*>\s*Donate Today/g)].map(m => m[1]);
+
+    /* GIVE-C CARRIES ONE, AND THE OTHER IS NOT A LINK. From 2026-09-11 its
+       first Donate Today is Gravity Forms' own submit button, which exists only
+       on the live page: the static file has a dashed marker where the form
+       goes and cannot draw a submit control with nothing behind it. So the
+       roadmap's two buttons survive, but only one of them is in this file, and
+       it is the closing one, which must stay demoted because the orange action
+       is the form's.
+
+       The live half is asserted in test-elementor.mjs, "the converted /donate/
+       carries Empower's donation form", which reads the rendered button's own
+       value. Splitting the pair across two files is not ideal and is the
+       honest shape: one half is markup this repository writes and the other is
+       a property of a form in Empower's database. */
+    if (out === 'dist/give-c.html') {
+      assert.equal(buttons.length, 1,
+        `${out} has ${buttons.length} Donate Today links; since 2026-09-11 it should have exactly the `
+        + 'closing one, with the orange action being Gravity Forms\u2019 own submit button');
+      assert.ok(!/em-btn--primary/.test(buttons[0]),
+        `${out}: the closing button is filled orange, which would be a second orange action beside the form\u2019s submit`);
+      continue;
+    }
+
     assert.equal(buttons.length, 2, `${out} has ${buttons.length} Donate Today buttons, the roadmap gives two`);
     assert.match(buttons[0], /em-btn--primary/, `${out}: the hero button is not the orange action`);
     assert.ok(!/em-btn--primary/.test(buttons[1]), `${out}: the closing button is a second orange fill`);
@@ -3798,6 +4112,7 @@ test('no About stylesheet reaches into another variation’s namespace', () => {
     'mail-a': 'mla', 'mail-b': 'mlb', 'amb-a': 'aba', 'amb-b': 'abb',
     'give-a': 'gva', 'give-b': 'gvb', 'give-c': 'gvc', 'give-d': 'gvd',
     'content-a': 'cad', 'content-b': 'cwa', 'landing': 'lnd', 'landing-b': 'lnb',
+    'contact': 'ct',
   };
 
   /* The map has to be written by hand — a slug does not imply a prefix — but its
@@ -4010,7 +4325,7 @@ const CONTENT_COPY = [
   'Get the latest news, announcements, and updates from Empower Mississippi.',
   'Quality Education',
   'Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'Bill Summaries',
 ];
 
@@ -4183,39 +4498,245 @@ test('content-b filters on one facet, so it needs no rule ordering', () => {
     'content-b has grown a topic facet — topic is this reading’s STRUCTURE, and two facets need the ordered shape');
 });
 
-test('content-a’s filter bar stacks its two facets against one label gutter', () => {
-  /* The two facets were set side by side, and they do not fit: the five topic
-     pills need about 590px of line and the container had 453 to give them beside
-     the five type tabs, so they wrapped to a ragged second row in a column that
-     was itself pushed to the right edge. Stacked, each facet holds one line and
-     both control rows start at the same x, which is what the shared label track
-     buys, and it only exists because display:contents dissolves the fieldsets.
-     A fieldset that is itself a grid leaves its legend outside that grid, so the
-     alignment cannot be done from inside one; putting the columns back on the
-     fieldsets is the reflex this test is here to catch. */
+test('content-a’s filter bar is one line, and its labels are hidden rather than deleted', () => {
+  /* SUPERSEDES "stacks its two facets against one label gutter" (2026-08-26).
+     That test defended a two-row bar built around a shared label track, and the
+     reasoning it recorded is still true as far as it goes: at full label length
+     the five type tabs need 656px and the five topic pills 688px, which is
+     1376px against a 1200px container, so the two facets CANNOT share a line
+     while the labels read "Community Stories" and "Quality Education".
+
+     What changed is the input, not the arithmetic. The bar was 133px tall and
+     stuck under a 113px header, so 246px of a 900px viewport — 27% — was gone
+     before a single card. Shortening the control labels (the band headings
+     below still carry Empower's full wording) brings the two facets to
+     343 + 492 + 48 = 883px, and one line fits with room to spare. Measured in
+     the browser at 1400px, not predicted.
+
+     THE LEGENDS ARE HIDDEN, NOT REMOVED, and that is the half worth guarding.
+     "Browse" and "Filter by Topic:" stop being drawn, because a one-line bar
+     has no gutter to put them in and the two control shapes (underlined tabs
+     against outlined pills, split by a rule) carry the distinction visually.
+     They must still be in the markup and still name their group: the fieldsets
+     carry role="group" and aria-labelledby precisely because display:contents
+     dropped implicit semantics, and hiding a legend with display:none would
+     take the accessible name with it. */
   const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const inner = css.match(/\.cad-controls__inner\{[^}]*\}/)[0];
-  assert.match(inner, /grid-template-columns:auto minmax\(0,1fr\)/,
-    'content-a’s filter bar is no longer a label gutter and one full-width control column');
-  assert.match(inner, /align-items:baseline/,
-    'content-a’s legends no longer sit on the baseline of the row they label');
-  assert.match(css, /\.cad-group\{[^}]*display:contents/,
-    'content-a’s control groups are boxes again, so their two legends can no longer share a column track');
 
-  /* The other half of the same decision. Dissolving a fieldset costs its
-     implicit grouping in shipped browsers, so the role and the name are stated
-     rather than inherited, and every group has to carry both. */
-  const html = CONTENTPAGES.find(p => p.out.endsWith('content-a.html')).html;
-  const groups = [...html.matchAll(/<fieldset class="cad-group[^"]*"([^>]*)>/g)].map(m => m[1]);
-  assert.equal(groups.length, 2, `content-a has ${groups.length} control groups in its filter bar, expected 2`);
-  for (const attrs of groups) {
-    assert.match(attrs, /role="group"/,
-      'a display:contents fieldset on content-a has no explicit role, so its grouping can be dropped');
-    const id = attrs.match(/aria-labelledby="([^"]+)"/);
-    assert.ok(id, 'a display:contents fieldset on content-a has no explicit accessible name');
-    assert.ok(html.includes(`class="cad-group__label" id="${id[1]}"`),
-      `content-a names a control group with #${id[1]}, which is not the id of its legend`);
+  assert.match(inner, /display:flex/,
+    'content-a’s filter bar is not a flex row, so it cannot be one line');
+  assert.match(inner, /flex-wrap:nowrap/,
+    'the filter bar may wrap at full width, which is the ragged second row this design exists to remove');
+
+  const label = css.match(/\.cad-group__label\{[^}]*\}/)[0];
+  assert.ok(!/display:none/.test(label),
+    'the legends are display:none, which removes the accessible name the fieldsets’ '
+    + 'aria-labelledby points at; clip them instead');
+  assert.match(label, /clip-path:inset\(50%\)|clip:rect/,
+    'the legends are not visually hidden, so the one-line bar still draws a label gutter it has no room for');
+
+  /* The markup must still carry both legends and both names. */
+  const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
+  for (const [id, text] of [['cad-type-label', 'Browse'], ['cad-topic-label', 'Filter by Topic:']]) {
+    assert.match(html, new RegExp(`<legend class="cad-group__label" id="${id}">${text}</legend>`),
+      `the ${id} legend is gone from the markup, so its group has no accessible name`);
+    assert.match(html, new RegExp(`aria-labelledby="${id}"`),
+      `nothing points at ${id} any more`);
   }
+});
+
+/* THE LABELS THAT MAKE ONE LINE POSSIBLE, asserted as an exact set. The design
+   only fits because these are short, so a well-meaning edit restoring
+   "Community Stories" here silently puts the bar back to two rows at 1400px and
+   nothing else would say so. The band headings below the bar are deliberately
+   NOT in this list: they keep Empower's full wording. */
+/* THE FILTER'S TOPIC SET EXISTS TWICE, AND CSS CANNOT DERIVE THE SECOND FROM
+   THE FIRST. css/content-a.css hides the CARD; bridge.css block 73 hides the
+   `.e-loop-item` wrapper that is the real grid item on a converted page, and it
+   has to restate the same condition because CSS cannot ask whether an element's
+   child is currently display:none. Add a topic to one and the other is wrong
+   and silent: the new topic would filter correctly on the static build and
+   leave holes on the live page, which is precisely the defect this pair was
+   written to fix. */
+/* THE ARCHIVE TEMPLATE NOW SERVES TWO KINDS OF PAGE, and the head is the only
+   thing that differs. A category archive is titled by its term; the posts page
+   (/updates/, WordPress's page_for_posts, titled "News") has no term at all, so
+   single_term_title() returns nothing there and the head would render empty.
+
+   Both cases go through the same shortcode rather than a second template,
+   because two templates differing in one string is two things to keep in step. */
+test('the archive head titles a category by its term and the posts page by its own title', () => {
+  const php = readFileSync('wp/empowerms-child/inc/archive.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_archive_title_shortcode'));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+
+  assert.match(body, /is_home\(\)/,
+    'the title shortcode has no posts-page branch, so /updates/ renders an empty heading');
+  /* AND AUTHOR ARCHIVES, which name themselves a third way: not a term, not a
+     page title, but the queried user's display_name. Read off the queried
+     object rather than get_the_author(), which depends on the loop having
+     started and is empty in a head rendered above it. 261 of the 490 posts sit
+     under the `empowerms` account, whose display_name is "Empower Mississippi",
+     so this is a real byline rather than a login leaking onto the page. */
+  assert.match(body, /is_author\(\)/,
+    'the title shortcode has no author branch, so /author/<name>/ renders an empty heading');
+  assert.match(body, /display_name/,
+    'the author branch does not read display_name, so the heading shows a login slug rather than a name');
+  assert.match(body, /single_post_title|get_the_title\(\s*(?:\(int\)\s*)?get_option\( 'page_for_posts'/,
+    'the posts-page branch does not read the page_for_posts title, so the heading is invented rather '
+    + 'than taken from the page Empower named');
+  assert.match(body, /single_term_title/,
+    'the category branch is gone');
+
+  /* The count shortcode has to follow, or /updates/ shows a heading with no
+     count while every category archive shows one. */
+  const cnt = php.slice(php.indexOf('function empower_archive_count_shortcode'));
+  const cntBody = cnt.slice(0, cnt.indexOf('\n}'));
+  assert.match(cntBody, /is_home\(\)/,
+    'the count shortcode still refuses anything that is not a category, so /updates/ shows no count');
+  assert.match(cntBody, /is_author\(\)/,
+    'the count shortcode refuses author archives, so they show a heading with no count while every '
+    + 'other archive shows one');
+});
+
+/* THE FALLBACK'S HEADING PRINTED ITS OWN MARKUP. get_the_archive_title() returns
+   HTML -- on a date archive, `Month: <span>May 2025</span>` -- and archive.php
+   passed it straight to esc_html(), so /2025/05/ rendered the tags as visible
+   text. Seen on the live install, not deduced. Now that categories, the posts
+   page and author archives all have an Elementor template, this fallback serves
+   only tag and date archives, which makes it MORE important that it reads
+   properly rather than less: it is the only thing a visitor there ever sees. */
+test('archive.php\'s fallback heading strips the markup WordPress puts in it', () => {
+  const php = readFileSync('wp/empowerms-child/archive.php', 'utf8');
+  const title = php.match(/esc_html\([^;]*get_the_archive_title\(\)[^;]*\)/);
+  assert.ok(title, 'the fallback no longer escapes its archive title at all');
+  assert.match(title[0], /wp_strip_all_tags/,
+    'the fallback escapes get_the_archive_title() without stripping it first, so a date archive '
+    + 'renders "Month: &lt;span&gt;May 2025&lt;/span&gt;" as visible text');
+});
+
+/* THE POSTS PAGE CANONICALS TO /all-content/, for the reason the three topic
+   terms do: it lists all 490 posts, which is what the signed-off All Content
+   page already is, and two indexable listings of one set compete rather than
+   consolidate. Decided 2026-08-27. */
+test('the posts page credits /all-content/ rather than competing with it', () => {
+  const php = readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const filter = php.slice(php.indexOf("add_filter( 'aioseo_canonical_url'"));
+  const body = filter.slice(0, filter.indexOf('\n} );'));
+
+  assert.match(body, /is_home\(\)/,
+    'the canonical filter has no posts-page branch, so /updates/ declares itself canonical over the '
+    + 'same 490 posts /all-content/ lists');
+  assert.match(body, /\/all-content\//,
+    'the posts-page branch does not name /all-content/ as its destination');
+  assert.match(body, /'publish' !== get_post_status/,
+    'the destination is not checked for existence; a canonical pointing at a 404 is worse than the '
+    + 'duplicate it replaces');
+});
+
+/* And the stylesheet key has to answer the posts page too, or /updates/ gets
+   the cards' markup with none of content-a.css to draw them. */
+test('empower_style_key answers the posts page as well as category archives', () => {
+  const php = readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  const fn = php.slice(php.indexOf('function empower_style_key()'));
+  /* COMMENTS STRIPPED FIRST. The negative assertion below asks whether the CODE
+     uses is_archive(), and the comment beside it explains at length why it must
+     not -- so an unstripped read fails on the prose that documents the rule.
+     Caught by this test going red against a correct implementation. */
+  const body = fn.slice(0, fn.indexOf('\n}'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '');
+  for (const cond of ['is_category()', 'is_home()', 'is_author()']) {
+    assert.ok(body.includes(cond),
+      `the archive branch does not answer ${cond}, so that archive loads neither content-a.css nor `
+      + 'archive.css and its cards render unstyled');
+  }
+  /* Still NOT is_archive(). Date and tag archives are not converted and keep
+     archive.php's plain fallback; keying them 'archive' would hand them a
+     stylesheet for markup that has none of its classes. */
+  assert.ok(!/is_archive\(\)/.test(body),
+    'the archive branch uses is_archive(), which also catches the date and tag archives that are '
+    + 'deliberately left on the plain fallback');
+});
+
+test('the topic filter hides the card and its grid cell, for the same set of topics', () => {
+  const page = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const topics = (css) => [...new Set(
+    [...css.matchAll(/#ca-p-([a-z]+):checked/g)].map((m) => m[1]),
+  )].filter((t) => t !== 'all').sort();
+
+  const onCards = topics(page);
+  const onCells = topics(bridge);
+
+  assert.ok(onCards.length >= 4, `only ${onCards.length} topic rules in content-a.css; the filter has shrunk`);
+  assert.deepEqual(onCells, onCards,
+    `css/content-a.css filters on [${onCards.join(', ')}] but bridge.css releases cells for `
+    + `[${onCells.join(', ')}]; the difference is a topic that hides its cards and leaves their grid `
+    + 'cells occupied on every converted page');
+});
+
+/* THE SAME PAIR, ON PODCAST-A. bridge.css block 74 restates podcast-a's guest
+   set for the same reason block 73 restates content-a's topics, and carries the
+   same hazard: add a guest facet to css/podcast-a.css and the catalogue filters
+   correctly on the static build while leaving holes on the converted page. */
+test('the guest filter hides the episode and its grid cell, for the same set of guests', () => {
+  const page = readFileSync('css/podcast-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const guests = (css) => [...new Set(
+    [...css.matchAll(/data-guest="([a-z]+)"/g)].map((m) => m[1]),
+  )].sort();
+
+  const onEpisodes = guests(page);
+  const onCells = guests(bridge);
+
+  assert.ok(onEpisodes.length >= 3, `only ${onEpisodes.length} guest rules in podcast-a.css; the filter has shrunk`);
+  assert.deepEqual(onCells, onEpisodes,
+    `css/podcast-a.css filters on [${onEpisodes.join(', ')}] but bridge.css releases cells for `
+    + `[${onCells.join(', ')}]; the difference is a guest whose episodes hide and leave their grid `
+    + 'cells occupied on the converted page');
+});
+
+test('content-a’s control labels are the short forms the one-line bar depends on', () => {
+  const html = readFileSync('src/content-a/sections/02-browse.html', 'utf8');
+  const labels = (cls) => [...html.matchAll(new RegExp(`<label class="${cls}"[^>]*>([^<]*)</label>`, 'g'))]
+    .map(m => m[1].trim());
+
+  assert.deepEqual(labels('cad-tab'), ['All', 'Articles', 'Stories', 'Research', 'Press'],
+    'the type tabs are not the short forms; at full length they need 656px and the bar returns to two rows');
+  assert.deepEqual(labels('cad-chip'), ['All topics', 'Education', 'Work', 'Safety', 'Bills'],
+    'the topic pills are not the short forms; at full length they need 688px and will not share a line');
+
+  /* The full wording still has to appear on the page, in the band headings, so
+     nothing Empower wrote is lost — only abbreviated in the control. */
+  for (const full of ['Community Stories', 'Research &amp; Reports', 'Press Releases']) {
+    assert.ok(html.includes(`>${full}</h2>`) || html.includes(full),
+      `${full} has disappeared from the page entirely, not just from the filter`);
+  }
+});
+
+/* A PRE-EXISTING BUG THIS CHANGE MAKES WRONG BY A DIFFERENT AMOUNT.
+   css/content-a.css sets no scroll-margin-top at all, so following #band-press
+   lands the heading underneath the sticky header and bar; every other page in
+   the build that has an in-page anchor sets 100-110px. The offset has to clear
+   the header plus the bar, and the bar's height is exactly what this design
+   changed, so the number moves with it. */
+test('content-a’s band headings clear the sticky bar when linked to', () => {
+  const css = readFileSync('css/content-a.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  /* ON THE TITLE, because the id is on the <h2>. The scroll target is the
+     element the fragment names, so scroll-margin-top on the section that
+     CONTAINS it does nothing; that exact mistake was made first and measured
+     (the heading still landed 44px above the viewport top). */
+  const band = css.match(/\.cad-band__title\{[^}]*scroll-margin-top:(\d+)px/);
+  assert.ok(band, 'no scroll-margin-top on .cad-band__title, which is the element #band-press names, '
+    + 'so following that link lands the heading under the sticky bar');
+
+  const top = parseInt(css.match(/\.cad-controls\{[^}]*top:(\d+)px/)[1], 10);
+  assert.ok(Number(band[1]) >= top,
+    `scroll-margin-top is ${band[1]}px but the bar alone sticks at ${top}px, so a linked heading still lands under it`);
 });
 
 test('every card on content-a carries the photograph of the post it links to', () => {
@@ -4370,7 +4891,7 @@ test('the landing template is six independent blocks', () => {
   assert.equal(sections.length, 6, `expected six blocks on the landing template, found ${sections.length}`);
   const files = readdirSync('src/landing/sections').sort();
   assert.deepEqual(files,
-    ['00-note.html', '01-hero.html', '02-ask.html', '03-pair.html',
+    ['01-hero.html', '02-ask.html', '03-pair.html',
      '04-voice.html', '05-act.html', '06-reading.html'],
     'the landing template’s blocks are not one file each');
 });
@@ -4470,12 +4991,337 @@ test('every landing template collects nothing and invents nothing', () => {
   }
 });
 
-test('every landing template says it is a template', () => {
+test('the handed-off landing template has shed its review strip, and the other has not', () => {
   /* Review-only chrome, and the thing that stops a worked example being read as
-     a live campaign or as approved copy. It is deleted at hand-off; until then
-     it has to be there, on both. */
-  for (const { out, html } of LANDINGPAGES) {
-    assert.match(html, /<div class="ln[bd]-note" role="note">/, `${out} has lost its review strip`);
-    assert.match(textOf(html), /This page is a template/, `${out}'s review strip no longer says what it is`);
+     a live campaign or as approved copy. It was required on both until the
+     template was handed off; Paolo called that on 2026-08-20 for dist/landing.html,
+     which is the reading Kienna duplicates, so it is now required to be ABSENT
+     there and still required on dist/landing-b.html, which nobody chose.
+
+     Asserted in both directions rather than simply deleted. A test that only
+     stopped checking would let the strip reappear on the handed-off template
+     silently, and would stop noticing if landing-b lost the warning that its
+     sample Save Our ESA copy is not approved copy. */
+  const handedOff = LANDINGPAGES.find((p) => p.out === 'dist/landing.html');
+  const other = LANDINGPAGES.find((p) => p.out !== 'dist/landing.html');
+  assert.ok(handedOff && other, 'the two landing templates are no longer distinguishable by name');
+
+  assert.doesNotMatch(handedOff.html, /<div class="ln[bd]-note" role="note">/,
+    'dist/landing.html has its review strip back; it is deleted at hand-off and Kienna duplicates this file');
+  assert.doesNotMatch(textOf(handedOff.html), /This page is a template/,
+    'dist/landing.html still carries the review strip’s copy');
+
+  assert.match(other.html, /<div class="ln[bd]-note" role="note">/, `${other.out} has lost its review strip`);
+  assert.match(textOf(other.html), /This page is a template/, `${other.out}'s review strip no longer says what it is`);
+});
+
+/* ---------------------------------------------------------------------------
+   THE TWO LEGAL PAGES.
+
+   These are not About variations and they are not a design. They are two legal
+   documents Empower already publishes, moved onto this build's chrome, so the
+   contract below is almost entirely about TRANSCRIPTION rather than about
+   composition: the words have to survive the move exactly.
+
+   `kind: 'legal'` rather than 'about' for that reason. The About contract asks
+   whether a page is one of several readings of the same brief, keeps each
+   variation's stylesheet separable and registers a namespace prefix per
+   reading. None of that describes a legal document, and there is only one
+   reading of each. They ARE in ALLPAGES, so every hygiene sweep in this file
+   still covers them.
+
+   docs/legal/*.source.html is the captured original, fetched from
+   empowerms.org on 2026-09-02, with third-party furniture stripped and nothing
+   else touched. docs/legal/README.md records what was stripped and why. */
+const LEGALPAGES = PAGES
+  .filter(p => p.kind === 'legal')
+  .map(p => ({ ...p, html: readFileSync(p.out, 'utf8') }));
+
+/* Prose, normalised for comparison: tags out, entities in, whitespace
+   collapsed. Both sides of every transcription assertion go through this, so a
+   difference it reports is a difference in WORDS and never in markup. */
+const proseOf = (h) => h
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&#8220;|&#8221;/g, '"')
+  .replace(/&#8217;/g, '’')
+  .replace(/&amp;/g, '&')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+test('both legal pages are in the build', () => {
+  assert.equal(LEGALPAGES.length, 2,
+    `expected the privacy and terms pages, found ${LEGALPAGES.length}`);
+  const outs = LEGALPAGES.map(p => p.out).sort();
+  assert.deepEqual(outs, ['dist/privacy.html', 'dist/terms.html']);
+});
+
+test('every word of each legal document survives the move', () => {
+  /* THE ONE TEST THAT MATTERS ON THESE PAGES. A dropped clause in a privacy
+     policy is not a visual regression, and no other sweep in this file would
+     see it: the hygiene tests read structure, and the About copy contracts
+     name strings that were chosen for a design. So the whole document is
+     compared, both directions, against the captured original.
+
+     Both directions deliberately. Comparing only source-into-page would pass a
+     page that had gained a sentence nobody at Empower wrote, which on a legal
+     document is the worse of the two failures. */
+  const SOURCES = {
+    'dist/privacy.html': 'docs/legal/privacy-policy.source.html',
+    'dist/terms.html': 'docs/legal/terms.source.html',
+  };
+  /* THE ONE LINE OF EITHER DOCUMENT THAT IS DELIBERATELY NOT IN THE BODY.
+     The terms open on their own dateline, and this build lifts it into the page
+     head where a dateline belongs — otherwise .ps-body's lede treatment, which
+     sets the first paragraph larger, would land on "Last updated: 01/22/2025"
+     instead of on the sentence that tells a reader what they are agreeing to.
+     It is dropped from the source side here and asserted in the head by "a
+     legal page states a date only when its own document states one", so it is
+     still checked, just by the test that knows where it went. */
+  const MOVED_TO_HEAD = 'Last updated: 01/22/2025';
+
+  for (const page of LEGALPAGES) {
+    const source = proseOf(readFileSync(SOURCES[page.out], 'utf8'))
+      .replace(MOVED_TO_HEAD, '').trim();
+    const body = page.html.match(/<div class="ps-body">([\s\S]*?)<\/div>\s*<\/div>/);
+    assert.ok(body, `${page.out} has no .ps-body block to compare`);
+    const built = proseOf(body[1]);
+
+    /* Sentence by sentence rather than one string equality, so a failure names
+       the clause that moved instead of printing two 600-word paragraphs. */
+    const sentences = s => s.split(/(?<=[.!?])\s+/).map(x => x.trim()).filter(x => x.length > 12);
+    for (const sentence of sentences(source)) {
+      assert.ok(built.includes(sentence),
+        `${page.out} is missing a sentence of the original: "${sentence.slice(0, 90)}…"`);
+    }
+    for (const sentence of sentences(built)) {
+      assert.ok(source.includes(sentence),
+        `${page.out} states something the original does not: "${sentence.slice(0, 90)}…"`);
+    }
   }
+});
+
+test('the legal pages share one stylesheet and reuse the article prose sheet', () => {
+  /* css/legal.css is the page frame; the reading column is .ps-body from
+     css/prose.css, shared with the 490 single posts so there is one prose
+     design rather than two kept in step by hand. Same call css/archive.css made
+     when it took content-a's cards.
+
+     AND NOT css/post-single.css, which is where that column lived until
+     2026-09-02. That file is install-only, which is what earns it the right to
+     carry Elementor selectors; a static page loading it breaks the premise the
+     exemption is derived from. Asserted in both directions here, because
+     linking it again would be silent. */
+  for (const page of LEGALPAGES) {
+    const shell = readFileSync(`src/${page.src}`, 'utf8');
+    assert.match(shell, /css\/legal\.css/, `${page.src} does not link css/legal.css`);
+    assert.match(shell, /css\/prose\.css/, `${page.src} does not link the shared reading column`);
+    assert.ok(!shell.includes('css/post-single.css'),
+      `${page.src} links css/post-single.css, which is install-only and must not be loaded by a static page`);
+    assert.match(shell, /<!--@include _shared\/header-2\.html-->/,
+      `${page.src} does not use the agreed build's header`);
+    assert.ok(!shell.includes('megamenu'), `${page.src} still loads mega-menu code`);
+  }
+});
+
+test('a legal page states a date only when its own document states one', () => {
+  /* Terms carries "Last updated: 01/22/2025" in Empower's own text, so the page
+     shows it, lifted out of the prose into the page head where a dateline
+     belongs. The privacy policy states no date anywhere in its text. Its
+     WordPress `modified` field says 2025-02-20, and that is a record of when
+     somebody saved the post, not of when the policy changed; printing it as
+     "Last updated" would be this build asserting something Empower has not.
+     So privacy shows no date, and this test holds that open rather than
+     letting a future edit quietly invent one. */
+  const terms = LEGALPAGES.find(p => p.out === 'dist/terms.html');
+  const privacy = LEGALPAGES.find(p => p.out === 'dist/privacy.html');
+
+  assert.match(terms.html, /<p class="lg-date"[^>]*>Last updated: 01\/22\/2025<\/p>/,
+    'the terms page has lost the date its own document states');
+  assert.ok(!proseOf(terms.html.match(/<div class="ps-body">[\s\S]*?<\/div>\s*<\/div>/)[0])
+    .startsWith('Last updated'),
+    'the terms dateline is still inside the prose as well as in the head');
+
+  assert.ok(!/lg-date/.test(privacy.html),
+    'the privacy page has gained a dateline; its document states no date and none may be invented');
+});
+
+test('each legal page is one h1 followed by h2s, with no level skipped', () => {
+  /* The privacy policy's own markup on empowerms.org opens its one section with
+     an <h3> under an <h1>. That is a skipped level, and it is fixed here rather
+     than transcribed: the heading LEVEL is structure, not wording, so changing
+     it alters nothing Empower wrote. Recorded in docs/legal/README.md. */
+  for (const page of LEGALPAGES) {
+    const levels = [...page.html.matchAll(/<h([1-6])[^>]*>/g)]
+      .map(m => Number(m[1]));
+    const inMain = page.html.slice(page.html.indexOf('<main'), page.html.indexOf('</main>'));
+    const mainLevels = [...inMain.matchAll(/<h([1-6])[^>]*>/g)].map(m => Number(m[1]));
+    assert.equal(mainLevels.filter(l => l === 1).length, 1, `${page.out} does not have exactly one h1`);
+    assert.equal(mainLevels[0], 1, `${page.out} does not open with its h1`);
+    for (let i = 1; i < mainLevels.length; i += 1) {
+      assert.ok(mainLevels[i] <= mainLevels[i - 1] + 1,
+        `${page.out} skips from h${mainLevels[i - 1]} to h${mainLevels[i]}`);
+    }
+    assert.ok(levels.length > 0);
+  }
+});
+
+test('the footer links both legal pages, and the combined label is gone', () => {
+  /* The footer carried ONE link labelled "Privacy Policy & Terms of Service"
+     pointing at /privacy, which is the privacy document alone. The label
+     promised two documents and delivered one. Paolo chose two pages on
+     2026-09-02, so the label is now two links that each land on the document
+     they name.
+
+     Asserted on the shared partial rather than on a built page, because the
+     footer is a site-wide theme part: every page gets this or none does. */
+  const footer = readFileSync('src/_shared/footer.html', 'utf8');
+  assert.match(footer, /<a href="\/privacy">Privacy Policy<\/a>/,
+    'the footer has no privacy link');
+  assert.match(footer, /<a href="\/terms">Terms of Service<\/a>/,
+    'the footer has no terms link');
+  assert.ok(!footer.includes('Privacy Policy &amp; Terms of Service'),
+    'the footer still carries the combined label, which named two documents and linked one');
+});
+
+test('the legal prose is held to the same measure as an article', () => {
+  /* The measure is declared twice on purpose and the two must not drift.
+
+     css/prose.css declares it at one class, which is all a static page needs.
+     The theme's bridge stylesheet declares it again at the specificity
+     Elementor forces, because converted the class lands on a widget wrapper
+     that Elementor gives max-width:100% at four classes. Same number both
+     times, two different renderings of the same document.
+
+     THIS PAIR REPLACED A WORSE ONE ON 2026-09-02. The measure used to live in
+     css/post-single.css in the Elementor-shaped form alone, and the legal pages
+     re-declared it in css/legal.css because that selector matches nothing on a
+     static page. Both files have since stopped carrying it: the column is
+     shared now, and post-single.css keeps only the furniture around it. If this
+     test starts reading either of those files again, the split has been undone.
+
+     It pins the NUMBER in both places rather than the presence of a rule in
+     either, because the failure it exists to catch is silent: every stylesheet
+     loads, every rule parses, and the head and the prose simply sit at
+     different widths. */
+  const prose = readFileSync('css/prose.css', 'utf8');
+  const bridge = readFileSync('wp/empowerms-child/css/bridge.css', 'utf8');
+  const legal = readFileSync('css/legal.css', 'utf8');
+
+  const staticMeasure = prose.match(/^\.ps-body\{max-width:min\(100%,(\d+)px\)/m);
+  assert.ok(staticMeasure, 'css/prose.css no longer gives the static page a reading measure');
+
+  const convertedMeasure = bridge.match(/\.elementor-widget\.ps-body\{max-width:min\(100%,(\d+)px\)/);
+  assert.ok(convertedMeasure, 'the bridge sheet no longer carries the converted measure');
+
+  assert.equal(convertedMeasure[1], staticMeasure[1],
+    `the converted measure (${convertedMeasure[1]}px) has drifted from the static one (${staticMeasure[1]}px)`);
+
+  /* The head is held to the same number, or the title sits over the middle of
+     nothing instead of over the first word of the text. */
+  assert.ok(legal.includes(`.lg-head{max-width:min(100%,${staticMeasure[1]}px)`),
+    'the legal page head is no longer on the same measure as its prose');
+
+  /* And the split itself: neither page-specific sheet may take the column back. */
+  assert.ok(!/\.ps-body\s*\{/.test(legal),
+    'css/legal.css has started declaring prose rules again; the column lives in css/prose.css');
+  const article = readFileSync('css/post-single.css', 'utf8');
+  assert.ok(!/^\.ps-body[\s,{]/m.test(article),
+    'css/post-single.css has taken the reading column back; it is shared with the legal pages');
+});
+
+/* ---------------------------------------------------------------------------
+   THE CONTACT PAGE.
+
+   Every other form-shaped page in this build is markup wired to nothing, and
+   that is safe because none of them replaces a working route. Contact does:
+   /contact is linked from the footer of all fourteen converted pages, and the
+   page it points at runs Gravity Form 3, which holds 3,116 entries with the
+   most recent on 2026-07-28, notifies the site admin and shows its own
+   confirmation. elementor/redirects.mjs states the hazard in its own words
+   about the ambassador form: pointing a live signup at a form-shaped design
+   "would end ambassador signups and report success while doing it".
+
+   So the CONVERTED page carries the real Gravity Forms shortcode, and the
+   STATIC build carries a stand-in, because a static page cannot run Gravity
+   Forms. The assertions below exist to keep those two honest about each other:
+   the stand-in must mirror the real form field for field, and must be marked
+   so nobody mistakes it for something that collects anything. */
+const CONTACT = () => readFileSync('dist/contact.html', 'utf8');
+
+test('the contact page is in the build', () => {
+  const page = PAGES.find(p => p.out === 'dist/contact.html');
+  assert.ok(page, 'dist/contact.html is not in the manifest');
+  assert.ok(existsSync('dist/contact.html'), 'dist/contact.html was not built');
+  assert.ok(existsSync('css/contact.css'), 'css/contact.css does not exist');
+});
+
+test('the contact stand-in mirrors Gravity Form 3 field for field', () => {
+  /* Read off the install on 2026-09-02, from wp_gf_form_meta for form_id 3:
+     four fields, all required, the name split into First and Last with the
+     prefix/middle/suffix inputs hidden, the message capped at 1000 characters,
+     and the submit reading "Send". A stand-in that promises different fields
+     from the form it stands in for is worse than no stand-in: it teaches a
+     reviewer the wrong page. */
+  const html = CONTACT();
+  const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+
+  for (const label of ['First', 'Last', 'Email', 'Phone', 'Message']) {
+    assert.ok(new RegExp(`>${label}\\b`).test(main), `the stand-in has no ${label} field`);
+  }
+  assert.match(main, /<textarea[^>]*maxlength="1000"/,
+    'the message field does not carry Gravity Forms’ own 1000-character cap');
+  assert.match(main, /type="submit"[^>]*>Send<|>Send<\/button>/,
+    'the submit does not read “Send”, which is what the live form says');
+
+  /* Every one of the four is required on the live form, so every one is
+     required here. Five inputs, because Name is two.
+
+     COUNTED ON THE TAGS, NOT IN THE PROSE. The first version of this matched
+     `\srequired\b` anywhere in <main> and read six, because the section's own
+     comment says "their required flags". A count that includes the commentary
+     about the thing it counts is not a count. */
+  const required = (main.match(/<(?:input|textarea)\b[^>]*\srequired[\s>]/g) || []).length;
+  assert.equal(required, 5,
+    `${required} required fields in the stand-in; Gravity Form 3 requires all four, which is five inputs`);
+});
+
+test('the contact form is marked as a stand-in and collects nothing', () => {
+  /* The same discipline the bio page uses for contact rows it has no data for:
+     a machine-readable mark AND a sentence a human reading the page can see.
+     Without both, a form-shaped design in a review reads as a working form. */
+  const html = CONTACT();
+  assert.match(html, /data-placeholder="form"/, 'the stand-in carries no placeholder mark');
+  assert.match(html, /the live Gravity Form/i,
+    'nothing on the page tells a reader the form is a stand-in for the live one');
+  assert.ok(!/action="(https?:)?\/\//.test(html),
+    'the stand-in posts somewhere; it must collect nothing');
+});
+
+test('the contact page carries the signed-off address and not the old one', () => {
+  /* Two addresses were in circulation on 2026-09-02: the old Contact page said
+     1000 Northpark Dr., and the footer this build shipped on all fourteen live
+     pages says 741 Avignon Dr., Suite C. Paolo chose the footer's, so the page
+     and the footer agree rather than contradicting each other in the same
+     scroll. Asserted in both directions: the old address must not come back. */
+  const html = CONTACT();
+  assert.match(html, /741 Avignon Dr\., Suite C/, 'the contact page has lost the signed-off address');
+  assert.match(html, /Ridgeland, MS 39157/, 'the contact page has lost the town and postcode');
+  assert.ok(!html.includes('Northpark'),
+    'the old 1000 Northpark address is back; the footer on this same page says otherwise');
+});
+
+test('the contact page invents no second contact route', () => {
+  /* The old page offers a form and nothing else. Paolo's call on 2026-09-02 was
+     to match it rather than publish an email address here, because three are in
+     circulation (info@empowerms.org in the header strip and footer,
+     Mail@empowerms.org twice in the privacy policy) and which is correct is an
+     open question in docs/legal/README.md. The header and footer still carry
+     theirs; what this asserts is that the PAGE does not add a fourth voice. */
+  const html = CONTACT();
+  const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  assert.ok(!main.includes('mailto:'),
+    'the contact page body publishes an email address; the old page published none');
+  assert.ok(!/\btelephone\b|\bCall us\b/i.test(main),
+    'the contact page offers a phone route the old page did not');
 });

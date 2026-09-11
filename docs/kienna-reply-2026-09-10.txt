@@ -1,0 +1,29 @@
+Subject: Podcast filter sorted, and a couple of small things
+
+Hi Kienna,
+
+All three of your changes are done, have a look when you get a chance.
+
+On the filter: rather than leave you to tag 57 episodes, I've had a first pass
+done automatically on the staging site from each episode's title. 61 of the 66
+now have a guest type. Please treat it as a starting point and correct anything
+that's wrong. One thing to watch: it found far more Lawmakers and Policy experts
+than Community leaders, because a title tends to announce an office or a
+doctorate and rarely announces that someone runs a local programme. Community
+leader is the one worth your eye.
+
+Five I left alone because the title didn't tell me: Bill Cork, Doug Deason,
+Gerard Gibert, Jamie Holder and Dr. Branden Henry. Worth knowing that an
+untagged episode currently shows up under every filter rather than none, so
+tagging those five makes the filter exact.
+
+Two others:
+
+- Rebekah Staples no longer needs a bio, since the Fellows are name and photo now.
+
+- I've kept the line under each Fellow's name saying what they cover, so it
+  reads "Rebekah Staples / Fellow on Work". The Board shows a role for Abb and
+  Gerard too. Say the word if you'd rather it was just the name.
+
+Thanks,
+Paolo

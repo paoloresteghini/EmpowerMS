@@ -1,0 +1,85 @@
+/* ==========================================================================
+   CATEGORY ARCHIVE — the head band above content-a's cards
+   ==========================================================================
+
+   WHAT THIS SHEET IS, AND HOW LITTLE OF IT THERE IS.
+
+   The archive template (elementor/theme-parts/category-archive.mjs) is two
+   blocks: a head band, and a Loop Grid pointing at content-a's own `article`
+   Loop Item. The second of those needs no rules at all here, because its cards
+   ARE `.cad-card` and `.cad-cards`, and css/content-a.css:202-300 is loaded
+   beside this file by the `archive` row in empower_page_styles(). Reusing that
+   design by post id rather than reproducing it is the whole reason this sheet
+   is short; the alternative was a second card design to keep in step by hand,
+   which is the cost post-single.css's own header records paying once already.
+
+   So what is left is the head: a term name, a count, and the space between
+   them and the grid. Everything below is that.
+
+   NO DESCRIPTION RULE, DELIBERATELY. All ten category descriptions are empty on
+   the install, so there is no third element in the head to style, and writing
+   ten lines of copy to fill it would be invented copy reading as approved copy.
+   When Empower supply them the head gains a `.ca-head__intro` and this sheet
+   gains one rule.
+
+   WHERE IT LOADS. empower_page_styles()['archive'], reached by
+   empower_style_key()'s `is_category()` branch — the one non-singular key in
+   that function. Tag, author and date archives deliberately do NOT get it:
+   they are unconverted and keep archive.php's plain-list fallback, which has
+   none of these classes.
+   ========================================================================== */
+
+/* =============================== 1 · The head ============================= */
+
+/* The band's own rhythm matches `.ps-article`'s opening block on a single post
+   (css/post-single.css), so a visitor moving from an article to its category
+   lands on the same vertical measure rather than a second interpretation of
+   "the top of a page". */
+.ca-head{padding-block:clamp(var(--space-9),5vw,var(--space-12)) var(--space-7)}
+
+/* THE 56x4 ORANGE MARK, from above rather than beside. It is the build's motif
+   and the rule is that a block is marked from above, never with a side stripe:
+   the mark sits over the heading, 56px wide and 4px tall, exactly as
+   css/content-a.css:196 sets it. Written here rather than inherited because
+   `.cad-` classes scope content-a's copy of it to that page's own bands. */
+.ca-head__title::before{
+  content:"";display:block;inline-size:56px;block-size:4px;
+  background:var(--em-orange);margin-block-end:var(--space-5)}
+
+.ca-head__title{
+  font-family:var(--font-display);font-weight:700;line-height:1.08;
+  font-size:clamp(2rem,1.4rem + 2.6vw,3.25rem);
+  color:var(--text-heading);margin:0;
+  /* The longest term name on this install is "Community Stories" at 17
+     characters, so this measure never wraps awkwardly; it is here for the
+     terms Empower add later, not for the ten that exist. */
+  max-width:20ch}
+
+/* The count is meta, not a subtitle: it takes the same muted treatment as a
+   card's own meta line rather than a lede's size, because it is a fact about
+   the listing rather than a sentence about the subject. --text-body, not
+   --text-muted: the muted grey fails AA on --surface-tint by 0.02, and this
+   band inherits whatever surface the page sets. */
+.ca-head__count{
+  margin:var(--space-4) 0 0;color:var(--text-body);
+  font-size:.9375rem;letter-spacing:.01em}
+
+/* =============================== 2 · The list ============================= */
+
+/* The grid itself is `.cad-cards` and comes from content-a. This is only the
+   gap between the head and it, and the room under the last row for the Loop
+   Grid's own pagination, which is the widget's built-in element rather than
+   anything this template authors. */
+.ca-list{padding-block:0 clamp(var(--space-10),6vw,var(--space-12))}
+
+/* ========================== 3 · Reduced motion ============================ */
+
+/* Nothing here animates on its own; the head's entrance comes from motion.css,
+   which the `archive` row loads. This block exists so that the sheet states its
+   position rather than leaving it to be inferred: no rule below opts anything
+   out, because there is nothing here with a transition of its own to protect
+   from `[data-reveal="on"] [data-reveal]`, the selector that has silently
+   replaced an element's own transition three times in this build. */
+@media (prefers-reduced-motion: reduce){
+  .ca-head__title::before{transition:none}
+}

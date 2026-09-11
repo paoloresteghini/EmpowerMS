@@ -65,7 +65,7 @@ build so the decision can be re-read.
 | `dist/what-we-do-c.html` | **The Field**: window-wide photograph, tall cards at three heights |
 
 **Team, Board & Fellows.** The page all six About builds link to. Empower chose
-**The Roster** (A) on 2026-08-05. Same ten staff, five fellows
+**The Roster** (A) on 2026-08-05. Same nine staff, five fellows
 and eight board members, same roadmap copy on all three; what differs is how
 much weight the photographs carry.
 
@@ -74,10 +74,10 @@ much weight the photographs carry.
 | `dist/team-a.html` | **The Roster**: founder block into a staggered wall of tall portraits, fellows on a dark ledger, board as a ragged roll of pills |
 | `dist/team-b.html` | **The Directory**: a numbered index, one hairline row per person, portraits reduced to discs, one window-wide photograph after the list |
 | `dist/team-c.html` | **The Frame**: window-wide photograph with the navy hero panel climbing it, staff as square plates, board as a navy ribbon |
-| `dist/team-bio.html` | **Staff detail, Grant Callen**: the one bio screen, and the template the other nine are cut from |
+| `dist/team-bio.html` | **Staff detail, Grant Callen**: the one bio screen, and the template the other eight are cut from |
 
 Within each variation the three groups get three treatments rather than the same
-block three times: ten staff who each have a bio page behind them are scanned by
+block three times: nine staff who each have a bio page behind them are scanned by
 face, five fellows carry subject areas and no bios, and eight board members carry
 nothing but a name and (twice) an officer role. B is the one that still works if
 Empower would rather not lead with faces at all.
@@ -95,9 +95,9 @@ than left to be noticed:
   Grant's own address or handles, so the "Get in touch" rows carry the
   organisation's inbox and accounts, marked `data-placeholder="contact"` with a
   note under them. A test keeps the mark and the note together.
-- **Nine of the ten bio pages do not exist.** The CEO's is built
+- **Eight of the nine bio pages do not exist.** The CEO's is built
   (`dist/team-bio.html`), and every staff card on all three variations points at
-  it so the flow is clickable in review. When the other nine are cut from that
+  it so the flow is clickable in review. When the other eight are cut from that
   template each card takes its own destination; at hand-off the links become
   `/about/team/<name>`. `TEAM_STAFF` in `test.mjs` already holds the slug each
   page will take.
@@ -281,18 +281,19 @@ it, and each one is a test:
   Now", and the show is audio ("listen and subscribe wherever you get your
   podcasts", "audio players") where the other leads on YouTube. A test fails the
   page if a Watch action appears on it.
-- **Wil Ervin's name is not a link.** Grant Callen is one on the podcast pages
-  because his bio is built; Wil Ervin's is not, and Empower's note on 2026-08-05
-  was about precisely this failure: a name that opens somebody else's bio. A test
-  checks every anchor on both readings, and separately checks the name is still
-  *present*, because not-a-link must not quietly become not-there.
+- **The host is not named at all, since 2026-08-21.** The sentence used to name
+  Wil Ervin and deliberately not link him: his bio page did not exist, and
+  Empower's note on 2026-08-05 was about precisely that failure, a name opening
+  somebody else's bio. Kienna Horn closed the question by deletion, rewriting the
+  sentence to be general because he leaves at the end of the month. The test kept
+  its place and flipped its assertion, from "present but unlinked" to absent.
 - **No intro paragraph under the library heading.** The Podcast tab gives its
   library one; this tab gives only "Catch Up From the Capitol". None is invented,
   and a test asserts nothing sits between that heading and the placeholder note.
 
 The library filters by **legislative session** on The Dome and by **topic and
-legislative session** on The Session. There are no guests to filter by, Wil Ervin
-presents every week. Empower dropped the Topic facet from The Dome on 2026-08-07,
+legislative session** on The Session. There are no guests to filter by, the same
+host presents every week. Empower dropped the Topic facet from The Dome on 2026-08-07,
 and the topic label went from its rows with it: those labels were ours, because
 Capitol Chat carries no topic taxonomy upstream, so with the filter gone they
 would have been unsourced decoration on a client's page. Six rows, one per
@@ -355,11 +356,11 @@ Alongside the four picks, three changes, all applied:
 - **Every card on The Roster is the same size.** The founder's feature panel is
   gone and Grant Callen is the first of ten identical cards. His bio paragraph
   now lives only on his own page.
-- **Only a card with a bio behind it links to one.** Nine of the ten cards are a
-  `<div>`, not an `<a>`. Every card used to open Grant Callen's page, which is
-  how a visitor clicking Wil Ervin ended up reading somebody else's bio, and that
-  is what "remove Wil Ervin's bio" was asking for. When the other nine pages are
-  built, each card takes its own destination.
+- **Only a card with a bio behind it links to one.** Eight of the nine cards are
+  a `<div>`, not an `<a>`. Every card used to open Grant Callen's page, which is
+  how a visitor clicking a colleague ended up reading somebody else's bio, and
+  that is what Empower's "remove the bio" note was asking for. When the other
+  eight pages are built, each card takes its own destination.
 - **Contact rows per person.** Grant keeps email, LinkedIn and X; every other
   staff bio gets the email row only. The bio partial says so where the block is.
 - **Our Solutions is a top-level destination.** In `header-2.html` it is now a
@@ -719,6 +720,41 @@ WP Engine's SSH gateway is key-only, and the key stays in `~/.ssh`.
 Unset any of them and the next call fails immediately with a message naming
 the variable, the same way the `SPIKE_URL` guard above does, rather than
 reaching the install and failing as a permissions error.
+
+### What the install actually receives
+
+`syncTheme()` does not rsync the repository's stylesheets. It calls
+`buildShipped()` in `wp/ship.mjs` first, which stages a comment-stripped copy
+of `tokens/`, `components/`, `css/` and `wp/empowerms-child/css/` under
+`.ship/` (gitignored), and the three CSS passes plus the bridge pass read from
+there. Everything else — the theme's PHP, `js/`, `assets/`, `patterns/` — is
+still synced straight from the repository.
+
+The comments in these stylesheets are the reason the bridge is maintainable
+and they stay in the repository; what they stop doing is travelling. Measured
+cold on 2026-08-27 (mobile 412x823, Slow 4G, 4x CPU), `css/bridge.css` was
+443 KB on disk and 141 KB over the wire, render-blocking on every converted
+page, and 94% of those bytes were comments. Gzip cannot rescue prose. The
+homepage's render-blocking CSS went from 189 KB gzipped to 27 KB.
+
+Two consequences worth knowing before editing `wp/ship.mjs`:
+
+- `stripCss()` is a scanner, not a regex. `content` is the only property whose
+  value is arbitrary author text, and a comment opener inside one would make a
+  naive `/\*[\s\S]*?\*\//` eat everything up to the next real close.
+- Staged files carry their SOURCE file's mtime. `rsync -a` compares size and
+  mtime, and `empower_asset_ver()` keys `?ver=` on the server's `filemtime`,
+  so fresh mtimes would re-upload every stylesheet and bust every visitor's
+  CSS cache on every deploy. Both failures are silent; both have a test.
+- The consequence of that, found the first time this shipped: the version key
+  tracks how a stylesheet is AUTHORED, not how it is SHIPPED. Change
+  `stripCss()` and every URL stays identical, so Cloudflare keeps serving the
+  previous bytes under `cache-control: public, max-age=31536000` — for a year,
+  with no signal that anything is stale. The bare-URL check is not enough
+  either: the theme requests `?ver=<mtime>`, so a fetch has to carry the same
+  query the page does, and comparing it against a `&cb=` busted fetch is what
+  actually shows the difference. After any change to what ships rather than to
+  what is written, `touch` the shipped stylesheets once and re-sync.
 
 ## Mobile navigation
 
@@ -1102,7 +1138,7 @@ this adds what each one turns into.
 | | `02-solutions` | Container + HTML widget (three inline SVGs) |
 | `team-a` | `01-hero` | Container + HTML widget (inline SVG) |
 | | `02-staff`, `03-fellows`, `04-board` | Containers. Every portrait is a placeholder tile; see the Team notes |
-| `team-bio` | `01-profile`, `02-back` | HTML widgets (five inline SVGs between them). This is the template the other nine bios are cut from, so it is the one worth making an Elementor **saved template** |
+| `team-bio` | `01-profile`, `02-back` | HTML widgets (five inline SVGs between them). This is the template the other eight bios are cut from, so it is the one worth making an Elementor **saved template** |
 | `solutions-b` | `01-hero`, `03-research`, `04-stories` | Containers |
 | | `02-solutions` | Container + HTML widget (three inline SVGs) |
 | `work`, `safety`, `education` | `01`–`05` | Containers. **One template across all three** (`css/solution.css`, seven `sol-*` blocks), so build it once as an Elementor saved template and fill it three times |
@@ -1111,7 +1147,7 @@ this adds what each one turns into.
 | `podcast-a` | `01-hero`, `02-about` | Containers |
 | | `03-library` | HTML widget for the filter controls + **Loop Grid** for the episodes. `data-cms-item-attrs="data-topic,data-guest"` |
 | `capitol-a` | `01-hero`, `02-about` | Containers |
-| | `03-library` | Same shape. `data-cms-item-attrs="data-session"`. Wil Ervin's name must stay unlinked |
+| | `03-library` | Same shape. `data-cms-item-attrs="data-session"`. Since 2026-08-21 the About copy names no host at all, so there is no name to keep unlinked |
 | `epic-a` | `01-hero`, `02-work` | Containers |
 | | `03-method` | Three nested containers; see the scroll-driven table below. Do **not** add Elementor's sticky effect on top |
 | | `04-research` | Container. Three authored focus areas, each with a `data-cms="field"` report line: the area is content, the report line is a query |
@@ -1290,9 +1326,9 @@ Two things to carry into the conversion:
   takes the fill. Promoting both would put two orange actions on one page.
 - **Ashley Green's name is not a link.** The roadmap names her in the Ambassador
   closing section. Her bio page does not exist, and a name that opens somebody
-  else's bio is the failure Empower flagged on 2026-08-05, the same reason Wil
-  Ervin is not a link on Capitol Chat. A test checks every anchor on both
-  readings, and separately checks the name is still present.
+  else's bio is the failure Empower flagged on 2026-08-05, which is also why
+  Capitol Chat never linked the host it used to name. A test checks every anchor
+  on both readings, and separately checks the name is still present.
 
 Photography on all four is stand-in, and the Ambassador tab explicitly asks to
 "Include ambassador photos", which Empower still owe. Both Email Sign Up
@@ -1696,12 +1732,12 @@ These are flagged throughout and are not defects in the build:
   feature cards are placeholder.
 - **Everything marked "auto-populated".** Those strings mark CMS slots: blog
   posts, EPIC research, Community Stories, the podcast feed.
-- **Twenty-three headshots**, for the team pages: ten staff, five fellows, eight
+- **Twenty-two headshots**, for the team pages: nine staff, five fellows, eight
   board. Every portrait on all three variations is a marked monogram placeholder
   until they arrive. A has all 23, B gives discs to the staff only, C plates the
   staff and sets the other two groups as type.
-- **Nine more staff bio pages.** The CEO's is built as the pattern; the copy for
-  the other nine is in the Team tab and each staff card points at the CEO's page
+- **Eight more staff bio pages.** The CEO's is built as the pattern; the copy for
+  the other eight is in the Team tab and each staff card points at the CEO's page
   until they exist.
 - **A decision on the two open brand-colour questions** in *Known accessibility
   issues* above.

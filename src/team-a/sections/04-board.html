@@ -1,6 +1,18 @@
-<!-- PLACEHOLDER: same monogram discs as the fellows, at the size a board roll
-     needs. Names and the two officer roles are the roadmap’s copy. Grant Callen
-     appears here and in the staff roster because he sits on both. -->
+<!-- Names and the two officer roles are the roadmap’s copy. Grant Callen appears
+     here and in the staff roster because he sits on both.
+
+     THE HEADSHOTS ARE EMPOWER’S OWN CROPS, taken from empowerms.org/board/ on
+     2026-09-10 and downscaled to 132px, 3x the 44px the disc renders at. Their
+     page pairs each photograph with its own name in its own markup, and that
+     pairing is what identifies them, because two of the eight files are named
+     after somebody else: `Betsy-Acklen-…` sits under the heading “Betsy Dowell”
+     (a former name) and `G-Gilbert-…` under “Gerard Gibert” (their own
+     misspelling). Grant Callen’s file is called `2`.
+
+     ALT IS EMPTY AND aria-hidden STAYS, exactly as it was on the monograms these
+     replace. The person’s name is the next element in the same row, so a
+     described photograph would make a screen reader announce every board member
+     twice. -->
 <section class="ta-board" aria-labelledby="board-title">
   <div class="ta-board__grid em-container">
     <div class="ta-board__head ta-mark" data-reveal-group>
@@ -9,37 +21,45 @@
 
     <ul class="ta-roll" data-reveal-group>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">AP</span>
+        <img class="ta-roll__photo" src="../assets/headshots/abb-payne.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Abb Payne</span>
         <span class="ta-roll__role">Chairman</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">GG</span>
+        <img class="ta-roll__photo" src="../assets/headshots/gerard-gibert.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Gerard Gibert</span>
         <span class="ta-roll__role">Treasurer</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">GC</span>
+        <img class="ta-roll__photo" src="../assets/headshots/grant-callen.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Grant Callen</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">SD</span>
+        <img class="ta-roll__photo" src="../assets/headshots/sunny-desai.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Sunny Desai</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">BD</span>
+        <img class="ta-roll__photo" src="../assets/headshots/betsy-dowell.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Betsy Dowell</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">LL</span>
+        <img class="ta-roll__photo" src="../assets/headshots/lex-lindsey.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Lex Lindsey</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">MS</span>
+        <img class="ta-roll__photo" src="../assets/headshots/marie-sanderson.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">Marie Sanderson</span>
       </li>
       <li class="ta-roll__item" data-reveal="rise">
-        <span class="ta-disc ta-disc--roll" data-placeholder="headshot" aria-hidden="true">GW</span>
+        <img class="ta-roll__photo" src="../assets/headshots/george-williams.jpg" width="132" height="132"
+             loading="lazy" decoding="async" alt="" aria-hidden="true">
         <span class="ta-roll__name">George Williams</span>
       </li>
     </ul>

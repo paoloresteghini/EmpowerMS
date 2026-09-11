@@ -1,0 +1,96 @@
+/* THE CONTACT PAGE.
+   ---------------------------------------------------------------------------
+
+   One job, two columns, and the shorter column is the one that matters least.
+
+   THE FORM LEADS AND THE ADDRESS FOLLOWS, in the source and therefore on a
+   phone. Somebody opening this page has something to say; the postal address is
+   what they check afterwards, if at all. At the wide breakpoint the details
+   column is pulled up beside the form rather than under it, which is the same
+   markup-order-is-the-phone's-layout rule the landing templates record.
+
+   THE FORM IS THE WIDER COLUMN. A two-up split would give equal weight to four
+   fields and three lines of address. 3fr/2fr keeps the message box wide enough
+   to write in, which is the only field on the page anybody types more than a
+   few words into.
+
+   NO SIDE STRIPE. The mark is 56x4 from above, as everywhere else in the build.
+*/
+
+.ct-head{padding-block:clamp(var(--space-9),5vw,var(--space-12)) 0}
+
+/* Marked from above, left, because everything under it is left aligned. Same
+   arrangement as css/legal.css and for the same reason. */
+.ct-head__inner{position:relative;max-width:60ch;
+  padding-top:calc(var(--space-5) + 4px)}
+.ct-head__inner::before{content:"";position:absolute;left:0;top:0;
+  width:56px;height:4px;background:var(--em-orange)}
+
+.ct-head h1{margin:0;font-family:var(--font-display);font-weight:var(--fw-black);
+  font-size:var(--fs-h1);line-height:1.04;letter-spacing:-.03em;
+  color:var(--em-blue);text-wrap:balance}
+
+.ct-head__lead{margin:var(--space-5) 0 0;font-size:var(--fs-lead);
+  line-height:1.6;color:var(--text-body)}
+
+/* ---------------------------------- Body -------------------------------- */
+
+.ct-body{padding-block:clamp(var(--space-7),3vw,var(--space-9))
+  clamp(var(--space-10),6vw,var(--space-12))}
+
+.ct-body__grid{display:grid;gap:clamp(var(--space-7),4vw,var(--space-10))}
+
+/* 900px, not the usual 1024: the form's own two-up row (First and Last) needs
+   room before the page splits, and below this the details column reads better
+   full width than squeezed into a third. Measured by narrowing the built page
+   rather than picked off the token scale. */
+@media (min-width:900px){
+  .ct-body__grid{grid-template-columns:3fr 2fr;
+    align-items:start}
+  /* Source order is form-then-details, which is what a phone gets. At this
+     width the details column moves to the right of the form. Explicit column
+     placement rather than `order`, so the tab sequence still follows the
+     source: a keyboard user reaches the form first at every width, which is
+     the point of putting it first in the markup. */
+  .ct-form{grid-column:1}
+  .ct-details{grid-column:2}
+}
+
+/* ---------------------------------- Form -------------------------------- */
+
+.ct-form__form{display:flex;flex-direction:column;
+  gap:clamp(var(--space-5),2vw,var(--space-6))}
+
+/* One row that becomes two fields at 480, which is where First and Last stop
+   fitting side by side at the base font size. */
+.ct-form__row{display:grid;gap:clamp(var(--space-5),2vw,var(--space-6))}
+@media (min-width:480px){
+  .ct-form__row{grid-template-columns:1fr 1fr}
+}
+
+.ct-form__form .em-btn{align-self:start}
+
+.ct-form__form .em-textarea{resize:vertical;min-height:11rem}
+
+/* THE STAND-IN NOTE. Same treatment as the review strip on the landing
+   template: quiet, but not so quiet it can be missed by somebody deciding
+   whether the form works. It is deleted when the page is converted, because
+   the converted page carries the real form. */
+.ct-form__note{margin:var(--space-6) 0 0;padding:var(--space-4) var(--space-5);
+  border:1px dashed var(--border-default);border-radius:var(--radius-card);
+  background:var(--surface-tint);
+  font-size:var(--fs-caption);line-height:1.6;color:var(--text-body)}
+
+/* --------------------------------- Details ------------------------------- */
+
+.ct-details{padding:clamp(var(--space-6),3vw,var(--space-7));
+  border-radius:var(--radius-card);background:var(--surface-tint)}
+
+.ct-details__title{margin:0;font-family:var(--font-display);
+  font-size:var(--fs-h4);line-height:var(--lh-heading);
+  letter-spacing:var(--ls-heading);color:var(--em-blue)}
+
+/* <address> italicises by default in every browser and this is a postal
+   address, not an aside. */
+.ct-details__address{margin:var(--space-4) 0 0;font-style:normal;
+  font-size:var(--fs-body);line-height:1.7;color:var(--text-body)}

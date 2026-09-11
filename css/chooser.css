@@ -171,7 +171,9 @@ body:has(#set-mail:checked) .ch__opt[data-set="mail"],
 body:has(#set-amb:checked) .ch__opt[data-set="amb"],
 body:has(#set-give:checked) .ch__opt[data-set="give"],
 body:has(#set-content:checked) .ch__opt[data-set="content"],
-body:has(#set-landing:checked) .ch__opt[data-set="landing"]{display:flex}
+body:has(#set-landing:checked) .ch__opt[data-set="landing"],
+body:has(#set-legal:checked) .ch__opt[data-set="legal"],
+body:has(#set-contact:checked) .ch__opt[data-set="contact"]{display:flex}
 body:has(#set-home:checked) .ch__results > section[data-set="home"],
 body:has(#set-who:checked) .ch__results > section[data-set="who"],
 body:has(#set-do:checked) .ch__results > section[data-set="do"],
@@ -187,7 +189,9 @@ body:has(#set-mail:checked) .ch__results > section[data-set="mail"],
 body:has(#set-amb:checked) .ch__results > section[data-set="amb"],
 body:has(#set-give:checked) .ch__results > section[data-set="give"],
 body:has(#set-content:checked) .ch__results > section[data-set="content"],
-body:has(#set-landing:checked) .ch__results > section[data-set="landing"]{display:block}
+body:has(#set-landing:checked) .ch__results > section[data-set="landing"],
+body:has(#set-legal:checked) .ch__results > section[data-set="legal"],
+body:has(#set-contact:checked) .ch__results > section[data-set="contact"]{display:block}
 
 /* Status: three of them, and HIDES rather than reveals.
      · Signed off — the thirteen builds Empower chose, one per decided set.

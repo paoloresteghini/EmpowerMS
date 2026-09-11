@@ -1,0 +1,296 @@
+[
+ {
+  "id": 1,
+  "url": "/solutions",
+  "target": "https://empv2.wpenginepowered.com/learn-more/?utm_source=video&utm_medium=link&utm_campaign=10th+anniv&utm_content=forest",
+  "code": 301,
+  "status": "disabled"
+ },
+ {
+  "id": 2,
+  "url": "/learn",
+  "target": "https://empv2.wpenginepowered.com/learn-more/?utm_source=video&utm_medium=link&utm_campaign=10th+anniv&utm_content=gerard",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 4,
+  "url": "/impact",
+  "target": "https://empv2.wpenginepowered.com/learn-more/?utm_source=video&utm_medium=qr&utm_campaign=10th+anniv&utm_content=jb",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 5,
+  "url": "/mission",
+  "target": "https://empv2.wpenginepowered.com/learn-more/?utm_source=video&utm_medium=link&utm_campaign=10th+anniv&utm_content=patrick",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 6,
+  "url": "/change",
+  "target": "https://empv2.wpenginepowered.com/learn-more/?utm_source=video&utm_medium=link&utm_campaign=10th+anniv&utm_content=wil",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 7,
+  "url": "/session-guide-copy/",
+  "target": "/labor-force-participation-in-ms/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 8,
+  "url": "/2024-new-content-page/",
+  "target": "/empower-commentary/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 9,
+  "url": "/ian-rowe-interview-an-approach-to-empower-all-americans-to-pursue-their-dreams-2/",
+  "target": "/christina-dent-interview-a-curious-approach-to-the-war-on-drugs/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 10,
+  "url": "/all-about-education/",
+  "target": "/education-freedom-in-ms/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 11,
+  "url": "/bill-crawford-former-gop-lawmaker-syndicated-columnist-and-now-published-author/",
+  "target": "/bill-crawford/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 12,
+  "url": "/grant-callen-testifies-on-expungement-and-rights-restoration/",
+  "target": "/grant-callen-and-kayla-hulett-testifyon-expungement-and-rights-restoration/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 13,
+  "url": "/waitlist/",
+  "target": "/waitlisted/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 14,
+  "url": "/education-copy/",
+  "target": "/education-3/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 15,
+  "url": "/justice-copy/",
+  "target": "/justice/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 16,
+  "url": "/work-copy/",
+  "target": "/work/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 17,
+  "url": "/state-rep-trey-lamar-the-build-up-mississippi-act-2/",
+  "target": "/doug-deason-first-step-act-and-second-chances/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 18,
+  "url": "/when-is-it-mississippis-turn-for-education-freedom/",
+  "target": "/mississippians-want-education-freedom/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 19,
+  "url": "/mike-hurst-school-choice-showdown/",
+  "target": "https://empv2.wpenginepowered.com/attorney-general-lynn-fitch-breaking-barriers-defending-life/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 20,
+  "url": "/capitol-chat-week-1-2/",
+  "target": "/2026-capitol-chat-week-1/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 21,
+  "url": "/house-introduces-the-education-freedom-act/",
+  "target": "/house-passes-the-education-freedom-act/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 22,
+  "url": "/sb-2467-expanding-the-literacy-based-promotion-act/",
+  "target": "/sb-2487-expanding-the-literacy-based-promotion-act/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 23,
+  "url": "/2025-impact-report/",
+  "target": "/empower-ms-releases-2025-impact-report/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 24,
+  "url": "/tune-in/",
+  "target": "https://empv2.wpenginepowered.com/the-empower-podcast/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 25,
+  "url": "/podcast",
+  "target": "https://empv2.wpenginepowered.com/the-empower-podcast/",
+  "code": 301,
+  "status": "disabled"
+ },
+ {
+  "id": 26,
+  "url": "/what-we-do-a/",
+  "target": "/what-we-do/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 27,
+  "url": "/solutions-b/",
+  "target": "/solutions/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 28,
+  "url": "/capitol-a/",
+  "target": "/capitol-chat/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 29,
+  "url": "/who-we-are-a/",
+  "target": "/who-we-are/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 30,
+  "url": "/mail-a/",
+  "target": "/newsletter/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 31,
+  "url": "/amb-a/",
+  "target": "/ambassadors/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 32,
+  "url": "/safety/",
+  "target": "/public-safety/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 33,
+  "url": "/work-2/",
+  "target": "/meaningful-work/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 34,
+  "url": "/education/",
+  "target": "/quality-education/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 35,
+  "url": "/content-a/",
+  "target": "/all-content/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 36,
+  "url": "/podcast-a/",
+  "target": "/podcast/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 37,
+  "url": "/epic-a/",
+  "target": "/epic/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 38,
+  "url": "/donate/",
+  "target": "/donate-old/",
+  "code": 301,
+  "status": "disabled"
+ },
+ {
+  "id": 39,
+  "url": "/team/",
+  "target": "/team-old/",
+  "code": 301,
+  "status": "disabled"
+ },
+ {
+  "id": 40,
+  "url": "/give-c/",
+  "target": "/donate/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 41,
+  "url": "/team-a/",
+  "target": "/team/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 42,
+  "url": "/team-bio/",
+  "target": "/grant-callen/",
+  "code": 301,
+  "status": "enabled"
+ },
+ {
+  "id": 43,
+  "url": "/final/",
+  "target": "/homepage/",
+  "code": 301,
+  "status": "enabled"
+ }
+]

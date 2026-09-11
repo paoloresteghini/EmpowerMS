@@ -85,7 +85,6 @@
 .tb-staff h2{margin:0;text-wrap:balance;font-size:clamp(1.75rem,1.2rem + 1.9vw,2.75rem);
   font-weight:var(--fw-black);line-height:1.06;letter-spacing:-.025em;color:var(--em-blue)}
 
-.tb-note{margin:var(--space-4) 0 0;font-size:var(--fs-small);color:var(--text-muted)}
 
 /* Build scaffolding, not client copy: names what is missing so the discs are
    never mistaken for a design decision. Carries the same dashed edge as the

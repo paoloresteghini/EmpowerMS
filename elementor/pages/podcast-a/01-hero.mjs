@@ -1,4 +1,5 @@
-import { container, heading, text, link } from '../../factory.mjs';
+import { container, text, link, image } from '../../factory.mjs';
+import { photo } from './media.mjs';
 
 /* Source of truth: src/podcast-a/sections/01-hero.html. Every class, string
    and attribute below is read from that partial, not typed from memory.
@@ -36,10 +37,14 @@ import { container, heading, text, link } from '../../factory.mjs';
       is risk 4 in the brief: reported, not fixed here (fixing it is a
       Phase 2 concern).
 
-   5. The <h1 id="hero-title"> carries the id the section's
-      aria-labelledby="hero-title" points at. _element_id lands on the
-      heading widget's WRAPPER div, not the <h1> itself (risk 5, see the
-      task report for the accessibility analysis).
+   5. THE HEADING IS A text() WIDGET CARRYING A BARE <h1>, not a heading()
+      widget with _element_id. Class-in-markup migration (2026-08-17): the
+      id moves off the widget's wrapper div and onto the <h1> itself, so
+      the section's aria-labelledby="hero-title" now resolves to the
+      heading element rather than to a div that merely contains it, which
+      was risk 5 in the brief and this page no longer carries it. The same
+      move also removes Elementor's own heading widget from this section,
+      so its frontend.min.css line-height:1 default needs no repair here.
 
    6. data-reveal-entrance and data-reveal-group are valueless in source.
       Elementor's Custom Attributes control (ElementorPro\Modules\
@@ -56,7 +61,14 @@ import { container, heading, text, link } from '../../factory.mjs';
       selectors and Element.hasAttribute() both match on presence, not on a
       specific value. */
 
-const CAPTION = 'Behind-the-scenes photography to come';
+/* The caption is gone: the frames carry real photographs since 2026-09-04.
+   That also retires risk 4 in the brief above, which was that `.pca-frame span`
+   stopped matching once Elementor wrapped the caption in a text widget. There
+   is no caption to match. Unlike capitol-a's triptych, these frames CAN be
+   image() widgets: .pca-frame's rules are class-based
+   (`.pca-frame:not(.pca-frame--tall)`), so nothing here depends on an <li>'s
+   position among its siblings and no widget wrapper can fall between a
+   selector and its target. */
 
 export function section() {
   return container(
@@ -73,26 +85,35 @@ export function section() {
             { cssClass: 'pca-hero__copy', content_width: 'full', _attributes: 'data-reveal-group|' },
             [
               text({
-                markup: '<p>The Empower Podcast</p>',
-                cssClass: 'pca-eyebrow',
-                _attributes: 'data-reveal|rise',
-              }),
-              heading({
-                text: 'Mississippi’s Biggest Challenges. Biggest Opportunities. Real Conversations.',
-                tag: 'h1',
-                _element_id: 'hero-title',
+                markup: '<p class="pca-eyebrow">The Empower Podcast</p>',
                 _attributes: 'data-reveal|rise',
               }),
               text({
-                markup: '<p>Join Grant Callen for thoughtful conversations with lawmakers, policy experts, and community leaders about the ideas and solutions that can help every Mississippian rise.</p>',
-                cssClass: 'pca-hero__lede',
+                markup: '<h1 id="hero-title">Mississippi’s Biggest Challenges. Biggest Opportunities. Real Conversations.</h1>',
+                _attributes: 'data-reveal|rise',
+              }),
+              text({
+                markup: '<p class="pca-hero__lede">Join Grant Callen for thoughtful conversations with lawmakers, policy experts, and community leaders about the ideas and solutions that can help every Mississippian rise.</p>',
                 _attributes: 'data-reveal|rise',
               }),
               container(
                 { cssClass: 'pca-hero__actions', content_width: 'full', _attributes: 'data-reveal|rise' },
                 [
-                  link({ label: 'Watch on YouTube', href: '/podcast', cssClass: 'em-btn em-btn--primary em-btn--lg' }),
-                  link({ label: 'Listen Now', href: '/podcast', cssClass: 'em-btn em-btn--inverse-outline em-btn--lg' }),
+                  /* Empower's channel, given by Paolo 2026-09-04. Both buttons
+                     pointed at '/podcast', which is THIS page: the hero's
+                     primary action was a link to itself. The footer reaches the
+                     same channel as https://youtube.com/@empowerms; both
+                     resolve, and unifying them is a separate decision.
+                     'Listen Now' goes to this page's own episode catalogue
+                     (Paolo, 2026-09-04: "the /podcast/ episodes page"). That
+                     catalogue is section 03-library on THIS page, not a route
+                     of its own: the only other podcast page on the install is
+                     /the-empower-podcast/ (17295), which is the Beaver original
+                     this one replaces. #library-title is the <h2> the section
+                     already carries as its aria-labelledby target, so both
+                     builds have the id and jumping lands on the heading. */
+                  link({ label: 'Watch on YouTube', href: 'https://www.youtube.com/user/empowerms', cssClass: 'em-btn em-btn--primary em-btn--lg' }),
+                  link({ label: 'Listen Now', href: '#library-title', cssClass: 'em-btn em-btn--inverse-outline em-btn--lg' }),
                 ],
               ),
             ],
@@ -104,20 +125,26 @@ export function section() {
                 {
                   cssClass: 'pca-frame pca-frame--tall',
                   content_width: 'full',
-                  _attributes: 'data-placeholder|photo\ndata-reveal|rise',
+                  _attributes: 'data-reveal|rise',
                 },
-                [text({ markup: `<p>${CAPTION}</p>` })],
+                [image({ ...photo('podcast-guest-with-mic') })],
               ),
-              container({
-                cssClass: 'pca-frame',
-                content_width: 'full',
-                _attributes: 'data-placeholder|photo\ndata-reveal|rise\naria-hidden|true',
-              }),
-              container({
-                cssClass: 'pca-frame',
-                content_width: 'full',
-                _attributes: 'data-placeholder|photo\ndata-reveal|rise\naria-hidden|true',
-              }),
+              container(
+                {
+                  cssClass: 'pca-frame',
+                  content_width: 'full',
+                  _attributes: 'data-reveal|rise\naria-hidden|true',
+                },
+                [image({ ...photo('podcast-cover') })],
+              ),
+              container(
+                {
+                  cssClass: 'pca-frame',
+                  content_width: 'full',
+                  _attributes: 'data-reveal|rise\naria-hidden|true',
+                },
+                [image({ ...photo('podcast-studio-wide') })],
+              ),
             ],
           ),
         ]),

@@ -1,0 +1,64 @@
+EMAIL to Kienna Horn (Kienna@empowerms.org). Sitting in Gmail drafts as of
+2026-09-07, NOT SENT. Draft id r-8850361755237183091.
+
+Purpose: turn the open "how is research filed?" question (round 1 row 3, open
+since 2026-09-04 and unanswered) into something she can answer yes or no to.
+Background and evidence: elementor/pages/content-a/02-browse.mjs:293 holds four
+post ids by hand, elementor/pages/epic-a/04-research.mjs:150-176 holds three
+typed title/href/date triples, and the homepage insights band card 2 is still a
+placeholder reading "Research title, auto-populated from EPIC". The three lists
+disagree: EPIC's education entry (20503) is not in All Content's four.
+
+---------------------------------------------------------------------------
+
+Subject: A "Research & Reports" category, and one list to check
+
+
+Hey Kienna,
+
+A quick one about the new site.
+
+Three places are meant to show your latest research: the homepage, the EPIC
+page, and the Research & Reports section of All Content. Right now none of them
+update on their own. Each has a list of reports typed into it by hand, so when
+you publish a new report it will not appear in any of them until someone edits
+the site.
+
+The fix is small. We add a "Research & Reports" category in WordPress, the same
+way you already have Community Stories and Press Releases. After that, all
+three places pull from it automatically and a new report appears everywhere the
+moment you publish it.
+
+Two things I need from you.
+
+1. Is this the right list to start with?
+
+These are the five reports the site is showing today across those three places:
+
+  * Empower MS Releases 2025 Impact Report
+  * 2024 Impact Report: Celebrating 10 Years of Service in Mississippi
+  * New Empower Mississippi Report Highlights Growth in Labor Force
+    Participation Rate
+  * Empower releases report on violent crime in Mississippi
+  * Charter Schools Outperform Districts on 3rd Grade Reading Test Initial
+    Results
+
+If any of those are not really research, or something obvious is missing, tell
+me and I will adjust it.
+
+2. Would you be happy to tick that category when you publish a report from now
+on?
+
+It is one checkbox in the WordPress editor, the same as choosing Community
+Stories. That is all it takes to keep the three places current.
+
+One extra question if you know the answer. The EPIC page shows the most recent
+report for each of Quality Education, Meaningful Work and Public Safety, so each
+report also needs its issue area ticked for that to work. Do you already do
+that, or shall I check them?
+
+I am happy to create the category and add those five myself if you would rather,
+and you can change anything afterwards.
+
+Thanks,
+Paolo

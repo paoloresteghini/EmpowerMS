@@ -56,3 +56,45 @@
    open their own page, so both bring generous top space. Stacked, that reads
    as a gap rather than as a transition. The second one gives some back. */
 .tl-change{padding-top:clamp(var(--space-11),6vw,var(--space-13))}
+
+/* ---------- Hero: Empower round 1, row 1 ----------
+   Two new photographs, and "Move the smaller image to the bottom of the large
+   image instead of to the side, make it a bit larger".
+
+   READ THAT NOTE CAREFULLY, because it was read wrong once. "To the bottom of
+   the large image" means the tuck moves from the photograph's TOP corner to its
+   BOTTOM corner. It does NOT mean the small picture leaves the photograph and
+   becomes a second full-width image stacked underneath. The first attempt did
+   the latter, which also meant dropping option-a's portrait slot for the
+   supplied banner's own ratio, and it changed the whole shape of the hero.
+   Empower's own mockup settled it: the original composition, the new pictures.
+
+   So option-a.css's layout is left ALONE. .fp-hero__media keeps its 4/5 portrait
+   slot and .fp-hero__aside stays absolutely positioned over it. The only things
+   this file changes are the three the note actually asks for: which corner, how
+   big, and the crop.
+
+   THE CROP IS THE ONE REAL RISK. The main photograph is 1376x726, a 1.9:1
+   banner, going into a 4/5 portrait slot, so most of its width is cropped away.
+   It survives because its three subjects are grouped in the middle: at
+   `center center` the grandmother, mother and child are all inside the frame,
+   and the crop takes empty kitchen off both edges. option-a's own
+   `object-position:center 30%` is wrong for it (that setting exists for a
+   standing portrait) and would push the faces low. This is a per-photograph
+   value: swap the image and re-check it by eye. */
+.fp-hero__media img{object-position:center center}
+
+/* Bottom corner rather than top, a little larger than the 120-180px original,
+   and 4/3 rather than square because the source is a landscape river scene and
+   a square crop of it loses the bridge span that makes the picture legible. */
+.fp-hero__aside{
+  top:auto;
+  /* Slightly NEGATIVE, so the picture crosses the photograph's bottom edge
+     rather than sitting politely inside it. Matching Empower's own mockup:
+     inside, it reads as an inset panel; crossing, it reads as a second picture
+     laid over the first, which is what the original top-corner tuck did too. */
+  bottom:calc(-1 * clamp(var(--space-2),1vw,var(--space-4)));
+  width:clamp(180px,21vw,300px);
+  aspect-ratio:4/3;
+}
+.fp-hero__aside img{object-position:center center}

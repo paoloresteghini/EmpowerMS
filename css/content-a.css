@@ -95,55 +95,77 @@
   border-bottom:1px solid var(--border-subtle);
   box-shadow:var(--shadow-xs)}
 
-/* ONE INSTRUMENT, NOT TWO WIDGETS, and the reason the two facets are stacked
-   rather than set side by side. The five topic pills need about 590px of line;
-   beside the five type tabs the container had 453 to give them, so they wrapped
-   to a ragged second row inside a column that was itself pushed to the right
-   edge: two controls of different heights, different languages and different
-   alignments, sharing one bar and agreeing on nothing.
+/* ONE LINE, AND WHAT IT COST TO GET THERE.
+   This bar was two rows: type tabs, then topic pills, each with its legend in a
+   shared 135px label gutter. It measured 133px and stuck under a 113px header,
+   so 246px of a 900px viewport -- 27% -- was spent before the first card, on
+   every scroll position of a long listing.
 
-   Stacked, each facet gets the full line and holds it: one row of tabs, one row
-   of pills, unwrapped at every width down to 900px. The order is the argument of
-   this reading (type is the page, topic narrows it), and the label gutter is
-   what makes it read as one control rather than two: BROWSE and FILTER BY TOPIC:
-   sit in the same column track, so both control rows start at the same x, and
-   both legends sit on their row's BASELINE rather than on the top of its box.
+   THE ARITHMETIC THAT FORCED TWO ROWS IS REAL, and it is why this is not simply
+   a compression. At full label length the five type tabs need 656px and the five
+   topic pills 688px; against this container's 1200px that is 1376px, so they
+   cannot share a line, and setting them side by side is what produced the ragged
+   wrapped column the two-row design was written to fix.
 
-   display:contents on the fieldsets is what allows that. A fieldset that is
-   itself a grid leaves its own legend outside the grid, because the legend is
-   placed in the border box rather than the content box, so the two label columns
-   could never be made to agree from inside one. Dissolving it makes the legend
-   and the control row items of the one grid above. The markup carries role="group" and
-   aria-labelledby for it: display:contents has dropped implicit semantics in
-   shipped browsers, and an explicit role and name survive that. */
-.cad-controls__inner{display:grid;grid-template-columns:auto minmax(0,1fr);
-  column-gap:clamp(var(--space-5),2.4vw,var(--space-8));row-gap:var(--space-4);
-  align-items:baseline;padding-top:var(--space-4);padding-bottom:var(--space-5)}
+   What changed is the labels, not the geometry. Shortened -- Everything->All,
+   Community Stories->Stories, Research & Reports->Research, Press Releases->Press,
+   and the topics to Education / Work / Safety / Bills -- the two facets measure
+   343 + 492 + 48 = 883px and one line fits with 317px spare. Measured in the
+   browser at 1400px, not predicted. The bar is now 63px and costs 176px stuck,
+   19% instead of 27%.
 
-.cad-group{display:contents;border:0;margin:0;padding:0;min-width:0}
+   EMPOWER'S FULL WORDING IS NOT LOST. The band headings below still read
+   "Community Stories", "Research & Reports", "Press Releases", and the card
+   eyebrows still carry the full topic names. Only the control abbreviates, which
+   is the one place on the page that is UI rather than a claim.
+
+   THE LEGENDS ARE CLIPPED, NOT REMOVED. A one-line bar has no gutter to put them
+   in, and the two control shapes carry the distinction visually: underlined tabs
+   against outlined pills, split by a rule. But the fieldsets carry role="group"
+   and aria-labelledby BECAUSE display:contents drops implicit semantics, and
+   display:none on a legend would take the accessible name with it. Clipped to a
+   pixel, both groups keep their names.
+
+   display:contents is gone with the gutter. It existed only so two legends could
+   share one column track; nothing shares a track now, so the fieldsets are plain
+   flex boxes and the legend problem it worked around no longer arises. */
+.cad-controls__inner{display:flex;flex-wrap:nowrap;align-items:center;
+  gap:0 clamp(var(--space-5),2.4vw,var(--space-7));
+  padding-top:var(--space-2);padding-bottom:var(--space-2)}
+
+.cad-group{display:flex;align-items:center;border:0;margin:0;padding:0;min-width:0}
+
+/* The topic group takes the right end, separated by a rule rather than by
+   distance alone: at 317px of slack the gap on its own reads as an accident. */
+.cad-group--topics{margin-left:auto;
+  padding-left:clamp(var(--space-5),2.4vw,var(--space-7));
+  border-left:1px solid var(--border-subtle)}
+
 .cad-group__label{padding:0;margin:0;white-space:nowrap;
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
-  text-transform:uppercase;color:var(--text-muted)}
+  text-transform:uppercase;color:var(--text-muted);
+  position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 
 /* The radios themselves are never seen; the labels are the control. Not
-   display:none — that takes them out of the tab order and off the a11y tree
+   display:none -- that takes them out of the tab order and off the a11y tree
    with them. Clipped to a pixel behind their own label instead, so focus lands
    somewhere sensible and :focus-visible can be styled through the label. */
 .cad-radio{position:absolute;width:1px;height:1px;margin:0;opacity:0;
   pointer-events:none}
 
-.cad-tabs,.cad-chips{display:flex;flex-wrap:wrap;align-items:center;
-  gap:var(--space-2) clamp(var(--space-4),2vw,var(--space-6))}
+.cad-tabs,.cad-chips{display:flex;flex-wrap:nowrap;align-items:center;
+  gap:0 clamp(var(--space-4),1.8vw,var(--space-5))}
 
-.cad-tab{position:relative;cursor:pointer;padding:var(--space-2) 0 calc(var(--space-3) + 4px);
+.cad-tab{position:relative;cursor:pointer;white-space:nowrap;
+  padding:var(--space-3) 0 calc(var(--space-3) + 2px);
   font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-body);line-height:1.2;color:var(--text-body);
   transition:color var(--dur) var(--ease-out)}
 .cad-tab:hover{color:var(--text-strong)}
 
 /* The 56x4 mark, doing the selected-tab job it does everywhere else in this
-   build — it grows from the left rather than appearing. */
+   build -- it grows from the left rather than appearing. */
 .cad-tab::after{content:"";position:absolute;left:0;bottom:0;height:4px;width:0;
   background:var(--em-orange);
   transition:width var(--dur) var(--ease-out)}
@@ -151,8 +173,9 @@
 .cad-radio:checked + .cad-tab::after{width:100%}
 .cad-radio:focus-visible + .cad-tab{outline:3px solid var(--focus-ring);outline-offset:3px;border-radius:2px}
 
-.cad-chip{cursor:pointer;display:inline-flex;align-items:center;min-height:36px;
-  padding:0 var(--space-4);border:1px solid var(--border-default);
+.cad-chip{cursor:pointer;display:inline-flex;align-items:center;min-height:32px;
+  white-space:nowrap;
+  padding:0 var(--space-3);border:1px solid var(--border-default);
   border-radius:var(--radius-pill);background:var(--surface-page);
   font-size:var(--fs-small);font-weight:var(--fw-semibold);color:var(--text-body);
   transition:background-color var(--dur) var(--ease-out),
@@ -165,9 +188,35 @@
   color:var(--text-inverse)}
 .cad-radio:focus-visible + .cad-chip{outline:3px solid var(--focus-ring);outline-offset:3px}
 
-/* Below this the gutter costs more line than it buys alignment: the tabs alone
-   need 656px, so a 135px label column starts forcing them to wrap. The fieldsets
-   become blocks again and each legend goes back over its own row. */
+/* BELOW 960 THE ONE LINE STOPS FITTING, and the number is measured rather than
+   chosen: the two facets need 883px of line, and this container gives 860 at a
+   900px viewport. Checked at 961 (one row, 63px, chips ending 24px inside the
+   container) and at 960 (restacked).
+
+   THE FALLBACK IS THE DESIGN THIS ONE REPLACED, restored exactly, not a column
+   stack. That distinction cost a measurement: stacking the two facets as flex
+   column with each legend on its own line made the bar 193px -- TALLER than the
+   133px two-row bar this whole change set out to shrink. The old shape is
+   compact because both legends share one column track, and that only works with
+   display:contents dissolving the fieldsets, for the reason the desktop rules
+   above no longer have to care about: a fieldset that is itself a grid leaves
+   its legend outside the grid, because the legend is placed in the border box
+   rather than the content box.
+
+   So below 960 the legends come back on display and the gutter comes back with
+   them, and below 900 -- where a 135px label column starts forcing the tabs to
+   wrap -- each legend goes back over its own row, which is what it did before. */
+@media (max-width:960px){
+  .cad-controls__inner{display:grid;grid-template-columns:auto minmax(0,1fr);
+    column-gap:clamp(var(--space-5),2.4vw,var(--space-8));row-gap:var(--space-4);
+    align-items:baseline;
+    padding-top:var(--space-4);padding-bottom:var(--space-5)}
+  .cad-group{display:contents}
+  .cad-group--topics{margin-left:0;padding-left:0;border-left:0}
+  .cad-group__label{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+  .cad-tabs,.cad-chips{flex-wrap:wrap;
+    gap:var(--space-2) clamp(var(--space-4),2vw,var(--space-6))}
+}
 @media (max-width:900px){
   .cad-controls__inner{grid-template-columns:minmax(0,1fr);row-gap:var(--space-5)}
   .cad-group{display:block}
@@ -183,6 +232,18 @@
 
 .cad-results{padding-top:clamp(var(--space-9),5vw,var(--space-12));
   padding-bottom:clamp(var(--space-10),6vw,var(--space-13))}
+
+/* FOLLOWING #band-press MUST NOT LAND THE HEADING UNDER THE BAR. This sheet set
+   no scroll-margin-top at all, so every in-page anchor on this page has always
+   landed behind the sticky chrome; every other page in the build with an anchor
+   sets 100-110px. The number has to clear the header (113px) plus the bar (63px)
+   with a little air, and it moves whenever the bar's height does.
+
+   ON THE TITLE, NOT ON THE BAND. `#band-press` is an id on the <h2>, so the h2
+   is the scroll target and the h2 is where scroll-margin-top has to sit; the
+   same rule on the section it lives in does nothing at all. Measured: with it
+   on .cad-band the heading still landed 44px above the viewport top. */
+.cad-band__title{scroll-margin-top:188px}
 
 .cad-band + .cad-band{margin-top:clamp(var(--space-8),3.5vw,var(--space-10));
   padding-top:clamp(var(--space-8),3.5vw,var(--space-10));

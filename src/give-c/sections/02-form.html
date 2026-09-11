@@ -1,0 +1,55 @@
+<!-- THE FORM ITSELF, in a card straddling the bottom edge of the navy band.
+
+     ADDED 2026-09-10, and the reason was a route rather than a change of mind.
+     The converted /donate/ IS this page. The Gravity Form that actually takes
+     the money sat on the old Beaver page at /donate-old/, so until this section
+     existed /donate/ was a donation page on which nobody could donate.
+
+     THE CARD ARRIVED 2026-09-11, with the gift panel’s removal. While the panel
+     was in the hero this section could sit quietly below it on the white; with
+     the panel gone the form IS the top of the page, and a form that begins
+     below the fold on a page whose brief is "fewer clicks" is the same mistake
+     the panel was removed for. Overlapping the band puts the first fields on
+     the first screen without making the navy tall enough to swallow them.
+
+     A SLOT, not a drawing of the form. The Card (give-d) is the reading that
+     reproduces the fields; repeating that here would make this page a second
+     copy of it, and — the harder rule — a static file handed to a client has no
+     endpoint behind it, so anything that looked like a real payment control
+     would be collecting card data into nothing.
+
+     What drops in here is Empower’s own form 4, unchanged:
+       [gravityform id="4" title="false" description="false" ajax="true"]
+
+     "MAKE YOUR GIFT" IS THE PANEL’S OWN HEADING, kept rather than replaced.
+     Empower signed off on those three words on 2026-08-12 and the thing they
+     name has not changed, only what sits under them. The section carried
+     "Complete your gift" for one day, between the form arriving and the panel
+     leaving, which was only ever a way of not saying the same thing twice.
+
+     THE 501(c)(3) SENTENCE LIVES HERE NOW. It was in the gift panel, and it is
+     a legal statement reproduced verbatim from the roadmap rather than
+     marketing copy, so deleting the panel without moving it would have quietly
+     taken a legal line off a page that asks for money.
+
+     `em-gform` IS ON THIS SECTION IN BOTH TREES, and that is deliberate. It is
+     the hook bridge.css uses to dress Gravity Forms’ own markup, and every one
+     of its selectors reads `.em-gform .gform_wrapper ...`, so an ancestor works
+     exactly as a wrapper does. Putting it here rather than on the widget means
+     it sits on an element this file also has, so the fidelity instruments see
+     it on both sides instead of reading this build’s own hook as an element the
+     conversion invented. -->
+<section class="gvc-form em-gform" id="donate-form" aria-labelledby="form-title">
+  <div class="em-container">
+    <div class="gvc-form__card">
+      <h2 class="gvc-form__title" id="form-title">Make your gift</h2>
+      <div class="gvc-slot" data-placeholder="form">
+        <p class="gvc-slot__label">Empower’s donation form</p>
+        <p class="gvc-slot__note">Gravity Forms form 4 with the Stripe Payment Element, embedded here
+          at roughly this height. Its own submit button is the orange action on this page. The card
+          row is Stripe’s own iframe and will not match the rest of the form.</p>
+      </div>
+      <p class="gvc-form__legal">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
+    </div>
+  </div>
+</section>

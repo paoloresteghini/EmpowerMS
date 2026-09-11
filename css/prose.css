@@ -1,0 +1,95 @@
+/* .ps-body — THE READING COLUMN, SHARED.
+   ---------------------------------------------------------------------------
+
+   One column of continuous prose: paragraphs, headings, lists, links, quotes,
+   images and embeds, at one measure. Two kinds of page wear it, and neither
+   owns it:
+
+     the 490 single posts   css/post-single.css dresses everything AROUND this
+                            block (the eyebrow, the title, the photograph, the
+                            More grid) and loads this for the body itself
+     /privacy and /terms    css/legal.css dresses the head and the frame, and
+                            loads this for the body itself
+
+   WHY IT IS ITS OWN FILE, since 2026-09-02. It lived in css/post-single.css,
+   which was legitimately install-only: it dresses markup that exists only on
+   WordPress, so it was allowed to carry Elementor selectors that a static page
+   could never satisfy. The legal pages have a static build AND load this
+   design, which broke that premise the moment they were written — and the
+   repository caught it, because the install-only exemption is derived from two
+   facts about files rather than from a list anybody maintains. The alternative
+   was a second prose design in css/legal.css to keep in step with this one by
+   hand, which is the duplication css/archive.css already refused when it took
+   content-a's cards rather than drawing new ones.
+
+   SO THIS FILE CARRIES NO ELEMENTOR SELECTOR AND MUST NOT GAIN ONE. Static
+   pages load it. The one rule that needs to out-specify the framework's own
+   width default is the measure, and it lives in the theme's bridge stylesheet
+   with every other repair of that kind. A test sweeps this directory for
+   framework selectors and will say so.
+
+   THE MEASURE IS DECLARED TWICE, ON PURPOSE, AND THE TWO MUST AGREE. Here, at
+   one class, for the static pages; and again in the bridge sheet at the
+   specificity the framework forces, for the converted ones. Same number both
+   times. A test pins them together, because a measure that drifts between the
+   two renderings of the same document is the exact defect that was found on
+   the legal pages before this file existed: the head at 880 and the prose at
+   1104, side by side, with every stylesheet loaded and nothing failing. */
+
+/* THE MEASURE. 880px, not a ch value, and the reason is in the face: the body
+   type is condensed, so its `0` is far narrower than its average lowercase
+   letter and a ch measure lies about how many characters land on a line. 74ch
+   rendered 699px here and already held about 103 characters. Measured with a
+   canvas text measurement over the real computed font rather than assumed.
+
+   THE MEASURE IS LONG AND THAT IS THE TRADE. 880px runs past the 45-85
+   characters usually quoted for continuous prose. Two things pay for it: the
+   1.75 line-height below, which is what carries the eye back to the left edge,
+   and the body size raised with the width so the column is not simply more
+   small type per line. If it reads long on a real page rather than in a
+   screenshot, this is the number to change, and it has to change in the bridge
+   sheet in the same commit. */
+.ps-body{max-width:min(100%,880px);margin-inline:auto}
+
+.ps-body p,.ps-body ul,.ps-body ol,.ps-body blockquote,.ps-body figure{
+  margin:0 0 var(--space-6)}
+.ps-body > :last-child{margin-bottom:0}
+/* One step above --fs-body (16px computed). The token stays untouched: it
+   sets card and UI copy everywhere else in the build, and this is the only
+   place running an 880px column of continuous prose. */
+.ps-body p,.ps-body li{font-size:clamp(1.0625rem,1rem + .3vw,1.1875rem);
+  line-height:1.75;color:var(--text-body)}
+.ps-body ul,.ps-body ol{padding-left:var(--space-6)}
+.ps-body li{margin-bottom:var(--space-3)}
+
+/* The opening paragraph is the one a visitor reads if they read one. Lifted
+   from css/team-bio.css:116, which makes the same call for bio copy. */
+/* Raised with the body size above so the opening paragraph stays a step
+   ahead of the rest rather than matching it. */
+.ps-body > p:first-child{font-size:clamp(1.1875rem,1.1rem + .4vw,1.3125rem);
+  color:var(--text-strong)}
+
+.ps-body h2,.ps-body h3,.ps-body h4{font-family:var(--font-display);
+  color:var(--em-blue);line-height:var(--lh-heading);letter-spacing:var(--ls-heading);
+  margin:clamp(var(--space-7),3vw,var(--space-9)) 0 var(--space-4)}
+.ps-body h2{font-size:var(--fs-h3)}
+.ps-body h3{font-size:var(--fs-h4)}
+
+.ps-body a{color:var(--em-orange-ink);text-decoration-line:underline;
+  text-decoration-thickness:1px;
+  text-decoration-color:color-mix(in oklab,currentColor 45%,transparent);
+  text-underline-offset:2px}
+.ps-body a:hover{text-decoration-color:currentColor}
+
+/* Images inside post content are Empower's own, at whatever size the editor
+   inserted them. Constraining rather than cropping: some are charts where a
+   crop would cut an axis label off. */
+.ps-body img{max-width:100%;height:auto;border-radius:var(--radius-card)}
+
+.ps-body blockquote{margin-left:0;padding-left:var(--space-6);
+  border-left:4px solid var(--em-orange);font-size:var(--fs-lead);
+  line-height:1.6;color:var(--text-strong)}
+.ps-body blockquote p:last-child{margin-bottom:0}
+
+/* Embedded video, which 66 podcast posts and a good many others carry. */
+.ps-body iframe{max-width:100%;border-radius:var(--radius-card)}

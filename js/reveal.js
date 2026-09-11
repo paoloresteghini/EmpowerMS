@@ -8,6 +8,51 @@
 const root = document.documentElement;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+// A CLIPPED ELEMENT NEVER LOADS ITS LAZY IMAGE, AND THE DEADLOCK OUTLIVES THE
+// ANIMATION. Found on the live install on 2026-08-20, on /epic/ and
+// /newsletter/ at 390px, where a photograph was simply missing from the page.
+//
+// css/motion.css:23 gives [data-reveal="clip"] a start state of
+// clip-path: inset(0 0 14% 0). On these pages, with that start state present
+// from the first frame, the image is never requested at all: its <figure>
+// collapses to 0px and the section is short by exactly the photograph's
+// height. It does not resolve on scroll and it does not resolve on reveal:
+// measured with is-revealed set, opacity 1, transform none and clip-path
+// inset(0px), the figure was STILL 0 tall with the image still never asked
+// for. Isolated to clip-path specifically: killing the transform or the
+// opacity start state changes nothing, killing clip-path alone restores the
+// image and the section's height to the static build's number to the
+// hundredth of a pixel (epic-a 4334.98 -> 4591.48, mail-a 2520.11 -> 2976.11).
+//
+// THE MECHANISM IS NOT FULLY ISOLATED, AND THIS COMMENT WILL NOT PRETEND IT
+// IS. The obvious reading -- "Chromium refuses to fetch a lazy image inside a
+// clipped element" -- is WRONG as a general rule, and was written here before
+// it was tested. Two synthetic reproductions, one of them replicating this
+// page's own structure (flex container > widget div > img with aspect-ratio,
+// clip-path and scale on the container, image far below the fold, scrolled
+// to), both load the image perfectly. So clip-path alone does not do it;
+// something else on these pages is part of the chain and has not been found.
+// What IS established, repeatedly and on two pages: with the gate present,
+// removing clip-path restores the image, and the repair below restores it.
+// Do not build on the general rule. Do trust the two measurements.
+//
+// WHY IT ONLY BIT NOW, and why it is this file's job to fix. The start state
+// used to apply after first paint, because this script set the gate and this
+// script is deferred; the image had already been requested during the frames
+// before that. Once the gate moved into the server markup (the theme's
+// language_attributes filter, which is what makes the entrance animation
+// visible at all), the clip is in place from the first frame and the request
+// never happens. The motion layer creates the deadlock, so the motion layer
+// clears it, rather than pushing loading="eager" into markup that is shared
+// with the static build and signed off.
+//
+// FIRST STATEMENT IN THE FILE, before the gate is touched: this is a network
+// fetch, and every millisecond it starts earlier is one the image is not
+// missing for.
+for (const img of document.querySelectorAll('[data-reveal="clip"] img[loading="lazy"]')) {
+  img.loading = 'eager';
+}
+
 root.setAttribute('data-reveal', 'on');
 
 // Query from body, not document: <html> now carries data-reveal="on" itself

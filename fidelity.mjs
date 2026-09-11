@@ -60,6 +60,101 @@ export async function checkRobots(baseUrl) {
   return res.text();
 }
 
+/* A HOLDING DOMAIN, i.e. one of the hostnames WP Engine hands out before a
+   site has its own. Everything served on one of these gets `Disallow: /` from
+   WP Engine's own edge, above WordPress, which is why the blanket block on
+   this install is not a setting anywhere and not a file anywhere. Measured on
+   2026-08-27 rather than assumed, by elimination:
+     - there is no robots.txt in the webroot
+     - blog_public is 1
+     - All in One SEO's robots.txt editor is off with no rules
+     - do_robots(), captured in PHP on the install, emits the ordinary
+       wp-admin block plus WP Engine's Crawl-delay and two Sitemap lines,
+       and no blanket Disallow at all
+     - the homepage comes back with x-cacheable and x-cache headers and
+       /robots.txt comes back with neither, so /robots.txt is answered before
+       the request ever reaches WordPress
+   The practical consequence is the one that matters here: nothing has to be
+   remembered or flipped on launch day. The block goes away by itself when the
+   install stops answering on this hostname. */
+export const WPE_HOLDING_DOMAIN = /(^|\.)wpengine(?:powered)?\.com$/i;
+
+/* A line that blocks the entire site, as opposed to `Disallow: /wp-admin/`.
+   ANCHORED AT BOTH ENDS, and that is the whole difference between this and
+   the check it replaces. The previous gate asserted /Disallow:\s*\// with no
+   end anchor, which `Disallow: /wp-admin/` satisfies: it was structurally
+   present and semantically inert, and would have stayed green against a
+   fully crawlable site. */
+const BLANKET_DISALLOW = /^\s*Disallow:\s*\/\s*$/im;
+
+/* Everything wrong with this install's crawl policy, as a list of sentences.
+   Empty means nothing is wrong.
+
+   PURE, taking the three strings rather than fetching them, so the branch
+   that only matters on launch day can be exercised today with a synthetic
+   hostname. A tripwire nobody has ever seen fire is a tripwire nobody knows
+   is connected, and this project has already shipped one of those.
+
+   `generated` is what WordPress itself would put out (do_robots()); `served`
+   is what a crawler is actually handed. They are different documents today
+   and the same document after launch, which is exactly why both are checked.
+   `home` comes from the install's own `home` option and not from an
+   environment variable, because updating that option IS the launch: keying
+   the decision on it means the tripwire cannot be missed by forgetting to
+   update a variable in a shell profile. */
+export function robotsProblems({ home, generated, served }) {
+  const problems = [];
+  const host = new URL(home).hostname;
+  const holding = WPE_HOLDING_DOMAIN.test(host);
+
+  /* First, proof that `generated` is a robots.txt at all: an SSH call that
+     half-fails returns an empty string, and an empty string satisfies every
+     "must not contain" test below it.
+     THE PROOF IS THE User-agent LINE AND NOT THE wp-admin LINE, which is what
+     it was first written as and is worth recording. WordPress emits
+     "Disallow: /wp-admin/" ONLY in the blog_public=1 branch of do_robots();
+     with blog_public=0 the whole body is "User-agent: *" and "Disallow: /".
+     So keying the readability proof on wp-admin made it fire on the single
+     case the check below exists to catch, and reported "I could not read
+     this" for the one input that meant "the site has been closed to search".
+     A guard on the healthy shape of a document cannot sit above a check for
+     its unhealthy shape. */
+  if (!/^\s*User-agent:/im.test(generated)) {
+    problems.push(
+      'the robots.txt WordPress itself generates carries no "User-agent:" line at all, so it was not read '
+      + 'properly and nothing about what WordPress would serve has been checked'
+    );
+  } else if (BLANKET_DISALLOW.test(generated)) {
+    problems.push(
+      'WordPress itself now generates "Disallow: /", which means blog_public has been set to 0 -- the '
+      + '"Discourage search engines from indexing this site" tick box in Settings > Reading. On this hostname '
+      + 'that is invisible, because the edge already blocks everything; on the live domain it is the whole site '
+      + 'gone from search'
+    );
+  }
+
+  if (!/User-agent:\s*\*/i.test(served)) {
+    problems.push('the robots.txt actually served carries no "User-agent: *" group, so no rule in it applies to anybody');
+  }
+
+  const blocked = BLANKET_DISALLOW.test(served);
+  if (holding && !blocked) {
+    problems.push(
+      `${host} is a WP Engine holding domain and its robots.txt no longer blocks crawlers. Pages are published `
+      + 'during conversion and linked from nothing; that is only defensible while this block is in place'
+    );
+  }
+  if (!holding && blocked) {
+    problems.push(
+      `${host} is not a WP Engine holding domain, so this install has launched, and its robots.txt still says `
+      + '"Disallow: /". The whole site is closed to search. Check for a robots.txt file in the webroot, for '
+      + "blog_public being 0, and for All in One SEO's robots.txt editor having been switched on with rules"
+    );
+  }
+
+  return problems;
+}
+
 /* Shared by segments() (checkCopy's helper) and checkSections(), so the two
    can never drift on what counts as "not really on the page" the way they
    already did once: checkSections searched raw liveHtml while checkCopy

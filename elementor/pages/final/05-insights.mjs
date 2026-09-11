@@ -1,4 +1,6 @@
-import { container, heading, text, image, link, html } from '../../factory.mjs';
+import { container, text, image, link, html, heading, loopGrid, elementId } from '../../factory.mjs';
+import { TERMS } from '../../terms.mjs';
+import { TEMPLATE_IDS } from '../../loop-templates.mjs';
 import { photo } from './media.mjs';
 
 /* Source of truth: src/sections/05-insights.html.
@@ -62,49 +64,157 @@ const PODCAST_MARKUP = `<a class="em-podcast em-insights__podcast" href="/podcas
         </span>
       </a>`;
 
+/* Same helper and same trap as final/04-stories.mjs, whose comment carries the
+   full story: the `id` attribute must be a FRESH id per tag, not the tag name.
+   Two tags sharing an id in one template means one of them silently renders
+   nothing, which reads as "dynamic tags do not work here". */
+const dynamicTag = (name, tagSettings = {}) =>
+  `[elementor-tag id="${elementId()}" name="${name}" settings="${encodeURIComponent(JSON.stringify(tagSettings))}"]`;
+
+/* THE THREE ROWS ARE LOOP GRIDS NOW, 2026-09-09, and this is Empower's round-1
+   row 3: "auto-populating from the actual reports and releases".
+ *
+ * WHAT SHIPPED BEFORE. Three authored <article> rows whose titles read "Article
+ * headline — auto-populated from the blog", "Research title — auto-populated
+ * from EPIC" and "Community story title — auto-populated". That copy was a
+ * placeholder describing an intention, and it was live on Empower's homepage.
+ * The middle row's photograph was a LOREM IPSUM report mockup.
+ *
+ * WHAT THE CARD LOST, and neither loss is cosmetic:
+ *
+ *   THE EXCERPT. Banned on this install, proved twice on 04-stories: all these
+ *   posts have an empty post_excerpt so the tag renders nothing, and with
+ *   apply_to_post_content on, the generated excerpt arrives carrying a BYLINE.
+ *   That is how "Written by Ashley Green" ended up beside a photograph of
+ *   Amanda. 04-stories.mjs carries the full account and the route back.
+ *
+ *   THE READ TIME. "4 min read" was invented. Nothing on this install computes
+ *   one, so a hard-coded number sitting beside a queried title is the same
+ *   defect class Empower reported in round 1: an authored value next to content
+ *   that changes underneath it. The post's real DATE takes its place, which
+ *   keeps the meta line's weight and is a fact rather than a guess.
+ *
+ * WHY THREE TEMPLATES RATHER THAN ONE. The badge is the row's own label and
+ * differs per row, and a Loop Item template renders one shape. content-a set
+ * the precedent with four (one per band). The ids are read from
+ * loop-templates.mjs, never typed: an elementor_library id belongs to one
+ * install, and a Loop Grid pointing at the wrong template renders the wrong
+ * card with no error at all.
+ *
+ * ARTICLES IS EMPOWER NEWS, matching content-a's Articles band rather than
+ * inventing a second definition of "article" for the same site. That band's
+ * own comment carries the measurement, including that Bill Summaries is a
+ * CHILD of Empower News and so arrives with it.
+ *
+ * THE STORY ROW IS OFFSET BY ONE. The stories band above this section already
+ * shows the newest Community Story, so without the offset the same post and the
+ * same photograph appear twice on one page. Offset rather than an explicit
+ * exclusion, so the two loops stay independent: coupling them would mean both
+ * had to agree at deploy time about which post the other was showing.
+ *
+ * NO ignore_sticky_posts. Checked rather than assumed: post 15691 is sticky and
+ * from 2022, and content-a's Articles band renders July 2026 first, so
+ * Elementor's own post query already ignores sticky. */
 const ROWS = [
   {
-    photo: 'child-classroom-tablet',
+    key: 'insightsArticle',
     badge: 'Article',
-    readTime: '4 min read',
-    title: 'Article headline — auto-populated from the blog',
-    excerpt: 'Excerpt pulled from the article. Tagged by issue area so it can feed the solution pages too.',
-    href: '/all-content',
+    modifier: 'em-insights__row--first',
+    query: () => ({
+      post_query_include: 'terms',
+      post_query_include_term_ids: [String(TERMS.empower)],
+    }),
   },
   {
-    photo: 'esa-email-mockup',
+    key: 'insightsResearch',
     badge: 'Research',
-    readTime: '6 min read',
-    title: 'Research title — auto-populated from EPIC',
-    excerpt: 'Summary of the report, with a link through to the full research page.',
-    href: '/research',
+    modifier: '',
+    query: () => ({
+      post_query_include: 'terms',
+      post_query_include_term_ids: [String(TERMS['research-reports'])],
+    }),
   },
   {
-    photo: 'classroom-students',
+    key: 'insightsStory',
     badge: 'Community Story',
-    readTime: '3 min read',
-    title: 'Community story title — auto-populated',
-    excerpt: 'A Mississippian in their own words, tagged to the solution their story speaks to.',
-    href: '/community-stories',
+    modifier: 'em-insights__row--last',
+    query: () => ({
+      post_query_include: 'terms',
+      post_query_include_term_ids: [String(TERMS['community-stories'])],
+      post_query_offset: 1,
+    }),
   },
 ];
 
+/* One row's Loop Item template. `_element_cache: 'yes'` for 04-stories' reason:
+   the container itself carries no dynamic setting, so without it Elementor
+   serves the same cached markup for every iteration.
+
+   THE TITLE IS A heading() WIDGET, which is an exception to this build's
+   "text() carrying a bare element, never heading()" rule and earns it. That
+   rule exists so authored markup travels intact; there is no authored markup
+   here, the title comes from the query. A text() widget with a dynamic editor
+   renders the title in a bare div, which would drop the <h3> and with it the
+   document outline. heading() keeps the real element and the class. */
+export function loopItem(key) {
+  const spec = ROWS.find(r => r.key === key);
+  if (!spec) throw new Error(`loopItem: no insights row called '${key}'`);
+  return [
+    container(
+      {
+        tag: 'article',
+        cssClass: `em-insights__row ${spec.modifier}`.trim(),
+        content_width: 'full',
+        _attributes: 'data-reveal|rise',
+        _element_cache: 'yes',
+      },
+      [
+        image({ id: '', url: '', __dynamic__: { image: dynamicTag('post-featured-image') } }),
+        container({ content_width: 'full' }, [
+          /* The meta line is a CONTAINER now rather than one html() widget,
+             because half of it is authored (the badge names the row's own
+             query) and half comes from the post. Elementor replaces a whole
+             setting through __dynamic__, so the two cannot share a widget.
+             components.css:159 already makes .em-article__meta a flex row, so
+             the two widget wrappers lay out as the span and the text did. */
+          container({ cssClass: 'em-article__meta', content_width: 'full' }, [
+            html({ markup: `<span class="em-badge em-badge--outline em-badge--sm">${spec.badge}</span>` }),
+            text({ markup: '', __dynamic__: { editor: dynamicTag('post-date') } }),
+          ]),
+          heading({
+            text: '',
+            tag: 'h3',
+            cssClass: 'em-article__title',
+            __dynamic__: { title: dynamicTag('post-title') },
+          }),
+          link({
+            label: 'Read more',
+            href: '',
+            cssClass: 'em-article__more',
+            __dynamic__: { link: dynamicTag('post-url') },
+          }),
+        ]),
+      ],
+    ),
+  ];
+}
+
+export const LOOP_ITEM_KEYS = ROWS.map(r => r.key);
+
 const row = (r) =>
-  container(
-    { tag: 'article', cssClass: 'em-insights__row', content_width: 'full', _attributes: 'data-reveal|rise' },
-    [
-      image({ ...photo(r.photo) }),
-      container({ content_width: 'full' }, [
-        html({
-          cssClass: 'em-article__meta',
-          markup: `<span class="em-badge em-badge--outline em-badge--sm">${r.badge}</span> ${r.readTime}`,
-        }),
-        heading({ text: r.title, tag: 'h3', cssClass: 'em-article__title' }),
-        text({ markup: `<p>${r.excerpt}</p>`, cssClass: 'em-article__excerpt' }),
-        html({ markup: `<a class="em-article__more" href="${r.href}">Read more →</a>` }),
-      ]),
-    ],
-  );
+  loopGrid({
+    templateId: TEMPLATE_IDS[r.key],
+    cssClass: 'em-insights__loop',
+    columns: 1,
+    columns_tablet: 1,
+    columns_mobile: 1,
+    posts_per_page: 1,
+    post_query_post_type: 'post',
+    ...r.query(),
+    post_query_orderby: 'post_date',
+    post_query_order: 'desc',
+    _attributes: 'data-cms|loop\ndata-reveal-group|',
+  });
 
 export function section() {
   return container(
@@ -119,17 +229,14 @@ export function section() {
         container(
           { cssClass: 'em-insights__aside', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
-            text({ markup: `<p>${EYEBROW}</p>`, cssClass: 'em-eyebrow', _attributes: 'data-reveal|rise' }),
-            heading({
-              text: HEADLINE,
-              tag: 'h2',
-              _element_id: 'insights-title',
+            text({ markup: `<p class="em-eyebrow">${EYEBROW}</p>`, _attributes: 'data-reveal|rise' }),
+            text({
+              markup: `<h2 id="insights-title">${HEADLINE}</h2>`,
               _attributes: 'data-reveal|rise',
             }),
             container({ cssClass: 'em-rule', content_width: 'full', _attributes: 'aria-hidden|true' }),
             text({
-              markup: `<p>${LEDE}</p>`,
-              cssClass: 'em-insights__lede',
+              markup: `<p class="em-insights__lede">${LEDE}</p>`,
               _attributes: 'data-reveal|rise',
             }),
             link({

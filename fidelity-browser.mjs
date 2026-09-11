@@ -293,15 +293,26 @@ export async function revealInventory(urls, { width = 1440, height = 900 } = {})
         await page.goto(url, { waitUntil: 'load' });
         out.push({ url, ...await page.evaluate(() => {
           const main = document.querySelector('main');
-          if (!main) return { reveal: null, group: null, entrance: null, inLoop: null, loops: null };
+          if (!main) return { reveal: null, group: null, entrance: null, inLoop: null, loops: null, inRendered: null, renderedRegions: null };
           const inLoop = (el) => !!el.closest('.elementor-loop-container');
+          /* SERVER-RENDERED SUBTREES ARE EXCLUDED FOR THE SAME REASON LOOPS ARE.
+             A shortcode writes its attributes at request time, so they are not
+             in _elementor_data and the authored tree cannot predict how many
+             there will be. `closest` matches the element itself as well as its
+             descendants, which is what catches both the group on the wrapper
+             and the reveals on the rows. The marker is written by the theme
+             (inc/solution-latest.php explains why it is not `data-cms="loop"`). */
+          const rendered = (el) => !!el.closest('[data-cms-rendered]');
+          const out = (el) => inLoop(el) || rendered(el);
           const all = [...main.querySelectorAll('[data-reveal]')];
           return {
-            reveal: all.filter((el) => !inLoop(el)).length,
-            group: [...main.querySelectorAll('[data-reveal-group]')].filter((el) => !inLoop(el)).length,
-            entrance: [...main.querySelectorAll('[data-reveal-entrance]')].filter((el) => !inLoop(el)).length,
+            reveal: all.filter((el) => !out(el)).length,
+            group: [...main.querySelectorAll('[data-reveal-group]')].filter((el) => !out(el)).length,
+            entrance: [...main.querySelectorAll('[data-reveal-entrance]')].filter((el) => !out(el)).length,
             inLoop: all.filter(inLoop).length,
             loops: main.querySelectorAll('.elementor-loop-container').length,
+            inRendered: all.filter(rendered).length,
+            renderedRegions: main.querySelectorAll('[data-cms-rendered]').length,
           };
         }) });
       } finally {
@@ -1938,7 +1949,33 @@ export async function screenshots(url, dir) {
  * every live <img> and on no static one; excluding them makes an <img> reduce
  * to the same token set on both sides, which is none, so it is simply not keyed
  * here. controlBoxes() is the instrument that measures images. */
-const PLATFORM_CLASS = /^(e-|elementor|swiper|animated|mailmunch|attachment-|size-|wp-|post|type-|status-|format-|hentry$|category-|tag-)/;
+/* GRAVITY FORMS AND STRIPE, added 2026-09-10 when a form first appeared on a
+ * page inside PAGE_REGISTER. contact, mail-a and amb-a all carry forms and all
+ * three are in EXCLUDED_PAGES, so this gap sat unmeasured until form 4 went on
+ * the converted /donate/ and layoutInvariants reported 105 live-only keys, every
+ * one of them markup this build did not write.
+ *
+ * This is a SUBTRACTION, not an exemption, and the difference is the point: an
+ * exemption forgives a difference on an element still being compared, so a list
+ * of 105 forgiven keys would also forgive a real defect that happened to land on
+ * one of them. These elements were never this build's to compare.
+ *
+ * `ginput_` and `gf_` carry their underscore because `ginput` and `gf` alone are
+ * two and four characters and would swallow any future build class starting with
+ * them; `gform` and `gfield` do not need one because they already cover both the
+ * underscore and hyphen families Gravity Forms emits (gform_wrapper and
+ * gform-field-label, gfield_label and gfield--type-radio). `gravity-theme` is
+ * anchored because it is a whole token rather than a family.
+ *
+ * COLLISION CHECKED BEFORE WIDENING, the way the `^e-` note above records:
+ * `grep -ohE '\.(gf|gform|gfield|ginput|gchoice|StripeElement)[a-zA-Z0-9_-]*'
+ * css/*.css components/*.css tokens/*.css` returns nothing. `em-gform`, the one
+ * class this build puts on a form's own container, begins `em-` and is
+ * deliberately untouched: it is this build's hook and must stay compared.
+ * Asserted both ways in test-elementor.mjs, "PLATFORM_CLASS drops Gravity
+ * Forms' own markup and keeps this build's". */
+const PLATFORM_CLASS = /^(e-|elementor|swiper|animated|mailmunch|attachment-|size-|wp-|post|type-|status-|format-|hentry$|category-|tag-|gform|gfield|ginput_|gchoice|gf_|gravity-theme$|StripeElement)/;
+export const PLATFORM_CLASS_SOURCE = PLATFORM_CLASS.source;
 const STATE_CLASS = /^(is-|has-|js-)/;
 
 export async function layoutInvariants(url, { width = 1440, height = 900 } = {}) {
@@ -1969,6 +2006,26 @@ export async function layoutInvariants(url, { width = 1440, height = 900 } = {})
       for (const el of main.querySelectorAll('*')) {
         const cs = getComputedStyle(el);
         if (cs.display === 'none') continue;
+        /* EVERYTHING INSIDE A GRAVITY FORM IS THE PLUGIN'S, not this build's,
+           and it is skipped structurally rather than by class name. The
+           PLATFORM_CLASS widening above catches the `gform*`/`gfield*` families,
+           but Gravity Forms also emits a legacy set with no prefix at all:
+           `medium`, `top_label`, `name_first`, `has_city`, `no_middle_name`,
+           `validation_below`. Those are ordinary English words, and adding them
+           to a prefix regex would sooner or later stop comparing a real element
+           of this build's that happened to share one.
+
+           `.gform_wrapper` is the plugin's own outermost node, so this skips its
+           descendants and nothing else. The wrapper itself is still keyed and
+           still dropped by PLATFORM_CLASS, and `em-gform` sits OUTSIDE the
+           wrapper (on the section, see elementor/pages/give-c/02-form.mjs note
+           4) so this build's own hook stays compared on both sides.
+
+           Same technique controlBoxes() already uses for link() wrappers
+           (`el.closest('.elementor-widget-button')`) and the same reason: some
+           things are better excluded by where they are than by what they are
+           called. */
+        if (el.closest('.gform_wrapper')) continue;
         const tokens = [...el.classList]
           .filter((c) => !PLATFORM.test(c) && !STATE.test(c))
           .sort();

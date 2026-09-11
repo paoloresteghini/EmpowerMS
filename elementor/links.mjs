@@ -77,7 +77,7 @@ const BY_HREF = new Map(Object.entries({
   '/solutions/safety': PAGE('safety'),
   '/quality-education': PAGE('education'),
   '/meaningful-work': PAGE('work'),
-  '/public-safety': PAGE('safety'),
+  '/safe-communities': PAGE('safety'),
   '/ambassadors': PAGE('amb-a'),
   '/donate': PAGE('give-c'),
   '/donate/': PAGE('give-c'),

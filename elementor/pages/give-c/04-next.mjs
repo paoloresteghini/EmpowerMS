@@ -71,7 +71,7 @@ const BODY = 'Together, we’re creating a future where more children can succee
 /* Copied from dist/give-c.html:294, attribute order included. The href is the
    in-page jump to `.gvc-give`, whose id 01-hero.mjs sets through _element_id. */
 const ACT = '<p class="gvc-next__act">'
-  + '<a class="em-btn em-btn--inverse em-btn--lg" href="#give">Donate Today</a>'
+  + '<a class="em-btn em-btn--inverse em-btn--lg" href="#donate-form">Donate Today</a>'
   + '</p>';
 
 export function section() {

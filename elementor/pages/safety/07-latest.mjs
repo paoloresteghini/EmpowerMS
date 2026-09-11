@@ -69,7 +69,7 @@ import { container, text, html } from '../../factory.mjs';
 
    5. `id="latest-title"` is authored in the markup, per 01-hero.mjs note 5. */
 
-const HEAD = 'The Latest on Public Safety';
+const HEAD = 'The Latest on Safe Communities';
 const LEDE = 'Explore the latest research, ideas, and policies shaping public safety, effective '
   + 'justice, and stronger communities across Mississippi.';
 

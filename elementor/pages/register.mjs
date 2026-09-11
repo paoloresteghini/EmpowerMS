@@ -563,6 +563,304 @@ export const PAGE_REGISTER = [
      <h2>, 2 <h3> and 13 <p>; outside it 2 <h3> and 4 <p>, the same six-element
      chrome every page in this build carries.
 
+     RE-COUNTED 2026-09-11, twice over: the donation form arrived on the page
+     on the 10th and the gift panel was removed on the 11th. The static file now
+     holds 23, being 1 <h1>, 3 <h2> and 13 <p> inside <main> plus the same 6
+     outside it, so this page's own content is 17 rather than the 19 it was
+     built with. The panel took four headings and several paragraphs with it;
+     the form card gave back one <h2> and the 501(c)(3) line it inherited.
+
+     BOTH FLOORS BELOW ARE MINIMUMS AND BOTH STILL CLEAR, which is worth
+     stating because the count went DOWN this time rather than up. minShared:14
+     demands at least 15 of 25 match; against 23 census elements it demands the
+     same 15, and the measured shared set is comfortably above it. If this page
+     loses another section, re-measure rather than assume.
+
+     TWO KEYS ARE STATIC-ONLY BY DESIGN and named in STATIC_ONLY_EXEMPTIONS: the
+     dashed marker's caption and note. The live page renders Gravity Form 4
+     where the static file draws the marker, and Gravity Forms' own markup is
+     not keyed at all (PLATFORM_CLASS, plus a structural skip of everything
+     inside .gform_wrapper), so the two sides compare cleanly everywhere else.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, not as a percentage of
+     the census total, following the correction the Task 9 review made to
+     team-a's entry above: a raw percentage of the total is not comparable
+     across pages, because the fixed 6-element chrome share is counted into
+     every page's total and is a different fraction of each one. An earlier
+     draft of this comment made exactly that uncomparable comparison
+     (16/30 against the other entries' totals) and is replaced here rather
+     than left to be re-derived.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs
+     (cited by its text rather than by a line number: this is the third time
+     today an unrelated edit to that file moved the line and invalidated the
+     citation, and an anchor that the file's own content carries cannot drift)
+     is strict, so 16 means at least 17 of 30 must match by text. Six of
+     those come from the chrome, so the floor demands 11 of this page's own
+     24. Measured against the same fraction on the other five entries
+     (final 35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a
+     8/19 42%, capitol-a 4/10 40%), 11/24 is 46%, which puts this page
+     between what-we-do-a and solutions-b rather than at either extreme.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/who-we-are-a.html alone, at both 1440 and 390: 69 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0. 39 keeps the same proportion as the
+     other entries (roughly 56-57%: at least 40 of 69 must match), and is
+     the same pair solutions-b's entry uses for the same 69.
+
+     __unsettled__ IS "unsettled" AT 390 ON BOTH SIDES, and that is a
+     property of this page rather than a flake, so it is recorded here
+     rather than left for the next person to re-diagnose. Every other
+     registered page reports "settled" at both widths. Here
+     css/who-we-are-a.css:260 gives the third people frame `display:none`
+     below 640px, and that frame carries `data-reveal="clip"`: an element
+     with no rendered box can never intersect, so js/reveal.js's
+     IntersectionObserver never fires for it and it never gains
+     .is-revealed, which is what settleReveal() waits on. The hero's own
+     `--tall` figure is hidden at the same breakpoint (:258) and does NOT
+     cause this, because it sits inside the `[data-reveal-entrance]` scope
+     and js/reveal.js:51 reveals that set unconditionally on load. Both
+     sides render the same rule, so both report the same marker and the key
+     compares equal; the cost is that each 390 run spends settleReveal()'s
+     full 10s wait before returning.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every
+     other entry documents, re-measured for this page: not minBoxes.
+     Counted directly from dist/who-we-are-a.html outside its own <main>
+     (the header and footer markup, identical across every page in this
+     build): 46 <a>, 12 <button>, 2 <img>, 60 of this page's 69 box-sweep
+     elements, leaving only 9 that belong to this page's own content (6
+     photographs and 3 anchors: the hero CTA, the hero's "Read our story"
+     jump, and the people section's CTA). A live page that failed to load
+     would still share 60 keys against minBoxes' 39 and the box sweep alone
+     could pass green. minShared is the real load-failure gate here too:
+     only 6 of the 30 census elements live in the header and footer
+     (counted the same way, outside <main>: 2 <h3>, 4 <p>), a 404 shares 6,
+     and 6 is under the 17 that minShared:16 demands, so the suite goes red
+     on the census, not the box sweep. The margin is the widest of any page
+     so far, because this page carries 24 census elements of its own. */
+  {
+    name: 'who-we-are-a',
+    envVar: 'WHO_WE_ARE_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/who-we-are/',
+    staticFile: 'dist/who-we-are-a.html',
+    minShared: 16,
+    minBoxes: 39,
+  },
+  /* mail-a: Task 12, the sixth page built class-in-markup from the start,
+     and the build's first form page. Its own floors, measured 2026-08-18
+     against dist/mail-a.html alone (no live side, served locally the same
+     way the tests do), not copied from any other entry.
+
+     THE TIGHTEST PAGE IN THE BUILD ON CENSUS HEADROOM, which is why the
+     floor is reasoned rather than scaled: census() finds 19 elements
+     matching h1,h2,h3,h4,h5,p,blockquote, and only 13 of them are this
+     page's own. Counted directly from the file: inside <main> 1 <h1>, 2
+     <h2> and 10 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the
+     correction the Task 9 review made to team-a's entry: a raw percentage
+     of the census total is not comparable across pages, because the fixed
+     6-element chrome share is a different fraction of each page's total,
+     and on this page it is nearly a third of it.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs
+     (cited by its text rather than by a line number, the convention
+     who-we-are-a's entry established after three unrelated edits moved that
+     line in one day) is strict, so 11 means at least 12 of 19 must match by
+     text. Six come from the chrome, so the floor demands 6 of this page's
+     own 13. Measured against the same fraction on the other six entries
+     (final 35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a
+     8/19 42%, capitol-a 4/10 40%, who-we-are-a 11/24 46%), 6/13 is 46%,
+     which puts this page level with who-we-are-a and mid-range overall.
+
+     ALL 19 ARE ACHIEVABLE, and that is a build decision rather than a
+     given. Recipe section 7 predicted this page would lose the census key
+     `p|Back to the sign-up form` to a container-plus-link(); 03-receive.mjs
+     note 2 records why that element is an html() widget carrying its real
+     <p> and <a> instead, and the effect here is that no census key and no
+     box-sweep key is lost on this page at all.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/mail-a.html alone, at both 1440 and 390: 68 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 38
+     keeps the same proportion as the other entries (roughly 56-57%: at
+     least 39 of 68 must match).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every
+     other entry documents, re-measured for this page: not minBoxes.
+     Counted directly from dist/mail-a.html outside its own <main>: 46 <a>,
+     12 <button>, 2 <img>, 60 of this page's 68 box-sweep elements, leaving
+     8 that belong to this page's own content (4 <input>, the submit
+     <button>, 2 photographs and the "Back to the sign-up form" anchor). A
+     live page that failed to load would still share 60 keys against
+     minBoxes' 38 and the box sweep alone could pass green. minShared is the
+     real load-failure gate here too: a 404 shares the 6 chrome census
+     elements, and 6 is under the 12 that minShared:11 demands, so the suite
+     goes red on the census, not the box sweep. */
+  /* amb-a: Task 13, the seventh page built class-in-markup from the start,
+     and the build's second form page. Its own floors, measured 2026-08-18
+     against dist/amb-a.html alone (no live side, served locally the same way
+     the tests do), not copied from any other entry.
+
+     census() finds 21 elements matching h1,h2,h3,h4,h5,p,blockquote, of
+     which 6 are the shared header and footer chrome and 15 are this page's
+     own. Counted directly from the file: inside <main> 1 <h1>, 3 <h2> and
+     11 <p>; outside it 2 <h3> and 4 <p>, the same six-element chrome every
+     page in this build carries.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited
+     by its text rather than by a line number, the convention who-we-are-a's
+     entry established after three unrelated edits moved that line in one
+     day) is strict, so 12 means at least 13 of 21 must match by text. Six
+     come from the chrome, so the floor demands 7 of this page's own 15.
+     Measured against the same fraction on the other seven entries (final
+     35/57 61%, solutions-b 9/18 50%, what-we-do-a 5/11 45%, team-a 8/19 42%,
+     capitol-a 4/10 40%, who-we-are-a 11/24 46%, mail-a 6/13 46%), 7/15 is
+     47%, which puts this page mid-range rather than at either extreme.
+
+     ALL 21 ARE ACHIEVABLE, and that is a build decision rather than a given.
+     Recipe section 7 predicted this page would lose the census key
+     `p|Join Our Ambassador Network` to a container-plus-link() for the hero
+     call to action; 01-hero.mjs note 1 records why that paragraph is an
+     html() widget carrying its real <p> and <a> instead. The effect is that
+     no census key and no box-sweep key is lost on this page at all, and it
+     is measured: shared is 21 of 21 at both widths.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/amb-a.html alone, at both 1440 and 390: 76 elements
+     (a,button,input,select,textarea,img with a usable identity) at both
+     widths, __excluded_count__ 0, __unsettled__ "settled" on every run. 43
+     keeps the same proportion as the other entries (roughly 56-57%: at least
+     44 of 76 must match).
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted
+     directly from dist/amb-a.html outside its own <main>: 46 <a>, 12
+     <button>, 2 <img>, 60 of this page's 76 box-sweep elements, leaving 16
+     that belong to this page's own content (8 <input>, being the four text
+     fields and the four checkboxes, the submit <button>, 5 photographs, the
+     <textarea> and the hero's "Join Our Ambassador Network" anchor). This is
+     the largest own-content share of any page in the register, and it is
+     still not enough: a live page that failed to load would share 60 keys
+     against minBoxes' 43 and the box sweep alone could pass green. minShared
+     is the real load-failure gate here too: a 404 shares the 6 chrome census
+     elements, and 6 is under the 13 that minShared:12 demands, so the suite
+     goes red on the census, not the box sweep. */
+  /* epic-a: Task 14, the eighth page built class-in-markup from the start, and
+     the build's first converted scroll-driven animation. Its own floors,
+     measured 2026-08-18 against dist/epic-a.html alone (no live side, served
+     locally the same way the tests do), not copied from any other entry.
+
+     census() finds 31 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 25 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>, 3
+     <h2>, 6 <h3> and 15 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries. This is the largest own-content
+     census of any page in the register after the homepage.
+
+     STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
+     the Task 9 review made to team-a's entry: a raw percentage of the census
+     total is not comparable across pages, because the fixed 6-element chrome
+     share is a different fraction of each page's total.
+
+     `assert.ok(shared.length > page.minShared)` in test-elementor.mjs (cited by
+     its text rather than by a line number, the convention who-we-are-a's entry
+     established after three unrelated edits moved that line in one day) is
+     strict, so 17 means at least 18 of 31 must match by text. Six come from the
+     chrome, so the floor demands 12 of this page's own 25. Measured against the
+     same fraction on the other eight entries (final 35/57 61%, solutions-b 9/18
+     50%, what-we-do-a 5/11 45%, team-a 8/19 42%, capitol-a 4/10 40%,
+     who-we-are-a 11/24 46%, mail-a 6/13 46%, amb-a 7/15 47%), 12/25 is 48%,
+     which puts this page mid-range rather than at either extreme.
+
+     30 OF THE 31 ARE ACHIEVABLE, NOT 31, and the one that is not is a build
+     decision recorded rather than a surprise. `.epa-research__cta` is a `<p>`
+     wrapping a CTA, which recipe section 7 converts to a container holding a
+     link(), so `p|View Research & Reports` exists on the static side and not on
+     the live one. 04-research.mjs note 5 argues that choice and records the
+     second key it costs. Measured: shared is 30 of 31 at both widths, and 30 is
+     comfortably above the 18 this floor demands.
+
+     minBoxes: measured the same way with controlBoxes() against
+     dist/epic-a.html alone, at both 1440 and 390: 74 elements
+     (a,button,input,select,textarea,img with a usable identity) at both widths,
+     __excluded_count__ 0, __unsettled__ "settled" on every run. 42 keeps the
+     same proportion as the other entries (roughly 56-58%: at least 43 of 74
+     must match).
+
+     69 OF THE 74 ARE ACHIEVABLE, and the five that are not split three to two.
+     THREE are the shared chrome keys every converted page in this build loses
+     to the Elementor header theme part (`a|Skip to content`,
+     `a|Empower Mississippi home`, `img|logo-reversed.png`); they are not this
+     page's doing and they are recorded here because no earlier entry names
+     them and the next person measuring a page will otherwise chase them. TWO
+     are this page's own link() widgets, `a|Dive Into the Resear` and
+     `a|View Research & Repo`, which controlBoxes() skips by design because they
+     sit inside `.elementor-widget-button`. Measured: shared is 69 of 74 at both
+     widths.
+
+     WHICH FLOOR ACTUALLY CATCHES A DEAD PAGE, the same asymmetry every other
+     entry documents, re-measured for this page: not minBoxes. Counted directly
+     from dist/epic-a.html outside its own <main>: 46 <a>, 12 <button>, 2 <img>,
+     60 of this page's 74 box-sweep elements, leaving 14 that belong to this
+     page's own content (9 anchors, being the hero CTA, the hero aside, the
+     three focus-area links, the three most-recent-report links and the closing
+     CTA, plus 5 images, being the EPIC lockup, the What We Do figure and the
+     three research panels). A live page that failed to load would still share
+     around 57 keys against minBoxes' 42 and the box sweep alone could pass
+     green. minShared is the real load-failure gate here too: a 404 shares the 6
+     chrome census elements, and 6 is under the 18 that minShared:17 demands, so
+     the suite goes red on the census, not the box sweep. */
+  {
+    name: 'epic-a',
+    envVar: 'EPIC_A_URL',
+    exampleUrl: 'https://empv2.wpenginepowered.com/epic/',
+    staticFile: 'dist/epic-a.html',
+    minShared: 17,
+    minBoxes: 42,
+  },
+  /* give-c: Task 15, the ninth page built class-in-markup from the start, and
+     the build's donate page. Its own floors, measured 2026-08-18 against
+     dist/give-c.html alone (no live side, served locally the same way the tests
+     do), not copied from any other entry.
+
+     census() finds 25 elements matching h1,h2,h3,h4,h5,p,blockquote at both
+     1440 and 390, of which 6 are the shared header and footer chrome and 19 are
+     this page's own. Counted directly from the file: inside <main> 1 <h1>, 3
+     <h2>, 2 <h3> and 13 <p>; outside it 2 <h3> and 4 <p>, the same six-element
+     chrome every page in this build carries.
+
+     RE-COUNTED 2026-09-10, when the donation form went onto the page: the
+     static file now holds 28, being 1 <h1>, 4 <h2>, 2 <h3> and 15 <p> inside
+     <main> plus the same 6 outside it. The three new ones are the form
+     section's own <h2> ("Complete your gift") and the two <p> inside the
+     dashed marker.
+
+     THE H2 IS SHARED AND THE TWO MARKER PARAGRAPHS ARE NOT, which is worth
+     stating because it is the one place on this page where the two sides
+     legitimately differ. The live page renders Gravity Form 4 where the static
+     file draws a marker: the heading exists on both sides, the marker's own
+     caption and note exist only on the static one. Both floors below are
+     minimums, so a page that gained one shared key and two static-only ones
+     clears them by more than it did before, not less; the keys themselves are
+     named in STATIC_ONLY_EXEMPTIONS (fidelity-deferred.mjs) for the
+     layout-invariant instrument, which compares sets rather than counting.
+
+     GRAVITY FORMS' OWN MARKUP IS NOT KEYED AT ALL, by PLATFORM_CLASS, the same
+     subtraction that already drops Elementor's and Mailmunch's. Without it the
+     live page carries 105 keys the static one cannot have. That widening was
+     made for this page and applies to every page; see the note beside
+     PLATFORM_CLASS in fidelity-browser.mjs.
+
      STATED AS A FRACTION OF THE PAGE'S OWN CONTENT, following the correction
      the Task 9 review made to team-a's entry: a raw percentage of the census
      total is not comparable across pages, because the fixed 6-element chrome
@@ -813,7 +1111,7 @@ export const PAGE_REGISTER = [
   {
     name: 'safety',
     envVar: 'SAFETY_URL',
-    exampleUrl: 'https://empv2.wpenginepowered.com/public-safety/',
+    exampleUrl: 'https://empv2.wpenginepowered.com/safe-communities/',
     staticFile: 'dist/safety.html',
     minShared: 26,
     minBoxes: 39,

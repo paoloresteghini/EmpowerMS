@@ -4315,10 +4315,10 @@
  *
  * The give-c half of this block, unchanged, follows.
  * ---------------------------------------------------------------------------
- * `css/give-c.css:72-75` is `.gvc-hero__under p{margin:0 0 var(--space-5);
+ * `css/give-c.css` is `.gvc-hero__words p{margin:0 0 var(--space-5);
  * max-width:56ch;font-size:var(--fs-body);line-height:var(--lh-body);
  * color:var(--text-inverse-muted)}` and `:77` is
- * `.gvc-hero__under p:last-child{margin-bottom:0}`, written for the last of
+ * `.gvc-hero__words p:last-child{margin-bottom:0}`, written for the last of
  * two real siblings. `:184-187` and `:188` are the identical pair on
  * `.gvc-matters__say` over three, differing only in `color`. Converted, each
  * paragraph is the only child of its own text-editor widget, so each satisfies
@@ -4341,7 +4341,7 @@
  *     p|Your generosity helps create the conditi   marginBottom 0px / 20px
  *     p|When you give, you become part of creati   marginBottom 20px / 0px
  *
- * THREE, NOT FOUR, AND THE FOURTH RUNS THE OTHER WAY. `.gvc-hero__under`'s
+ * THREE, NOT FOUR, AND THE FOURTH RUNS THE OTHER WAY. `.gvc-hero__words`'s
  * second paragraph is the block's genuinely last one, so the static build
  * zeroes it and the converted page should too. It measures 20px LIVE, because
  * MailMunch injects `<div class='mailmunch-forms-in-post-middle'
@@ -4372,7 +4372,8 @@
  *
  * Checked for @media interference before writing: css/give-c.css's three media
  * blocks open at :241, :246 and :259, and the only line in any of them naming
- * either block is :255, `.gvc-hero__say,.gvc-hero__under{grid-column:1}`, which
+ * either block was `.gvc-hero__say,.gvc-hero__under{grid-column:1}` (removed
+ * 2026-09-11 with the panel layout), which
  * declares no margin and reaches no paragraph.
  *
  * After: all five paragraphs match their static counterparts at 1440 and 390.
@@ -4420,7 +4421,7 @@
  *
  * After: both paragraphs match their static counterparts at 1440 and 390, and
  * `main` matches at 390. */
-.elementor .gvc-hero__under .elementor-widget-text-editor p,
+.elementor .gvc-hero__words .elementor-widget-text-editor p,
 .elementor .gvc-matters__say .elementor-widget-text-editor p,
 .elementor .sol-problem__copy .elementor-widget-text-editor p,
 .elementor .sol-grid__intro .elementor-widget-text-editor p,
@@ -4433,7 +4434,7 @@
   margin-block-end:var(--space-6); /* 24px, css/solution.css:137 and :213, the
     named lede rule that p:last-child also beats */
 }
-.elementor .gvc-hero__under > .elementor-widget-text-editor:last-child p,
+.elementor .gvc-hero__words > .elementor-widget-text-editor:last-child p,
 .elementor .gvc-matters__say > .elementor-widget-text-editor:last-child p,
 .elementor .sol-problem__copy > .elementor-widget-text-editor:last-child p,
 .elementor .sol-grid__intro > .elementor-widget-text-editor:last-child p,
@@ -4443,164 +4444,43 @@
     happens to be the last node inside one */
 }
 
-/* ---------- 29. give-c: a margin that collapsed away in the static build is
- *                paid in full once the gift panel is a flex container ------
- * NOT IN THIS PAGE'S PRICE. The same family as block A2 and as the footer's
- * `.em-footer__social` rule: `.gvc-give` declares no `display` of its own
- * (css/give-c.css:83-88 gives it only a background, a radius, padding and a
- * shadow), so Elementor makes it a flex column and adjacent siblings' margins
- * stop collapsing.
+/* ---------- 29 and 30. give-c: REMOVED 2026-09-11, with the panel they
+ *                repaired ---------------------------------------------------
+ * Both blocks existed to fix Elementor's treatment of the gift panel in
+ * give-c's hero: 29 took a surplus off `.gvc-give__act`'s top margin, because
+ * `.gvc-give` became a flex column and its children's margins stopped
+ * collapsing; 30 put back the `box-shadow` that `.elementor a{box-shadow:none}`
+ * removed from `.gvc-give__act .em-btn`, which was the first and only anchor in
+ * the converted build to carry `.em-btn--primary` directly.
  *
- * The panel's six children were walked pairwise before the page was deployed,
- * and exactly ONE pair collides:
+ * The panel was removed on 2026-09-11 when Gravity Form 4 went onto the page:
+ * it was a second set of controls for the questions the form itself asks. Both
+ * rules named `.gvc-give`, which appears nowhere else in this build, so both
+ * became dead the moment it did.
  *
- *     h2.gvc-give__title  mb clamp(20px,2.4vw,28px) -> .gvc-field   mt 0   no
- *     .gvc-field          mb clamp(20px,2.4vw,28px) -> .gvc-field   mt 0   no
- *     .gvc-field          mb clamp(20px,2.4vw,28px) -> .gvc-give__act
- *                                                      mt clamp(24px,3vw,32px)
- *                                                                         YES
- *     .gvc-give__act      mb 0 -> .gvc-give__hand   mt var(--space-4)      no
- *     .gvc-give__hand     mb 0 -> .gvc-give__legal  mt var(--space-5)      no
+ * TWO FINDINGS FROM THEM OUTLIVE THE RULES and are kept here rather than lost
+ * with the blocks:
  *
- * `clamp(24px,3vw,32px)` is larger than `clamp(20px,2.4vw,28px)` at every
- * width, term by term, so the static gap is always the act's own margin and the
- * converted page always pays the sum. Measured with layoutInvariants() live
- * against static before this rule:
+ *   - `.elementor a{box-shadow:none;text-decoration:none}` is site-wide, and
+ *     any anchor carrying a class that declares `box-shadow` at 0,1,0 or lower
+ *     is subject to it. The 2026-08-18 corpus sweep found exactly one live
+ *     instance (this one) because every other primary CTA in the build is a
+ *     link() wrapper div or a native <button>. The next page built Route A with
+ *     an `.em-btn--primary` anchor will need the repair again, WITH its
+ *     :focus-visible companion: the rest-state rule alone outranks
+ *     `components.css:6` and deletes the focus ring, a WCAG 2.4.7 failure.
+ *   - a corpus sweep must key on the element that CARRIES the property, not on
+ *     the element type that carried it in the static build. Keyed by anchor,
+ *     that same sweep reported seven false findings, all of them the
+ *     class-on-wrapper mechanism showing up in the measurement rather than on
+ *     the page.
  *
- *     1440   .gvc-give   672.59 / 644.59      +28   (28 + 32 against 32)
- *            .gvc-hero   869.39 / 841.39      +28
- *     390    .gvc-give   678.92 / 658.92      +20   (20 + 24 against 24)
- *            .gvc-hero  1351.94 / 1331.94     +20
- *
- * and every painted box below the hero moved down by the same constant, which
- * is this family's signature.
- *
- * THE REPAIR TAKES THE SURPLUS OFF `.gvc-give__act`'s TOP MARGIN, NOT OFF
- * `.gvc-field`'s BOTTOM ONE, which is block A2's ruling and the reason is worth
- * repeating: the static build's 20 to 28px is real and merely collapsed away, so
- * a repair that deletes it fixes the total by falsifying a term. Static pays
- * max(A, B) = B; live pays A + B; so live's B must become B - A. Both clamps
- * are restated verbatim rather than resolved to pixels, which is what carries
- * the responsive half with no media query of its own: 32-28=4 at 1440 (total
- * 32), 24-20=4 at 390 (total 24), and 27-21.6=5.4 at 900 (total 27).
- *
- * census() reads `marginBottom` and never `marginTop`, and this element's own
- * `marginBottom` is 0 on both sides, so this repair is invisible to the census
- * by construction.
- *
- * Specificity 0,3,0 against css/give-c.css:153's `.gvc-give__act` at 0,1,0.
- * NAMED to this page's own panel: `.gvc-give__act` appears nowhere else in the
- * build, and the rule is qualified with `.gvc-give` anyway so it can never
- * reach a `.gvc-give__act` that a later page puts somewhere else.
- *
- * Checked for @media interference before writing: no rule inside any of
- * css/give-c.css's three media blocks names `.gvc-give__act` or `.gvc-field`. */
-.elementor .gvc-give .gvc-give__act{
-  margin-block-start:calc(clamp(24px,3vw,32px) - clamp(20px,2.4vw,28px));
-}
+ * No instrument in this project compares box-shadow: census(), controlBoxes()
+ * and layoutInvariants() were all green on that element. It was found by
+ * hand-probing every anchor on the page, and that is still the only way it
+ * would be found.
+ * ------------------------------------------------------------------------- */
 
-/* ---------- 30. give-c: the OTHER half of Elementor's anchor reset, and the
- *                phase's NINTH cost category -----------------------------
- * NEW SHAPE. Blocks 26 and 27 repair `text-decoration` on two pages and both
- * quote the rule that causes it. Read again on this install rather than from
- * either quotation, in `wp-content/plugins/elementor/assets/css/frontend.min.css`
- * (cached at .snapshots/give-c/elementor/frontend.min.css):
- *
- *     .elementor a{box-shadow:none;text-decoration:none}
- *
- * TWO declarations at 0,1,1, and the phase has spent two blocks on one of them.
- * `components/components.css:11` is `.em-btn--primary{background:var(--em-orange);
- * color:var(--white);box-shadow:var(--shadow-sm)}` at 0,1,0, which LOSES.
- *
- * WHY THE BUILD HAS NOT PAID THIS BEFORE, checked across the whole converted
- * corpus rather than assumed. Every `.em-btn--primary` converted so far is one
- * of two things, and neither is an anchor carrying that class:
- *
- *     final, what-we-do-a, solutions-b, capitol-a, team-a, who-we-are-a,
- *     podcast-a, epic-a      link() widgets, so the class lands on the WRAPPER
- *                            div (factory.mjs, WIDGET_CSS_CLASS_KEY) and a div
- *                            is not an `a`
- *     mail-a, amb-a          native <button> elements, and a button is not an
- *                            `a` either
- *
- * `.gvc-give__act`'s CTA is the first anchor in the converted build to carry
- * `.em-btn--primary`, because 01-hero.mjs builds the whole `<p>` as one html()
- * widget (Route A) and the anchor therefore reaches the page as itself. So the
- * category is not new to the install, only newly reachable.
- *
- * Measured live against static at 1440, at rest and on hover, on a 6000px-tall
- * viewport so that nothing scrolls (a hover probe that scrolls measures its own
- * timing: the live install sets `scroll-behavior:smooth` and Chromium does not
- * recompute the hovered element after a programmatic scroll until the mouse
- * moves again):
- *
- *     rest    live  none        static  rgba(0, 41, 53, 0.08) 0px 2px 6px 0px
- *     hover   live  none        static  rgba(0, 41, 53, 0.08) 0px 2px 6px 0px
- *
- * NO INSTRUMENT IN THIS PROJECT COMPARES box-shadow. census() reads fontSize,
- * lineHeight, fontFamily, color, background, marginBottom, opacity, visibility
- * and zeroSized; controlBoxes() reads w, h, padding, borderRadius, borderWidth,
- * fontWeight, letterSpacing and fontSize; layoutInvariants() reads x,
- * flex-direction, top and height. All three were green on this element. It is
- * the same class of defect as the eighth category and was found the same way,
- * by hand-probing every anchor on the page.
- *
- * THE :focus-visible COMPANION IS NOT OPTIONAL AND IS THE HALF THAT COULD HAVE
- * SHIPPED A WCAG 2.4.7 FAILURE. `components.css:6` is
- * `.em-btn:focus-visible{box-shadow:var(--shadow-focus)}` at 0,2,0. Before this
- * block it beat Elementor's 0,1,1 and the focus ring was correct. A rest-state
- * restatement here at 0,3,0 also beats 0,2,0, and bridge.css loads last, so
- * writing the first rule alone would have deleted the focus ring while fixing
- * the resting shadow: exactly the shape this file's "Task 5 defect #1" block
- * records for the skip link. So the repair is two rules, 0,3,0 and 0,4,0, and
- * the ring was verified by real keyboard focus after deploying, not inferred
- * from the specificity arithmetic.
- *
- * SCOPE, stated so nobody reads this as the whole finding. `.gvc-next__act`'s
- * anchor is `.em-btn--inverse`, which declares no `box-shadow` at all, so the
- * reset has nothing there to take away; probed anyway, and it matches static at
- * rest and on hover. What is NOT claimed is that this page is the only one: the
- * reset is site-wide, and any anchor on any page that carries a class declaring
- * `box-shadow` at 0,1,0 or lower is subject to it. `.em-btn--primary`,
- * `.em-card--raised`, `.em-card--interactive:hover` and every `--shadow-*` user
- * in components.css are the population to sweep. This rule is named to this
- * page's own container per the standing constraint, and the general finding is
- * recorded in this task's report as a cost category the phase has not priced.
- *
- * Checked for @media interference before writing: no rule inside any of
- * css/give-c.css's three media blocks names `.gvc-give__act` or `.em-btn`, and
- * components.css declares this shadow unconditionally, so one unconditional
- * declaration is correct at every width. Confirmed by re-probing at 390.
- *
- * THE SITE-WIDE SWEEP THIS BLOCK ASKS FOR HAS NOW BEEN RUN, 2026-08-18, and the
- * count is ONE: this instance. Every anchor inside <main> on all ten converted
- * pages was compared live against static for box-shadow as well as the
- * decoration properties, and seven pages reported a difference on their primary
- * CTA. All seven are FALSE, and the reason is this phase's own class-on-wrapper
- * mechanism turned on the measurement rather than on the page: keyed by the
- * ANCHOR, the sweep compares a static <a> that carries .em-btn--primary against
- * a live <a> that does not, because link() puts the class on the wrapper. Keyed
- * by the element that CARRIES the class, the two sides are identical, same
- * property and same box, on all seven:
- *
- *     final 282x68, what-we-do-a 282x68, solutions-b 353x68, capitol-a 200x68,
- *     team-a 284x68, who-we-are-a 238x68, epic-a 337x68
- *     static <a> and live <div>, both rgba(0, 41, 53, 0.08) 0px 2px 6px 0px
- *
- * give-c is the only page where the carrier is an <a> on both sides, which is
- * what made it reachable, exactly as this block's scope note predicted. The
- * transferable half: a corpus sweep must key on the element that CARRIES the
- * property, not on the element type that carried it in the static build, or it
- * measures the conversion rather than the defect.
- *
- * After: `rgba(0, 41, 53, 0.08) 0px 2px 6px 0px` live, matching static exactly,
- * at rest and on hover, at 1440 and 390, with the focus ring intact. */
-.elementor .gvc-give__act .em-btn{
-  box-shadow:var(--shadow-sm); /* components/components.css:11 */
-}
-.elementor .gvc-give__act .em-btn:focus-visible{
-  box-shadow:var(--shadow-focus); /* components/components.css:6 */
-}
 
 /* ============================================================================
  * Task 16: team-bio. Five blocks, 31 to 35.
@@ -7133,7 +7013,7 @@ body .wpautoterms-footer a:focus-visible{
  * at "block 61"; both are corrected to 71 in this same commit
  * (elementor/theme-parts/header.mjs:88, wp/empowerms-child/theme-js/
  * search.js:15), along with the assertion whose message carries the same
- * stale number (test-elementor.mjs:1508), so the reference and its target
+ * stale number (test-elementor.mjs:1558), so the reference and its target
  * land together.
  *
  * THE MARKUP: elementor/theme-parts/header.mjs's SEARCH_PANEL constant
@@ -7157,7 +7037,7 @@ body .wpautoterms-footer a:focus-visible{
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:3530 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:3630 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the
@@ -8244,4 +8124,45 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 .elementor .ta-disc img{
   aspect-ratio:1;
   height:auto;
+}
+
+
+/* ---------- A2's family, give-c's hero: the same non-collapsing margin, the
+ *                same repair, and the reason it appeared only on 2026-09-11 ---
+ * `css/give-c.css` gives `.gvc-hero__words p` a 20px bottom margin and
+ * `.gvc-hero__words .gvc-hero__so` a top margin of clamp(12px,1.5vw,20px).
+ *
+ * Static: `.gvc-hero__you` and `.gvc-hero__so` are block siblings in a block
+ * parent, so the 20px bottom collapses into the top margin and the gap is
+ * max(20, top). Converted, each paragraph is alone inside its own widget
+ * wrapper and the wrappers are flex items of an Elementor container, where
+ * adjacent-sibling margins do not collapse, so the page pays 20 + top.
+ *
+ * Measured live against static, both widths, before this rule:
+ *   @1440  hero live 565.48 static 545.48   (+20, top margin 20 at that width)
+ *   @390   hero live 653.02 static 641.02   (+12, top margin 12 at that width)
+ * The surplus is exactly the hinge's own top margin at each width, which is
+ * what identifies this as the collapse rather than as anything else.
+ *
+ * WHY IT IS NEW. These two paragraphs were siblings inside `.gvc-hero__say`
+ * until 2026-09-11, where nothing carried a top margin: the panel's removal put
+ * all four of the hero's paragraphs in one column and gave the hinge a top
+ * margin for the first time. The category is old; this instance is one day old.
+ *
+ * THE REPAIR TAKES THE SURPLUS OFF THE HINGE'S TOP MARGIN, NOT OFF THE
+ * PARAGRAPH'S BOTTOM ONE, which is A2's ruling and its reason applies here
+ * unchanged: census() reads each element's own marginBottom, so zeroing the
+ * preceding widget would fix the geometry and make a property wrong, trading a
+ * visible defect for an invisible one.
+ *
+ * 0,3,0 against css/give-c.css's `.gvc-hero__words .gvc-hero__so` at 0,2,0, and
+ * named to this page's own column per the standing constraint: `.gvc-hero__so`
+ * appears nowhere else in this build.
+ *
+ * Checked for @media interference before writing: give-c's three media blocks
+ * name neither `.gvc-hero__so` nor `.gvc-hero__words`, and the clamp resolves
+ * on its own at every width, so one unconditional declaration is correct at
+ * both measured widths. */
+.elementor .gvc-hero__words .gvc-hero__so{
+  margin-block-start:0; /* the 20px below the lead is the whole gap now */
 }

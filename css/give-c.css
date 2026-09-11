@@ -26,25 +26,24 @@
   color:var(--text-inverse);
   padding-block:clamp(48px,7vw,104px) clamp(48px,7vw,96px);
 }
-/* Two columns, and the panel column is fixed rather than fluid: a gift panel
-   that grows with the viewport stops looking like a thing you fill in. The
-   under-fold paragraphs sit in the words column only, so they never run under
-   the panel and leave it stranded. */
+/* TWO COLUMNS OF WORDS since 2026-09-11: headline left, the roadmap's four
+   opening paragraphs right. Before that the right column held the gift panel
+   and this grid needed an explicit two-row split to stop the panel stretching
+   the headline's row; with both columns now being text of similar length, that
+   machinery is gone rather than left in place doing nothing.
+
+   THE HEADLINE COLUMN IS THE NARROWER OF THE TWO. It sets at up to 3.6rem
+   against body copy, so equal columns would give the display face more line
+   breaks than it needs and the body copy a measure longer than it wants. 5fr
+   against 7fr puts the headline at roughly 16ch and the paragraphs at roughly
+   52ch, which are the measures each was already set to. */
 .gvc-hero__grid{
   display:grid;
-  grid-template-columns:minmax(0,1fr) clamp(340px,32vw,440px);
-  /* The first row is exactly as tall as the headline block; the second takes
-     whatever the panel leaves. Without that split the panel, which is taller
-     than both text blocks together, stretches the row it shares with the
-     headline and opens a hole between "So do we." and the paragraph after it. */
-  grid-template-rows:max-content 1fr;
+  grid-template-columns:minmax(0,5fr) minmax(0,7fr);
   column-gap:clamp(32px,5vw,88px);
-  row-gap:clamp(32px,5vw,64px);
+  row-gap:clamp(28px,4vw,48px);
   align-items:start;
 }
-.gvc-hero__say{grid-column:1}
-.gvc-give{grid-column:2;grid-row:1 / span 2}
-.gvc-hero__under{grid-column:1;align-self:start}
 
 .gvc-hero__title{
   margin:0;
@@ -54,112 +53,134 @@
   color:var(--text-inverse);
   max-width:16ch;
 }
-.gvc-hero__you{
-  margin:clamp(24px,3vw,40px) 0 0;
+/* QUALIFIED BY THE COLUMN, and both of the next two rules are, for a reason
+   worth stating once: `.gvc-hero__words p` below sits at 0,1,1 and would
+   otherwise beat a bare `.gvc-hero__you` at 0,1,0, taking this lead down to
+   body size and "So do we." down to body size AND body colour.
+
+   That is not hypothetical. It shipped for the length of one deploy on
+   2026-09-11, when these paragraphs moved into `.gvc-hero__words` and both
+   named rules silently stopped applying. Nothing caught it: every instrument in
+   this project compares the live page against the static one, and the static
+   one was equally wrong, so they all agreed. test-elementor.mjs now asserts the
+   design intent against the static build alone.
+
+   NEITHER RULE MAY SET A BOTTOM MARGIN, and the first fix for the above did,
+   which broke the page a second way in the other direction. The column rule
+   below owns the rhythm between these four paragraphs, and bridge.css restates
+   it at 0,3,0 for the converted tree, where each paragraph is alone inside its
+   own widget wrapper. A bottom margin here at 0,2,0 beats the column rule in
+   the STATIC build and loses to the bridge rule LIVE, so the two trees disagree
+   by exactly one gap: the shape census() reports as a computed-style
+   difference, which is how it was caught the second time. Set what is
+   distinctive about these two paragraphs, size, colour and the space ABOVE the
+   hinge, and leave the space below them to the column. */
+.gvc-hero__words .gvc-hero__you{
   max-width:46ch;
   font-size:var(--fs-lead);line-height:1.5;
   color:var(--text-inverse-muted);
 }
 /* The hinge of the roadmap's opening. Two words, so they get the weight rather
-   than a size that would out-shout the headline above them. */
-.gvc-hero__so{
-  margin:clamp(12px,1.5vw,20px) 0 0;
+   than a size that would out-shout the headline above them. Qualified by the
+   column for the specificity reason above. */
+.gvc-hero__words .gvc-hero__so{
+  margin-top:clamp(12px,1.5vw,20px);
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:clamp(1.4rem,1rem + 1.4vw,2.1rem);
   letter-spacing:var(--ls-heading);
   color:var(--orange-300);
 }
-.gvc-hero__under p{
+.gvc-hero__words p{
   margin:0 0 var(--space-5);max-width:56ch;
   font-size:var(--fs-body);line-height:var(--lh-body);
   color:var(--text-inverse-muted);
 }
-.gvc-hero__under p:last-child{margin-bottom:0}
+.gvc-hero__words p:last-child{margin-bottom:0}
 
-/* ---------- The choice ---------- */
-/* A white panel on the navy hero: the two decisions, and nothing else. It no
-   longer carries the details step, because the details step is Empower's own
-   form further down the same page. */
-.gvc-give{
-  background:var(--white);
-  border-radius:var(--radius-card);
-  padding:clamp(24px,2.6vw,36px);
+/* ---------- The form itself ---------- */
+/* HOW FAR THE NAVY RUNS PAST THE TOP OF THE CARD. Read once, by the gradient
+   below. */
+:root{--gvc-overlap:clamp(72px,11vw,200px)}
+
+/* The slot sits on the page surface rather than in a plate, because the thing
+   that lands in it brings its own chrome: Gravity Forms draws its own labels,
+   its own field boxes and, for the card row, a Stripe iframe this stylesheet
+   cannot reach into. A panel around all that would be a second border around a
+   bordered thing. So the section gives it a measure and a heading and nothing
+   else. */
+/* THE CARD STRADDLES THE BOTTOM OF THE NAVY BAND, AND NOTHING OVERLAPS.
+
+   THE OBVIOUS WAY TO BUILD THIS IS A NEGATIVE MARGIN on the card, pulling it up
+   into the hero, and that is how it was built first on 2026-09-11. It looked
+   right and it was wrong, for a reason no amount of looking would have found:
+   a negative top margin on a first child with no padding or border above it
+   collapses THROUGH the parent, so `.gvc-form`'s own box moved up too and the
+   two sections genuinely overlapped in flow. layoutInvariants() refused it,
+   correctly, with "gvc-hero (static top 0 h 651.75) partially overlaps the
+   exempted em-gform.gvc-form (static top 493.36 h 564.98), so no expected
+   difference is derivable": its height attribution assumes a stack of boxes
+   that do not overlap, and once two do, a difference below them cannot be
+   traced to either.
+
+   SO THE NAVY MOVES INSTEAD OF THE CARD. This section paints its own band of
+   navy across its first --gvc-overlap pixels and white below, and the card
+   starts at its top edge with no offset at all. Every box stays in its own
+   lane: the hero ends where it ends, this section begins after it, the card is
+   wholly inside this section. The rendering is identical, the CSS is shorter,
+   and there is no stacking to reason about.
+
+   WHAT THE NAVY IS FOR, since the card covers most of it: the strip either side
+   of the card, and the sliver its rounded corners leave. That is what makes the
+   card read as sitting across the edge rather than under it, and it is why the
+   gradient stop and the card's top are the same number by construction rather
+   than by arithmetic. */
+.gvc-form{
+  background:linear-gradient(
+    var(--surface-navy-deep) 0 var(--gvc-overlap),
+    var(--surface-page) var(--gvc-overlap)
+  );
+  padding-block:0;
+}
+.gvc-form__card{
+  background:var(--surface-card);
+  border-radius:var(--radius-panel);
+  padding:clamp(28px,3.4vw,56px);
   box-shadow:var(--shadow-lg);
 }
-.gvc-give__title{
-  margin:0 0 clamp(20px,2.4vw,28px);
+.gvc-form__title{
+  margin:0 0 clamp(20px,2.6vw,32px);
+  /* Kept at section-heading size rather than dropped to the panel's h3: it is
+     the only heading between the hero and Why Your Gift Matters, and the card
+     is now the widest thing on the page. */
   font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-h3);letter-spacing:var(--ls-heading);
+  font-size:clamp(1.6rem,1.1rem + 2vw,2.6rem);
+  line-height:1.12;letter-spacing:var(--ls-heading);
   color:var(--text-strong);
 }
-
-.gvc-field{margin-bottom:clamp(20px,2.4vw,28px)}
-/* An eyebrow, not a heading at heading size: these label a row of controls, and
-   a label set larger than the thing it labels is the inversion this build has
-   already had to fix once. */
-.gvc-field__label{
-  margin:0 0 var(--space-3);
-  font-family:var(--font-display);font-weight:var(--fw-bold);
+/* The dashed marker is the STATIC file only. It says "a real thing goes here"
+   to whoever is reading the hand-off, and it is what the Elementor shortcode
+   widget replaces. It must never be styled to look like a form. */
+.gvc-slot{
+  display:grid;align-content:center;gap:var(--space-3);
+  min-height:320px;padding:var(--space-7);
+  border:2px dashed var(--border-strong);border-radius:var(--radius-panel);
+  background:var(--surface-subtle);
+}
+.gvc-slot__label{
+  margin:0;font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-eyebrow);letter-spacing:var(--ls-eyebrow);
-  text-transform:uppercase;color:var(--text-muted);
+  text-transform:uppercase;color:var(--orange-600);
+}
+.gvc-slot__note{
+  margin:0;max-width:52ch;
+  font-size:var(--fs-small);line-height:1.55;color:var(--text-muted);
 }
 
-/* Frequency: three segments in one track, so they read as one choice with three
-   settings rather than as three separate buttons. */
-.gvc-freq{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  list-style:none;margin:0;padding:4px;gap:4px;
-  background:var(--surface-muted);
-  border-radius:var(--radius-pill);
-}
-.gvc-freq__opt{
-  display:flex;align-items:center;justify-content:center;
-  min-height:44px;padding-inline:var(--space-2);
-  border-radius:var(--radius-pill);
-  font-family:var(--font-display);font-weight:var(--fw-semibold);
-  font-size:var(--fs-small);color:var(--text-body);
-  text-align:center;text-decoration:none;
-  transition:background-color var(--dur-fast) var(--ease-out),
-             color var(--dur-fast) var(--ease-out);
-}
-.gvc-freq__opt:hover{background:var(--white);color:var(--text-strong)}
-
-/* Amounts: three across, two down. A single row of six makes each tile too
-   narrow to be a comfortable target, and a column of six pushes the details slot
-   off the screen, which is the whole point of this reading. */
-.gvc-ladder{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:var(--space-3);
-  list-style:none;margin:0;padding:0;
-}
-.gvc-amount{
-  display:flex;align-items:center;justify-content:center;
-  min-height:56px;
-  border:1px solid var(--border-default);
-  border-radius:var(--radius-md);
-  background:var(--white);
-  text-decoration:none;
-  transition:border-color var(--dur-fast) var(--ease-out),
-             background-color var(--dur-fast) var(--ease-out);
-}
-.gvc-amount__figure{
-  font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-h4);color:var(--text-strong);
-  letter-spacing:var(--ls-heading);
-}
-.gvc-amount:hover{border-color:var(--em-orange);background:var(--orange-100)}
-.gvc-amount--other .gvc-amount__figure{font-size:var(--fs-body);color:var(--text-body)}
-
-.gvc-give__act{margin:clamp(24px,3vw,32px) 0 0}
-.gvc-give__act .em-btn{width:100%}
-/* Says what the choice does, because the form is not on this page to show it.
-   Quiet: the tiles and the button above are the things to act on. */
-.gvc-give__hand{
-  margin:var(--space-4) 0 0;
-  font-size:var(--fs-small);line-height:1.5;color:var(--text-muted);
-}
-.gvc-give__legal{
-  margin:var(--space-5) 0 0;
+/* Moved here from the gift panel on 2026-09-11 with the sentence it styles. A
+   legal statement, so it is quiet and last, but it is inside the card rather
+   than under it: it qualifies the thing directly above it. */
+.gvc-form__legal{
+  margin:clamp(20px,2.4vw,28px) 0 0;
   padding-top:var(--space-5);
   border-top:1px solid var(--border-subtle);
   font-size:var(--fs-caption);line-height:1.5;color:var(--text-muted);
@@ -239,28 +260,32 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width:1024px){
-  .gvc-hero__grid{grid-template-columns:minmax(0,1fr) clamp(320px,38vw,400px)}
   .gvc-matters__grid{grid-template-columns:minmax(0,1fr);gap:clamp(28px,4vw,48px)}
 }
 
 @media (max-width:900px){
   .gvc-next__plate{grid-template-columns:minmax(0,1fr);align-items:start}
   .gvc-next__act{white-space:normal}
-  /* One column, and the gift goes FIRST: above the headline, not below the
-     copy. On a page with one job, a donor on a phone should not have to scroll
-     past an argument to reach the thing they came to do. The words follow as
-     the reason to have done it. */
+  /* One column. Until 2026-09-11 this block also pulled the gift panel above
+     the headline with `order:-1`, on the argument that a donor on a phone
+     should not scroll past an argument to reach the thing they came to do.
+     That argument survives its panel: the form card is the next thing after
+     four short paragraphs, and it is a form rather than a link to one. */
   .gvc-hero__grid{grid-template-columns:minmax(0,1fr)}
-  .gvc-give{grid-column:1;grid-row:auto;order:-1;position:static}
-  .gvc-hero__say,.gvc-hero__under{grid-column:1}
   .gvc-hero__title{max-width:20ch}
 }
 
+@media (max-width:640px){
+  /* THE STRADDLE ALL BUT GOES ON A PHONE. It is a wide-viewport figure: at 390px
+     the card is the full width of the screen, so there is no navy left either
+     side of it to cross, and the band becomes a stripe behind two corners.
+     16px keeps the seam from reading as a gap without pretending to be the
+     effect. */
+  :root{--gvc-overlap:16px}
+  .gvc-form__card{padding:var(--space-6)}
+}
+
 @media (max-width:520px){
-  /* The frequency track stays three-across at every width. Stacked, the pill
-     radius wraps a tall column and the control stops reading as one switch with
-     three settings; the three labels are short enough to hold their row. */
-  .gvc-ladder{grid-template-columns:repeat(2,minmax(0,1fr))}
   .gvc-matters__figures{grid-template-columns:minmax(0,1fr)}
   .gvc-figure:last-child{margin-top:0}
 }

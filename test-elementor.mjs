@@ -1,3 +1,30 @@
+/* WHAT THIS SUITE CANNOT SEE, read this before trusting a green run.
+ *
+ * Almost every instrument here is a COMPARISON between the live converted page
+ * and the static build it came from: census() on text and computed values,
+ * controlBoxes() on control geometry, layoutInvariants() on position and
+ * height. They are very good at finding a conversion defect, and they are blind
+ * by construction to a defect that is present on BOTH sides.
+ *
+ * Concretely: if a change to css/, components/ or tokens/ breaks the design,
+ * the static build renders it broken, the conversion faithfully reproduces it,
+ * and every comparison above reports agreement. A green suite means "the two
+ * sides match", never "the page is right".
+ *
+ * This has happened. On 2026-09-11 give-c's hero paragraphs moved into a new
+ * container whose `p` rule sits at 0,1,1, which silently outranked
+ * `.gvc-hero__you` and `.gvc-hero__so` at 0,1,0: the lead lost its size and
+ * "So do we." lost its size and its orange. Three instruments ran and all three
+ * were green. It was found by looking at a screenshot.
+ *
+ * THE CORRECTION IS A TEST WITH A SIDE THAT DOES NOT COME FROM THE CONVERSION:
+ * assert what the design says, against the static build ALONE. "give-c's hero
+ * lead and its hinge keep their own type" is the first of those and the pattern
+ * is worth more instances wherever a page says something with type, colour or
+ * spacing rather than with words.
+ *
+ * The general form, which is not specific to this project: a comparison is only
+ * as good as the independence of its two sides. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,6 +34,7 @@ import http from 'node:http';
 import { execFileSync } from 'node:child_process';
 import { installConfig } from './install.mjs';
 import { fromRootArgs, syncTheme, FROM_ROOT } from './wp/sync.mjs';
+import { PLATFORM_CLASS_SOURCE } from './fidelity-browser.mjs';
 import { stripNotices, wpe } from './wpe.mjs';
 import { container, heading, text, image, link, html, loopGrid, elementId } from './elementor/factory.mjs';
 import { flushPageCache, fetchConverted, checkCopy, checkSections, checkRobots, robotsProblems } from './fidelity.mjs';
@@ -49,6 +77,7 @@ import { remapLinks, convertedPagePaths } from './elementor/links.mjs';
 import {
   isImageKey, isBookkeepingKey, validateDeferredEntry, compareBoxes, expiredDeferredEntries,
   validateContentExemption, explainLayoutHeights, CONTENT_HEIGHT_EXEMPTIONS, MEASURED_WIDTHS,
+  validateStaticOnlyExemption, unexplainedStaticOnly, STATIC_ONLY_EXEMPTIONS,
 } from './fidelity-deferred.mjs';
 
 /* The computed-style comparison test below reads dist/podcast-a.html
@@ -1156,6 +1185,23 @@ test('every internal file:line citation still lands on the kind of line it claim
   const suiteLines = fs.readFileSync('test-elementor.mjs', 'utf8').split('\n');
   const bridgeLines = fs.readFileSync('wp/empowerms-child/css/bridge.css', 'utf8').split('\n');
 
+  /* COLLECTED AND ASSERTED ONCE, rather than asserted inside the loop, and the
+     reason is a cost this project paid three times on 2026-09-11.
+
+     Asserting per iteration means the FIRST stale citation stops the run and
+     the rest are never looked at. That is not merely an undercount: fixing the
+     one it named and seeing the suite go green reads as "the class is clear"
+     when it only means "the first one is gone". Two sessions working in this
+     repository that day each concluded independently that they had fixed THE
+     stale citation, and both were wrong in the same way, because a line
+     inserted anywhere in this file shifts every citation below it at once, so
+     these fail in batches by nature.
+
+     An assertion whose scope is one loop iteration reports an EXAMPLE, not a
+     result. The shape below reports the result. It applies to any sweep over a
+     population, not to citations in particular: link checks, alt-text audits
+     and dead-file detection all have the same failure mode. */
+  const stale = [];
   let checked = 0;
   for (const file of files) {
     const src = fs.readFileSync(file, 'utf8');
@@ -1164,8 +1210,9 @@ test('every internal file:line citation still lands on the kind of line it claim
       const n = Number(m[1]);
       const line = suiteLines[n - 1] ?? '';
       checked += 1;
-      assert.match(line, /assert\./,
-        `${file} cites test-elementor.mjs:${n}, which is now "${line.trim().slice(0, 60)}" and carries no assertion`);
+      if (!/assert\./.test(line)) {
+        stale.push(`${file} cites test-elementor.mjs:${n}, which is now "${line.trim().slice(0, 60)}" and carries no assertion`);
+      }
     }
 
     if (!file.endsWith('bridge.css')) continue;
@@ -1173,10 +1220,13 @@ test('every internal file:line citation still lands on the kind of line it claim
       const n = Number(m[1]);
       const line = bridgeLines[n - 1] ?? '';
       checked += 1;
-      assert.doesNotMatch(line, /^\s*\*/,
-        `${file} cites bridge.css:${m[0].split(':')[1]}, whose first line is now comment prose rather than CSS: "${line.trim().slice(0, 60)}"`);
+      if (/^\s*\*/.test(line)) {
+        stale.push(`${file} cites bridge.css:${m[0].split(':')[1]}, whose first line is now comment prose rather than CSS: "${line.trim().slice(0, 60)}"`);
+      }
     }
   }
+  assert.deepEqual(stale, [],
+    `${stale.length} stale citation(s), ALL of them, not the first:\n  ${stale.join('\n  ')}`);
 
   /* A sweep that silently checks nothing is the failure this project has
      already shipped once, in a test whose page list was hand-written. */
@@ -2516,7 +2566,7 @@ test('the three topic archives credit their converted page, and only those three
   const pairs = [...body.matchAll(/'([a-z0-9-]+)'\s*=>\s*'([^']+)'/g)].map(m => [m[1], m[2]]);
   assert.deepEqual(pairs.sort(), [
     ['education', '/quality-education/'],
-    ['justice', '/public-safety/'],
+    ['justice', '/safe-communities/'],
     ['work', '/meaningful-work/'],
   ], 'the topic-to-page map is not the three terms and destinations that were agreed');
 
@@ -5082,8 +5132,14 @@ for (const page of PAGE_REGISTER) {
 
         const liveOnly = Object.keys(live.axis).filter((k) => !stat.axis[k]);
         const statOnly = Object.keys(stat.axis).filter((k) => !live.axis[k]);
-        assert.deepEqual(statOnly, [],
-          `${statOnly.length} element(s) carrying a build class exist on the static ${page.name} page at ${width}px and not on the live one: ${statOnly.join(', ')}`);
+        /* Named exemptions subtracted here and NOT from liveOnly below: a
+           static-only key can be a hand-off marker standing where a live embed
+           goes, which is a real and explainable divergence; a live-only key
+           means the conversion invented an element, which nothing explains.
+           See STATIC_ONLY_EXEMPTIONS in fidelity-deferred.mjs. */
+        const unexplained = unexplainedStaticOnly(statOnly, page.name);
+        assert.deepEqual(unexplained, [],
+          `${unexplained.length} element(s) carrying a build class exist on the static ${page.name} page at ${width}px and not on the live one: ${unexplained.join(', ')}`);
         assert.deepEqual(liveOnly, [],
           `${liveOnly.length} element(s) carrying a build class exist on the live ${page.name} page at ${width}px and not on the static one: ${liveOnly.join(', ')}`);
 
@@ -6437,7 +6493,25 @@ for (const page of [...PAGE_REGISTER, ...EXCLUDED_PAGES].filter((p) => p.example
       + 'expected means the install has been edited to add motion the repository does not know about, which '
       + 'the next deploy of this page will silently destroy, because deployElements() replaces _elementor_data '
       + 'wholesale. Either way the install and this repository have diverged and one of them has to win.\n'
+      + '  BEFORE BELIEVING EITHER, check the third cause, which is neither of those and which cost a session '
+      + 'on 2026-09-11: a server-rendered shortcode that emits motion of its own. Those attributes are written '
+      + 'at request time, are not in _elementor_data, and no deploy can destroy them. They are excluded here by '
+      + 'the `data-cms-rendered` marker, so a shortcode that emits data-reveal WITHOUT that marker reopens this '
+      + 'exactly. The tell is an identical delta on several pages at once: a hand edit in the editor does not '
+      + 'produce the same mismatch three times.\n'
       + '  `reveal` is the animation, `group` is the stagger, `entrance` is the above-the-fold choreography.');
+
+    /* The server-rendered half, deliberately coarse, and for the same reason as
+       the loop half below: how many rows a shortcode emits is a function of what
+       the install holds, which is not this test's business. What it can say is
+       that the region has not lost its attributes altogether. */
+    if (live.renderedRegions > 0) {
+      assert.ok(live.inRendered > 0,
+        `${page.name} renders ${live.renderedRegions} server-rendered region(s) marked data-cms-rendered, but `
+        + 'not one element inside them carries a data-reveal attribute. The shortcode that builds them writes '
+        + 'the attributes itself, so zero means that markup has changed: check the emitting function in '
+        + 'wp/empowerms-child/inc/.');
+    }
 
     /* The loop half, deliberately coarse. A Loop Grid renders one template N
        times, so an exact number here would be a function of how many posts
@@ -7542,7 +7616,7 @@ test('every archived post redirects instead of 404ing', { concurrency: 1 }, asyn
 
   /* The four destinations the mapping can produce. Anything else means the
      category-to-page table has been edited without this test being told. */
-  const DESTINATIONS = new Set(['/quality-education/', '/meaningful-work/', '/public-safety/', '/all-content/']);
+  const DESTINATIONS = new Set(['/quality-education/', '/meaningful-work/', '/safe-communities/', '/all-content/']);
 
   const step = Math.max(1, Math.floor(slugs.length / 20));
   const sample = slugs.filter((_, i) => i % step === 0).slice(0, 20);
@@ -8001,4 +8075,402 @@ test('an unconverted Beaver page keeps the plugin assets the converted pages dro
     `${url} carries no Beaver Builder markup, so it is not the unconverted page this test needs`);
   assert.ok(html.includes('plugins/wp-user-avatar'),
     'an unconverted page lost its ProfilePress assets: the dequeue is running site-wide, not on the register');
+});
+
+/* --- The donation form / Gravity Forms dynamic population ---------------- */
+
+/* THE ONE ROUTE ON THIS BUILD WHERE A SILENT FAILURE COSTS MONEY.
+   Empower's donate page is Gravity Forms form 4 with the Stripe Payment
+   Element embedded in it, and the converted /donate/ IS the page it sits on.
+   Three separate things have to line up for a tile on that page to arrive as a
+   filled-in form, and NONE of the three announce themselves when they break:
+
+     1. form 4 carries the parameter names `gift_type` and `amount`, with
+        "allow field to be populated dynamically" set. Written by
+        elementor/apply-donate-prepopulate.mjs. Lives in the DATABASE, so it
+        does not travel with the repo and has to be re-run at prod cutover.
+     2. wp/empowerms-child/inc/donate-prepopulate.php turns our URL slugs into
+        the form's own choice values. Field 7 is a RADIO whose values are the
+        literal strings "One Time Gift", "Monthly Gift" and "Annual Gift"; a
+        prepopulated radio whose value matches no choice selects NOTHING and
+        reports no error at all.
+     3. the tiles carry those slugs, which test.mjs owns.
+
+   Break any one and the page still renders, the form still works, and every
+   donor simply arrives at a form with nothing filled in. That is why this is
+   asserted from three directions rather than one. */
+
+test('form 4 carries the parameter names the tiles depend on', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const { wpe, stripNotices } = await import('./wpe.mjs');
+
+  const raw = stripNotices(await wpe(`wp eval '
+    $f = GFAPI::get_form(4);
+    if (!$f) { echo "NOFORM"; exit; }
+    foreach ($f["fields"] as $fl) {
+      echo $fl->id."|".$fl->type."|".(!empty($fl->allowsPrepopulate) ? "1" : "0")
+        ."|".(isset($fl->inputName) ? $fl->inputName : "")."\\n";
+    }
+  '`));
+  assert.ok(!raw.includes('NOFORM'), 'form 4 is gone from the install, so the donate route takes no money');
+
+  const fields = new Map();
+  for (const line of raw.split('\n').map((s) => s.trim()).filter(Boolean)) {
+    const [id, type, prepop, name] = line.split('|');
+    fields.set(id, { type, prepop: prepop === '1', name: name ?? '' });
+  }
+
+  const type = fields.get('7');
+  assert.ok(type, 'field 7, the gift type radio, is gone from form 4');
+  assert.equal(type.prepop, true,
+    'field 7 does not allow dynamic population, so ?gift_type= is ignored and every donor '
+    + 'arrives with no gift type chosen. Re-run elementor/apply-donate-prepopulate.mjs --apply.');
+  assert.equal(type.name, 'gift_type', `field 7 answers to "${type.name}", not gift_type`);
+
+  const amount = fields.get('4');
+  assert.ok(amount, 'field 4, the one-time price box, is gone from form 4');
+  assert.equal(amount.prepop, true,
+    'field 4 does not allow dynamic population, so ?amount= is ignored. '
+    + 'Re-run elementor/apply-donate-prepopulate.mjs --apply.');
+  assert.equal(amount.name, 'amount', `field 4 answers to "${amount.name}", not amount`);
+
+  /* Fields 5 and 6 are the MONTHLY and ANNUAL ladders, and they are radios with
+     their own figures ($15/$25/$50/$100 and $100/$250/$500/$1,000). No tile
+     addresses them and none should: a typed amount cannot select a radio, and
+     giving them the same parameter name as field 4 would mean ?amount=250
+     silently selecting nothing on two of the three gift types. Asserted so a
+     later well-meaning edit that "makes amount work everywhere" fails here. */
+  for (const id of ['5', '6']) {
+    const ladder = fields.get(id);
+    assert.ok(ladder, `field ${id} is gone from form 4`);
+    assert.equal(ladder.name, '',
+      `field ${id} has been given the parameter name "${ladder.name}". It is a radio ladder with its `
+      + 'own figures; a typed amount cannot select one of its choices, so this populates nothing '
+      + 'while looking like it should.');
+  }
+});
+
+test('the child theme maps our slugs to form 4’s exact choice values', () => {
+  /* Offline, on purpose: this is the half of the contract that lives in the
+     repository, and it must be checkable without the install. The exact strings
+     are asserted character for character because that is the failure this
+     cannot afford, and because "One Time Gift" is not a value anyone would
+     guess from the slug one-time. */
+  const php = fs.readFileSync('wp/empowerms-child/inc/donate-prepopulate.php', 'utf8');
+
+  for (const filter of ['gform_field_value_gift_type', 'gform_field_value_amount']) {
+    assert.match(php, new RegExp(`add_filter\\(\\s*'${filter}'`),
+      `inc/donate-prepopulate.php does not register ${filter}, so that parameter arrives unmapped`);
+  }
+  for (const [slug, value] of [['one-time', 'One Time Gift'], ['monthly', 'Monthly Gift'], ['annual', 'Annual Gift']]) {
+    assert.ok(php.includes(`'${slug}'`), `inc/donate-prepopulate.php does not map the slug ${slug}`);
+    assert.ok(php.includes(`'${value}'`),
+      `inc/donate-prepopulate.php does not produce the exact choice value "${value}". `
+      + 'A radio prepopulated with anything else selects nothing and reports no error.');
+  }
+
+  const fn = fs.readFileSync('wp/empowerms-child/functions.php', 'utf8');
+  assert.match(fn, /require_once get_stylesheet_directory\(\) \. '\/inc\/donate-prepopulate\.php'/,
+    'functions.php does not require inc/donate-prepopulate.php, so neither filter is registered');
+});
+
+test('the converted /donate/ carries Empower’s donation form', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+
+  const probe = new URL(`${origin}/donate/`);
+  probe.searchParams.set('empower_cb', 'donate-form');
+  const html = await (await fetch(probe.href)).text();
+
+  assert.match(html, /gform_wrapper_4|gform_4|gform-4/,
+    'the converted /donate/ renders no Gravity Form. It is the donate route: the page the nav, the '
+    + 'header button and every amount tile point at. Without the form on it, nobody can give.');
+  assert.match(html, /id="donate-form"/,
+    'the page has no #donate-form anchor, so the panel’s Donate Today button scrolls nowhere');
+
+  /* ASSERTED BY CONTENT, ON THE LIVE PAGE, and the reason is a defect this
+     suite could not see. On 2026-09-10 two copy edits landed in
+     src/give-c/sections/01-hero.html and were missed in
+     elementor/pages/give-c/01-hero.mjs, and every fidelity instrument passed:
+     census() KEYS ON THE TEXT, so a changed string is not one element
+     differing, it is one static-only key and one live-only key, and the shared
+     count merely drops by one while staying far above its floor. A copy change
+     that lands in one tree is invisible to an instrument that identifies
+     elements by their copy.
+
+     So the strings this build owns on the live page are checked directly. */
+
+  /* The gift panel, removed 2026-09-11. Asserted absent LIVE as well as static
+     because the Elementor tree is a separate source: the page could keep
+     rendering the panel from a stale deploy while the repository shows none. */
+  assert.doesNotMatch(html, /gvc-give/,
+    'the live /donate/ still renders the gift panel. It was removed on 2026-09-11 because the real '
+    + 'form is on the page; either the deploy did not land or somebody rebuilt it in the Elementor editor.');
+
+  /* The card, and the heading that moved onto it. */
+  assert.match(html, /gvc-form__card/,
+    'the live /donate/ has no form card, so the form is not overlapping the band it is meant to');
+  assert.match(html, /Make your gift/,
+    'the card has lost its heading. "Make your gift" is the gift panel’s own signed-off wording, kept '
+    + 'when the panel went because the thing it names did not change.');
+
+  /* The 501(c)(3) line, which moved out of the panel and could have gone with it. */
+  assert.match(html, /Empower Mississippi Foundation is a 501\(c\)\(3\) nonprofit organization/,
+    'the live /donate/ has lost the 501(c)(3) statement. It is a legal statement on a page that asks '
+    + 'for money, and it lived in the panel that was deleted.');
+
+  /* THE ORANGE ACTION, which is now Gravity Forms' own submit button and is a
+     property of form 4 in the database rather than markup in this repository.
+     test.mjs exempts give-c from the one-orange-button count on the strength of
+     this assertion, so if this stops holding, the page has no action at all and
+     nothing else is watching. */
+  const submit = /<input[^>]*id=(?:"|')gform_submit_button_4(?:"|')[^>]*>/.exec(html);
+  assert.ok(submit, 'the live form has no submit button at all');
+  assert.match(submit[0], /value=(?:"|')Donate Today(?:"|')/,
+    `form 4’s submit button does not read "Donate Today". Gravity Forms ships "Submit", which is the `
+    + 'weakest word available for the moment someone gives money, and since the hero panel was removed '
+    + 'this is the page’s only action. Run: node elementor/apply-donate-prepopulate.mjs --apply');
+});
+
+test('a choice made on the panel arrives selected on the form', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(
+    { name: 'the install home page', envVar: 'HOME_URL', exampleUrl: 'https://empv2.wpenginepowered.com/' },
+    t,
+  );
+  if (!url) return;
+  const origin = new URL(url).origin;
+
+  /* Read, never submit. Three Stripe feeds are active on this install and the
+     add-on's api_mode is unset, which is not the same as being in test mode.
+     Proving the population works needs the rendered HTML and nothing more. */
+  const fetchDonate = async (query, tag) => {
+    const probe = new URL(`${origin}/donate/`);
+    for (const [k, v] of Object.entries(query)) probe.searchParams.set(k, v);
+    probe.searchParams.set('empower_cb', tag);
+    return (await fetch(probe.href)).text();
+  };
+
+  const monthly = await fetchDonate({ gift_type: 'monthly' }, 'pop-monthly');
+  const monthlyInput = /<input[^>]*value=(?:"|')Monthly Gift(?:"|')[^>]*>/.exec(monthly);
+  assert.ok(monthlyInput, 'the Monthly Gift radio is not on the rendered form at all');
+  assert.match(monthlyInput[0], /checked/,
+    '?gift_type=monthly did not select Monthly Gift. Either field 7 lost its parameter name or '
+    + 'inc/donate-prepopulate.php stopped mapping the slug to the exact string "Monthly Gift".');
+
+  const oneTime = await fetchDonate({ gift_type: 'one-time', amount: '100' }, 'pop-onetime');
+  const oneTimeInput = /<input[^>]*value=(?:"|')One Time Gift(?:"|')[^>]*>/.exec(oneTime);
+  assert.ok(oneTimeInput, 'the One Time Gift radio is not on the rendered form at all');
+  assert.match(oneTimeInput[0], /checked/, '?gift_type=one-time did not select One Time Gift');
+
+  /* Field 4 is a free-entry price box, so the figure arrives as the input's
+     value rather than as a selected choice.
+
+     KEYED ON THE ID, NOT THE NAME, and quote-agnostic. Gravity Forms renders
+     its attributes single-quoted (`name='input_4'`), which the first version of
+     this assertion did not allow, and it failed against a page that was working
+     correctly. The id is the unambiguous handle: `input_4_4` is form 4, field 4,
+     where a bare name match could also hit input_40. */
+  const priceInput = /<input[^>]*id=(?:"|')input_4_4(?:"|')[^>]*>/.exec(oneTime);
+  assert.ok(priceInput, 'the one-time price field is not on the rendered form at all');
+  assert.match(priceInput[0], /value=(?:"|')\$?100(?:\.00)?(?:"|')/,
+    '?amount=100 did not reach the one-time price field. The tiles promise "nothing to fill in twice" '
+    + `and this is the half of that promise that carries the figure. Rendered: ${priceInput[0]}`);
+
+  /* A slug the map does not know must leave the radio UNSET rather than guess.
+     Guessing here would mean a donor being charged on a frequency they did not
+     pick, which is worse than an empty field. */
+  const junk = await fetchDonate({ gift_type: 'weekly' }, 'pop-junk');
+  const junkChecked = [...junk.matchAll(/<input[^>]*name="input_7"[^>]*>/g)].filter((m) => /checked/.test(m[0]));
+  assert.equal(junkChecked.length, 0,
+    `?gift_type=weekly selected ${junkChecked.length} gift type(s). An unrecognised slug must leave the `
+    + 'radio unset: charging someone on a frequency they never chose is worse than an empty field.');
+});
+
+/* --- fidelity-deferred.mjs / STATIC_ONLY_EXEMPTIONS ---------------------- *
+
+   THE THIRD EXEMPTION LIST, and the one with the narrowest job. DEFERRED_IMAGES
+   names a box the live page has not filled yet; CONTENT_HEIGHT_EXEMPTIONS names
+   an element that exists on BOTH sides at a different height. This names an
+   element that exists on the static side and has no live counterpart AT ALL,
+   because the conversion deliberately replaced it with something else.
+
+   It exists for exactly one situation and must not grow past it: a marker in a
+   hand-off file standing where a live third-party embed goes. dist/give-c.html
+   draws a dashed slot saying "Empower's donation form"; the converted page
+   renders Gravity Form 4 there. Neither side is wrong and no CSS can reconcile
+   them.
+
+   WHY NOT EXCLUDE THE PAGE, which is what contact does for the same reason. On
+   contact EVERY control key differs, because its stand-in is a drawing of the
+   real form field for field; there is nothing left to compare. give-c diverges
+   in ONE section of four, and excluding it would drop the hero, Why Your Gift
+   Matters and the closing plate out of the fidelity suite to pay for a slot.
+   Three named keys is a smaller hole than a whole page.
+
+   THE ASYMMETRY IS DELIBERATE: this list can only ever forgive a STATIC-only
+   key. A live-only key means the conversion invented an element, which no
+   hand-off marker can explain, and stays a hard failure. */
+test('a static-only exemption needs a page in the register, a real key, a reason and a date', () => {
+  const good = { page: 'give-c', key: 'gvc-slot', reason: 'the live page renders the real form here', date: '2026-09-10' };
+  assert.equal(validateStaticOnlyExemption(good), good);
+
+  assert.throws(() => validateStaticOnlyExemption({ ...good, page: 'no-such-page' }),
+    /not in PAGE_REGISTER/);
+  assert.throws(() => validateStaticOnlyExemption({ ...good, key: '' }),
+    /non-string key/);
+  /* Both instruments' markers: layoutInvariants' own, and one of the two
+     isBookkeepingKey() already knows, so neither route into the guard can be
+     removed without this going red. */
+  assert.throws(() => validateStaticOnlyExemption({ ...good, key: '__main_height__' }),
+    /bookkeeping marker/);
+  assert.throws(() => validateStaticOnlyExemption({ ...good, key: '__unsettled__' }),
+    /bookkeeping marker/);
+  assert.throws(() => validateStaticOnlyExemption({ ...good, reason: '  ' }),
+    /has no reason/);
+  assert.throws(() => validateStaticOnlyExemption({ ...good, date: undefined }),
+    /has no date/);
+});
+
+test('a static-only exemption forgives only the keys it names, on only the page it names', () => {
+  /* The list is applied by subtracting named keys from the static-only set, so
+     the test that matters is that an unnamed key still comes through. */
+  const list = [{ page: 'give-c', key: 'gvc-slot', reason: 'r', date: '2026-09-10' }];
+
+  assert.deepEqual(unexplainedStaticOnly(['gvc-slot'], 'give-c', list), []);
+  assert.deepEqual(unexplainedStaticOnly(['gvc-slot', 'gvc-give'], 'give-c', list), ['gvc-give'],
+    'an unnamed key was forgiven along with the named one, which would hide a lost element');
+  assert.deepEqual(unexplainedStaticOnly(['gvc-slot'], 'final', list), ['gvc-slot'],
+    'the exemption applied to a page it does not name');
+});
+
+test('every static-only exemption still names a key the static build actually carries', () => {
+  /* The failure this catches: the slot is renamed or deleted in src/, the
+     exemption is forgotten, and it sits in the list forgiving a key that no
+     longer exists. A stale exemption is indistinguishable from a live one until
+     the day it forgives something real. */
+  for (const entry of STATIC_ONLY_EXEMPTIONS) {
+    const page = PAGE_REGISTER.find((p) => p.name === entry.page);
+    const html = fs.readFileSync(page.staticFile, 'utf8');
+    assert.ok(html.includes(`"${entry.key}"`) || html.includes(`${entry.key} `) || html.includes(`${entry.key}"`),
+      `STATIC_ONLY_EXEMPTIONS forgives "${entry.key}" on ${entry.page}, but ${page.staticFile} no longer `
+      + 'carries that class. Either the exemption is stale or the marker was renamed without it.');
+  }
+});
+
+/* PLATFORM_CLASS AND GRAVITY FORMS.
+
+   layoutInvariants() keys an element by the classes left after the platform's
+   own are subtracted, and an element with nothing left is not keyed at all.
+   That subtraction already covers Elementor, Swiper, WordPress's image sizes
+   and Mailmunch: everything that renders markup on this install which this
+   build did not write.
+
+   Gravity Forms belongs in that set and was missing from it, which did not
+   show until a form appeared on a page inside PAGE_REGISTER. contact, mail-a
+   and amb-a all carry forms and all three are in EXCLUDED_PAGES, so the gap sat
+   unmeasured; putting form 4 on the converted /donate/ surfaced it as 105
+   live-only keys, every one of them Gravity Forms' own markup (gform_wrapper,
+   gfield, ginput_container, gchoice, gform-field-label) plus Stripe's mount
+   point inside it.
+
+   NOT AN EXEMPTION. An exemption forgives a difference; this says the elements
+   were never this build's to compare. The distinction matters because a list of
+   105 forgiven keys would also forgive a real defect that happened to land on
+   one of them.
+
+   CHECKED FOR COLLISION BEFORE WIDENING, the way the `^e-` note above records
+   for its own prefix: `grep -ohE '\.(gf|gform|gfield|ginput|gchoice|StripeElement)[a-zA-Z0-9_-]*'
+   css/*.css components/*.css tokens/*.css` returns nothing, so no class this
+   build writes begins with any of them. `em-gform`, the one class this build
+   DOES put near a form, starts with `em-` and is deliberately unaffected. */
+test('PLATFORM_CLASS drops Gravity Forms’ own markup and keeps this build’s', () => {
+  const PLATFORM = new RegExp(PLATFORM_CLASS_SOURCE);
+
+  /* Real class tokens, copied from the live /donate/ render rather than
+     invented, so this cannot pass against a shape Gravity Forms does not emit. */
+  for (const cls of [
+    'gform_wrapper', 'gform_anchor', 'gform_heading', 'gform_required_legend',
+    'gform-body', 'gform_body', 'gform_fields', 'gform_footer', 'gform_button',
+    'gfield', 'gfield_label', 'gfield_required', 'gfield_radio', 'gfield-choice-input',
+    'gform-field-label', 'gform-grid-row', 'gform-grid-col', 'gform-text-input-reset',
+    'ginput_container', 'ginput_complex', 'ginput_amount', 'ginput_total',
+    'gchoice', 'gchoice_4_7_0', 'gf_clear', 'gf_name_has_2', 'gf_browser_chrome',
+    'gravity-theme', 'StripeElement--payment-element',
+  ]) {
+    assert.match(cls, PLATFORM, `${cls} is Gravity Forms' or Stripe's own class and must not be keyed as this build's`);
+  }
+
+  /* And the build's own vocabulary survives, including the one class this
+     build puts on a form's container. A prefix widened too far would silently
+     stop comparing real elements, which is the failure the `^e-` correction
+     documents. */
+  for (const cls of ['em-gform', 'em-container', 'gvc-form', 'gvc-give', 'gvc-slot', 'ct-form', 'em-btn']) {
+    assert.doesNotMatch(cls, PLATFORM, `${cls} is this build's own class and must stay keyed`);
+  }
+});
+
+/* --- give-c's hero: design intent, asserted on the static build alone ----- *
+
+   THE GAP THIS CLOSES, and it is a gap in the whole fidelity approach rather
+   than in one test. Every instrument in this suite compares the LIVE page
+   against the STATIC one. That catches a conversion defect perfectly and is
+   blind, by construction, to a defect present in both: if a CSS change breaks
+   the design in css/give-c.css, the static build renders it broken, the
+   conversion faithfully reproduces it, and census(), controlBoxes() and
+   layoutInvariants() all report agreement.
+
+   It happened on 2026-09-11. Removing the gift panel moved the hero's four
+   paragraphs into `.gvc-hero__words`, whose `p` rule sits at 0,1,1 and
+   therefore outranks `.gvc-hero__you` and `.gvc-hero__so` at 0,1,0. The lead
+   lost its size and "So do we." lost both its size and its orange, on both
+   sides, silently. It was found by looking at the page.
+
+   So this asserts what the DESIGN says, against the static file on its own, in
+   the two places where this page's hero says something with type rather than
+   with words: the lead is larger than body copy, and the hinge of the roadmap's
+   opening is orange and larger still. Neither is a conversion question. */
+test('give-c’s hero lead and its hinge keep their own type', { concurrency: 1 }, async () => {
+  const { census } = await import('./fidelity-browser.mjs');
+  const server = await serveRepoRoot();
+  try {
+    const seen = await census(`${server.url}/dist/give-c.html`);
+
+    /* census() TRUNCATES ITS KEY TEXT AT 40 CHARACTERS, so these are the
+       opening fragments rather than the whole sentences. Written out as the
+       instrument actually emits them, because a key that silently matches
+       nothing would make every assertion below vacuous; the guard on the next
+       line is what stops that. */
+    const body = seen['p|That’s why we’re working every day to ad'];
+    const lead = seen['p|You want Mississippi to be a place where'];
+    const hinge = seen['p|So do we.'];
+    assert.ok(body && lead && hinge,
+      'one of the three hero paragraphs is no longer keyed by census(); check the copy has not changed');
+
+    const px = (v) => Number.parseFloat(v);
+    assert.ok(px(lead.fontSize) > px(body.fontSize),
+      `the hero lead is set at ${lead.fontSize}, the same as or smaller than the body copy at ${body.fontSize}. `
+      + 'css/give-c.css gives it var(--fs-lead); a container rule at higher specificity is overriding it.');
+
+    assert.ok(px(hinge.fontSize) > px(lead.fontSize),
+      `"So do we." is set at ${hinge.fontSize} against a lead of ${lead.fontSize}. It is the hinge of the `
+      + 'roadmap’s opening and is meant to be the largest thing in the column.');
+
+    /* var(--orange-300), #F09A75. Compared as a resolved rgb string because
+       that is what getComputedStyle returns, and asserted by value rather than
+       by "not the body colour" so that a change to some other orange fails
+       here too. */
+    assert.equal(hinge.color, 'rgb(240, 154, 117)',
+      `"So do we." is ${hinge.color}, not var(--orange-300). It is the one coloured word in the hero and `
+      + 'the only thing carrying the brand into an otherwise navy band.');
+  } finally {
+    await server.close();
+  }
 });

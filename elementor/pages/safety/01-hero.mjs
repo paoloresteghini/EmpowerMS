@@ -73,7 +73,7 @@ const NOTE = '<!-- Dark hero, no photograph. This variation’s whole idea is th
 /* The curly apostrophe below is the source's, reproduced byte for byte rather
    than normalised: census() keys on the element's own text, so a straight
    quote would take the heading out of the shared set. */
-const EYEBROW = 'Public Safety';
+const EYEBROW = 'Safe Communities';
 const HEAD = 'Every Mississippian Deserves to <em>Feel Safe at Home</em>';
 
 export function section() {

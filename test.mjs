@@ -979,7 +979,7 @@ test('Our Solutions opens the landing page and its dropdown holds only the pages
   const panel = header2.match(/<div class="em-header__menu" id="drop-solutions"[\s\S]*?<\/div>/)[0];
   const links = [...panel.matchAll(/<a href="([^"]+)">([^<]*?)<span>/g)].map(m => m[2]);
   assert.deepEqual(links,
-    ['Quality Education', 'Meaningful Work', 'Public Safety', 'Research (EPIC)'],
+    ['Quality Education', 'Meaningful Work', 'Safe Communities', 'Research (EPIC)'],
     'the Our Solutions dropdown is not the four pages beneath the landing page');
   const markup = header2.replace(/<!--[\s\S]*?-->/g, '');
   assert.ok(!markup.includes('Solutions Center'),
@@ -1273,12 +1273,42 @@ test('every page has exactly one h1 and no skipped heading levels', () => {
    loses its action fails, and so does one of these two if it grows one. */
 const NO_PRIMARY = ['dist/content-a.html', 'dist/content-b.html'];
 
+/* GIVE-C HAS ITS ONE ORANGE ACTION AND IT IS NOT AN em-btn. From 2026-09-11 the
+   action on the donate page is Gravity Form 4's own submit button, which
+   bridge.css already fills orange (.em-gform .gform_wrapper .gform_button,
+   background var(--em-orange)). It exists only on the live page: this file
+   draws a dashed marker where the form goes, because a static hand-off cannot
+   run a shortcode and must not draw a submit control with nothing behind it.
+
+   NOT ADDED TO NO_PRIMARY, which would say the page has no action at all and is
+   false. Listed separately so that the distinction is in the file rather than
+   in somebody's memory, and so a future page that genuinely loses its action
+   still fails. The live half is asserted in test-elementor.mjs, which reads the
+   rendered button's own value. */
+const PRIMARY_IS_A_LIVE_FORM_BUTTON = ['dist/give-c.html'];
+
 test('one orange filled button per page', () => {
   for (const { out, html } of ALLPAGES) {
     const primaries = html.match(/em-btn--primary/g) || [];
-    const expected = NO_PRIMARY.includes(out) ? 0 : 1;
+    const expected = NO_PRIMARY.includes(out) || PRIMARY_IS_A_LIVE_FORM_BUTTON.includes(out) ? 0 : 1;
     assert.equal(primaries.length, expected,
       `${out}: brand rule is one orange action per view, expected ${expected}, found ${primaries.length}`);
+  }
+});
+
+test('the page whose orange action is a live form button still has one, and knows where', () => {
+  /* The risk in the exception above is that it becomes a way of having no
+     action at all and nobody noticing. So the static file is held to carrying
+     the slot the live button appears in, and to saying so in the marker's own
+     note, which is what a reviewer reads instead of the button. */
+  for (const out of PRIMARY_IS_A_LIVE_FORM_BUTTON) {
+    const html = ALLPAGES.find(p => p.out === out).html;
+    assert.ok(html.includes('gvc-slot'),
+      `${out} is exempt from the orange-button count because its action is inside the form, but it has `
+      + 'no slot for the form either, so the page has no action at all');
+    assert.match(html, /gvc-slot__note[^>]*>[\s\S]*?orange action/,
+      `${out}'s form marker does not tell a reviewer that the orange action is the form's own submit `
+      + 'button. That sentence is the only thing standing in for it in this file.');
   }
 });
 
@@ -1875,7 +1905,7 @@ const WHAT_WE_DO_COPY = [
   'Helping every child access the education they need to reach their full potential.',
   'Meaningful Work',
   'Removing barriers so more Mississippians can find meaningful work and build lasting prosperity.',
-  'Public Safety',
+  'Safe Communities',
   'Creating safer communities where families and opportunity can thrive.',
   'View our annual reports:',
   '2025', '2024', '2023', '2022',
@@ -2130,7 +2160,7 @@ const SOLUTIONS_COPY = [
   'Every Mississippian should have the opportunity to build a meaningful career and create a better future.',
   'We work to connect more people with meaningful work, strengthen Mississippi’s workforce, and advance solutions that help individuals and families build greater stability and opportunity.',
   'Explore Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'Opportunity grows when people feel safe in the places they live, work, and raise their families.',
   'We work to advance practical public safety solutions that promote accountability, improve outcomes, and help build safer, stronger communities across Mississippi.',
   'Explore Safe Communities',
@@ -2344,7 +2374,7 @@ const SAFETY_COPY = [
   /* Sections 6 and 7. */
   'Voices of Safer Communities',
   'Hear from Mississippians whose experiences with crime, justice, reentry, and community leadership show what it takes to build safer, stronger communities.',
-  'The Latest on Public Safety',
+  'The Latest on Safe Communities',
   'Explore the latest research, ideas, and policies shaping public safety, effective justice, and stronger communities across Mississippi.',
 ];
 
@@ -2496,7 +2526,7 @@ test('no solution page carries another solution page’s copy', () => {
      the hero, and the closing feed heading. */
   const EXCLUSIVE = {
     work: ['Work Should Open Doors to Opportunity', 'The Latest on Meaningful Work'],
-    safety: ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Public Safety'],
+    safety: ['Every Mississippian Deserves to Feel Safe at Home', 'The Latest on Safe Communities'],
     education: ['Every Child Deserves the Opportunity to Succeed', 'The Latest on Education'],
   };
   const tabOf = out =>
@@ -2961,7 +2991,7 @@ test('Capitol Chat filters by session only, and shows no invented topic', () => 
      elsewhere on the page as Our Solutions nav links, which are not the
      invented row label this check is guarding against. */
   const library = html.slice(html.indexOf('<section class="cca-library"'), html.indexOf('</section>', html.indexOf('<section class="cca-library"')));
-  for (const t of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+  for (const t of ['Quality Education', 'Meaningful Work', 'Public Safety', 'Safe Communities']) {
     assert.ok(!library.includes(`>${t}<`),
       `dist/capitol-a.html still labels a row "${t}", which Empower never tagged`);
   }
@@ -3032,7 +3062,7 @@ const EPIC_COPY = [
   'Explore reports, data, policy briefs, and practical recommendations on the issues shaping opportunity in Mississippi.',
   'Quality Education',
   'Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'View Research & Reports',
 ];
 
@@ -3078,7 +3108,7 @@ test('every EPIC reading names the three focus areas above its research index', 
       assert.ok(html.includes(`href="#${id}"`), `${out} never links to #${id}`);
     }
     const hero = html.slice(0, html.indexOf('id="research"'));
-    for (const area of ['Quality Education', 'Meaningful Work', 'Public Safety']) {
+    for (const area of ['Quality Education', 'Meaningful Work', 'Safe Communities']) {
       assert.ok(hero.includes(area),
         `${out} does not name ${area} before the research section`);
     }
@@ -3515,9 +3545,17 @@ test('no Donate reading collects payment details', () => {
        floor is asserted for the readings that offer a ladder, and The Card is
        asserted to offer none at all. */
     const amounts = [...html.matchAll(/<a class="gv[a-z]-amount[^"]*" href="([^"]+)"/g)].map(m => m[1]);
-    if (out === 'dist/give-d.html') {
+    /* TWO READINGS OFFER NO LADDER OF THEIR OWN, for related but distinct
+       reasons, and both are asserted to offer NONE rather than merely allowed
+       to. give-d copies Empower's form, which reveals its amounts only after a
+       gift type is chosen. give-c had a ladder of six tiles until 2026-09-11
+       and lost it when the real form arrived on the page: the form asks for the
+       amount itself, and a tile that reloads the page to answer a question
+       already on screen is a click spent for nothing. */
+    if (out === 'dist/give-d.html' || out === 'dist/give-c.html') {
       assert.equal(amounts.length, 0,
-        `${out} draws its own amount ladder, and it is a copy of Empower's form, which reveals amounts after the gift type`);
+        `${out} draws its own amount ladder. give-d copies Empower's form, which reveals amounts after `
+        + 'the gift type; give-c carries the real form, which asks for the amount itself');
     } else {
       assert.ok(amounts.length >= 5, `${out} offers ${amounts.length} amounts, expected at least five`);
     }
@@ -3535,9 +3573,14 @@ test('every hand-off link on a Donate page stays on Empower\u2019s donate route'
   for (const { out, html } of GIVEPAGES) {
     const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
     const hrefs = [...body.matchAll(/href="(\/donate[^"]*)"/g)].map(m => m[1]);
-    /* The Card hands off once, from the button under the form; the others also
-       hand off from every tile. */
-    const floor = out === 'dist/give-d.html' ? 1 : 5;
+    /* The Card hands off once, from the button under the form; give-a and
+       give-b also hand off from every tile. give-c hands off NOWHERE and that
+       is the reading rather than an omission: it is the donate route itself and
+       the form is on it, so from 2026-09-11 it has no /donate/ link left to
+       make. What this test still owns for that page is the direction of the
+       assertion below, which fails any /donate link that leaves for somewhere
+       that is not Empower's own route. */
+    const floor = { 'dist/give-d.html': 1, 'dist/give-c.html': 0 }[out] ?? 5;
     assert.ok(hrefs.length >= floor, `${out} has ${hrefs.length} hand-off links`);
     for (const href of hrefs) {
       assert.match(href, /^\/donate\//, `${out} sends a donor to ${href}`);
@@ -3545,52 +3588,154 @@ test('every hand-off link on a Donate page stays on Empower\u2019s donate route'
   }
 });
 
-test('One Screen is the choice, and the choice carries into Empower\u2019s form', () => {
-  /* The reason this reading exists, and the thing a later edit could quietly
-     undo. Empower asked for fewer clicks with the giving form higher up, and the
-     live donate page turned out to be Gravity Forms with the Stripe Payment
-     Element embedded in it. So the answer is not a hand-off and not a second
-     copy of the form: it is the two decisions that cost the clicks, made once,
-     on the first screen, and carried into the form by the URL.
+test('One Screen is the form, and the panel that used to stand in for it is gone', () => {
+  /* THE READING CHANGED ON 2026-09-11 AND THIS TEST IS THE RECORD OF WHY.
 
-     The form itself is deliberately NOT on this page. The Card is the reading
-     that reproduces it field for field; drawing it here as well made the page
-     about the form rather than about the choice. */
+     What it asserted until today: a gift panel in the hero carrying three
+     frequency tiles and six amount tiles, each a link putting the donor's
+     choice into the query string, with the real form somewhere else. That was
+     built on 2026-08-12 and it was the right answer to the question as it then
+     stood, which was "the form is not on this page, so how does the choice
+     reach it?"
+
+     The question stopped standing on 2026-09-10, when Gravity Form 4 went onto
+     this page. With the real form one screen down, the panel was a second set
+     of controls for the same three decisions, and every tile cost a full page
+     reload to answer a question the form below was already asking. Paolo's call
+     on 2026-09-11: remove the panel, and put the form itself where the panel
+     was, in a card overlapping the navy band.
+
+     THE PREFILL MACHINERY IS DELIBERATELY NOT REMOVED WITH THE TILES. Nothing
+     on this page sends ?gift_type= any more, but a campaign email or a printed
+     QR code still can, and form 4 still answers it. See
+     wp/empowerms-child/inc/donate-prepopulate.php. */
   const html = readFileSync('dist/give-c.html', 'utf8');
   const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
 
-  const choice = body.indexOf('class="gvc-give" id="give"');
-  const under = body.indexOf('gvc-hero__under');
-  const matters = body.indexOf('gvc-matters');
-  assert.ok(choice > -1, 'give-c has lost the choice panel');
-  assert.ok(choice < under, 'the choice no longer comes before the copy it was put above');
-  assert.ok(choice < matters, 'the choice now sits below Why Your Gift Matters');
-
-  /* No second rendering of the form, in any shape: neither the field-for-field
-     drawing nor a slot standing in for it. */
-  assert.ok(!body.includes('gvc-drawn') && !body.includes('gvc-slot'),
-    'give-c is showing the form again — that is The Card\u2019s reading');
-  assert.ok(!/<input|<select|<textarea|<button|<label/.test(body),
-    'give-c has grown a real form control');
-
-  /* Every tile carries the choice in the query string. A bare /donate/ link
-     would leave the donor to state the same thing twice, which is the click this
-     reading exists to remove. */
-  const tiles = [...body.matchAll(/<a class="gvc-(?:amount|freq__opt)[^"]*" href="([^"]+)"/g)].map(m => m[1]);
-  assert.equal(tiles.length, 9, `give-c offers ${tiles.length} choices, expected three frequencies and six amounts`);
-  for (const href of tiles) {
-    assert.match(href, /^\/donate\/\?gift_type=/, `${href} carries no gift type`);
+  /* The panel is gone, in every part. Asserted by its own class names rather
+     than by counting links, because a later edit that reinstates one tile
+     should fail here and say which piece came back. */
+  for (const gone of ['gvc-give', 'gvc-freq', 'gvc-ladder', 'gvc-amount', 'gvc-field']) {
+    assert.ok(!body.includes(gone),
+      `give-c still carries .${gone}. The gift panel was removed on 2026-09-11 because the real form `
+      + 'is on this page; a second set of controls for the same three decisions is what it existed to avoid.');
   }
-  /* &amp; in the source, because these hrefs are read out of the built HTML. The
-     five figures carry an amount as well as a type; Other deliberately does not,
-     because the donor is going to type it. */
-  const withAmount = tiles.filter(h => /(?:\?|&amp;|&)amount=\d+/.test(h));
-  assert.equal(withAmount.length, 5, `${withAmount.length} tiles carry an amount, expected five`);
 
-  /* And the panel has to say what the choice does, because the form is not on
-     the page to show it. */
-  assert.match(body, /gvc-give__hand[^>]*>[^<]*donation form/,
-    'the panel no longer says where the choice goes');
+  /* And the sentence that described what the tiles did, which is now false. */
+  assert.ok(!body.includes('Nothing to fill in twice'),
+    'give-c still promises "Nothing to fill in twice", but nothing on the page carries a choice any more');
+
+  const hero = body.indexOf('gvc-hero');
+  const card = body.indexOf('gvc-form__card');
+  const matters = body.indexOf('gvc-matters');
+  assert.ok(card > -1, 'give-c has no form card, so /donate/ cannot take a donation');
+  assert.ok(hero > -1 && hero < card, 'the form card now sits above the hero it is meant to overlap');
+  assert.ok(card < matters, 'the form card has fallen below Why Your Gift Matters');
+
+  /* Still not The Card (give-d), which reproduces the form field for field. */
+  assert.ok(!body.includes('gvc-drawn'),
+    'give-c is drawing the form field by field, which is The Card’s reading');
+
+  /* The slot inside the card is empty of controls. The generic sweep bans a
+     form in main across all four readings and keeps doing so; this pins the
+     reason to the slot itself, so a later edit that fills it in by hand fails
+     with a message that says what is actually wrong. */
+  const slot = body.indexOf('gvc-slot');
+  assert.ok(slot > -1, 'the card has no slot standing for Empower’s form');
+  const region = body.slice(slot, matters > -1 ? matters : body.length);
+  assert.ok(!/<input|<select|<textarea|<button/.test(region),
+    'the form slot has grown real controls; the static file has no endpoint behind it');
+});
+
+test('every in-page link on a Donate reading lands on something that exists', () => {
+  /* The defect this catches actually happened. give-c's closing Donate Today
+     pointed at #give, the gift panel's own id, and the panel was removed on
+     2026-09-11; the link kept working in the sense that nothing errored, and
+     did nothing at all, which is the worst kind of broken on the one button
+     left at the bottom of a donation page.
+
+     Every reading is swept rather than just give-c: a fragment that names
+     nothing is the same defect wherever it appears, and three of these four
+     pages are archived readings that nobody will look at again until somebody
+     does. */
+  for (const { out, html } of GIVEPAGES) {
+    const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]));
+    const fragments = [...html.matchAll(/href="#([^"]+)"/g)].map(m => m[1]);
+    for (const fragment of fragments) {
+      assert.ok(ids.has(fragment),
+        `${out} links to #${fragment}, and no element on the page carries that id`);
+    }
+  }
+});
+
+test('the 501(c)(3) statement survives the panel it used to live in', () => {
+  /* It is a legal statement, not marketing copy, and it is reproduced verbatim
+     from the roadmap. It sat in the gift panel until 2026-09-11; deleting the
+     panel without moving it would have taken a legal line off a page that
+     solicits money, silently. */
+  const html = readFileSync('dist/give-c.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  const card = body.indexOf('gvc-form__card');
+  const legal = body.indexOf('Empower Mississippi Foundation is a 501(c)(3) nonprofit organization');
+  /* Asserted before the comparison below, which is otherwise vacuously true:
+     indexOf returns -1 for a missing card and every real position is above it. */
+  assert.ok(card > -1, 'give-c has no form card, so there is nothing for the statement to be inside');
+  assert.ok(legal > -1, 'give-c has lost the 501(c)(3) statement');
+  assert.ok(legal > card, 'the 501(c)(3) statement is no longer inside the form card');
+});
+
+test('One Screen’s hero sets the headline against the roadmap copy, and carries all of it', () => {
+  /* The two-column hero Paolo chose on 2026-09-11: headline left, every
+     paragraph of the roadmap's opening right, card overlapping below both.
+     The risk in a layout change that moves copy between containers is dropping
+     a paragraph in the move, so all four are asserted present and in order. */
+  const html = readFileSync('dist/give-c.html', 'utf8');
+  const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+  const ORDER = [
+    'You want Mississippi to be a place',
+    'So do we.',
+    'That’s why we’re working every day',
+    'When you give, you become part of',
+  ];
+  let at = body.indexOf('gvc-hero__words');
+  assert.ok(at > -1, 'the hero has no words column');
+  for (const line of ORDER) {
+    const next = body.indexOf(line, at);
+    assert.ok(next > -1, `the hero words column is missing, or has reordered, "${line}"`);
+    at = next;
+  }
+});
+test('every Donate query string is one the live form can actually receive', () => {
+  /* The switch that makes the tiles work is Gravity Forms' dynamic population,
+     and it is exact: field 7 is a RADIO whose choice values are the literal
+     strings "One Time Gift", "Monthly Gift" and "Annual Gift". A prepopulated
+     radio whose value matches no choice selects nothing and reports no error,
+     so a wrong slug here is invisible on the page and surfaces only as donors
+     arriving at an unset form.
+
+     The three slugs below are mapped to those exact strings by
+     wp/empowerms-child/inc/donate-prepopulate.php. This test and that file are
+     two halves of one contract; the third half is the parameter name on form 4
+     itself, which elementor/apply-donate-prepopulate.mjs writes.
+
+     Amount is asserted numeric because it lands on field 4, a free-entry PRICE
+     field, and asserted to travel only with one-time because fields 5 and 6 are
+     radio ladders that a typed figure cannot select. */
+  const SLUGS = new Set(['one-time', 'monthly', 'annual']);
+  for (const { out, html } of GIVEPAGES) {
+    const body = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
+    for (const [, href] of body.matchAll(/href="(\/donate\/\?[^"]+)"/g)) {
+      const query = new URLSearchParams(href.slice(href.indexOf('?') + 1).replace(/&amp;/g, '&'));
+      const type = query.get('gift_type');
+      assert.ok(SLUGS.has(type), `${out} sends gift_type=${type}, which maps to no choice on form 4`);
+      const amount = query.get('amount');
+      if (amount !== null) {
+        assert.match(amount, /^\d+(?:\.\d{1,2})?$/, `${out} sends amount=${amount} to a price field`);
+        assert.equal(type, 'one-time',
+          `${out} sends an amount with gift_type=${type}, but only the one-time field takes a typed figure`);
+      }
+    }
+  }
 });
 
 test('no Donate reading invents a number', () => {
@@ -3666,6 +3811,29 @@ test('The Card is a drawing of Empower\u2019s form, not a form', () => {
 test('the Donate readings keep both roadmap buttons and fill only the first', () => {
   for (const { out, html } of GIVEPAGES) {
     const buttons = [...html.matchAll(/<a class="em-btn([^"]*)"[^>]*>\s*Donate Today/g)].map(m => m[1]);
+
+    /* GIVE-C CARRIES ONE, AND THE OTHER IS NOT A LINK. From 2026-09-11 its
+       first Donate Today is Gravity Forms' own submit button, which exists only
+       on the live page: the static file has a dashed marker where the form
+       goes and cannot draw a submit control with nothing behind it. So the
+       roadmap's two buttons survive, but only one of them is in this file, and
+       it is the closing one, which must stay demoted because the orange action
+       is the form's.
+
+       The live half is asserted in test-elementor.mjs, "the converted /donate/
+       carries Empower's donation form", which reads the rendered button's own
+       value. Splitting the pair across two files is not ideal and is the
+       honest shape: one half is markup this repository writes and the other is
+       a property of a form in Empower's database. */
+    if (out === 'dist/give-c.html') {
+      assert.equal(buttons.length, 1,
+        `${out} has ${buttons.length} Donate Today links; since 2026-09-11 it should have exactly the `
+        + 'closing one, with the orange action being Gravity Forms\u2019 own submit button');
+      assert.ok(!/em-btn--primary/.test(buttons[0]),
+        `${out}: the closing button is filled orange, which would be a second orange action beside the form\u2019s submit`);
+      continue;
+    }
+
     assert.equal(buttons.length, 2, `${out} has ${buttons.length} Donate Today buttons, the roadmap gives two`);
     assert.match(buttons[0], /em-btn--primary/, `${out}: the hero button is not the orange action`);
     assert.ok(!/em-btn--primary/.test(buttons[1]), `${out}: the closing button is a second orange fill`);
@@ -4157,7 +4325,7 @@ const CONTENT_COPY = [
   'Get the latest news, announcements, and updates from Empower Mississippi.',
   'Quality Education',
   'Meaningful Work',
-  'Public Safety',
+  'Safe Communities',
   'Bill Summaries',
 ];
 

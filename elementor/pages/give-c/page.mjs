@@ -1,6 +1,7 @@
 import { section as hero } from './01-hero.mjs';
-import { section as matters } from './02-matters.mjs';
-import { section as next } from './03-next.mjs';
+import { section as form } from './02-form.mjs';
+import { section as matters } from './03-matters.mjs';
+import { section as next } from './04-next.mjs';
 
 /* The page's composition contract: which sections it carries, and in what
    order. Same shape and same reasoning as every earlier page.mjs:
@@ -26,4 +27,10 @@ import { section as next } from './03-next.mjs';
 
 export const POST_ID = 20606;
 
-export const sections = () => [hero(), matters(), next()];
+/* THE FORM SITS SECOND, between the choice and the reassurance, and the order
+   is the argument. Somebody who arrived ready has chosen in the panel and
+   reaches the form without scrolling past a case for giving they do not need;
+   somebody who did not is reading "Why Your Gift Matters" immediately below it.
+   The sections were renumbered on 2026-09-10 to match src/give-c/sections/,
+   so a section's number means the same thing in both trees. */
+export const sections = () => [hero(), form(), matters(), next()];

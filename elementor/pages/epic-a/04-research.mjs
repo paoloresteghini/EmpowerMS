@@ -197,7 +197,7 @@ const AREAS = [
     id: 'area-safety',
     area: 'safety',
     photo: 'advocates-outside-capitol',
-    name: 'Public Safety',
+    name: 'Safe Communities',
   },
 ];
 

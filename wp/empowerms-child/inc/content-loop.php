@@ -76,7 +76,7 @@ function empower_content_a_topic_map() {
 	return array(
 		7   => array( 'token' => 'education', 'label' => 'Quality Education' ),
 		28  => array( 'token' => 'work',      'label' => 'Meaningful Work' ),
-		29  => array( 'token' => 'safety',    'label' => 'Public Safety' ),
+		29  => array( 'token' => 'safety',    'label' => 'Safe Communities' ),
 		124 => array( 'token' => 'bills',     'label' => 'Bill Summaries' ),
 	);
 }

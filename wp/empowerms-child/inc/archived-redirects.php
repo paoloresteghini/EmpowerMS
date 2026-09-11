@@ -65,7 +65,7 @@ function empower_archived_destinations() {
 	return array(
 		'education'        => '/quality-education/',
 		'work'             => '/meaningful-work/',
-		'justice'          => '/public-safety/',
+		'justice'          => '/safe-communities/',
 		'community-stories' => '/all-content/',
 		'news'             => '/all-content/',
 		'empower'          => '/all-content/',

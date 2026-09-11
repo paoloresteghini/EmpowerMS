@@ -45,7 +45,7 @@ export const REDIRECTS = [
   { from: '/donate-old/', to: '/donate/', why: 'superseded by the converted give page' },
   { from: '/about/', to: '/who-we-are/', why: 'same subject, and /who-we-are/ is the one in the nav' },
   { from: '/work/', to: '/meaningful-work/', why: 'h1 "Work provides purpose."; the converted solution page replaces it' },
-  { from: '/justice/', to: '/public-safety/', why: 'h1 "Every Person Deserves a Fair Shake"; same' },
+  { from: '/justice/', to: '/safe-communities/', why: 'h1 "Every Person Deserves a Fair Shake"; same' },
   { from: '/education-3/', to: '/quality-education/', why: 'h1 "Every child deserves a great education"; same' },
   { from: '/the-empower-podcast/', to: '/podcast/', why: 'superseded by the converted podcast page' },
   /* Added 2026-09-02, when /terms/ went live. This is the ONLY entry in this
@@ -76,9 +76,22 @@ export const REDIRECTS = [
    caught rather than silently repointing the wrong rule. */
 export const REPOINT = [
   { id: 14, from: '/education-copy/', was: '/education-3/', to: '/quality-education/' },
-  { id: 15, from: '/justice-copy/', was: '/justice/', to: '/public-safety/' },
+  { id: 15, from: '/justice-copy/', was: '/justice/', to: '/safe-communities/' },
   { id: 16, from: '/work-copy/', was: '/work/', to: '/meaningful-work/' },
   { id: 24, from: '/tune-in/', was: 'https://empv2.wpenginepowered.com/the-empower-podcast/', to: '/podcast/' },
+  /* Added 2026-09-11 by the Safe Communities slug move, and it is the second
+     time this one rule has been left pointing at a slug that moved under it.
+     `/safety/` was this page's first slug on empv2; the 2026-08-20 rename to
+     `public-safety` auto-created rule 32 to cover it, and the rename to
+     `safe-communities` would have made that rule the first link in a chain of
+     two. Repointed at the final destination in the same pass as the rest.
+
+     The plugin's own `monitor_post: 1` created `/public-safety/` ->
+     `/safe-communities/` (rule 54) when the slug changed, which is the single
+     hop this list wants and is left alone. What monitor_post cannot do is
+     notice that OTHER rules were already aimed at the slug it just moved, and
+     that is exactly what this array is for. */
+  { id: 32, from: '/safety/', was: '/public-safety/', to: '/safe-communities/' },
 ];
 
 /* LOADED GUNS. Three rules already in the table are the EXACT REVERSE of

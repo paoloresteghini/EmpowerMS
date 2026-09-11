@@ -181,7 +181,7 @@ const STATIONS = [
   {
     photo: 'advocates-capitol-hall-54',
     href: '/solutions/safety',
-    title: 'Public Safety',
+    title: 'Safe Communities',
     promise: 'Opportunity grows when people feel safe in the places they live, work, and raise their families.',
     body: 'We work to advance practical public safety solutions that promote accountability, improve outcomes, and help build safer, stronger communities across Mississippi.',
     cue: 'Explore Safe Communities',

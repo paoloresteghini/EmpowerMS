@@ -126,7 +126,30 @@ add_shortcode( 'empower_solution_latest', function ( $atts ) {
 
 	$note = 'Latest articles and research for this solution area, newest three, mixed types.';
 
-	$out = '<ul class="sol-stubs" data-cms="loop" data-cms-note="' . esc_attr( $note ) . '" data-reveal-group>';
+	/* `data-cms-rendered` MARKS THIS SUBTREE AS SERVER-RENDERED, and it exists for
+	   one instrument. test-elementor's reveal inventory compares the attributes on
+	   the live page against the tree elementor/pages/<name>/page.mjs deploys. That
+	   comparison was exact and correct until this band became a shortcode: the
+	   authored tree now carries `[empower_solution_latest]` and no motion at all,
+	   while the rendered page carries this group plus one reveal per card. Live
+	   was therefore expected + 3 reveal + 1 group on all three solution pages, and
+	   the test read that as an Elementor editor edit and warned that a deploy would
+	   destroy it. Neither was true: these attributes are written here, at request
+	   time, and are not in _elementor_data for any deploy to overwrite.
+
+	   `data-cms="loop"` CANNOT carry this meaning. It is an authoring annotation
+	   that also appears on eight hand-written lists in elementor/pages/, where the
+	   attributes ARE deployed and MUST still be counted. The two facts are
+	   different: one says "this list should be CMS-driven", this one says "this
+	   markup did not come from _elementor_data". Only the second tells the
+	   instrument what to exclude.
+
+	   The count of cards is a function of what the install holds, exactly like a
+	   Loop Grid, so the test treats this region the same way: out of the exact
+	   comparison, and covered instead by the coarse assertion that it carries at
+	   least one reveal. Any future shortcode that emits motion should carry this
+	   attribute too. */
+	$out = '<ul class="sol-stubs" data-cms="loop" data-cms-rendered data-cms-note="' . esc_attr( $note ) . '" data-reveal-group>';
 	foreach ( $ids as $id ) {
 		$out .= '<li class="sol-stub" data-reveal="rise">'
 			. '<span class="sol-stub__kind">' . esc_html( empower_solution_stub_kind( $id ) ) . '</span>'

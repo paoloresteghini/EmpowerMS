@@ -92,7 +92,7 @@ export const PAGES = [
      css/solution.css; the unpicked readings keep their own stylesheets. */
   { src: 'education/index.html', out: 'dist/education.html', title: 'Quality Education', kind: 'about' },
   { src: 'work/index.html', out: 'dist/work.html', title: 'Meaningful Work', kind: 'about' },
-  { src: 'safety/index.html', out: 'dist/safety.html', title: 'Public Safety', kind: 'about' },
+  { src: 'safety/index.html', out: 'dist/safety.html', title: 'Safe Communities', kind: 'about' },
 
   /* A third reading of each, built with the impeccable craft flow on 2026-08-05.
      These two keep three sections of work-b that Paolo picked out — the work-area

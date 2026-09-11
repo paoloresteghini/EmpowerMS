@@ -22,7 +22,7 @@ const LABEL = {
   '/ambassadors/': 'Ambassador Program',
   '/epic/': 'EPIC',
   '/donate/': 'Donate',
-  '/public-safety/': 'Public Safety',
+  '/safe-communities/': 'Safe Communities',
   '/meaningful-work/': 'Meaningful Work',
   '/quality-education/': 'Quality Education',
   '/podcast/': 'The Empower Podcast',

@@ -154,8 +154,8 @@ export const PAGE_SEO = {
       + 'opportunity, strengthen the workforce and build safer communities. '
       + 'Empower is a 501(c)(3).',
   },
-  '/public-safety/': {
-    title: 'Public Safety in Mississippi',
+  '/safe-communities/': {
+    title: 'Safe Communities in Mississippi',
     description:
       'Safer communities start with preventing crime, supporting effective law '
       + 'enforcement, strengthening families and a justice system that is both '

@@ -1,70 +1,49 @@
-<!-- Hero and the choice, on one screen. Built 2026-08-11 to Empower’s brief that
-     neither of the first two readings landed: "simpler and more streamlined… as
-     easy as possible for someone to give with fewer clicks", with the giving form
-     high on the page. Rebuilt 2026-08-12 once we knew what the live form is.
+<!-- THE HERO. Headline against the roadmap’s opening copy, with the form card
+     overlapping the bottom of this band from the section below.
 
-     It is Gravity Forms with the Stripe add-on, and the Stripe Payment Element is
-     embedded in Empower’s own page. Nothing redirects to stripe.com. That changes
-     the shape of this reading: the two decisions that cost the clicks (how often,
-     how much) come first, and the tiles carry the answer straight into that form
-     rather than making a donor state it twice.
+     BUILT 2026-08-11 to Empower’s brief that neither of the first two readings
+     landed: "simpler and more streamlined… as easy as possible for someone to
+     give with fewer clicks", with the giving form "high on the page".
 
-     The form itself is not drawn on this page. The Card is the reading that
-     reproduces it field for field; here the page is about the choice, and showing
-     the form as well made it about the form.
+     WHAT USED TO BE HERE, and why it is not. Until 2026-09-11 the right of this
+     band held a gift panel: three frequency tiles and six amount tiles, each a
+     link carrying the donor’s answer into Empower’s form in the query string.
+     That was the right answer to the question as it stood on 2026-08-12, which
+     was "the form is not on this page, so how does the choice reach it?"
 
-     Every tile is a link to /donate/ with the choice in the query string. Gravity
-     Forms populates a field from a query parameter when that field has "Allow
-     field to be populated dynamically" ticked and a parameter name set. It is NOT
-     switched on today: six plausible names were tested against the live form on
-     2026-08-12 and none populated anything. So the names here are ours, they are
-     documented on the chooser as an ask, and swapping in the real ones is one
-     edit per tile.
+     Gravity Form 4 went onto this page on 2026-09-10, and the question stopped
+     standing. The panel became a second set of controls for the same three
+     decisions the form below was already asking about, and an expensive one:
+     every tile was a link, so answering "how much" cost a full page reload.
+     Removing it and letting the form ask its own questions is fewer clicks,
+     which is the brief.
 
-     Links, not fields. Nothing here collects anything: the form owns every input,
-     and this build has no endpoint behind it. -->
+     THE PREFILL IS NOT REMOVED WITH THE TILES. Nothing on this page sends
+     ?gift_type= or ?amount= any more, but form 4 still answers both, and a
+     campaign email or a printed QR code can still use them. That machinery is
+     wp/empowerms-child/inc/donate-prepopulate.php and
+     elementor/apply-donate-prepopulate.mjs, and it is kept deliberately: a
+     working feature should not be deleted because the caller that prompted it
+     went away.
+
+     TWO COLUMNS OF WORDS, Paolo’s call on 2026-09-11. The headline is long
+     enough to hold a column on its own, and putting the four paragraphs beside
+     it rather than beneath it keeps this band short enough that the card
+     overlapping its lower edge still has navy above it to overlap.
+
+     NOTHING HERE COLLECTS ANYTHING. The form owns every input, and it is the
+     real one now rather than a drawing of one. -->
 <section class="gvc-hero" aria-labelledby="give-title">
   <div class="em-container gvc-hero__grid">
 
-    <div class="gvc-hero__say">
-      <h1 class="gvc-hero__title" id="give-title">Help Build a Mississippi Where Opportunity Is Within Reach</h1>
-      <p class="gvc-hero__you">You want Mississippi to be a place where children can succeed, families can thrive, and opportunity is within reach.</p>
-      <p class="gvc-hero__so">So do we.</p>
-    </div>
+    <h1 class="gvc-hero__title" id="give-title">Help Build a Mississippi Where Opportunity Is Within Reach</h1>
 
-    <div class="gvc-give" id="give">
-      <h2 class="gvc-give__title">Make your gift</h2>
-
-      <div class="gvc-field">
-        <h3 class="gvc-field__label" id="freq-label">How often</h3>
-        <ul class="gvc-freq" aria-labelledby="freq-label">
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=one-time">One time</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=monthly">Monthly</a></li>
-          <li><a class="gvc-freq__opt" href="/donate/?gift_type=annual">Annually</a></li>
-        </ul>
-      </div>
-
-      <div class="gvc-field">
-        <h3 class="gvc-field__label" id="amount-label">How much</h3>
-        <ul class="gvc-ladder" aria-labelledby="amount-label">
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=25"><span class="gvc-amount__figure">$25</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=50"><span class="gvc-amount__figure">$50</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=100"><span class="gvc-amount__figure">$100</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=250"><span class="gvc-amount__figure">$250</span></a></li>
-          <li><a class="gvc-amount" href="/donate/?gift_type=one-time&amp;amount=500"><span class="gvc-amount__figure">$500</span></a></li>
-          <li><a class="gvc-amount gvc-amount--other" href="/donate/?gift_type=one-time"><span class="gvc-amount__figure">Other</span></a></li>
-        </ul>
-      </div>
-
-      <p class="gvc-give__act"><a class="em-btn em-btn--primary em-btn--lg" href="/donate/">Donate Today</a></p>
-      <p class="gvc-give__hand">Your choice carries into Empower’s donation form. Nothing to fill in twice.</p>
-      <p class="gvc-give__legal">Empower Mississippi Foundation is a 501(c)(3) nonprofit organization. Contributions are tax-deductible to the fullest extent allowed by law.</p>
-    </div>
-
-    <!-- The rest of the roadmap’s opening section, under the choice rather than
-         above it. Somebody who arrived ready has already chosen by this point;
-         somebody who did not is reading exactly this. -->
-    <div class="gvc-hero__under" data-reveal-group>
+    <!-- The roadmap’s opening section, all of it, in the order the document
+         states it. test.mjs asserts these four in sequence, because the risk in
+         moving copy between containers is dropping a paragraph in the move. -->
+    <div class="gvc-hero__words" data-reveal-group>
+      <p class="gvc-hero__you" data-reveal="rise">You want Mississippi to be a place where children can succeed, families can thrive, and opportunity is within reach.</p>
+      <p class="gvc-hero__so" data-reveal="rise">So do we.</p>
       <p data-reveal="rise">That’s why we’re working every day to advance practical solutions that expand educational opportunity, strengthen our workforce, and build safer communities.</p>
       <p data-reveal="rise">When you give, you become part of creating a path to generational prosperity for Mississippi’s children, workers, and families.</p>
     </div>

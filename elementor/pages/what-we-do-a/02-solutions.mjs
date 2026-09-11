@@ -83,8 +83,8 @@ const DOORS = [
   },
   {
     photo: 'advocates-capitol-hall',
-    href: '/public-safety',
-    title: 'Public Safety',
+    href: '/safe-communities',
+    title: 'Safe Communities',
     body: 'Creating safer communities where families and opportunity can thrive.',
   },
 ];

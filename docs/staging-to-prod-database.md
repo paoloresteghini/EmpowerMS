@@ -129,8 +129,37 @@ page has to say:
   real submissions from real people and are not ours to move casually.
 - Newsletter and ambassador forms, live on their pages.
 - **Forms 37 and 41 are duplicate ambassador forms**, still unresolved.
+- **Form 4**, donate. **96 entries on empv2, and it takes money.** Gravity Forms
+  with the Stripe add-on: three active feeds, two subscription and one product,
+  and the Payment Element embedded in the page rather than a redirect to
+  stripe.com. Embedded on /donate/ by shortcode, not rebuilt.
 
 Forms are embedded in page trees by id.
+
+**Form 4 also carries a setting that has to be re-applied, and this one is
+invisible when it is missing.** Two of its fields are populated from the URL by
+the tiles on /donate/:
+
+    field 7  Select Gift Type (radio)          <- ?gift_type=
+    field 4  One Time Gift (free-entry price)  <- ?amount=
+
+"Allow field to be populated dynamically" and the parameter name are properties
+of the FORM, stored in `wp_gf_form_meta`, so neither travels with this
+repository. `node elementor/apply-donate-prepopulate.mjs --apply` writes them
+and must be run against production at cutover.
+
+The failure it prevents has no symptom. A form with no parameter names renders
+correctly, submits correctly, and ignores every tile: donors arrive at an empty
+form having already chosen, and nothing is logged. `elementor/deploy-donate.mjs`
+refuses to deploy the page until the install answers correctly, which covers the
+repo route but not a hand-edit from the Elementor editor.
+
+The other half of that mechanism DOES ship with the theme:
+`wp/empowerms-child/inc/donate-prepopulate.php` maps our URL slugs
+(`one-time`, `monthly`, `annual`) onto the form's own choice values ("One Time
+Gift", "Monthly Gift", "Annual Gift"). Those strings are Empower's, they are what
+the 96 entries store and what the three Stripe feeds condition on, and nothing in
+this build rewrites them.
 
 ### Redirects
 

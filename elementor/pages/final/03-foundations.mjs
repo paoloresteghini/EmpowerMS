@@ -85,8 +85,8 @@ const PANELS = [
   },
   {
     photo: 'advocate-capitol-portrait',
-    href: '/public-safety',
-    title: 'Public Safety',
+    href: '/safe-communities',
+    title: 'Safe Communities',
     promise: 'You should feel safe in the community you call home.',
     solution: 'We’re advancing practical public safety solutions that strengthen communities, promote accountability, and create safer neighborhoods where opportunity can thrive.',
   },

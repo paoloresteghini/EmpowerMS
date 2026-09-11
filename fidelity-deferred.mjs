@@ -381,9 +381,153 @@ export const CONTENT_HEIGHT_EXEMPTIONS = [
       + 'against the same placeholder pull-quote. Content by design, not repairable in CSS.',
     date: '2026-08-18',
   },
+  /* give-c, both widths. The static file draws a dashed marker with a 320px
+     floor where the live page renders Gravity Form 4: name, email, cell, a
+     six-part address, the gift type radio, whichever amount ladder that radio
+     reveals, Stripe's Payment Element and a total. No CSS reconciles a marker
+     with a form.
+
+     THE SECTION IS THE ROOT, not the marker inside it. `gvc-slot` has no live
+     counterpart at all, so it is unmeasurable here and belongs to
+     STATIC_ONLY_EXEMPTIONS instead; `em-gform.gvc-form` exists on both sides,
+     which is what lets the difference be attributed to one box and everything
+     below it explained as a uniform offset rather than as a page of defects.
+
+     RE-MEASURED 2026-09-11, after the gift panel was removed and the form moved
+     into a card straddling the navy band. The whole page-height difference is
+     this one box, at both widths, with every other painted box showing dH 0:
+
+       @1440  section live 1594.88 static 564.98  (dH 1029.90)
+              main    live 3315.92 static 2286.03 (     1029.89)
+       @390   section live 1823.05 static 516.16  (dH 1306.89)
+              main    live 4433.17 static 3126.28 (     1306.89)
+
+     THE HERO AND THIS SECTION NO LONGER OVERLAP, and that is load-bearing for
+     this exemption rather than incidental. The card was built first with a
+     negative top margin, which collapsed through its parent and moved the whole
+     section up into the hero; explainLayoutHeights() refused it, because a root
+     that partially overlaps another box cannot explain a difference below
+     either of them. The navy is painted by this section instead. If anyone
+     reinstates a negative margin here, this entry stops working and the failure
+     will name the overlap. */
+  {
+    page: 'give-c',
+    width: 1440,
+    key: 'em-gform.gvc-form',
+    reason: 'Gravity Form 4 (name, email, cell, address, gift type, amount ladder, Stripe Payment '
+      + 'Element, total) against the dashed marker dist/give-c.html draws in its place. A static '
+      + 'hand-off file cannot run a shortcode and must not draw a payment surface with nothing behind '
+      + 'it, so the two sides are both correct and differ by content. See elementor/pages/give-c/02-form.mjs',
+    date: '2026-09-10',
+  },
+  {
+    page: 'give-c',
+    width: 390,
+    key: 'em-gform.gvc-form',
+    reason: 'the same section at 390, where the form is taller still because every field in it stacks',
+    date: '2026-09-10',
+  },
 ];
 
 CONTENT_HEIGHT_EXEMPTIONS.forEach(validateContentExemption);
+
+/* --------------------------------------------------------------------------
+   STATIC-ONLY KEYS THAT ARE BY DESIGN
+
+   The layout-invariant assertion compares the set of build-classed elements on
+   the static page against the live one and demands they be equal in both
+   directions. A STATIC-only key normally means the conversion lost an element,
+   which is worth a red every time.
+
+   There is one situation where it does not, and it has exactly one instance.
+   A hand-off file cannot run a shortcode, and it must never draw a working
+   payment surface with nothing behind it, so where the converted page renders
+   a third-party embed the static file draws a marked space instead. The two
+   sides are both correct and no CSS reconciles them: the marker's own elements
+   simply have no live counterpart.
+
+   WHY NOT EXCLUDE THE PAGE. That is what contact does, and it is right there:
+   its stand-in reproduces the real form field for field, so every control key
+   differs and there is nothing left to compare. give-c diverges in one section
+   of four. Excluding it would drop the hero, Why Your Gift Matters and the
+   closing plate out of the suite to pay for a slot, which is a much larger hole
+   than the three keys below.
+
+   THIS CAN ONLY EVER FORGIVE A STATIC-ONLY KEY. A LIVE-only key means the
+   conversion invented an element, and no marker in a hand-off file explains
+   that, so it stays a hard failure with no list to add it to.
+
+   NO WIDTH FIELD, unlike CONTENT_HEIGHT_EXEMPTIONS. A height difference can be
+   real at one width and absent at another, which is why those entries name one.
+   An element that does not exist does not exist at either width, so a
+   width-scoped entry here would only be a way to half-forgive something and
+   leave the other width red for the same reason. */
+
+export function validateStaticOnlyExemption(entry) {
+  if (typeof entry.key !== 'string' || entry.key.trim() === '') {
+    throw new Error(`STATIC_ONLY_EXEMPTIONS: an entry for page "${entry.page}" has a non-string key `
+      + `(${JSON.stringify(entry.key)}); every entry needs a real layoutInvariants() key.`);
+  }
+  /* BOTH INSTRUMENTS' MARKERS, not just isBookkeepingKey()'s two. That helper
+     knows controlBoxes()'s `__excluded_count__` and `__unsettled__`; the keys
+     this list forgives come from layoutInvariants(), whose own marker is
+     `__main_height__`, and forgiving THAT would tell the assertion a page with
+     no <main> at all was expected. The double-underscore shape is the thing
+     they have in common, and it catches a marker added later without this
+     needing to be told about it. */
+  if (isBookkeepingKey(entry.key) || /^__.+__$/.test(entry.key)) {
+    throw new Error(`STATIC_ONLY_EXEMPTIONS: "${entry.key}" for page "${entry.page}" is a bookkeeping marker, `
+      + 'not an element, and can never be exempted.');
+  }
+  if (!PAGE_REGISTER.some((p) => p.name === entry.page)) {
+    throw new Error(`STATIC_ONLY_EXEMPTIONS: "${entry.key}" is exempted for page "${entry.page}", which is not `
+      + 'in PAGE_REGISTER (elementor/pages/register.mjs); check for a typo in `page`.');
+  }
+  if (typeof entry.reason !== 'string' || entry.reason.trim() === '') {
+    throw new Error(`STATIC_ONLY_EXEMPTIONS: "${entry.key}" for page "${entry.page}" has no reason. An exemption `
+      + 'without one is indistinguishable from a defect nobody looked at.');
+  }
+  if (typeof entry.date !== 'string' || entry.date.trim() === '') {
+    throw new Error(`STATIC_ONLY_EXEMPTIONS: "${entry.key}" for page "${entry.page}" has no date, so a stale one `
+      + 'cannot be spotted by eye.');
+  }
+  return entry;
+}
+
+export const STATIC_ONLY_EXEMPTIONS = [
+  {
+    page: 'give-c',
+    key: 'gvc-slot',
+    reason: 'the converted /donate/ renders Gravity Form 4 here, with the Stripe Payment Element inside '
+      + 'it; dist/give-c.html draws a dashed marker in that space instead, because a static hand-off file '
+      + 'cannot run a shortcode and must never draw a payment surface with nothing behind it. See '
+      + 'elementor/pages/give-c/02-form.mjs note 3',
+    date: '2026-09-10',
+  },
+  {
+    page: 'give-c',
+    key: 'gvc-slot__label',
+    reason: 'the marker\'s own caption, inside the slot above and there for the same reason',
+    date: '2026-09-10',
+  },
+  {
+    page: 'give-c',
+    key: 'gvc-slot__note',
+    reason: 'the marker\'s own explanatory line, inside the slot above and there for the same reason',
+    date: '2026-09-10',
+  },
+];
+
+STATIC_ONLY_EXEMPTIONS.forEach(validateStaticOnlyExemption);
+
+/* Pure: the static-only key list in, the ones nothing explains out. Ordinals
+   are NOT stripped before matching, so an exemption for `gvc-slot` forgives
+   that element and not a second `gvc-slot#2` somebody added later. */
+export function unexplainedStaticOnly(statOnlyKeys, pageName, list = STATIC_ONLY_EXEMPTIONS) {
+  const forgiven = new Set(list.filter((e) => e.page === pageName).map((e) => e.key));
+  return statOnlyKeys.filter((k) => !forgiven.has(k));
+}
+
 
 /* Pure: two layoutInvariants()-shaped `painted` maps in, plus the static
    <main> height, out comes everything the assertion needs. Never mutates

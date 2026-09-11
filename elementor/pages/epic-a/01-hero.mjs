@@ -152,7 +152,7 @@ const ASIDE = '<a class="epa-hero__aside" href="https://empowerms.org/introducin
 const AREALIST = '<ul class="epa-hero__arealist">'
   + '<li><a href="#area-education">Quality Education</a></li>'
   + '<li><a href="#area-work">Meaningful Work</a></li>'
-  + '<li><a href="#area-safety">Public Safety</a></li>'
+  + '<li><a href="#area-safety">Safe Communities</a></li>'
   + '</ul>';
 
 export function section() {

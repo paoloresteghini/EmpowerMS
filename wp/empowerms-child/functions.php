@@ -22,6 +22,7 @@ require_once get_stylesheet_directory() . '/inc/archive.php';
 require_once get_stylesheet_directory() . '/inc/epic-research.php';
 require_once get_stylesheet_directory() . '/inc/archived-redirects.php';
 require_once get_stylesheet_directory() . '/inc/solution-latest.php';
+require_once get_stylesheet_directory() . '/inc/donate-prepopulate.php';
 
 /**
  * Theme supports. Added 2026-08-15, when this stopped being a child theme and
@@ -314,7 +315,7 @@ function empower_page_styles() {
 		   slug and sheet were the same word would enqueue css/safety.css,
 		   which does not exist, and the page would render unstyled with
 		   nothing in the enqueue reporting it. */
-		'public-safety'=> array( 'motion', 'solution' ),
+		'safe-communities' => array( 'motion', 'solution' ),
 		/* work. Read off dist/work.html's own <head> (lines 10-22), which is the
 		   same cascade safety's row records and ends in css/solution.css, the
 		   template sheet all three solution pages share.
@@ -978,7 +979,7 @@ function empower_term_canonical_overrides() {
 		/* category term slug => the converted page it should credit instead */
 		'education' => '/quality-education/',
 		'work'      => '/meaningful-work/',
-		'justice'   => '/public-safety/',
+		'justice'   => '/safe-communities/',
 	);
 }
 

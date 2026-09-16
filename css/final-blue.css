@@ -1,0 +1,85 @@
+/* THE BLUE HERO, AND NOTHING ELSE. A REVIEW ARTEFACT, NOT A THIRD HOMEPAGE.
+ *
+ * Grant's round 2, via Kienna on 2026-09-16: "Grant is deciding between the
+ * current white hero background and a blue background. Could you create an
+ * alternate version of just the homepage hero/header with the blue background?
+ * For that version, the text colors could follow the same treatment used on the
+ * Solutions page. We'd just like to see the two options side by side before
+ * making the final call."
+ *
+ * So this file is the whole of the difference between dist/final.html and
+ * dist/final-blue.html. Both pages include the SAME six section partials; the
+ * alternate reading adds this one stylesheet after css/final.css and changes
+ * nothing else. That is deliberate, and it is what makes the comparison honest:
+ * there is no second copy of the hero markup to drift from the first, and no
+ * chance of a copy edit landing on one reading and not the other while Grant is
+ * deciding.
+ *
+ * WHEN HE DECIDES. If blue wins, these rules move into css/option-a.css beside
+ * the ones they override and this file and src/final-blue/ are deleted. If white
+ * wins, both are deleted and nothing else has to be undone. Either way the
+ * cleanup is one commit, which is the point of building it this way rather than
+ * forking the page.
+ *
+ * NOT CONVERTED, deliberately: there is no elementor/pages/final-blue/. The
+ * conversion target is whichever hero Empower keep, and converting a reading
+ * that is 50% likely to be deleted would put a second homepage tree on the
+ * install for no one to look at.
+ *
+ * THE TREATMENT IS SOLUTIONS B'S, READ OFF IT RATHER THAN INVENTED, which is
+ * what Kienna asked for. css/solutions-b.css:43-64 is the source for every
+ * value below:
+ *
+ *     .sb-hero              background:var(--surface-navy-deep); color:var(--text-inverse)
+ *     .sb-hero h1           color:var(--white)
+ *     .sb-hero h1 em        color:var(--orange-300)
+ *     .sb-hero__lede        color:var(--white)
+ *     .sb-hero__copy p      color:var(--text-inverse-muted)
+ *
+ * THE TAGLINE IS THE ONE VALUE SOLUTIONS B DOES NOT SUPPLY, because that page
+ * has no kicker above its h1. `.fp-tagline` is --em-orange-ink today, which is
+ * the DARK orange the build uses for orange type on light backgrounds; on navy
+ * it fails contrast and reads as brown. It takes --orange-300, which is the
+ * value solutions-b already gives orange type on this exact background, so the
+ * page gains no new colour. Measured on the pair this build ships:
+ * --orange-300 (#F09A75) on --blue-900 is 6.6:1, comfortably past 4.5:1 at
+ * this size, where --em-orange-ink on the same navy is 2.97:1 and fails.
+ *
+ * Measured, not estimated, all against --blue-900 #002935:
+ *
+ *     --orange-300         #F09A75   7.00:1    the tagline and the h1's <em>
+ *     --white              #FFFFFF  15.34:1    the h1
+ *     --text-inverse-muted #C2CCCF   9.38:1    the lede, composited at .76
+ *     --em-orange-ink      #BA4920   2.97:1    what the tagline carries today
+ *
+ * THE ORANGE BUTTON IS LEFT ALONE. `.em-btn--primary` is white on --em-orange,
+ * which measures 3.59:1 and is the build's standing open question about the
+ * brand orange, NOT something this file introduces: the pairing is identical on
+ * the white reading, because what sits behind a filled button does not change
+ * the contrast inside it. Changing it here would put a second variable into a
+ * comparison meant to have one, so it stays and the orange question stays open.
+ *
+ * WHAT IS NOT TOUCHED: the layout, the two photographs, the h1 text, the
+ * gradient's replacement only. The hero is not overflow:hidden on either
+ * reading, because the north-star quote card still has to escape it
+ * (css/option-a.css:36-39). */
+
+/* The gradient goes; the flat navy replaces it. --surface-navy-deep rather than
+   --surface-navy because that is the value solutions-b uses, and the deeper of
+   the two is what gives the orange headline half its contrast. */
+.fp-hero{background:var(--surface-navy-deep);color:var(--text-inverse)}
+
+/* --em-blue on navy is invisible; the headline takes white, and its <em> half
+   takes the lighter orange, exactly as .sb-hero h1 and .sb-hero h1 em do. */
+.fp-hero h1{color:var(--white)}
+.fp-hero h1 em{color:var(--orange-300)}
+
+/* The kicker's rule and its 34x4 mark are one element and one ::before, so both
+   move together or the mark stays dark orange beside lightened type. */
+.fp-tagline{color:var(--orange-300)}
+.fp-tagline::before{background:var(--orange-300)}
+
+/* --text-body is a dark grey. The lede is the hero's one long paragraph, so it
+   takes the muted inverse rather than flat white, which is the distinction
+   .sb-hero__copy p:last-child draws on the page this is copied from. */
+.fp-hero__lede{color:var(--text-inverse-muted)}

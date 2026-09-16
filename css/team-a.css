@@ -71,27 +71,41 @@
   border-radius:var(--radius-pill);border:2px dashed var(--border-inverse);
   font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-small);
   letter-spacing:.02em;color:var(--orange-300)}
-/* The board roll carries real photographs now (2026-09-10). Same 44px box the
-   monogram held, so the row rhythm below is untouched, and the same pill radius
-   so it still reads as a disc. `object-fit:cover` is belt and braces rather than
-   a crop: every file is already square, because Empower's own board page crops
-   them square and those are the files this build ships. A future headshot that
-   is not square will be centre-cropped rather than squashed. */
-/* 96px SINCE 2026-09-16, up from the 44px the monogram left behind. Grant's
-   review: "the board members currently feel quite a bit smaller than the
-   staff", which they did, and by a long way. Against a 280px staff tile at 4:5
-   the board headshot was a fourteenth of the area; at 96 against a 240px tile
-   (see .ta-roster below, reduced in the same change) it is about a ninth of the
-   height rather than an eighth of the width, and the two sections read as two
-   treatments of the same roster rather than as people of two ranks.
 
-   THE SOURCE FILES CARRY IT. Every headshot in assets/headshots is 132x132, so
-   96 is still inside the native size and none of the eight is being scaled up.
-   `object-fit:cover` above was belt and braces at 44 and stays that way at 96:
-   the files are square, and a future one that is not gets centre-cropped rather
-   than squashed. */
-.ta-roll__photo{width:96px;height:96px;flex:0 0 auto;
-  border-radius:var(--radius-pill);object-fit:cover;display:block}
+/* THE BOARD'S PICTURE FRAME, and deliberately NOT .ta-portrait.
+
+   .ta-portrait above is the staff tile's PLACEHOLDER treatment: a dashed edge, a
+   hex-lattice ::before and a monogram, all three there to look pending. On the
+   converted page bridge.css block 57 strips them and turns it into a frame,
+   because the staff roster's photographs arrive from the `person` CPT and exist
+   only there. The static build never loads bridge.css, so a board card reusing
+   .ta-portrait would be a real photograph sitting inside a dashed placeholder on
+   half the builds this repo produces.
+
+   .ta-headshot is the frame in BOTH, and it needs no bridge rule of its own for
+   a second reason: the board is one authored html() widget, so this class stays
+   on the real <img> in the converted tree rather than moving to a widget wrapper
+   the way image() would move it.
+
+   SAME BOX AS .ta-portrait, by the same three declarations (100% wide, 4:5,
+   --radius-lg), so a board card and a staff card measure identically, which is
+   what "the same size as the Staff cards" asks for. --surface-subtle sits
+   underneath as the letterbox colour; every file is cropped to 4:5 already, so
+   nothing shows it today.
+
+   `height:auto` IS LOAD-BEARING AND IS NOT TIDYING. Each <img> carries its own
+   real `width`/`height` attributes, which is what stops the browser reserving a
+   box the picture does not fill; those two attributes are also mapped to CSS as
+   presentational hints. `aspect-ratio` only sizes an element whose height is
+   `auto`, so with `height="500"` still in force the ratio is ignored and the
+   picture renders 240 wide by its own attribute height: eight cards of eight
+   different heights, which is the precise opposite of what this section was
+   asked for. Without the attributes the bug disappears and the layout shift
+   comes back, so both stay and `height:auto` settles which one wins.
+   `.ta-portrait` never showed this because it is a <span>, and bridge.css's
+   `.ta-portrait img` sets height explicitly. */
+.ta-headshot{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;
+  border-radius:var(--radius-lg);background:var(--surface-subtle)}
 
 /* =============================== 1 · Hero ================================= */
 /* Same gradient the About pages open on, so arriving here from Who We Are is
@@ -271,41 +285,31 @@ a.ta-person__link:hover .ta-person__more::after{width:22px}
    always reached by its own class, never through the anchor. */
 
 /* =============================== 4 · Board ================================ */
-/* Eight names and two officer roles. Anything card-shaped here would be a box
-   holding a name, so the roll is set as a ragged wall of pills that wraps on
-   its own rather than a grid pretending each entry has equal content. */
-.ta-board{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0;background:var(--surface-tint)}
+/* Eight names and two officer roles. */
+.ta-board{padding:clamp(var(--space-10),5.5vw,var(--space-13)) 0
+  clamp(var(--space-11),6vw,var(--space-14));background:var(--surface-tint)}
 
-.ta-board__grid{display:grid;grid-template-columns:minmax(0,.5fr) minmax(0,1.5fr);
-  gap:clamp(var(--space-8),4vw,var(--space-12));align-items:start}
+/* CARDS SINCE 2026-09-16, Grant's round 2. What stood here until then was a
+   two-column band: the heading in a narrow left rail and, beside it, a ragged
+   wall of name pills each holding a 96px round photograph. The comment above
+   this rule argued for that shape on the grounds that a board entry is a name
+   and sometimes an officer role, and so should not pretend to equal content per
+   person. Grant asked for the opposite and he is right about the page: two
+   roster sections drawn two different ways read as two ranks of people, which is
+   the same note that raised the discs from 44px to 96px a week earlier without
+   fixing the cause.
+
+   So the section takes the staff section's own shape, heading above and
+   .ta-roster below. It REUSES .ta-roster and .ta-person rather than restating
+   their measurements, so the two sections cannot drift apart and every
+   responsive rule already keyed on .ta-roster covers this list too.
+
+   The light blue stays. Kienna's note calls it "the light blue board section"
+   and asks for it moved, not recoloured, and the tint is what keeps the board
+   legible as its own section now that it is drawn like the one above it. */
+.ta-board__head{max-width:62ch;margin-bottom:clamp(var(--space-8),4vw,var(--space-11))}
 .ta-board h2{margin:0;text-wrap:balance;font-size:clamp(1.6rem,1.15rem + 1.7vw,2.4rem);
   font-weight:var(--fw-black);line-height:1.1;letter-spacing:-.025em;color:var(--em-blue)}
-
-.ta-roll{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;
-  gap:clamp(var(--space-4),1.6vw,var(--space-6))}
-.ta-roll__item{display:flex;align-items:center;gap:var(--space-4);
-  padding:var(--space-4) var(--space-6) var(--space-4) var(--space-4);
-  background:var(--surface-card);border-radius:var(--radius-pill);box-shadow:var(--shadow-sm)}
-.ta-roll__name{font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:clamp(1rem,.95rem + .35vw,1.1875rem);line-height:1.2;
-  letter-spacing:var(--ls-heading);color:var(--em-blue)}
-
-/* --orange-700, not the brand --em-orange: white on #E65A28 measures 3.59:1 and
-   this label is 13px, so the large-text exemption cannot apply. Same failing
-   pair, same local override, as .em-badge--accent in css/site.css and the year
-   chip on Who We Are A. One more instance of the open orange question. Delete
-   this line if Empower darken the brand value upstream.
-
-   white-space, and overflow-wrap back to normal, because css/site.css sets
-   `overflow-wrap:anywhere` on everything below 420px so no long word can force
-   sideways scroll. A nine-letter role in a pill is not that word: left alone it
-   breaks as TREASURE / R. The pill is ~90px against 327px of viewport, so
-   holding it on one line cannot overflow anything. */
-.ta-roll__role{padding:var(--space-1) var(--space-4);border-radius:var(--radius-pill);
-  white-space:nowrap;overflow-wrap:normal;
-  background:var(--orange-700);color:var(--white);
-  font-family:var(--font-display);font-weight:var(--fw-bold);font-size:var(--fs-caption);
-  letter-spacing:var(--ls-caps);text-transform:uppercase}
 
 /* ============================== Responsive ================================ */
 @media (max-width:1100px){
@@ -313,7 +317,6 @@ a.ta-person__link:hover .ta-person__more::after{width:22px}
   .ta-hero__lede,.ta-hero__body{max-width:56ch}
   .ta-hero__media{aspect-ratio:16/10}
   .ta-hero__media img{object-position:center 26%}
-  .ta-board__grid{grid-template-columns:1fr}
 }
 
 @media (max-width:900px){
@@ -327,14 +330,12 @@ a.ta-person__link:hover .ta-person__more::after{width:22px}
 
 @media (max-width:640px){
   .ta-fellows__slab::before{-webkit-mask-size:58px;mask-size:58px}
-  .ta-roll__item{width:100%;flex-wrap:wrap}
-  .ta-roll__role{margin-left:auto}
   /* Names keep their words whole. The `overflow-wrap:anywhere` in
      css/site.css is there so no long word can push the page sideways at 320px,
      but a person's name broken as "Ger / ard Gib / ert" is not a wrapping
      decision anyone would make, and a pill on its own line gives the name the
      full width it needs anyway. */
-  .ta-roll__name{overflow-wrap:normal}
+  .ta-person__name{overflow-wrap:normal}
 }
 
 @media (max-width:480px){

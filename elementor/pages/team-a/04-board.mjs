@@ -6,37 +6,49 @@ import { container, text, html } from '../../factory.mjs';
 
    Structural decisions:
 
-   1. `.ta-board__grid` AND `.em-container` ARE ONE DIV, matching this
-      page's own hero grid (01-hero.mjs note 1) and solutions-b's
-      precedent: `<div class="ta-board__grid em-container">`, a single
-      element carrying both classes.
+   1. `.em-container` HOLDS THE HEAD AND THE ROSTER DIRECTLY. Until
+      2026-09-16 this was one div carrying `.ta-board__grid em-container`,
+      a two-column band with the heading in a left rail. The band is gone
+      with the roll (note 3), so the wrapper is a plain `.em-container` and
+      the section now matches `.ta-staff`'s own shape exactly.
 
    2. `.ta-board__head` AND `.ta-mark` ARE ONE DIV, matching this page's
       own staff head (02-staff.mjs note 2): `<div class="ta-board__head
       ta-mark" data-reveal-group>`.
 
-   3. `.ta-roll` (a <ul> of eight <li>, each carrying two or three plain
-      <span>s) IS ONE html() WIDGET, the same choice and the same reason
-      as this page's own `.ta-ledger` (03-fellows.mjs) and roster
-      (02-staff.mjs): nothing inside any item needs to be a widget (no
-      images, no dynamic content, no links). css/team-a.css carries no
-      structural pseudo-class touching `.ta-roll`/`.ta-roll__item` at all,
-      so container-vs-html() makes no difference to bridge cost either
-      way, matching the brief's own note; html() is chosen to keep real
-      `<ul>`/`<li>` list semantics, the same editability trade
-      02-staff.mjs's own note records for the roster, accepted here for
-      the same reason. No cssClass passed to html(): the real class sits
-      on the `<ul>` tag directly in the markup string.
+   3. CARDS SINCE 2026-09-16, and still ONE html() WIDGET. Grant's round 2:
+      "make the Board into cards like the staff and the same size as the
+      Staff cards". The pill roll is replaced by a `<ul class="ta-roster">`
+      of eight `<li class="ta-person">`, which is the STAFF roster's own
+      markup and its own classes, so "the same size" is true by
+      construction rather than by a measurement copied into two files.
+
+      IT STAYS html() FOR THE SAME REASON AS BEFORE, and the reason is now
+      stronger rather than weaker. Nothing in a card needs to be a widget:
+      no dynamic content and no links (note 6 - these eight are not
+      `person` posts, so there is no bio to open and no post-url tag to
+      bind). Keeping the whole list in one html() blob preserves real
+      `<ul>`/`<li>` semantics, and it keeps `.ta-headshot` on the real
+      `<img>`: an image() widget would move that class to the wrapper and
+      buy this section a bridge rule of exactly the shape block 57 had to
+      be written in for the staff tiles. No cssClass passed to html(); the
+      real classes sit on the tags in the markup string.
+
+      THE PHOTOGRAPH TAKES `.ta-headshot`, NOT `.ta-portrait`.
+      `.ta-portrait` is the staff tile's placeholder treatment and is only
+      turned into a picture frame by bridge.css block 57, which the static
+      build does not load. `.ta-headshot` (css/team-a.css) is the same box
+      by the same three declarations and is a real frame in both builds.
 
    4. THE HEADING IS A text() WIDGET CARRYING A BARE <h2>, never heading().
       No `heading()` import above.
 
    5. GRANT CALLEN APPEARS TWICE ON THIS PAGE, here and in the staff
       roster (02-staff.mjs), because he sits on both the staff and the
-      board, matching dist/team-a.html's own comment. His board entry
-      carries no `.ta-roll__role` span (he and four others have no officer
-      title), matching source exactly: only Abb Payne (Chairman) and
-      Gerard Gibert (Treasurer) carry one.
+      board, matching dist/team-a.html's own comment. His card carries no
+      `.ta-person__title` (he and five others have no officer title),
+      matching source exactly: only Abb Payne (Chairman) and Gerard Gibert
+      (Treasurer) carry one.
 
    6. THE BOARD STAYS HAND-WRITTEN, AND THAT IS THE DATA'S DECISION RATHER
       THAN THIS FILE'S. The staff roster and the fellows ledger became Loop
@@ -78,14 +90,14 @@ import { container, text, html } from '../../factory.mjs';
 const HEADLINE = 'Board of Directors';
 
 const BOARD = [
-  { photo: 'abb-payne', name: 'Abb Payne', role: 'Chairman' },
-  { photo: 'gerard-gibert', name: 'Gerard Gibert', role: 'Treasurer' },
-  { photo: 'grant-callen', name: 'Grant Callen', role: null },
-  { photo: 'sunny-desai', name: 'Sunny Desai', role: null },
-  { photo: 'betsy-dowell', name: 'Betsy Dowell', role: null },
-  { photo: 'lex-lindsey', name: 'Lex Lindsey', role: null },
-  { photo: 'marie-sanderson', name: 'Marie Sanderson', role: null },
-  { photo: 'george-williams', name: 'George Williams', role: null },
+  { photo: 'abb-payne', name: 'Abb Payne', role: 'Chairman', w: 400, h: 500 },
+  { photo: 'gerard-gibert', name: 'Gerard Gibert', role: 'Treasurer', w: 387, h: 484 },
+  { photo: 'grant-callen', name: 'Grant Callen', role: null, w: 480, h: 600 },
+  { photo: 'sunny-desai', name: 'Sunny Desai', role: null, w: 479, h: 600 },
+  { photo: 'betsy-dowell', name: 'Betsy Dowell', role: null, w: 479, h: 600 },
+  { photo: 'lex-lindsey', name: 'Lex Lindsey', role: null, w: 400, h: 500 },
+  { photo: 'marie-sanderson', name: 'Marie Sanderson', role: null, w: 320, h: 400 },
+  { photo: 'george-williams', name: 'George Williams', role: null, w: 400, h: 500 },
 ];
 
 /* THE HEADSHOTS ARE THEME ASSETS, NOT MEDIA LIBRARY ATTACHMENTS, and that is
@@ -107,26 +119,42 @@ const BOARD = [
  * a cutover step, which is what eight more attachment ids would have cost
  * (docs/staging-to-prod-database.md).
  *
- * THE FILES ARE EMPOWER'S OWN CROPS, lifted from empowerms.org/board/ on
- * 2026-09-10, downscaled to 132px for a 44px box. Their page pairs each
+ * THE FILES ARE EMPOWER'S OWN, from empowerms.org/board/. Their page pairs each
  * photograph with its own name in its own markup, and that pairing is the only
  * thing that identifies them: `Betsy-Acklen-...` sits under "Betsy Dowell" (a
  * former name), `G-Gilbert-...` under "Gerard Gibert" (their misspelling), and
- * Grant Callen's file is called `2`.
+ * Grant Callen's file is called `2`. All eight also carry `-circle-`, which
+ * names the CSS their page applies and not the file: every one is a plain
+ * square photograph.
  *
- * ALT IS EMPTY AND aria-hidden STAYS, carried over from the monograms these
- * replace. `.ta-roll__name` is the very next element, so a described photograph
- * would have a screen reader announce every board member twice. */
+ * RE-PULLED AT SOURCE SIZE ON 2026-09-16 and cropped to 4:5. The 2026-09-10
+ * copies were downscaled to 132px because that was the size the disc rendered
+ * at, and that made a card-sized board look as though it needed new assets from
+ * Empower. It did not: the same eight were still being served at 400 to 1422px
+ * square. The crop takes the full height and trims the sides, so no face moves
+ * and nothing is upscaled. Marie Sanderson's is the smallest at 320x400 and is
+ * the first to replace if Empower ever send a larger set.
+ *
+ * THE WIDTH AND HEIGHT ATTRIBUTES DIFFER PER FILE, deliberately: they are each
+ * image's real intrinsic size, which is what stops the browser reserving a box
+ * the picture does not fill. `.ta-headshot`'s aspect-ratio is what actually
+ * sizes the rendered box.
+ *
+ * ALT IS EMPTY AND aria-hidden STAYS, carried over from the discs these
+ * replace. `.ta-person__name` is the very next element, so a described
+ * photograph would have a screen reader announce every board member twice. */
 const THEME_ASSETS = '/wp-content/themes/empowerms-child/assets/headshots';
 
-const rollItem = (b) => `      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="${THEME_ASSETS}/${b.photo}.jpg" width="132" height="132" loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">${b.name}</span>${b.role ? `
-        <span class="ta-roll__role">${b.role}</span>` : ''}
+const card = (b) => `      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="${THEME_ASSETS}/${b.photo}.jpg" width="${b.w}" height="${b.h}" loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">${b.name}</h3>${b.role ? `
+          <span class="ta-person__title">${b.role}</span>` : ''}
+        </div>
       </li>`;
 
-const ROLL = `<ul class="ta-roll" data-reveal-group>
-${BOARD.map(rollItem).join('\n')}
+const ROSTER = `<ul class="ta-roster" data-reveal-group>
+${BOARD.map(card).join('\n')}
     </ul>`;
 
 export function section() {
@@ -138,7 +166,7 @@ export function section() {
       _attributes: 'aria-labelledby|board-title',
     },
     [
-      container({ cssClass: 'ta-board__grid em-container', content_width: 'full' }, [
+      container({ cssClass: 'em-container', content_width: 'full' }, [
         container(
           { cssClass: 'ta-board__head ta-mark', content_width: 'full', _attributes: 'data-reveal-group|' },
           [
@@ -148,7 +176,7 @@ export function section() {
             }),
           ],
         ),
-        html({ markup: ROLL }),
+        html({ markup: ROSTER }),
       ]),
     ],
   );

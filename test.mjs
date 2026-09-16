@@ -1185,7 +1185,13 @@ test('dev server never leaks into the built page', () => {
    Insights intro. See the open item in the vault: either the roadmap copy is
    restored into final's sections 5 and 6, or Empower sign off the rewrite.
    Whichever way it goes, final.html then joins this list. */
-const NOT_OPTIONS = ['dist/current.html', 'dist/current-2.html', 'dist/final.html'];
+/* final-blue joined this list on 2026-09-16. It is `kind: 'homepage'` because
+   it IS the homepage, but it was never one of the four readings Empower chose
+   between: it is the agreed build plus css/final-blue.css, built so Grant can
+   see the hero on navy beside the hero on white. Counting it as a fifth option
+   would make this test assert a decision that never happened. */
+const NOT_OPTIONS = ['dist/current.html', 'dist/current-2.html', 'dist/final.html',
+  'dist/final-blue.html'];
 const OPTIONS = HOMEPAGES.filter(p => !NOT_OPTIONS.includes(p.out));
 
 test('every page in the manifest actually built', () => {
@@ -1533,10 +1539,10 @@ test('the chooser filters without a script, and every control is a real one', ()
     .map(m => m[1]);
   assert.deepEqual(ids,
     ['to-review', 'signed-off', 'archived',
-     'set-home', 'set-who', 'set-do', 'set-team', 'set-solutions',
+     'set-home', 'set-hero', 'set-who', 'set-do', 'set-team', 'set-solutions',
      'set-education', 'set-work', 'set-safety', 'set-podcast', 'set-capitol', 'set-epic',
      'set-mail', 'set-amb', 'set-give', 'set-content', 'set-landing', 'set-contact', 'set-legal'],
-    'the facets in the rail are not the three statuses and eighteen sets expected');
+    'the facets in the rail are not the three statuses and nineteen sets expected');
   for (const id of ids) {
     assert.ok(chooser.includes(`<label class="ch__check__label" for="${id}">`),
       `the ${id} facet has no label bound to it`);
@@ -1594,9 +1600,16 @@ test('every build on the chooser is filterable, and every set has exactly one pi
      readings of one brief. What is open is Empower's sign-off on the
      transcription and on the wording questions the move surfaced, so it carries
      no pick for the same reason a set awaiting a decision carries none. */
-  const UNDECIDED = ['content', 'landing', 'contact', 'legal'];
+  /* `hero` joined on 2026-09-16, and it is undecided in yet another sense: the
+     homepage set above it IS decided, and what is open is one property of the
+     page Empower already chose. It carries a single card, the blue reading,
+     because the other reading is the homepage card itself and listing final.html
+     twice would have the Status counts claim a build that does not exist. The
+     set comes off the page entirely when Grant answers, whichever way he
+     answers. */
+  const UNDECIDED = ['content', 'landing', 'contact', 'legal', 'hero'];
   const sections = chooser.match(/<section data-set="[a-z]+" data-state="[a-z]+" aria-labelledby="group-[^"]+"[\s\S]*?<\/section>/g) || [];
-  assert.equal(sections.length, 18, `expected eighteen sets on the chooser, found ${sections.length}`);
+  assert.equal(sections.length, 19, `expected nineteen sets on the chooser, found ${sections.length}`);
   for (const section of sections) {
     const key = section.match(/data-set="([a-z]+)"/)[1];
     const picks = (section.match(/ch__opt--pick/g) || []).length;
@@ -3267,7 +3280,7 @@ const MAIL_COPY = [
   /* Section 1, the hero, and the roadmap's one button. */
   'Stay Connected',
   'Get the latest from Empower Mississippi delivered straight to your inbox.',
-  'From monthly updates to important news from the Capitol, we’ll help you stay informed in five minutes or less.',
+  'From the latest news across Mississippi to important updates under the Dome, we’ll help you stay informed in five minutes or less.',
   'Join Our Email List',
 
   /* Section 2, About. */
@@ -3278,7 +3291,7 @@ const MAIL_COPY = [
 
   /* Section 3, What You'll Receive, and its four items. */
   'What You’ll Receive',
-  'Monthly news and updates',
+  'Latest news and updates',
   'Legislative highlights during the session',
   'New articles, research, and podcasts',
   'Opportunities to get involved',

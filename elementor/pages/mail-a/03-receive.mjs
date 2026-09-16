@@ -118,7 +118,7 @@ import { photo } from './media.mjs';
 const HEADLINE = 'What You’ll Receive';
 
 const ITEMS = [
-  'Monthly news and updates',
+  'Latest news and updates',
   'Legislative highlights during the session',
   'New articles, research, and podcasts',
   'Opportunities to get involved',

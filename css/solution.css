@@ -229,7 +229,43 @@
   background:var(--surface-navy);color:var(--white);
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);letter-spacing:var(--ls-caps);
-  text-transform:uppercase;line-height:1.3}
+  text-transform:uppercase;line-height:1.3;
+  /* TWO LINES ALWAYS, since 2026-09-16. Grant's round 2, on Quality Education:
+     "make the blue boxes all the same size ... the box sizes should match the
+     'support educators and innovators' box". The rule above equalises the CARD
+     bottoms and says nothing about where the navy cap ends, so each cap was as
+     tall as its own title happened to wrap.
+
+     MEASURED BEFORE IT WAS FIXED, all three pages, eleven widths from 1440 to
+     390, reading each cap's rendered height off the built page:
+
+       education  1440/1280/1200  [56.9, 56.9, 73.8, 56.9]   <- Grant's screenshot
+       safety     1440/1280/1200  [73.8, 73.8, 73.8, 73.8]   even
+       work       1440/1280/1200  [73.8, 73.8, 73.8, 73.8]   even
+
+     Education is the page that shows it because "Empower Parents" is the one
+     two-word title in the unit: it sets one line where its neighbour sets two.
+     Its siblings are NOT correct by rule, only by luck, every one of their eight
+     titles being long enough to wrap at desktop; both go ragged lower down (work
+     at 780, 700 and 390, safety at 700 and 390). So the repair is made once here,
+     in the file all three share, rather than as a Quality Education patch.
+
+     2 IS THE MEASURED CEILING, not a guess: no title in the unit reaches three
+     lines at any of the eleven widths, and min-height lets one grow if a longer
+     title is ever added rather than clipping it.
+
+     WHY min-height AND NOT subgrid. Subgrid would size the row from the tallest
+     cap and is the tidier CSS, but the cap that carries the navy background is a
+     text() WIDGET in the converted page, so the grid item is Elementor's wrapper
+     div and the stretch would land on the wrapper while the <p> inside kept its
+     own height: the navy box would not grow and the fix would be invisible on
+     the exact pages it was written for. min-height sits on the <p> itself, which
+     carries the background in BOTH trees, so it needs no bridge rule and no
+     wrapper-shaped selector. See docs on class-on-wrapper for the family.
+
+     The 1.3 below is the line-height declared immediately above; border-box
+     (tokens/base.css:1) is what makes the padding term part of the total. */
+  min-height:calc(2 * 1.3 * var(--fs-caption) + 2 * var(--space-5))}
 
 .sol-cap__body{display:flex;flex-direction:column;flex:1;
   gap:var(--space-5);padding:clamp(var(--space-6),2.4vw,var(--space-7))}

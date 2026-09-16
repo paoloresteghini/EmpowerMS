@@ -31,7 +31,17 @@ import { LOOP_ITEM_POST_IDS, staffCard, fellowRow } from './loop-item.mjs';
 
 export const POST_ID = 20599;
 
-export const sections = () => [hero(), staff(), fellows(), board()];
+/* BOARD BEFORE STAFF SINCE 2026-09-16, Grant's round 2 via Kienna: "move the
+   light blue board section so it sits below the Staff section. The order would
+   then be Board -> Staff -> Fellows, with Fellows at the bottom of the page."
+   Those two sentences do not agree: moving Board below Staff gives Staff ->
+   Board -> Fellows, not the order she then wrote out. Both readings satisfy her
+   third constraint, so the text cannot settle it. Built to the order she stated
+   explicitly and reinforced ("Fellows at the bottom"), which is also the
+   conventional order for a governance page, and flagged back to her in the same
+   reply. One line here and one include order in src/team-a/index.html reverse it
+   if she meant the other. */
+export const sections = () => [hero(), board(), staff(), fellows()];
 
 /* The two Loop Item templates, as [postId, elements] pairs. Derived from the
    same LOOP_ITEM_POST_IDS map the two section modules read, so the id a grid

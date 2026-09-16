@@ -58,8 +58,7 @@ const PODCAST_MARKUP = `<a class="em-podcast em-insights__podcast" href="/podcas
           ${PLAY_SVG}
         </span>
         <span>
-          <span class="em-podcast__show">The Empower Podcast</span>
-          <span class="em-podcast__title">Capitol Chat</span>
+          <span class="em-podcast__title">The Empower Podcast</span>
           <span class="em-podcast__meta">New episodes on the ideas, people, and policy shaping opportunity in Mississippi.</span>
         </span>
       </a>`;

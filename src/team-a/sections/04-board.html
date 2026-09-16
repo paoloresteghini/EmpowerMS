@@ -1,66 +1,100 @@
 <!-- Names and the two officer roles are the roadmap’s copy. Grant Callen appears
      here and in the staff roster because he sits on both.
 
-     THE HEADSHOTS ARE EMPOWER’S OWN CROPS, taken from empowerms.org/board/ on
-     2026-09-10 and downscaled to 132px, 3x the 44px the disc renders at. Their
-     page pairs each photograph with its own name in its own markup, and that
-     pairing is what identifies them, because two of the eight files are named
-     after somebody else: `Betsy-Acklen-…` sits under the heading “Betsy Dowell”
-     (a former name) and `G-Gilbert-…` under “Gerard Gibert” (their own
-     misspelling). Grant Callen’s file is called `2`.
+     THE HEADSHOTS ARE EMPOWER’S OWN, taken from empowerms.org/board/. Their page
+     pairs each photograph with its own name in its own markup, and that pairing
+     is what identifies them, because two of the eight files are named after
+     somebody else: `Betsy-Acklen-…` sits under the heading “Betsy Dowell” (a
+     former name) and `G-Gilbert-…` under “Gerard Gibert” (their own
+     misspelling). Grant Callen’s file is called `2`. Every one of the eight also
+     carries `-circle-` in its filename, which describes the CSS their page
+     applies and not the file: all eight are plain square photographs.
 
-     ALT IS EMPTY AND aria-hidden STAYS, exactly as it was on the monograms these
-     replace. The person’s name is the next element in the same row, so a
+     RE-PULLED AT SOURCE SIZE ON 2026-09-16, and cropped to the 4:5 the card
+     wants. The earlier copies were downscaled to 132px because that was the size
+     the disc rendered at, which made this change look as though it needed new
+     assets from Empower; it did not. Sources ran 400 to 1422px square, so the
+     crop takes the full height and trims the sides, and nothing here is upscaled.
+     Marie Sanderson’s is the smallest at 320x400 and is the one to replace first
+     if Empower ever send a larger set.
+
+     ALT IS EMPTY AND aria-hidden STAYS, exactly as it was on the discs these
+     replace. The person’s name is the next element in the same card, so a
      described photograph would make a screen reader announce every board member
-     twice. -->
+     twice.
+
+     CARDS SINCE 2026-09-16, Grant’s round 2: “make the Board into cards like the
+     staff and the same size as the Staff cards”. So the section reuses
+     `.ta-roster` and `.ta-person` rather than copying their measurements, which
+     is what makes “the same size” true by construction rather than by a number
+     typed twice. The photograph takes `.ta-headshot` and NOT `.ta-portrait`:
+     `.ta-portrait` is the staff tile’s placeholder treatment, a dashed edge and a
+     hex lattice, and it is only turned into a picture frame in bridge.css, which
+     the static build does not load. `.ta-headshot` is a real frame in both. -->
 <section class="ta-board" aria-labelledby="board-title">
-  <div class="ta-board__grid em-container">
+  <div class="em-container">
     <div class="ta-board__head ta-mark" data-reveal-group>
       <h2 id="board-title" data-reveal="rise">Board of Directors</h2>
     </div>
 
-    <ul class="ta-roll" data-reveal-group>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/abb-payne.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Abb Payne</span>
-        <span class="ta-roll__role">Chairman</span>
+    <ul class="ta-roster" data-reveal-group>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/abb-payne.jpg" width="400" height="500"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Abb Payne</h3>
+          <span class="ta-person__title">Chairman</span>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/gerard-gibert.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Gerard Gibert</span>
-        <span class="ta-roll__role">Treasurer</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/gerard-gibert.jpg" width="387" height="484"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Gerard Gibert</h3>
+          <span class="ta-person__title">Treasurer</span>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/grant-callen.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Grant Callen</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/grant-callen.jpg" width="480" height="600"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Grant Callen</h3>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/sunny-desai.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Sunny Desai</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/sunny-desai.jpg" width="479" height="600"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Sunny Desai</h3>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/betsy-dowell.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Betsy Dowell</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/betsy-dowell.jpg" width="479" height="600"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Betsy Dowell</h3>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/lex-lindsey.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Lex Lindsey</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/lex-lindsey.jpg" width="400" height="500"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Lex Lindsey</h3>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/marie-sanderson.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">Marie Sanderson</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/marie-sanderson.jpg" width="320" height="400"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">Marie Sanderson</h3>
+        </div>
       </li>
-      <li class="ta-roll__item" data-reveal="rise">
-        <img class="ta-roll__photo" src="../assets/headshots/george-williams.jpg" width="132" height="132"
-             loading="lazy" decoding="async" alt="" aria-hidden="true">
-        <span class="ta-roll__name">George Williams</span>
+      <li class="ta-person" data-reveal="rise">
+        <div class="ta-person__link">
+          <img class="ta-headshot" src="../assets/headshots/george-williams.jpg" width="400" height="500"
+               loading="lazy" decoding="async" alt="" aria-hidden="true">
+          <h3 class="ta-person__name">George Williams</h3>
+        </div>
       </li>
     </ul>
   </div>

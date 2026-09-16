@@ -157,6 +157,7 @@
 body:has(.ch__set:checked) .ch__opt,
 body:has(.ch__set:checked) .ch__results > section{display:none}
 body:has(#set-home:checked) .ch__opt[data-set="home"],
+body:has(#set-hero:checked) .ch__opt[data-set="hero"],
 body:has(#set-who:checked) .ch__opt[data-set="who"],
 body:has(#set-do:checked) .ch__opt[data-set="do"],
 body:has(#set-team:checked) .ch__opt[data-set="team"],
@@ -175,6 +176,7 @@ body:has(#set-landing:checked) .ch__opt[data-set="landing"],
 body:has(#set-legal:checked) .ch__opt[data-set="legal"],
 body:has(#set-contact:checked) .ch__opt[data-set="contact"]{display:flex}
 body:has(#set-home:checked) .ch__results > section[data-set="home"],
+body:has(#set-hero:checked) .ch__results > section[data-set="hero"],
 body:has(#set-who:checked) .ch__results > section[data-set="who"],
 body:has(#set-do:checked) .ch__results > section[data-set="do"],
 body:has(#set-team:checked) .ch__results > section[data-set="team"],

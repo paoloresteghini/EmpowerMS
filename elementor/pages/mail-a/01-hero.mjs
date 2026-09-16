@@ -81,7 +81,7 @@ const LEAD = 'Get the latest from Empower Mississippi delivered straight to your
 /* The curly apostrophe is the source's, reproduced byte for byte rather than
    normalised: census() keys on the element's own text, so a straight quote
    here would take this paragraph out of the shared set entirely. */
-const SUB = 'From monthly updates to important news from the Capitol, we’ll help you stay informed in '
+const SUB = 'From the latest news across Mississippi to important updates under the Dome, we’ll help you stay informed in '
   + '<strong>five minutes or less</strong>.';
 
 /* THE LIVE FORM, NOT A COPY OF ONE, since 2026-09-02.

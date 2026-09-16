@@ -31,6 +31,14 @@ const MARKER = /<!--@include\s+([^\s>]+?)\s*-->/g;
 export const PAGES = [
   { src: 'chooser.html', out: 'dist/index.html', title: 'Compare the builds', kind: 'chooser' },
   { src: 'final/index.html', out: 'dist/final.html', title: 'The agreed build', kind: 'homepage' },
+  /* The blue hero, 2026-09-16. NOT a sixth homepage and not an option Empower
+     are choosing a build from: it is the SAME page as the line above, including
+     the same six section partials, plus css/final-blue.css, which changes the
+     hero's background and its type colours and nothing else. Grant asked to see
+     the two side by side before settling the hero direction; that file's own
+     header carries the whole argument and says what to delete whichever way he
+     decides. */
+  { src: 'final-blue/index.html', out: 'dist/final-blue.html', title: 'The agreed build — blue hero', kind: 'homepage' },
   { src: 'index.html', out: 'dist/current.html', title: 'Current reference build', kind: 'homepage' },
   { src: 'current-2/index.html', out: 'dist/current-2.html', title: 'Current build — new header and banner', kind: 'homepage' },
   { src: 'option-a/index.html', out: 'dist/homepage-a.html', title: 'Homepage A — Front Porch', kind: 'homepage' },

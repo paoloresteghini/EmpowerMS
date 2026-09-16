@@ -15,7 +15,15 @@
 
     <div class="ta-hero__aside">
       <figure class="ta-hero__media" data-reveal="clip">
-        <img src="../assets/photography/two-advocates-portrait.jpg" alt="A woman and a man standing together inside the Capitol" width="906" height="1132" fetchpriority="high" decoding="async">
+        <!-- Swapped 2026-09-16, Grant’s round 2: "swap out the header photo on the
+             Staff, Board and fellow page with this one". Kienna’s file is 4200x2800,
+             a 3:2 LANDSCAPE, and this slot is 4:5 at desktop and 16/10 below 1100px.
+             Shipped whole at 1800x1200 and cropped by the slot rather than cropped on
+             disk, so the two breakpoints each take what they need from one file. At
+             4:5 the cover crop is horizontal and object-position’s vertical term does
+             nothing; the centre third is the conversation, which is checked by eye and
+             not by any test here. -->
+        <img src="../assets/photography/advocates-event-conversation.jpg" alt="Three men in conversation at an Empower Mississippi event" width="1800" height="1200" fetchpriority="high" decoding="async">
       </figure>
     </div>
   </div>

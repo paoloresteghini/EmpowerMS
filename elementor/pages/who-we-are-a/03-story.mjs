@@ -129,7 +129,7 @@ export function section() {
           [
             container(
               { cssClass: 'wa-story__photo', content_width: 'full', _attributes: 'data-reveal|clip' },
-              [image({ ...photo('teacher-at-whiteboard') })],
+              [image({ ...photo('empower-office-building') })],
             ),
             text({
               markup: `<p class="wa-story__year">${YEAR}</p>`,

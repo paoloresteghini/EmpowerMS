@@ -76,7 +76,7 @@ const DOORS = [
     body: 'Helping every child access the education they need to reach their full potential.',
   },
   {
-    photo: 'worker-at-bench',
+    photo: 'welding-lesson',
     href: '/meaningful-work',
     title: 'Meaningful Work',
     body: 'Removing barriers so more Mississippians can find meaningful work and build lasting prosperity.',

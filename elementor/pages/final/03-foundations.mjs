@@ -70,7 +70,7 @@ const CUE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 
 const PANELS = [
   {
-    photo: 'student-hand-raised',
+    photo: 'family-school-morning',
     href: '/quality-education',
     title: 'Quality Education',
     promise: 'You want to know your child has every opportunity to succeed.',
@@ -84,7 +84,7 @@ const PANELS = [
     solution: 'We’re advancing workforce solutions that connect more Mississippians to meaningful careers, strengthen our workforce, and create more opportunities to succeed.',
   },
   {
-    photo: 'advocate-capitol-portrait',
+    photo: 'father-teaching-bike',
     href: '/safe-communities',
     title: 'Safe Communities',
     promise: 'You should feel safe in the community you call home.',

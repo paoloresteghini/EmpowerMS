@@ -107,6 +107,13 @@ const PHOTOS = {
   'event-conversation-anniversary': FINAL_PHOTOS['event-conversation-anniversary'],
   'event-conversation-atrium': FINAL_PHOTOS['event-conversation-atrium'],
   'event-conversation-banners': FINAL_PHOTOS['event-conversation-banners'],
+  /* Grant's review, 2026-09-16: the two hero frames and the Our Story frame
+     are Empower's own photographs now. The three they replace stay mapped
+     below, because other pages still use them and because a name removed from
+     this map throws at build time. */
+  'team-conversation-event': FINAL_PHOTOS['team-conversation-event'],
+  'team-anniversary-portrait': FINAL_PHOTOS['team-anniversary-portrait'],
+  'empower-office-building': FINAL_PHOTOS['empower-office-building'],
   'advocates-capitol-rail': FINAL_PHOTOS['advocates-capitol-rail'],
   'shop-owner-standing': FINAL_PHOTOS['shop-owner-standing'],
   'teacher-at-whiteboard': FINAL_PHOTOS['teacher-at-whiteboard'],

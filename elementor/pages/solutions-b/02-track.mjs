@@ -171,7 +171,7 @@ const STATIONS = [
     cue: 'Explore Quality Education',
   },
   {
-    photo: 'worker-at-bench-54',
+    photo: 'welding-lesson-54',
     href: '/solutions/work',
     title: 'Meaningful Work',
     promise: 'Every Mississippian should have the opportunity to build a meaningful career and create a better future.',

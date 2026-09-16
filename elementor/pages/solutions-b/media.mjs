@@ -102,6 +102,10 @@ const PHOTOS = {
   },
   'advocates-in-conversation-wide': FINAL_PHOTOS['advocates-in-conversation-wide'],
   'classroom-small-group-54': FINAL_PHOTOS['classroom-small-group-54'],
+  /* Grant's review, 2026-09-16: the Meaningful Work panel is the welding
+     lesson now. worker-at-bench-54 stays mapped; it is not deleted from the
+     install and nothing here should throw if a later page wants it. */
+  'welding-lesson-54': FINAL_PHOTOS['welding-lesson-54'],
   'worker-at-bench-54': FINAL_PHOTOS['worker-at-bench-54'],
   'advocates-capitol-hall-54': FINAL_PHOTOS['advocates-capitol-hall-54'],
   'ms-capitol-first-light-wide': FINAL_PHOTOS['ms-capitol-first-light-wide'],

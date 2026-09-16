@@ -332,6 +332,51 @@ export const PHOTOS = {
     id: 20706,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/vicksburg-bridge-sunrise.jpg',
   },
+
+  /* GRANT'S REVIEW, 2026-09-16. Seven files from Empower's own Drive, imported
+     by elementor/import-photography.mjs with their alt written at creation and
+     read back off the install, same as every entry above.
+
+     FIVE OF THE SEVEN REPLACE A PHOTOGRAPH THAT IS STILL HERE. The ones they
+     replace (student-hand-raised, advocate-capitol-portrait, worker-at-bench
+     and its 5:4 crop, advocates-capitol-rail, teacher-with-student,
+     teacher-at-whiteboard) are NOT deleted from this map: other pages still use
+     several of them, and an id removed from here is a page that throws at build
+     time rather than a page that quietly renders nothing. What changed is which
+     name each point of use asks for.
+
+     THE BUILDING IS A KNOWN COMPROMISE. empower-office-building arrived 800px
+     wide for a 911x683 slot and is upscaled, on Paolo's call, so Grant sees the
+     section he asked for; Kienna has been asked for the original. Swap the file
+     and re-import under the same name when it lands. */
+  'empower-office-building': {
+    id: 20725,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/empower-office-building.jpg',
+  },
+  'family-school-morning': {
+    id: 20726,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/family-school-morning.jpg',
+  },
+  'father-teaching-bike': {
+    id: 20727,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/father-teaching-bike.jpg',
+  },
+  'team-anniversary-portrait': {
+    id: 20728,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/team-anniversary-portrait.jpg',
+  },
+  'team-conversation-event': {
+    id: 20729,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/team-conversation-event.jpg',
+  },
+  'welding-lesson': {
+    id: 20730,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/welding-lesson.jpg',
+  },
+  'welding-lesson-54': {
+    id: 20731,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/welding-lesson-54.jpg',
+  },
 };
 
 /* Reads like `photo('father-children-field')` at the point of use, and throws

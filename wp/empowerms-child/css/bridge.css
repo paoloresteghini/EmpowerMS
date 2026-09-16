@@ -8066,30 +8066,41 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 
 
 /* ---------- 79. team-a: the board's headshots are square on the install ----
- * `.ta-roll__photo` is eight 44px circular headshots in the board roll, added
- * 2026-09-10 in place of the monogram tiles block 58 used to describe.
+ * `.ta-headshot` is the eight board portraits. It replaced `.ta-roll__photo` on
+ * 2026-09-16 when Grant asked for the board as cards the size of the staff
+ * cards, and THIS BLOCK IS THE SAME DEFECT UNDER A NEW CLASS: the rule that
+ * stood here named `.ta-roll__photo`, which no longer exists anywhere in the
+ * build, so it had stopped matching anything at the moment the class was
+ * renamed. It matched nothing silently, which is the failure mode this whole
+ * file exists to make loud, and it took a live measurement to notice.
  *
  * THEY ARE RAW <img> INSIDE ONE html() WIDGET, not image() widgets, so none of
  * the wrapper-and-child machinery blocks 56 to 58 exist for applies here: the
  * class is on the real element and every declaration lands. Every declaration
  * except one.
  *
- * MEASURED, static build against the install, all eight:
+ * MEASURED, static build against the install, all eight, after the deploy:
  *
- *     borderRadius   static 999px      live 0px
- *     box            44 x 44 on both, objectFit cover on both
+ *     borderRadius   static 20px       live 0px
+ *     box            240 x 300 on both, objectFit cover on both
  *
  * Elementor's own frontend carries `.elementor img{border-radius:0}`, which is
- * 0,1,1. `.ta-roll__photo` is 0,1,0 and loses. Read off the install with
+ * 0,1,1. `.ta-headshot` is 0,1,0 and loses. Read off the install with
  * CSS.getMatchedStylesForNode rather than guessed, because "some reset is
  * winning" is the kind of explanation that survives being wrong.
  *
- * The circle is the whole shape of the element: at 44px a square headshot in a
- * pill-shaped row does not read as a slightly different style, it reads as an
- * unstyled image. Two classes, 0,2,0, which beats the reset without needing
- * !important. */
-.elementor .ta-roll__photo{
-  border-radius:var(--radius-pill);    /* css/team-a.css, .ta-roll__photo */
+ * `.ta-portrait` NEXT DOOR NEVER NEEDED THIS and that is not luck: it is a
+ * <span> in the static build and an image() WRAPPER on the install, so
+ * `.elementor img` cannot match it, and block 57's `.ta-portrait img` is 0,1,1
+ * tying the reset and winning on source order. A class that lands on the <img>
+ * itself, which is what an html() blob gives you, is the case that needs 0,2,0.
+ *
+ * The rounded corner is not decoration here: the board sits beside the staff
+ * roster now, and a square-cornered portrait next to a rounded one reads as a
+ * broken card rather than a different style. Two classes, 0,2,0, which beats
+ * the reset without needing !important. */
+.elementor .ta-headshot{
+  border-radius:var(--radius-lg);    /* css/team-a.css, .ta-headshot */
 }
 
 /* ---------- 80. the fellows' discs: block 58's height never won ----------

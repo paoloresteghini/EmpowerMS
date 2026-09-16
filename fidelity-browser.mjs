@@ -805,7 +805,16 @@ export async function teamRoster(url) {
     return await page.evaluate(() => {
       const txt = (el) => (el ? el.textContent.replace(/\s+/g, ' ').trim() : null);
 
-      const staff = [...document.querySelectorAll('.ta-person')].map((card) => {
+      /* SCOPED TO .ta-staff SINCE 2026-09-16, and the scope is the assertion.
+         Grant's round 2 made the board cards, and they reuse `.ta-person` and
+         `.ta-person__name` on purpose: that is what makes "the same size as the
+         Staff cards" true by construction rather than by a measurement typed
+         into two files. An unscoped `.ta-person` therefore returns the board
+         followed by the staff, and the caller's alphabetical-order assertion
+         fails on a page that is correct, naming the staff sort as the culprit
+         when the staff are perfectly sorted. `.ta-staff` is the section the
+         `person` CPT drives and is what this helper has always meant. */
+      const staff = [...document.querySelectorAll('.ta-staff .ta-person')].map((card) => {
         const link = card.querySelector('a.ta-person__link');
         const img = card.querySelector('.ta-portrait img');
         return {
@@ -835,7 +844,14 @@ export async function teamRoster(url) {
       /* The board is still hand-written markup with monogram tiles, and its
          own `.ta-pending` note says so. Read so the test can assert the note
          moved with the placeholders rather than being deleted with them. */
-      const board = [...document.querySelectorAll('.ta-roll__item')].map((li) => txt(li.querySelector('.ta-roll__name')));
+      /* `.ta-board .ta-person` SINCE 2026-09-16, not `.ta-roll__item`. The board
+         became cards in Grant's round 2 and `.ta-roll__item` stopped existing the
+         moment it did, so this line returned an empty array on a page carrying
+         eight perfectly good board members. A selector that matches nothing reads
+         exactly like a section that rendered nothing, and the caller's message
+         ("found 0 board names") accuses the install rather than this line. Scoped
+         to `.ta-board` because the staff roster shares the card classes. */
+      const board = [...document.querySelectorAll('.ta-board .ta-person')].map((li) => txt(li.querySelector('.ta-person__name')));
 
       return {
         staff,

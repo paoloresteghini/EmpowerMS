@@ -75,9 +75,33 @@
 /* The half of the sentence the page is actually about takes the orange. */
 .sol-hero h1 em{font-style:normal;display:block;color:var(--orange-300)}
 
+/* THE SECTION RHYTHM, in one place because five sections share it and they
+   have to stay in step: vision, problem, caps, grid and latest. The hero and
+   the stories band set their own, deliberately, and are not on this token.
+
+   TIGHTENED 2026-09-11 on Paolo's ask, from clamp(80px, 7vw, 120px). Measured
+   on dist/safety.html at 1440 before the change: every one of the five paid
+   100.8px top and bottom, 201.6px a section, and on the vision section that
+   was 202px of padding around 182px of content, which is why the page read
+   loose rather than airy. The three breakpoints move together:
+
+       390    80px  ->  64px
+       1440  100.8  ->  74.9
+       1920   120   ->   96
+
+   A fifth of the vertical rhythm, taken off five sections twice each. The
+   ladder stays on the spacing tokens rather than resolving to pixels, so it
+   still steps with everything else in the build.
+
+   NOT THE FIX FOR THE PROBLEM SECTION's 256px hole. That was a grid placement
+   bug and is repaired at .sol-problem__copy; padding was never the cause, and
+   tightening alone would have hidden it at one width and left it at others. */
+:where(.sol-vision,.sol-problem,.sol-caps,.sol-grid,.sol-latest){
+  --sol-rhythm:clamp(var(--space-11),5.2vw,var(--space-13))}
+
 /* ============================= 2 · Vision ================================ */
 
-.sol-vision{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+.sol-vision{padding:var(--sol-rhythm) 0;
   border-top:1px solid var(--border-inverse);
   background:var(--surface-navy-deep);color:var(--text-inverse)}
 /* The hairline is what separates two navy sections. Without it the hero and the
@@ -109,7 +133,7 @@
 
 /* ======================= 3 · The first light break ======================= */
 
-.sol-problem{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+.sol-problem{padding:var(--sol-rhythm) 0;
   background:var(--surface-page)}
 
 .sol-problem__inner{display:grid;
@@ -129,7 +153,29 @@
 .sol-problem__media img{display:block;width:100%;height:auto;
   aspect-ratio:4/3;object-fit:cover;object-position:50% 38%}
 
-.sol-problem__copy{min-width:0}
+/* SPANS BOTH ROWS, and without this the picture above cannot rise. Measured on
+   dist/safety.html at 1440 before the fix: 256px between the heading's baseline
+   box and the top of the photograph, and 425px of dead space under the copy,
+   in a section 914px tall. The cause is not spacing, it is placement. The
+   media sits in row 2, and row 1's height is set by whichever column is taller
+   — the copy, at 288px against the heading's 79px. So row 2 began below the
+   copy and the photograph was pushed clear of the column it was meant to fill.
+   The rule above says the picture belongs "in the column that was otherwise
+   empty below it", which is precisely what did not happen.
+
+   Spanning the copy across both rows lets each row in column 1 take its own
+   content's height: row 1 the heading, row 2 the photograph directly beneath
+   it. Section drops to 706px with nothing removed from the page.
+
+   VERIFIED ON THE CONVERTED PAGE TOO, not assumed from the static build. This
+   is a grid placement, so it only works while both elements are DIRECT
+   children of .sol-problem__inner, and Elementor wraps widgets in a div of its
+   own. Checked on empv2: .sol-problem__copy and .sol-problem__media both land
+   as direct children (the h2 is the one that gains a wrapper, and it only ever
+   auto-placed), so the placement holds on both sides. A future section that
+   builds either of these as a widget rather than a container breaks this, and
+   it breaks silently, as a return of the gap. */
+.sol-problem__copy{min-width:0;grid-column:2;grid-row:1/span 2}
 .sol-problem__copy p{margin:0 0 var(--space-5);font-size:var(--fs-body);
   line-height:var(--lh-body);color:var(--text-body)}
 .sol-problem__copy p:last-child{margin-bottom:0}
@@ -151,6 +197,10 @@
      the picture is pinned to a row the copy now occupies. It falls last, which
      is its source order. */
   .sol-problem__media{grid-row:auto;margin-top:0}
+  /* The span above has to go with the second column, for the same reason the
+     media's row placement does: one column, so a row-2 span would strand the
+     copy below a row the heading now occupies alone. */
+  .sol-problem__copy{grid-column:auto;grid-row:auto}
 }
 
 /* ====================== 4 · Practical solutions ========================== */
@@ -158,7 +208,7 @@
 /* Four capped columns. The 1px grid gap over a tinted background draws the
    hairlines between posts as the gap itself, so there is no double rule to
    undo at the wrap points. */
-.sol-caps{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+.sol-caps{padding:var(--sol-rhythm) 0;
   background:var(--surface-page)}
 
 .sol-caps__head{margin:0 0 clamp(var(--space-9),5vw,var(--space-11));
@@ -195,7 +245,7 @@
 
 /* ========================= 5 · The lit cards ============================= */
 
-.sol-grid{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+.sol-grid{padding:var(--sol-rhythm) 0;
   background:var(--surface-navy-deep);color:var(--text-inverse)}
 
 .sol-grid__head{display:grid;
@@ -331,7 +381,7 @@
 
 /* Closes on the dark, so the last screen matches the first and the light
    sections in between read as the breaks they are. */
-.sol-latest{padding:clamp(var(--space-12),7vw,var(--space-14)) 0;
+.sol-latest{padding:var(--sol-rhythm) 0;
   background:var(--surface-navy-deep);color:var(--text-inverse)}
 
 .sol-latest__head{max-width:64ch}

@@ -2128,6 +2128,78 @@ async function discoverTrees(dir, { skip = [] } = {}) {
   return found;
 }
 
+/* THE SOLUTION TEMPLATE'S PHOTOGRAPH IS PLACED BY GRID, AND GRID PLACEMENT ONLY
+   REACHES DIRECT CHILDREN. css/solution.css puts `.sol-problem__media` in
+   column 1 row 2 and spans `.sol-problem__copy` across both rows, so the
+   heading and the photograph stack in column 1 and the copy sets its own
+   height beside them. Every one of those placements is void the moment either
+   element stops being a direct child of `.sol-problem__inner`.
+
+   WHY THIS IS A TEST AND NOT A COMMENT. It already failed once, silently, and
+   for a long time. Before 2026-09-11 the copy did not span, so row 1's height
+   came from whichever column was taller: 288px of copy against a 79px heading.
+   Row 2 therefore began below the copy and the photograph was pushed clear of
+   the column it was written to fill, leaving a 256px hole in a section 914px
+   tall. census(), controlBoxes() and layoutInvariants() were all green
+   throughout, and they were right to be: they compare the converted page
+   against the static build, and the static build was equally wrong. A defect
+   that lives in css/ is invisible to every instrument in this file.
+
+   The remaining way to break it is the class-on-wrapper mechanism this phase
+   has paid for repeatedly: build either element with a widget helper rather
+   than container(), the class lands on Elementor's own wrapper div, the real
+   element moves one level down, and the grid placement stops applying. The
+   page still renders, nothing errors, and the hole comes back. So the
+   condition is asserted here rather than trusted to the note in the CSS.
+
+   Offline, against the mapping modules' own trees, so it runs on every pass
+   instead of waiting for a deployed URL. Checked on empv2 when the rule was
+   written: both elements are direct children there, and it is the h2 that
+   gains the wrapper, which only ever auto-placed. */
+test('the solution template places its photograph on elements the grid can actually reach', async () => {
+  const classOf = (n) => n.settings?.css_classes ?? n.settings?._css_classes ?? '';
+  const hasClass = (n, c) => String(classOf(n)).split(/\s+/).includes(c);
+  function* everyNode(nodes) {
+    for (const n of nodes) {
+      yield n;
+      if (n.elements?.length) yield* everyNode(n.elements);
+    }
+  }
+
+  const problems = [];
+  for (const dir of ['safety', 'work', 'education']) {
+    const page = await import(`./elementor/pages/${dir}/page.mjs`);
+    const inners = [...everyNode(page.sections())].filter(n => hasClass(n, 'sol-problem__inner'));
+    if (inners.length !== 1) {
+      problems.push(`${dir}: expected exactly one .sol-problem__inner, found ${inners.length}`);
+      continue;
+    }
+    const kids = inners[0].elements ?? [];
+    for (const cls of ['sol-problem__copy', 'sol-problem__media']) {
+      const direct = kids.filter(k => hasClass(k, cls));
+      if (direct.length !== 1) {
+        const anywhere = [...everyNode(page.sections())].filter(n => hasClass(n, cls)).length;
+        problems.push(
+          `${dir}: .${cls} is not a direct child of .sol-problem__inner `
+          + `(${direct.length} direct, ${anywhere} anywhere in the tree). `
+          + 'css/solution.css places this element by grid and the placement will be void.',
+        );
+        continue;
+      }
+      if (direct[0].elType !== 'container') {
+        problems.push(
+          `${dir}: .${cls} is an elType "${direct[0].elType}", not a container. `
+          + 'A widget puts the class on Elementor\'s wrapper and moves the real element '
+          + 'a level down, out of reach of the grid placement.',
+        );
+      }
+    }
+  }
+  assert.deepEqual(problems, [],
+    `${problems.length} solution page(s) would lose the photograph's grid placement:\n  `
+    + problems.join('\n  '));
+});
+
 test('every container in every podcast-a mapping module and every theme part sets content_width: \'full\'', async () => {
   function* everyContainer(nodes) {
     for (const n of nodes) {

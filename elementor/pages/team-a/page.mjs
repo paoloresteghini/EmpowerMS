@@ -31,17 +31,21 @@ import { LOOP_ITEM_POST_IDS, staffCard, fellowRow } from './loop-item.mjs';
 
 export const POST_ID = 20599;
 
-/* BOARD BEFORE STAFF SINCE 2026-09-16, Grant's round 2 via Kienna: "move the
-   light blue board section so it sits below the Staff section. The order would
-   then be Board -> Staff -> Fellows, with Fellows at the bottom of the page."
-   Those two sentences do not agree: moving Board below Staff gives Staff ->
-   Board -> Fellows, not the order she then wrote out. Both readings satisfy her
-   third constraint, so the text cannot settle it. Built to the order she stated
-   explicitly and reinforced ("Fellows at the bottom"), which is also the
-   conventional order for a governance page, and flagged back to her in the same
-   reply. One line here and one include order in src/team-a/index.html reverse it
-   if she meant the other. */
-export const sections = () => [hero(), board(), staff(), fellows()];
+/* BOARD BETWEEN STAFF AND FELLOWS SINCE 2026-09-16, and this line was built the
+   other way round first. Kienna's note said two things that did not agree: the
+   action, "move the light blue board section so it sits below the Staff
+   section", which gives Staff -> Board -> Fellows, and the result, "the order
+   would then be Board -> Staff -> Fellows". Both readings satisfy her third
+   constraint, "Fellows at the bottom", so the text could not settle it. Built to
+   the stated order, flagged back, and she confirmed the same day that she meant
+   the verb: Staff -> Board -> Fellows.
+
+   RECORDED RATHER THAN QUIETLY CORRECTED, because the instruction is the kind
+   that will arrive again: when a change request names BOTH an operation and its
+   expected end state, the two are a checksum. Compute the end state from the
+   operation against the current page and compare; on a mismatch the request is
+   defective and the answer is to ask, not to pick the likelier half. */
+export const sections = () => [hero(), staff(), board(), fellows()];
 
 /* The two Loop Item templates, as [postId, elements] pairs. Derived from the
    same LOOP_ITEM_POST_IDS map the two section modules read, so the id a grid

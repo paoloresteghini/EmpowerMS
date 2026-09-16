@@ -8181,3 +8181,27 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-catalogue .e-l
 .elementor .gvc-hero__words .gvc-hero__so{
   margin-block-start:0; /* the 20px below the lead is the whole gap now */
 }
+
+/* ---------- 81. podcast-a: the episode list is a list, and Elementor's grid
+ *                puts 30px between its rows -----------------------------------
+ * 2026-09-16, with the library's rebuild from cards to rows (Grant's review
+ * asked for the Capitol Chat treatment, "something easier to quickly scan").
+ *
+ * WHAT THE STATIC BUILD DOES: `.pca-eps` is a bordered list and `.pca-ep` is a
+ * row with a hairline under it. Rows touch. That is what makes it read as one
+ * list rather than as 66 objects, and it is the whole point of the change.
+ *
+ * WHAT THE INSTALL DID INSTEAD, measured on the deployed page rather than
+ * inferred: `.elementor-loop-container.elementor-grid` computes `gap:30px`,
+ * which is Elementor's own default for a Loop Grid and is not reachable from
+ * `.pca-eps`. 03-library.mjs's note 9 already records why: the class lands on
+ * the widget's OUTER wrapper and the real grid container is two levels deeper,
+ * driven by the widget's own controls and a per-template inline <style>. So the
+ * hairlines were there and 30px of page sat between every pair of them, which
+ * reads as a stack of cards. Exactly the thing the rebuild removed.
+ *
+ * Scoped through `.pca-catalogue` so it reaches this one Loop Grid and not the
+ * four others on the install, whose card layouts want their gaps. */
+.pca-catalogue .elementor-loop-container{
+  gap:0; /* css/podcast-a.css's .pca-eps is a list, not a grid of cards */
+}

@@ -46,14 +46,36 @@ export const LABELS = {
 
 /* wp eval, not wp db query: GFAPI::update_form() maintains whatever Gravity
    Forms keeps alongside display_meta, and a hand-written UPDATE against the
-   serialised column would not. The PHP is a single line with no shell
-   variables in it, per wpe.mjs's rule about remote shell capture. */
+   serialised column would not. */
 const readChoices = () =>
   `wp eval 'if(!class_exists("GFAPI")){echo "NO_GFAPI";return;} $f=GFAPI::get_form(${FORM_ID}); if(!$f){echo "NO_FORM";return;} foreach($f["fields"] as $fl){ if($fl->id==${FIELD_ID}){ echo json_encode($fl->choices); return; } } echo "NO_FIELD";'`;
 
+/* BASE64, AND THE FIRST DRAFT PROVED WHY. The map is JSON, JSON is full of
+   double quotes, and the PHP that reads it is already inside single quotes
+   inside a remote bash command. Interpolating the JSON there produced
+
+       bash: line 2: syntax error near unexpected token `)'
+
+   and wrote nothing, which at least failed safely. deploy-seo.mjs solved the
+   same problem for the same reason and its note says it plainly: a base64 blob
+   is [A-Za-z0-9+/=] and cannot be mangled by node, ssh, bash or PHP. It is
+   decoded once, inside PHP, where the quotes are harmless.
+
+   The labels themselves are ordinary words today, but "Mississippi's" is one
+   client edit away and this repository has lost time to quoting twice already. */
 const writeLabels = () => {
-  const map = JSON.stringify(LABELS).replace(/'/g, "\\'");
-  return `wp eval '$map=json_decode(\\'${map}\\', true); $f=GFAPI::get_form(${FORM_ID}); $n=0; foreach($f["fields"] as $fl){ if($fl->id==${FIELD_ID}){ $cs=$fl->choices; foreach($cs as $i=>$c){ if(isset($map[$c["value"]]) && $c["text"]!==$map[$c["value"]]){ $cs[$i]["text"]=$map[$c["value"]]; $n++; } } $fl->choices=$cs; } } $r=GFAPI::update_form($f); echo is_wp_error($r) ? "ERROR: ".$r->get_error_message() : "updated ".$n;'`;
+  const map = Buffer.from(JSON.stringify(LABELS), 'utf8').toString('base64');
+  const php = [
+    `$map=json_decode(base64_decode("${map}"), true);`,
+    `$f=GFAPI::get_form(${FORM_ID}); $n=0;`,
+    `foreach($f["fields"] as $fl){ if($fl->id==${FIELD_ID}){`,
+    `$cs=$fl->choices;`,
+    `foreach($cs as $i=>$c){ if(isset($map[$c["value"]]) && $c["text"]!==$map[$c["value"]]){ $cs[$i]["text"]=$map[$c["value"]]; $n++; } }`,
+    `$fl->choices=$cs; } }`,
+    `$r=GFAPI::update_form($f);`,
+    `echo is_wp_error($r) ? "ERROR: ".$r->get_error_message() : "updated ".$n;`,
+  ].join(' ');
+  return `wp eval '${php}'`;
 };
 
 export function parseArgs(argv) {

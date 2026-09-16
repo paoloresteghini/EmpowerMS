@@ -65,27 +65,72 @@ const HEADLINE = 'View our annual reports:';
  * the static build is frozen. That means a 2022 click replaces the page with a
  * 50 MB PDF, which is worth knowing and is on the task report as Empower's
  * call rather than settled quietly here. */
+/* RE-EXPORTED AND REPOINTED 2026-09-16. Grant's review: the impact reports
+ * opened as two-page spreads where the other report PDFs open a page at a
+ * time. It was the files, not the viewer, and it was measurable:
+ *
+ *                    pages in the file   content pages   page box
+ *   2025, before            11                20         612x792 x2, 1224x792 x9
+ *   2024, before            14                26         612x792 x2, 1224x792 x12,
+ *                                                        and one 2448x792 gatefold
+ *   2023, before            11                20         612x792 x2, 1224x792 x9
+ *
+ * Two singles and the rest spreads, in all three. Kienna re-exported them the
+ * same afternoon and the new files are 20, 26 and 20 pages, every page
+ * 612x792 letter portrait: the same arithmetic, unfolded.
+ *
+ * 2022 WAS NEVER A SPREAD and is deliberately not re-exported. Measured the
+ * same way before asking: 20 pages, all A4 portrait, widths varying a few
+ * points between 588 and 613 as an old export does. It is also an Annual
+ * Report rather than an Impact Report, which is why Grant's note named the
+ * annual reports and Kienna sent three files.
+ *
+ * THEY STAY ON empv2, AND A DEPLOY PROVED WHY. The three new files existed
+ * only on production, so the first attempt pointed all four at empowerms.org:
+ * that looked like a fix for a real cutover problem, since these are absolute
+ * URLs with no route to remap and four empv2 links would still say empv2 after
+ * go-live. It shipped three 404s.
+ *
+ * THE MECHANISM IS elementor/links.mjs's OWN, AND IT IS CORRECT. localisedHref()
+ * rewrites any empowerms.org absolute URL to a root-relative path, deliberately,
+ * so that a link is right on the review install and on production alike. For a
+ * PAGE it is: the post lives at that path on both. For a MEDIA FILE it is not,
+ * because the file lives on one host only, and `/wp-content/uploads/2026/09/
+ * 2025-New-Impact-Report-.pdf` is a 404 on empv2. Checked after deploying, which
+ * is the only reason it was caught: the deploy reported success and the page
+ * rendered four links.
+ *
+ * So the three were imported into the install's own media library, the way
+ * every other asset this build references is (ids 20732, 20733, 20734), and all
+ * four hrefs are empv2 absolute URLs again. The cutover problem is real and is
+ * every empv2 URL's problem, not these four's; see the staging-to-prod notes.
+ *
+ * All four checked live on 2026-09-16: 200, Content-Type application/pdf. */
 const REPORTS = [
   {
     year: '2025',
-    /* Post 20396, "Empower MS Releases 2025 Impact Report", 2026-03-02. */
-    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/03/2025-EM-Impact-Report-.pdf',
+    /* Post 20396, "Empower MS Releases 2025 Impact Report", 2026-03-02.
+       Re-exported 2026-09-16; 20 single pages. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/2025-New-Impact-Report-.pdf',
   },
   {
     year: '2024',
     /* Post 19392, "2024 Impact Report: Celebrating 10 Years Of Service In
-       Mississippi", 2025-02-18. */
-    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2025/02/2024-EM-Impact-Report-for-Web.pdf',
+       Mississippi", 2025-02-18. Re-exported 2026-09-16; 26 single pages, the
+       gatefold among them. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/2024-New-Impact-Report-.pdf',
   },
   {
     year: '2023',
-    /* Post 17643, "Empower releases 2023 impact report", 2024-02-19. */
-    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2024/02/EM-Impact-Report.pdf',
+    /* Post 17643, "Empower releases 2023 impact report", 2024-02-19.
+       Re-exported 2026-09-16; 20 single pages. */
+    href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/2023-New-Impact-Report-.pdf',
   },
   {
     year: '2022',
     /* Post 16794, "Empower releases 2022 annual report", 2023-03-02. This is
-       the one with the decoy attachment; see the note above. 50 MB. */
+       the one with the decoy attachment; see the note above. 50 MB, and the
+       one of the four that was already single pages. */
     href: 'https://empv2.wpenginepowered.com/wp-content/uploads/2023/03/2022-Annual-Report-web-1.pdf',
   },
 ];

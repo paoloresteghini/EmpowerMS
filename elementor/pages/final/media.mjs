@@ -371,6 +371,17 @@ export const PHOTOS = {
     id: 20729,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/team-conversation-event.jpg',
   },
+  /* 2026-09-16, Grant's round 2: the new header photograph for /team/. NOT the
+     same picture as `team-conversation-event` above it, which is the Who We Are
+     hero, and the two slugs are close enough to be worth saying so: that one is
+     a woman talking with two men in front of an Empower banner, this one is
+     three men in conversation at an event. The alt sentence is this session's
+     draft rather than Empower's, and is on the sign-off list with
+     elementor/story-alt.json's twenty-seven. */
+  'advocates-event-conversation': {
+    id: 20735,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/advocates-event-conversation.jpg',
+  },
   'welding-lesson': {
     id: 20730,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/welding-lesson.jpg',

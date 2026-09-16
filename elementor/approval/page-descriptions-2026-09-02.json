@@ -12,9 +12,9 @@
       "path": "/contact/",
       "postId": 11345,
       "title": "Contact Us: Send Us a Message",
-      "description": "Send Empower Mississippi a message using the form on this page. We’d love to hear from you. Write to us at 741 Avignon Dr., Suite C, Ridgeland, MS.",
+      "description": "Send Empower Mississippi a message using the form on this page. We’d love to hear from you. Write to us at 1000 Northpark Drive, Ridgeland, MS.",
       "sourcedFrom": "The page's own heading and lead sentence ('We’d love to hear from you! Use the form below to e-mail us.') and the address block.",
-      "note": "THE ADDRESS IS THE OPEN QUESTION. This uses 741 Avignon Dr., Suite C, which is what the signed-off footer carries on every page. The page this replaced said 1000 Northpark Dr. If Empower confirm Northpark is current, this description and the page both change together."
+      "note": "THE ADDRESS QUESTION IS CLOSED. Empower confirmed 1000 Northpark Drive on 2026-09-16, with Grant's review, so this description and the page changed together exactly as the open note said they would. The superseded street is not repeated here."
     },
     {
       "path": "/privacy-policy/",

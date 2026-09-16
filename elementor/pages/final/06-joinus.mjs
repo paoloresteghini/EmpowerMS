@@ -58,8 +58,10 @@ import { photo } from './media.mjs';
    than expressible differently. */
 
 const PITCH_HEADLINE = 'This is where you come in.';
-const PITCH_LEAD = 'Opportunity moves when more people push. Start with the newsletter: what changed this month, who it changed things for, and what happens next.';
-const NOTE = 'Once a month. Unsubscribe in one click.';
+/* Grant's review, 2026-09-16. Empower do not send one email a month; this
+   paragraph and the note below it both said they do. Both changed together. */
+const PITCH_LEAD = 'Stay connected with the latest research, stories, and updates from Empower Mississippi.';
+const NOTE = 'Stay informed. Unsubscribe in one click.';
 
 const FORM_MARKUP = `<form class="em-newsletter__form" action="#" method="post">
             <label class="em-visually-hidden" for="join-email">Email address</label>
@@ -72,7 +74,8 @@ const WAYS = [
     photo: 'shop-owner-portrait',
     wash: 'em-join__wash--community',
     title: 'Bring it home',
-    body: 'Take the conversation about opportunity to the place you already know best — your school board, your church, your street. We hand you what you need to start it.',
+    /* Empower's replacement copy, verbatim including its unspaced dash. */
+    body: 'Start conversations about opportunity with the people around you—at church, in your neighborhood, or at a school board meeting. We’ll give you the tools and support to make those conversations count.',
     href: '/ambassadors',
     label: 'Become an ambassador',
   },
@@ -80,7 +83,7 @@ const WAYS = [
     photo: 'gift-boxes-detail',
     wash: 'em-join__wash--work',
     title: 'Fund the work',
-    body: 'Your support puts research, advocacy and follow-through behind the solutions on this page — and keeps them in front of the people who decide.',
+    body: 'Your support puts research, advocacy, and follow-through behind the solutions on this page — and keeps them in front of the people who decide.',
     href: '/donate',
     label: 'Support the work',
   },

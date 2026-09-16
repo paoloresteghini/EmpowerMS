@@ -54,10 +54,16 @@ export const footerPart = () => [
           text({
             markup: [
               '<ul class="em-footer__links">',
-              '<li><a href="https://facebook.com/empowerms">Facebook</a></li>',
-              '<li><a href="https://instagram.com/empowerms">Instagram</a></li>',
+              /* EMPOWER'S OWN URLS, SUPPLIED 2026-09-16 after Grant's review
+                 found that four of the five were guesses. The icon row above
+                 is read out of the partial by socialMarkup(), so it picked
+                 these up with the file; this list is typed here and had to be
+                 changed with it. LinkedIn is new to both. */
+              '<li><a href="https://www.facebook.com/EmpowerMississippi/">Facebook</a></li>',
+              '<li><a href="https://www.instagram.com/empower_ms/">Instagram</a></li>',
               '<li><a href="https://x.com/empowerms">X</a></li>',
-              '<li><a href="https://youtube.com/@empowerms">YouTube</a></li>',
+              '<li><a href="https://www.youtube.com/user/empowerms">YouTube</a></li>',
+              '<li><a href="https://www.linkedin.com/company/empower-mississippi">LinkedIn</a></li>',
               '</ul>',
             ].join(''),
           }),
@@ -87,7 +93,13 @@ export const footerPart = () => [
       ]),
       container({ cssClass: 'em-footer__bottom', content_width: 'full' }, [
         text({ markup: '<p class="em-footer__legal">© Empower Mississippi</p>' }),
-        text({ markup: '<p>741 Avignon Dr., Suite C &nbsp;|&nbsp; Ridgeland, MS 39157</p>' }),
+        /* THE NORTHPARK ADDRESS, CONFIRMED BY EMPOWER 2026-09-16. This closes
+           the question the 2026-09-02 contact page build left open: that page
+           found a different street on Empower's own live site, took the
+           footer's on Paolo's call, and recorded that Empower had to settle
+           which was current. Grant's review settled it, and both are now the
+           new one. The superseded address is deliberately not repeated here. */
+        text({ markup: '<p>1000 Northpark Drive &nbsp;|&nbsp; Ridgeland, MS 39157</p>' }),
       ]),
     ]),
   ]),

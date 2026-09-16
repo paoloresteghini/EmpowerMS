@@ -113,15 +113,22 @@ const NOTE = '<!-- Four capped columns, the layout Empower picked out of Public 
 
 const HEAD = 'Practical Solutions for Mississippi Workers';
 
-/* Verbatim from dist/work.html:236-259, in source order. */
+/* Verbatim from src/work/sections/04-solutions.html, in source order.
+ *
+ * THE FIRST ENTRY IS EMPOWER'S, NEW ON 2026-09-16. Grant's review deleted
+ * "Understand What Keeps People From Work" and gave "Turn the Safety Net into
+ * a Path to Work" in its place, asking for it SECOND, which is why the list
+ * now opens on removing obstacles. Both files changed together; the static
+ * section is still the reference and the test that compares them is what would
+ * catch it if only one of the two had been edited. */
 const CAPS = [
-  {
-    title: 'Understand What Keeps People From Work',
-    body: 'Identify why Mississippians are disconnected from work and what can help them return.',
-  },
   {
     title: 'Remove Obstacles to Opportunity',
     body: 'Ensure unnecessary requirements and outdated policies don’t stand between people and meaningful work.',
+  },
+  {
+    title: 'Turn the Safety Net into a Path to Work',
+    body: 'Reform public assistance so earning more doesn’t leave families worse off, and connect people receiving benefits with work and training.',
   },
   {
     title: 'Build Pathways to Good Careers',

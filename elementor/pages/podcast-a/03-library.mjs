@@ -259,16 +259,10 @@ export function loopItem() {
           { cssClass: 'pca-ep__art', content_width: 'full', _attributes: 'aria-hidden|true' },
           [html({ markup: ICON })],
         ),
-        container({ cssClass: 'pca-ep__tags', content_width: 'full' }, [
-          text({
-            markup: '',
-            __dynamic__: {
-              editor: dynamicTag('post-terms', {
-                taxonomy: 'guest_type', link: '', before: '', after: '', separator: ' ',
-              }),
-            },
-          }),
-        ]),
+        /* ORDER IS THE ROW'S ORDER, CHANGED 2026-09-16: art, title, date,
+           tags. It was art, tags, title, date, which is the card's order, and
+           the card is gone. The four children are otherwise untouched; this is
+           a re-ordering and a stylesheet change, not a new template. */
         heading({
           text: 'Add Your Heading Text Here',
           tag: 'span',
@@ -284,6 +278,16 @@ export function loopItem() {
           markup: '',
           __dynamic__: { editor: dynamicTag('post-date', { format: 'default' }) },
         }),
+        container({ cssClass: 'pca-ep__tags', content_width: 'full' }, [
+          text({
+            markup: '',
+            __dynamic__: {
+              editor: dynamicTag('post-terms', {
+                taxonomy: 'guest_type', link: '', before: '', after: '', separator: ' ',
+              }),
+            },
+          }),
+        ]),
       ],
     ),
   ];
@@ -348,8 +352,17 @@ export function section() {
           loopGrid({
             templateId: LOOP_ITEM_POST_ID,
             cssClass: 'pca-eps',
-            columns: 3,
-            columns_tablet: 2,
+            /* ONE COLUMN AT EVERY WIDTH, SINCE 2026-09-16. The library is a
+               list of rows now, not a grid of cards (Grant's review; see
+               css/podcast-a.css's own note on the change). Note 9 below is
+               what makes this the setting that matters: Elementor's own
+               `.elementor-loop-container.elementor-grid` is what lays the
+               items out, driven by these three controls, and css/podcast-a.css
+               cannot reach it. A row list is that grid with one track, so the
+               three values are 1, and .pca-ep's own four-column grid then lays
+               out the inside of each row. */
+            columns: 1,
+            columns_tablet: 1,
             columns_mobile: 1,
             posts_per_page: LIBRARY_POSTS_PER_PAGE,
             post_query_post_type: 'post',

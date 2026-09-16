@@ -333,11 +333,13 @@ test('footer is a landmark with four social links', () => {
   assert.match(html, /<footer class="em-footer">/);
   const socials = html.match(/class="em-footer__social"[\s\S]*?<\/div>/);
   assert.ok(socials, 'no social block');
-  assert.equal((socials[0].match(/<a /g) || []).length, 4);
+  /* FIVE, since 2026-09-16: Empower supplied their real accounts with Grant's
+     review and LinkedIn joined the four that were already here. */
+  assert.equal((socials[0].match(/<a /g) || []).length, 5);
 });
 
 test('footer carries the registered address', () => {
-  assert.match(html, /741 Avignon Dr\., Suite C/);
+  assert.match(html, /1000 Northpark Drive/);
   assert.match(html, /Ridgeland, MS 39157/);
 });
 
@@ -2271,12 +2273,17 @@ const WORK_COPY = [
   'The reasons are complex. Limited pathways to good careers, unnecessary requirements, and policies that make returning to work harder can all keep people on the sidelines.',
   'We can do better.',
 
-  /* Section 4, the four approaches. */
+  /* Section 4, the four approaches. EMPOWER REPLACED THE FIRST ONE ON
+     2026-09-16, at Grant's review: "Understand What Keeps People From Work"
+     is deleted and "Turn the Safety Net into a Path to Work" takes its place,
+     second in the order rather than first. The deleted promise is not listed
+     here in any form, so this stays a list of copy that must be on the page
+     rather than a list of copy that once was. */
   'Practical Solutions for Mississippi Workers',
-  'Understand What Keeps People From Work',
-  'Identify why Mississippians are disconnected from work and what can help them return.',
   'Remove Obstacles to Opportunity',
   'Ensure unnecessary requirements and outdated policies don’t stand between people and meaningful work.',
+  'Turn the Safety Net into a Path to Work',
+  'Reform public assistance so earning more doesn’t leave families worse off, and connect people receiving benefits with work and training.',
   'Build Pathways to Good Careers',
   'Create more ways for Mississippians to gain skills, enter the workforce, and build successful careers.',
   'Create an Environment for Growth',
@@ -3387,10 +3394,22 @@ test('each converted Join Us page mirrors the live Gravity Form it now carries',
      contract for the identical reason. */
   const LIVE_FIELDS = {
     'dist/mail-a.html': { form: 2, labels: ['First', 'Last', 'Email'], absent: ['County'] },
+    /* THE THREE ISSUE-AREA LABELS CHANGED ON 2026-09-16, on both sides. Grant's
+       review asked for the site's own names for the three areas in place of the
+       bare Education / Work / Justice the form was built with, so Gravity Form
+       37's choice TEXT was edited on the install and the stand-in here follows
+       it. The stored VALUES are deliberately untouched, because 25 entries are
+       keyed on them.
+
+       The three old labels move to `absent`, which is what keeps this test
+       doing its job in both directions: if either side is reverted on its own,
+       one of the two lists fails. */
     'dist/amb-a.html': {
       form: 37,
-      labels: ['First', 'Last', 'Email', 'Phone', 'City', 'ZIP / Postal Code', 'Education', 'Work', 'Justice'],
-      absent: ['County', 'Share my story', 'Help grow the network'],
+      labels: ['First', 'Last', 'Email', 'Phone', 'City', 'ZIP / Postal Code',
+        'Quality Education', 'Meaningful Work', 'Safe Communities'],
+      absent: ['County', 'Share my story', 'Help grow the network',
+        'Education', 'Work', 'Justice'],
     },
   };
   assert.equal(CONVERTED_JOIN.length, 2,
@@ -5298,17 +5317,23 @@ test('the contact form is marked as a stand-in and collects nothing', () => {
     'the stand-in posts somewhere; it must collect nothing');
 });
 
-test('the contact page carries the signed-off address and not the old one', () => {
-  /* Two addresses were in circulation on 2026-09-02: the old Contact page said
-     1000 Northpark Dr., and the footer this build shipped on all fourteen live
-     pages says 741 Avignon Dr., Suite C. Paolo chose the footer's, so the page
-     and the footer agree rather than contradicting each other in the same
-     scroll. Asserted in both directions: the old address must not come back. */
+test('the contact page carries the current address and not the superseded one', () => {
+  /* EMPOWER SETTLED THIS ON 2026-09-16, AND THE ANSWER REVERSED THIS TEST.
+     Two addresses were in circulation on 2026-09-02: Empower's own live
+     Contact page said Northpark, the footer this build shipped said Avignon,
+     and with nothing to choose between them Paolo took the footer's so the
+     page and its own footer would at least agree. The note in
+     elementor/approval/page-descriptions-2026-09-02.json said in as many words
+     that the description and the page both change if Empower confirm
+     Northpark. Grant's review confirmed it, so they did.
+
+     Still asserted in both directions, with the direction flipped: Avignon is
+     now the address that must not come back. */
   const html = CONTACT();
-  assert.match(html, /741 Avignon Dr\., Suite C/, 'the contact page has lost the signed-off address');
+  assert.match(html, /1000 Northpark Drive/, 'the contact page has lost the confirmed address');
   assert.match(html, /Ridgeland, MS 39157/, 'the contact page has lost the town and postcode');
-  assert.ok(!html.includes('Northpark'),
-    'the old 1000 Northpark address is back; the footer on this same page says otherwise');
+  assert.ok(!html.includes('Avignon'),
+    'the superseded Avignon address is back; Empower confirmed Northpark on 2026-09-16');
 });
 
 test('the contact page invents no second contact route', () => {

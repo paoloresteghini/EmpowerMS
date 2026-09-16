@@ -66,7 +66,7 @@ export function section() {
                page and its own footer agree. The superseded one is not repeated
                here, not even in a comment. */
             text({
-              markup: '<address class="ct-details__address">741 Avignon Dr., Suite C<br>Ridgeland, MS 39157</address>',
+              markup: '<address class="ct-details__address">1000 Northpark Drive<br>Ridgeland, MS 39157</address>',
               _attributes: 'data-reveal|rise',
             }),
           ],

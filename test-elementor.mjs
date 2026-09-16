@@ -2447,6 +2447,77 @@ test('the category archive grid points at content-a\'s article Loop Item, not a 
     + 'second card design that has to be kept in step with the signed-off one by hand');
 });
 
+/* THE DEFECT THIS GATE EXISTS FOR SHIPPED, AND RAN LIVE FROM 2026-08-26 TO
+   2026-09-16. The grid carried no query setting, on the stated theory that an
+   archive template inherits the query WordPress resolved. It does not:
+   loop-grid defaults to its own posts query, so every category archive and
+   every author archive listed the same twelve most recent posts, under a
+   heading and a count that were correct.
+
+   `current_query` is the whole fix, and it is one key. This asserts it at the
+   source, where it is cheap; the live gate below asserts the result, which is
+   what actually went wrong. Both, because neither alone would have caught
+   this: the source test that existed asserted the card's post id and passed
+   throughout, and nothing rendered the page and counted. */
+test('the category archive grid defers to the query WordPress already resolved', async () => {
+  const { categoryArchive } = await import('./elementor/theme-parts/category-archive.mjs');
+
+  const grids = [];
+  (function walk(nodes) {
+    for (const n of nodes) {
+      if (n.widgetType === 'loop-grid') grids.push(n);
+      if (n.elements?.length) walk(n.elements);
+    }
+  })(categoryArchive());
+
+  assert.equal(grids[0].settings.post_query_post_type, 'current_query',
+    'the archive Loop Grid does not set post_query_post_type to current_query, so it runs its own '
+    + 'posts query instead of the term\'s or the author\'s: every archive on the install lists the '
+    + 'same most-recent posts under a correct heading and a correct count');
+});
+
+/* An author archive with FEWER posts than the page size, deliberately: the
+   comparison is only sharp below PER_PAGE, where cards rendered must equal the
+   count printed above them exactly. Forest Thigpen had 6 on 2026-09-16 against
+   a page size of 12. Any author under 12 works; the URL is the variable.
+
+   THE TWO NUMBERS COME FROM DIFFERENT PLACES, which is what makes this worth
+   asserting. The count is `$wp_query->found_posts`, read by
+   inc/archive.php's shortcode off the query WordPress resolved. The cards are
+   whatever the Loop Grid's own query returned. While they disagreed, the page
+   looked entirely normal. */
+const AUTHOR_ARCHIVE_PAGE = {
+  name: 'author archive (one with fewer than 12 posts)',
+  envVar: 'AUTHOR_ARCHIVE_URL',
+  exampleUrl: 'https://empv2.wpenginepowered.com/author/forest/',
+};
+
+test('the live archive lists the posts it counted, not the site\'s most recent', { concurrency: 1 }, async (t) => {
+  const url = requirePageUrl(AUTHOR_ARCHIVE_PAGE, t);
+  if (!url) return;
+
+  const html = await fetchConverted(url);
+
+  const printed = html.match(/class="ca-head__count"[^>]*>\s*([\d,]+)\s*post/);
+  assert.ok(printed, 'no ca-head__count on the page, so inc/archive.php\'s shortcode did not render '
+    + 'and this gate has nothing to compare the cards against');
+  const counted = Number(printed[1].replace(/,/g, ''));
+
+  /* One marker per card, not per link: cad-card__meta renders once inside each
+     loop item. Counting anchors would count the header and footer too. */
+  const rendered = (html.match(/cad-card__meta/g) ?? []).length;
+
+  assert.ok(counted < 12,
+    `${url} reports ${counted} posts, which is not under the 12-post page size: this gate needs an `
+    + 'archive small enough that cards and count must match exactly. Point AUTHOR_ARCHIVE_URL at a '
+    + 'smaller author.');
+  assert.equal(rendered, counted,
+    `the archive printed "${counted} posts" and rendered ${rendered} cards. The heading and the count `
+    + 'read the resolved query; the cards come from the Loop Grid\'s own. They disagree, which is the '
+    + '2026-09-16 defect returning: check post_query_post_type is still current_query in '
+    + 'elementor/theme-parts/category-archive.mjs and that the archive template was redeployed.');
+});
+
 /* NOTHING ABOUT THE TERM IS WRITTEN INTO THE TREE. One template serves ten
    terms, so a term name or a post count in the tree is wrong on nine of them
    the moment it is written, and wrong on all ten the moment Empower add a post.
@@ -3650,7 +3721,7 @@ test('the footer part carries the build own classes and copy', () => {
   assert.equal(root.settings.html_tag, 'footer');
   assert.equal(root.settings.content_width, 'full');
   assert.match(json, /Empower Mississippi works to Educate, Engage, and Elect/);
-  assert.match(json, /741 Avignon Dr\., Suite C/);
+  assert.match(json, /1000 Northpark Drive/);
   assert.match(json, /Privacy Policy/);
 });
 
@@ -3664,12 +3735,26 @@ test('the footer part keeps the reveal attributes the motion layer needs', () =>
   assert.equal(fades.length, 3, 'all three footer columns carry data-reveal="fade"');
 });
 
-test('the footer social icons are one markup block, not four widgets', () => {
-  /* The four social links are inline SVG. Elementor has no widget that
-     emits them, and an icon widget would substitute its own library. */
+test('the footer social icons are one markup block, not five widgets', () => {
+  /* The social links are inline SVG. Elementor has no widget that emits them,
+     and an icon widget would substitute its own library.
+
+     FIVE URLS, AND THEY ARE EMPOWER'S OWN SINCE 2026-09-16. Four of the five
+     were guesses before that: the build had facebook.com/empowerms,
+     instagram.com/empowerms and youtube.com/@empowerms, made from the pattern
+     of the one that happened to be right, and Grant's review found them.
+     LinkedIn was not in the footer at all. These are the URLs Empower sent, so
+     they are asserted verbatim rather than by pattern: the failure this guards
+     against is a plausible-looking URL, and a pattern would accept one. */
   const json = JSON.stringify(footerPart());
   assert.match(json, /"widgetType":"html"/);
-  for (const network of ['facebook.com/empowerms', 'instagram.com/empowerms', 'x.com/empowerms', 'youtube.com/@empowerms']) {
+  for (const network of [
+    'https://www.facebook.com/EmpowerMississippi/',
+    'https://www.instagram.com/empower_ms/',
+    'https://x.com/empowerms',
+    'https://www.youtube.com/user/empowerms',
+    'https://www.linkedin.com/company/empower-mississippi',
+  ]) {
     assert.ok(json.includes(network), `footer markup is missing ${network}`);
   }
 });
@@ -3683,7 +3768,7 @@ test('every string in the footer part appears in the static footer partial', () 
     'Follow',
     'More',
     'Contact Us',
-    '741 Avignon Dr., Suite C',
+    '1000 Northpark Drive',
   ]) {
     assert.ok(source.includes(copy), `"${copy}" is not in src/_shared/footer.html`);
     assert.ok(JSON.stringify(footerPart()).includes(copy), `"${copy}" is not in the footer part`);

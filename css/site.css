@@ -199,6 +199,16 @@ body{overflow-wrap:break-word}
      white-space:nowrap upstream, so it grows with the user's text size and
      pushes the layout past the viewport. Buttons wrap here instead. */
   .em-btn{white-space:normal;text-align:center}
+  /* EXCEPT THE HEADER'S. Added 2026-09-16, from Grant's review: the rule above
+     makes every button's label breakable, and on the one button that sits in a
+     squeezed flex row that means flex resolves the overflow by breaking the
+     word rather than by wrapping the row. "Donate" came out as DO / NA / TE at
+     412 and 414. The row-wrap below (.em-header__bar{flex-wrap:wrap}) is what
+     is meant to give here, and it only gets the chance if the label cannot
+     break. This is the static half of the same repair
+     wp/empowerms-child/css/bridge.css makes for the converted pages, which had
+     been scoped to 400 and so missed the 401-420 band this rule opens. */
+  .em-header__actions .em-btn{white-space:nowrap}
   .em-mobilenav__link,.em-mobilenav__trigger{padding-left:16px;padding-right:16px}
   /* The header bar's children are flex:0 0 auto, so at 200% text the Donate
      button cannot give any width back. Let the actions group shrink. */
@@ -240,6 +250,15 @@ body{overflow-wrap:break-word}
      assumed. */
   .em-header__bar{flex-wrap:wrap;row-gap:var(--space-3);
     padding-top:var(--space-3);padding-bottom:var(--space-3)}
+}
+
+/* The wrap above is what the header actions fall back on once their labels
+   cannot break, so it has to exist across the whole band where the labels are
+   held on one line. That band starts at 420, not 400. Same 2026-09-16 change
+   as the nowrap exception above; without this line a 412px viewport at 200%
+   text has an unbreakable Donate label in a row that is not allowed to wrap. */
+@media (max-width:420px) and (min-width:401px){
+  .em-header__bar{flex-wrap:wrap;row-gap:var(--space-3)}
 }
 
 /* ---------- Accessibility overrides, colour half ----------

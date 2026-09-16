@@ -73,17 +73,27 @@
       <fieldset class="aba-form__set">
         <legend class="aba-form__legend">My Issue Area:<span class="em-field__req" aria-hidden="true">*</span></legend>
         <div class="aba-form__checks">
+          <!-- THE LABELS ARE THE ISSUE AREAS' OWN NAMES SINCE 2026-09-16, at
+               Grant’s review: Education / Work / Justice were the raw values
+               the live Gravity Form stores, and the site calls the same three
+               things Quality Education, Meaningful Work and Safe Communities
+               everywhere else.
+
+               THE VALUES ARE DELIBERATELY UNCHANGED. Gravity Form 37 has 25
+               entries against the old values; changing what is STORED would
+               make every one of them read as an area nobody chose. Only the
+               label a person reads changes, on the live form and here. -->
           <div class="aba-check">
             <input type="checkbox" id="aba-area-education" name="issue_area" value="Education">
-            <label for="aba-area-education">Education</label>
+            <label for="aba-area-education">Quality Education</label>
           </div>
           <div class="aba-check">
             <input type="checkbox" id="aba-area-work" name="issue_area" value="Work">
-            <label for="aba-area-work">Work</label>
+            <label for="aba-area-work">Meaningful Work</label>
           </div>
           <div class="aba-check">
             <input type="checkbox" id="aba-area-justice" name="issue_area" value="Justice">
-            <label for="aba-area-justice">Justice</label>
+            <label for="aba-area-justice">Safe Communities</label>
           </div>
         </div>
       </fieldset>

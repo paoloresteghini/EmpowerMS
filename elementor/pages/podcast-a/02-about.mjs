@@ -1,4 +1,6 @@
-import { container, text } from '../../factory.mjs';
+import { readFileSync } from 'node:fs';
+import { container, text, html } from '../../factory.mjs';
+import { extractBlock } from '../../theme-parts/extract.mjs';
 
 /* Source of truth: src/podcast-a/sections/02-about.html. Every class, string
    and attribute below is read from that partial, not typed from memory.
@@ -76,7 +78,34 @@ import { container, text } from '../../factory.mjs';
       now resolves to the heading element itself rather than to a div that
       merely contains it. The same move also removes Elementor's own
       heading widget from this section, so its frontend.min.css
-      line-height:1 default needs no repair here. */
+      line-height:1 default needs no repair here.
+
+   7. THE PLATFORM ROW IS READ OUT OF THE PARTIAL, not retyped. Added
+      2026-09-16, Grant's review: three linked marks (YouTube, Apple
+      Podcasts, Spotify) under the "listen wherever you get your podcasts"
+      line, which until now named three places and linked to none.
+
+      Same instrument and the same reason as the footer's social row
+      (elementor/theme-parts/footer.mjs): it is a <ul> of <li><a> wrapping
+      inline SVG, and Elementor offers neither a list container (the html_tag
+      control has no ul or li) nor an icon that would keep these marks. An
+      icon widget would substitute its own library and change the drawing;
+      a div tree would announce nothing where the source announces "list, 3
+      items".
+
+      readFileSync + extractBlock rather than a literal, so the marks cannot
+      drift from the static build: three long SVG path strings retyped here
+      is three chances to be subtly wrong in a way no test would catch,
+      because a wrong path is still a valid path. The whole <ul>, including
+      its data-reveal, comes across verbatim on the real element, so
+      js/reveal.js and css/podcast-a.css see what they see statically. */
+
+/* See note 7. The partial is the source of truth for the three marks. */
+const platformsMarkup = () => extractBlock(
+  readFileSync(new URL('../../../src/podcast-a/sections/02-about.html', import.meta.url), 'utf8'),
+  'ul',
+  'pca-platforms',
+);
 
 export function section() {
   return container(
@@ -108,6 +137,7 @@ export function section() {
                 markup: '<p class="pca-about__where">Watch on YouTube or listen wherever you get your podcasts.</p>',
                 _attributes: 'data-reveal|rise',
               }),
+              html({ markup: platformsMarkup() }),
             ]),
           ],
         ),

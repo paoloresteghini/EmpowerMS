@@ -165,9 +165,43 @@ export function categoryArchive() {
           pagination_load_type: 'page_reload',
           enable_nothing_found_message: 'yes',
           nothing_found_message_text: 'Nothing in this category yet.',
-          /* No post_query_* overrides. An archive template renders the query
-             WordPress already resolved for the term; naming a query here would
-             replace it and show the same posts on every category. */
+          /* `current_query`, AND THE COMMENT THAT USED TO SIT HERE HAD IT
+             EXACTLY BACKWARDS. It read: "No post_query_* overrides. An
+             archive template renders the query WordPress already resolved
+             for the term; naming a query here would replace it and show the
+             same posts on every category." The second half is right about
+             the symptom and wrong about the cause. Omitting the key does not
+             inherit anything: loop-grid's query group defaults to its own
+             posts query, so the grid ran that instead, and the SAME TWELVE
+             most recent posts rendered on every category and every author
+             archive on the install.
+
+             MEASURED 2026-09-16, on the live install, before the change:
+             /category/community-stories/ printed "27 posts" above a list of
+             twelve that included posts not in the category at all;
+             /author/forest/, /author/ashley/ and /author/patrick/ printed 6,
+             5 and 3 posts above the identical twelve. The heading and the
+             count were right the whole time, because inc/archive.php reads
+             them off $wp_query, which WordPress had resolved correctly. Only
+             the list was wrong, which is why this survived review: the page
+             looked like a working archive, and you have to know the term's
+             contents to see that it is not.
+
+             Grant found it from the author links and reported it as an
+             author-archive fault. It was never author-specific; author
+             archives joined this template's condition later, and they
+             inherited a defect the category archives already had.
+
+             The setting itself is unremarkable and was in the build already:
+             search-archive.mjs:195 has carried `current_query` since Task 5,
+             and its own comment cites where the value is registered
+             (group-control-query.php:45). This grid needed the same line.
+
+             posts_per_page STAYS. search-archive.mjs deliberately omits it so
+             the inherited query keeps the site's own page size; here the
+             design is a 12-card page with numbered pagination under it, and
+             PER_PAGE is what css/archive.css was measured against. */
+          post_query_post_type: 'current_query',
           _attributes: 'data-cms|loop\ndata-cms-item-attrs|data-topic\ndata-reveal-group|',
         }),
       ]),

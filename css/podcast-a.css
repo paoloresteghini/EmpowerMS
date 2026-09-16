@@ -147,6 +147,31 @@
   font-family:var(--font-display);font-weight:var(--fw-semibold);
   font-size:var(--fs-h5);line-height:1.35;color:var(--text-strong)}
 
+/* The three platform marks under that line, 2026-09-16. A list, because it is
+   one: three equivalent destinations in no meaningful order, and a screen
+   reader saying "list, 3 items" is the useful thing to say about them.
+
+   44px BOXES. The marks draw at 24; the target is 44 because that is the
+   smallest target WCAG 2.5.8 accepts without exception, and three small round
+   links side by side is exactly the case it exists for. The gap keeps them from
+   sharing edges.
+
+   THE FOCUS RING IS EXPLICIT, not inherited. Route B's converted buttons
+   shipped with no visible focus indicator once and it took a live audit to
+   find; anything focusable added to this build gets its ring written at the
+   point it is added. --shadow-focus is the same token every other control
+   uses, so this is the build's ring rather than a second one. */
+.pca-platforms{list-style:none;display:flex;flex-wrap:wrap;
+  gap:var(--space-3);margin:var(--space-4) 0 0;padding:0}
+.pca-platform{display:grid;place-items:center;width:44px;height:44px;
+  border-radius:var(--radius-pill);color:var(--em-blue);
+  border:1px solid var(--border-default);background:var(--surface-card);
+  transition:color var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out),
+    background var(--dur) var(--ease-out)}
+.pca-platform svg{width:24px;height:24px}
+.pca-platform:hover{color:var(--em-orange);border-color:var(--em-orange)}
+.pca-platform:focus-visible{outline:none;box-shadow:var(--shadow-focus)}
+
 @media (max-width:900px){
   .pca-about__grid{grid-template-columns:minmax(0,1fr);row-gap:var(--space-6)}
 }
@@ -258,36 +283,79 @@ body:has(.pca-guest:checked):not(:has(#pa-g-leader:checked)) .pca-ep[data-guest=
   .pca-catalogue{grid-template-columns:minmax(0,1fr)}
 }
 
-/* ---- The episode cards ---- */
+/* ---- The episode rows ---- */
 
-.pca-eps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:clamp(var(--space-5),2.4vw,var(--space-6));
-  list-style:none;margin:0;padding:0}
+/* ROWS, NOT CARDS, SINCE 2026-09-16. Grant's review: the cards were hard to
+   scan and he asked for the treatment the Capitol Chat page already uses. That
+   page's own note gives the argument this page now borrows: a card the size of
+   a long-form interview's says the wrong thing when what a reader wants is to
+   run down a list and find one. Sixty-six episodes make that truer here than
+   there, where there are 28.
 
-.pca-ep{display:flex;flex-direction:column;gap:var(--space-4);
-  padding:var(--space-5);border:1px solid var(--border-subtle);
-  border-radius:var(--radius-card);background:var(--surface-page)}
+   MEASUREMENTS ARE CAPITOL'S, NOT RE-DERIVED. css/capitol-a.css:209-241 is the
+   list this is modelled on; the row padding, the hairline, the 40px play disc
+   and the phone reflow are all read from it so the two shows look like two
+   views of one design rather than two designs. What differs is the one column
+   Capitol does not have: this page carries two tag pills (topic and guest
+   type) where Capitol carries a single session label, because the guest type is
+   this page's facet and the filter rail above is CSS over it.
+
+   NO TRANSITION ON .pca-ep, AND THAT IS DELIBERATE. Capitol's equivalent row
+   declares `transition:background`, and every row carries data-reveal="rise",
+   so css/motion.css's reveal selector replaces that transition wholesale: the
+   declaration has never done anything on that page. Rather than copy a line
+   that is already inert, the hover here is an instant background change, which
+   is what both pages actually render. (css/motion.css:10-15 is the selector;
+   this build has shipped three bugs to it.) */
+
+.pca-eps{list-style:none;margin:0;padding:0;
+  border-top:1px solid var(--border-default)}
+
+/* One row, four columns: play, title, date, tags. The title column is the
+   flexible one because it is the only one whose content varies in length. */
+.pca-ep{display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto auto;
+  gap:var(--space-5);align-items:center;
+  padding:var(--space-5) var(--space-4);
+  border-bottom:1px solid var(--border-default);
+  background:var(--surface-page)}
+.pca-ep:hover{background:var(--surface-tint)}
 
 /* The play affordance, matching .em-podcast__play in components.css rather than
-   inventing a second one. */
-.pca-ep__art{display:grid;place-items:center;width:44px;height:44px;
+   inventing a second one. 40px in the row, matching Capitol's, where the card
+   carried 44. */
+.pca-ep__art{display:grid;place-items:center;width:40px;height:40px;
   border-radius:var(--radius-pill);background:var(--em-orange);color:var(--white)}
-.pca-ep__art svg{width:18px;height:18px}
+.pca-ep__art svg{width:16px;height:16px}
 
-.pca-ep__tags{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.pca-ep__tags{display:flex;flex-wrap:wrap;gap:var(--space-2);justify-content:flex-end}
 .pca-ep__tags span{padding:4px 10px;border-radius:var(--radius-pill);
-  background:var(--surface-subtle);
+  background:var(--surface-subtle);white-space:nowrap;
   font-family:var(--font-display);font-weight:var(--fw-bold);
   font-size:var(--fs-caption);color:var(--em-orange-ink)}
 
+/* Body size, not --fs-h5: in a row of sixty-six the title is one line to scan,
+   not a card's headline. `text-wrap:balance` goes with the card it belonged to,
+   which evened two-line headlines and is the wrong instinct for a list. */
 .pca-ep__title{font-family:var(--font-display);font-weight:var(--fw-bold);
-  font-size:var(--fs-h5);line-height:1.24;letter-spacing:-.01em;
-  color:var(--text-strong);text-decoration:none;text-wrap:balance}
+  font-size:var(--fs-body);line-height:1.3;
+  color:var(--text-strong);text-decoration:none}
 .pca-ep__title:hover,.pca-ep__title:focus-visible{text-decoration:underline;
   text-underline-offset:3px}
 
-.pca-ep__date{margin-top:auto;padding-top:var(--space-2);
-  font-size:var(--fs-caption);color:var(--text-muted)}
+.pca-ep__date{font-size:var(--fs-caption);color:var(--text-muted);
+  white-space:nowrap}
+
+/* Four columns do not fit beside the filter rail, let alone on a phone. Play
+   stays with the title, the metadata drops under them. Capitol does the same at
+   860; this list starts from a narrower column because the rail takes some of
+   the width, so it reflows earlier. */
+@media (max-width:1180px){
+  .pca-ep{grid-template-columns:auto minmax(0,1fr);gap:var(--space-3) var(--space-5)}
+  .pca-ep__date{grid-column:2}
+  .pca-ep__tags{grid-column:2;justify-content:flex-start}
+  .pca-ep__art{grid-row:1 / span 3}
+}
 
 @media (max-width:980px){
   .pca-catalogue{grid-template-columns:minmax(0,1fr)}

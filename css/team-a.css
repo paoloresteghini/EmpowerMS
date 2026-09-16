@@ -77,7 +77,20 @@
    a crop: every file is already square, because Empower's own board page crops
    them square and those are the files this build ships. A future headshot that
    is not square will be centre-cropped rather than squashed. */
-.ta-roll__photo{width:44px;height:44px;flex:0 0 auto;
+/* 96px SINCE 2026-09-16, up from the 44px the monogram left behind. Grant's
+   review: "the board members currently feel quite a bit smaller than the
+   staff", which they did, and by a long way. Against a 280px staff tile at 4:5
+   the board headshot was a fourteenth of the area; at 96 against a 240px tile
+   (see .ta-roster below, reduced in the same change) it is about a ninth of the
+   height rather than an eighth of the width, and the two sections read as two
+   treatments of the same roster rather than as people of two ranks.
+
+   THE SOURCE FILES CARRY IT. Every headshot in assets/headshots is 132x132, so
+   96 is still inside the native size and none of the eight is being scaled up.
+   `object-fit:cover` above was belt and braces at 44 and stays that way at 96:
+   the files are square, and a future one that is not gets centre-cropped rather
+   than squashed. */
+.ta-roll__photo{width:96px;height:96px;flex:0 0 auto;
   border-radius:var(--radius-pill);object-fit:cover;display:block}
 
 /* =============================== 1 · Hero ================================= */
@@ -153,12 +166,19 @@
    already differs from a stock grid by having no cards, capped tiles and a
    founder block above; it does not need the wobble as well.
 
-   Tracks are capped at 280px and the slack goes into the gutters. A third of a
-   1200px container is a 340px headshot: a face you are meant to recognise at a
-   glance, blown up to the size of the thing the person wrote. The cap is also
-   what keeps the tile from dragging the name and title away from it. */
+   Tracks are capped and the slack goes into the gutters. A third of a 1200px
+   container is a 340px headshot: a face you are meant to recognise at a glance,
+   blown up to the size of the thing the person wrote. The cap is also what
+   keeps the tile from dragging the name and title away from it.
+
+   240, DOWN FROM 280, SINCE 2026-09-16. The other half of Grant's balance note:
+   the board discs came up and the staff tiles came down, because doing it all
+   with the discs would have put a 130px circle in a name pill. 240 keeps three
+   across a 1200px container comfortably and holds the same 4:5 box, so nothing
+   about the tile changes except its size. The two-track rule in the responsive
+   section below moved with it. */
 .ta-roster{list-style:none;margin:0;padding:0;
-  display:grid;grid-template-columns:repeat(3,minmax(0,280px));
+  display:grid;grid-template-columns:repeat(3,minmax(0,240px));
   justify-content:space-between;align-items:start;
   column-gap:clamp(var(--space-6),3vw,var(--space-10));
   row-gap:clamp(var(--space-9),4vw,var(--space-12))}
@@ -297,9 +317,9 @@ a.ta-person__link:hover .ta-person__more::after{width:22px}
 }
 
 @media (max-width:900px){
-  /* Three 280px tiles plus their gutters need ~890px of container, which is
+  /* Three 240px tiles plus their gutters need ~770px of container, which is
      where this breakpoint comes from. */
-  .ta-roster{grid-template-columns:repeat(2,minmax(0,280px))}
+  .ta-roster{grid-template-columns:repeat(2,minmax(0,240px))}
   .ta-fellows__slab{grid-template-columns:1fr;gap:var(--space-7)}
   .ta-ledger__row{grid-template-columns:auto minmax(0,1fr);row-gap:var(--space-2)}
   .ta-ledger__field{grid-column:2;text-align:left}

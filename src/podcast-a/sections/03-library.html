@@ -13,6 +13,12 @@
      the real library would not have. The cards carry no titles, dates or guest
      names — those are the client’s content, and an invented episode title is the
      one kind of placeholder that reads as finished work. -->
+<!-- ROWS SINCE 2026-09-16, not a grid of cards. Grant’s review asked for the
+     treatment the Capitol Chat page already uses, "something easier to quickly
+     scan". The episodes, their attributes and the filter rail are unchanged;
+     what changed is the order of each row’s four parts (play, title, date,
+     tags) and css/podcast-a.css. Capitol’s own note carries the argument, and
+     it applies harder here: 66 episodes against its 28. -->
 <section class="pca-library" aria-labelledby="library-title">
   <div class="em-container">
     <div class="pca-library__head" data-reveal-group>
@@ -65,59 +71,59 @@
       <ul class="pca-eps" data-cms="loop" data-cms-item-attrs="data-topic,data-guest" data-cms-note="Episode library, newest first. In WordPress this is a Loop Grid over the show’s posts. ONLY data-guest converts: it is the page’s one facet, the filter above is CSS over it, and a loop item template that does not emit it filters nothing and reports no error. data-topic is NOT a filter — Empower removed Filter by Topic on 2026-08-07 — it is scaffolding for this static sample, guaranteeing the nine cards cover a full topic/guest matrix so no combination of ticks shows a dead end. The real library makes that guarantee meaningless, so data-topic is dropped at conversion. Empower owe the guest taxonomy: their podcast posts carry category 133 and nothing else." data-reveal-group>
         <li class="pca-ep" data-topic="education" data-guest="lawmaker" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Quality Education</span><span>Lawmaker</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/speaker-jason-white-education-freedom-and-mississippis-future/">Speaker Jason White: Education Freedom and Mississippi’s Future</a>
           <span class="pca-ep__date">August 5, 2025</span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Lawmaker</span></span>
         </li>
         <li class="pca-ep" data-topic="education" data-guest="expert" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Quality Education</span><span>Policy expert</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/dr-john-dixon-charter-schools-choice-and-accountability/">Dr. John Dixon: Charter Schools, Choice, and Accountability</a>
           <span class="pca-ep__date">February 3, 2026</span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Policy expert</span></span>
         </li>
         <li class="pca-ep" data-topic="education" data-guest="leader" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Quality Education</span><span>Community leader</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/dearchie-scott-charter-schools-and-educational-excellence/">DeArchie Scott: Charter Schools and Educational Excellence</a>
           <span class="pca-ep__date">April 8, 2025</span>
+          <span class="pca-ep__tags"><span>Quality Education</span><span>Community leader</span></span>
         </li>
 
         <li class="pca-ep" data-topic="work" data-guest="lawmaker" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Lawmaker</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/lt-governor-delbert-hosemann-whistle-while-you-work/">Lt. Governor Delbert Hosemann: Whistle While You Work</a>
           <span class="pca-ep__date">October 1, 2024</span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Lawmaker</span></span>
         </li>
         <li class="pca-ep" data-topic="work" data-guest="expert" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Policy expert</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/david-bahnsen-author-of-full-time-work-and-the-meaning-of-life/">David Bahnsen: Author of “Full-Time: Work and the Meaning of Life”</a>
           <span class="pca-ep__date">September 23, 2024</span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Policy expert</span></span>
         </li>
         <li class="pca-ep" data-topic="work" data-guest="leader" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Community leader</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/josh-mcmanus-jacksons-comeback-story/">Josh McManus: Jackson’s Comeback Story</a>
           <span class="pca-ep__date">May 12, 2026</span>
+          <span class="pca-ep__tags"><span>Meaningful Work</span><span>Community leader</span></span>
         </li>
 
         <li class="pca-ep" data-topic="safety" data-guest="lawmaker" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Safe Communities</span><span>Lawmaker</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/senator-brice-wiggins-justice-education-and-mississippis-future/">Senator Brice Wiggins: Justice, Education, and Mississippi’s Future</a>
           <span class="pca-ep__date">May 20, 2025</span>
+          <span class="pca-ep__tags"><span>Safe Communities</span><span>Lawmaker</span></span>
         </li>
         <li class="pca-ep" data-topic="safety" data-guest="expert" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Safe Communities</span><span>Policy expert</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/dr-jennifer-doleac-what-actually-deters-crime/">Dr. Jennifer Doleac: What Actually Deters Crime?</a>
           <span class="pca-ep__date">March 31, 2026</span>
+          <span class="pca-ep__tags"><span>Safe Communities</span><span>Policy expert</span></span>
         </li>
         <li class="pca-ep" data-topic="safety" data-guest="leader" data-reveal="rise">
           <span class="pca-ep__art" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
-          <span class="pca-ep__tags"><span>Safe Communities</span><span>Community leader</span></span>
           <a class="pca-ep__title" href="https://empowerms.org/alesha-judkins/">Alesha Judkins: Public Safety, Crime, and Second Chances</a>
           <span class="pca-ep__date">November 12, 2024</span>
+          <span class="pca-ep__tags"><span>Safe Communities</span><span>Community leader</span></span>
         </li>
       </ul>
     </div>

@@ -112,7 +112,10 @@ export function section() {
                      this one replaces. #library-title is the <h2> the section
                      already carries as its aria-labelledby target, so both
                      builds have the id and jumping lands on the heading. */
-                  link({ label: 'Watch on YouTube', href: 'https://www.youtube.com/user/empowerms', cssClass: 'em-btn em-btn--primary em-btn--lg' }),
+                  /* The PLAYLIST since 2026-09-16, per Grant's review: the
+                     channel opens on Empower's newest upload, the playlist
+                     opens on the show. */
+                  link({ label: 'Watch on YouTube', href: 'https://www.youtube.com/playlist?list=PLAARIJoqsOM6-jbhcAUf0PdR_TzKBjqKS', cssClass: 'em-btn em-btn--primary em-btn--lg' }),
                   link({ label: 'Listen Now', href: '#library-title', cssClass: 'em-btn em-btn--inverse-outline em-btn--lg' }),
                 ],
               ),

@@ -7037,7 +7037,7 @@ body .wpautoterms-footer a:focus-visible{
  * the CSS below never has to travel from the button to the panel at all.
  *
  * THE FLASH IS KNOWN, NOT DESIGNED AROUND: the panel ships open in the
- * markup for the no-JavaScript contract test-elementor.mjs:3702 enforces,
+ * markup for the no-JavaScript contract test-elementor.mjs:3766 enforces,
  * so there is a brief window on every load, before search.js's first
  * statement sets [data-search="on"], where the panel is visible. js/nav.js
  * and js/dropdown.js already pay the same cost for the mobile menu and the
@@ -7185,8 +7185,23 @@ body .wpautoterms-footer a:focus-visible{
  * box parity on that element rather than inventing a new size for it.
  *
  * Scoped through `.em-header` so it cannot reach the `.em-btn` instances in
- * the search panel or anywhere else on the page. */
-@media (max-width:400px){
+ * the search panel or anywhere else on the page.
+ *
+ * 420, NOT 400, SINCE 2026-09-16, AND THE GAP IS WHY GRANT SAW THIS AGAIN.
+ * The repair above was measured at 320, 360 and 390 and shipped at 400, which
+ * is the breakpoint the SEARCH restore uses. It is not the breakpoint of the
+ * rule it is repairing: `.em-btn{white-space:normal}` is css/site.css:201,
+ * inside `@media (max-width:420px)`. Between 401 and 420 the label was
+ * breakable and nothing here reached it, so the defect survived at exactly the
+ * widths a reviewer is most likely to use: 412 (Pixel) and 414 (iPhone Plus)
+ * both sit in that 20px window, and Grant reported "DO / NA / TE", three lines
+ * rather than the two the note above records at 390.
+ *
+ * The lesson is the general one, not the number: a rule that repairs another
+ * rule has to cover the whole width of what it repairs, or it leaves a band
+ * where the defect is live and every measurement inside the repaired range
+ * says it is fixed. Measured after the change at 390, 412, 414 and 420. */
+@media (max-width:420px){
   .em-header .em-header__actions .em-btn{
     white-space:nowrap;
   }

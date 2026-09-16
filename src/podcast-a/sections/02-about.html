@@ -16,6 +16,32 @@
         <p class="pca-lede" data-reveal="rise">Hosted by Empower Mississippi Founder and CEO <a href="team-bio.html">Grant Callen</a>, The Empower Podcast brings together lawmakers, policy experts, and community leaders to explore Mississippi’s biggest challenges and brightest opportunities.</p>
         <p data-reveal="rise">Through thoughtful, long-form conversations, we look beyond divisive politics to the people impacted by public policy and the ideas that can help create a Mississippi where everyone can rise.</p>
         <p class="pca-about__where" data-reveal="rise">Watch on YouTube or listen wherever you get your podcasts.</p>
+        <!-- THE THREE PLACES, ADDED 2026-09-16 at Grant’s review: the line above
+             told a reader the show is on YouTube and in podcast apps and then
+             gave them nothing to click. These are Empower’s own three, supplied
+             with the review.
+
+             THE MARKS ARE DRAWN HERE, not imported. Same decision as the
+             footer’s social row: an icon library would substitute its own
+             glyphs, and these are outline marks in the build’s own weight
+             rather than the three platforms' full-colour logos. They are
+             labelled, so what identifies them to a screen reader is the name,
+             not the drawing.
+
+             EACH ONE OPENS SOMEWHERE ELSE, so each carries rel="noopener" with
+             its target. The name is the accessible name via aria-label; the
+             SVG is aria-hidden, which is why the label cannot be dropped. -->
+        <ul class="pca-platforms" data-reveal="rise">
+          <li><a class="pca-platform" href="https://www.youtube.com/playlist?list=PLAARIJoqsOM6-jbhcAUf0PdR_TzKBjqKS" target="_blank" rel="noopener" aria-label="Watch The Empower Podcast on YouTube">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.8" y="5.6" width="18.4" height="12.8" rx="3.6"/><path d="M10.4 9.6 15.2 12l-4.8 2.4z" fill="currentColor" stroke="none"/></svg>
+          </a></li>
+          <li><a class="pca-platform" href="https://podcasts.apple.com/us/podcast/the-empower-podcast/id1716799684" target="_blank" rel="noopener" aria-label="Listen to The Empower Podcast on Apple Podcasts">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><rect x="10.2" y="6.2" width="3.6" height="6.6" rx="1.8" fill="currentColor" stroke="none"/><path d="M8.4 11.7a3.6 3.6 0 0 0 7.2 0" stroke-linecap="round"/><path d="M10.6 17.9h2.8" stroke-linecap="round"/></svg>
+          </a></li>
+          <li><a class="pca-platform" href="https://open.spotify.com/show/39UKG6WL8h90nTy9o0M5qJ" target="_blank" rel="noopener" aria-label="Listen to The Empower Podcast on Spotify">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9.2"/><path d="M7.4 9.3c3.1-.8 6.4-.5 9.1 1.1" stroke-linecap="round"/><path d="M8 12.4c2.5-.6 5.2-.3 7.4.9" stroke-linecap="round"/><path d="M8.6 15.3c2-.4 4-.2 5.6.7" stroke-linecap="round"/></svg>
+          </a></li>
+        </ul>
       </div>
     </div>
   </div>

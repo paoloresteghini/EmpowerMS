@@ -345,10 +345,12 @@ export const PHOTOS = {
      time rather than a page that quietly renders nothing. What changed is which
      name each point of use asks for.
 
-     THE BUILDING IS A KNOWN COMPROMISE. empower-office-building arrived 800px
-     wide for a 911x683 slot and is upscaled, on Paolo's call, so Grant sees the
-     section he asked for; Kienna has been asked for the original. Swap the file
-     and re-import under the same name when it lands. */
+     THE BUILDING WAS A KNOWN COMPROMISE FOR ABOUT AN HOUR. It arrived 800x431
+     for a 911x683 slot and shipped upscaled on Paolo's call; Kienna sent the
+     4032x3024 original the same afternoon and the file was swapped underneath
+     attachment 20725 with elementor/replace-photograph.mjs, which is the script
+     that case produced. Same id, same alt, four times the detail, and the
+     source is 4:3 so the slot takes it with no crop at all. */
   'empower-office-building': {
     id: 20725,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/empower-office-building.jpg',

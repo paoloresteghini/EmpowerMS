@@ -2328,10 +2328,13 @@ const WORK_COPY = [
   'For some families, earning more can mean suddenly losing benefits before they can afford to make up the difference.',
   'Creating a smoother path from public assistance to financial independence so earning more always moves families forward.',
 
+  /* "Creating a tax and regulatory environment" rather than "Creating an
+     environment": Empower's policy team, 2026-09-17. The only word changed on
+     this page in that round, and the rest of the sentence is untouched. */
   'Economic Opportunity',
   'Mississippi Should Be a Place Where Opportunity Grows',
   'When businesses and entrepreneurs can grow, they create jobs and more opportunities for Mississippians to succeed.',
-  'Creating an environment where businesses can thrive, jobs can grow, and more people can build a better future through work.',
+  'Creating a tax and regulatory environment where businesses can thrive, jobs can grow, and more people can build a better future through work.',
 
   /* Sections 6 and 7, the two feed headings and their intros. */
   'Voices of Mississippi’s Workforce',
@@ -2366,14 +2369,41 @@ const SAFETY_COPY = [
   'Create Pathways to a Better Future',
   'Help people successfully reenter their communities, find meaningful work, and build stable lives after serving their sentence.',
 
-  /* Section 5, the intro and all four work areas. */
+  /* Section 5, the intro and all four work areas. EMPOWER'S POLICY TEAM
+     REWORKED THIS SECTION ON 2026-09-17, four changes in one block:
+
+       1. Strong Families & Communities moves from fourth to FIRST. The order
+          below follows the page so the list can still be read down it, but the
+          assertion is an includes() and does not depend on that; the order is
+          not tested anywhere, and the count sweep further down is.
+       2. "Safety Starts With Solutions That Work" becomes "Safety REQUIRES
+          Solutions That Work".
+       3. Crime Prevention's description gains "exploring what has worked
+          elsewhere" as a middle clause. The instruction quoted "where and why
+          it happens," with a comma the source did not have, so the insertion
+          turns the sentence into a three-item list and the comma is Empower's
+          own, not an edit of ours.
+       4. Second Chances opens "Almost every person who enters" rather than
+          "Most people who enter", and Strong Families commits to
+          "Demonstrating" rather than "Better understanding".
+
+     Only the SIGNED-OFF page is reordered. safety-a and safety-c keep their
+     original card order: they are archived options rather than the build, and
+     safety-c's first plate carries .sfc-plate-area--lead, so moving a card
+     there would move a double-width composition rather than a block of copy.
+     Both still carry every string below, which is all this sweep asserts. */
   'Safety Creates the Foundation for Opportunity',
   'Safe communities don’t happen through one solution alone. They require effective law enforcement, strong families, a fair justice system, and opportunities for people to build stable lives.',
   'We’re advancing research and practical solutions that help make Mississippi communities safer and stronger.',
 
+  'Strong Families & Communities',
+  'Strong Communities Start With Strong Foundations',
+  'Stable families and connected communities play an important role in creating environments where people can thrive and neighborhoods can flourish.',
+  'Demonstrating the connection between family stability, community strength, and public safety—and advancing solutions that help strengthen those foundations.',
+
   'Crime Prevention & Public Safety',
-  'Safety Starts With Solutions That Work',
-  'Reducing crime requires understanding where and why it happens and focusing resources on strategies that make communities safer.',
+  'Safety Requires Solutions That Work',
+  'Reducing crime requires understanding where and why it happens, exploring what has worked elsewhere, and focusing resources on strategies that make communities safer.',
   'Using research, data, and partnerships with law enforcement and community leaders to advance effective approaches to crime reduction.',
 
   'Effective Justice',
@@ -2383,13 +2413,8 @@ const SAFETY_COPY = [
 
   'Second Chances & Reentry',
   'A Second Chance Should Lead Somewhere',
-  'Most people who enter prison will eventually return home. Successful reentry helps people find work, rebuild their lives, and become contributing members of their communities.',
+  'Almost every person who enters prison will eventually return home. Successful reentry helps people find work, rebuild their lives, and become contributing members of their communities.',
   'Expanding pathways to employment and successful reentry that reduce repeat crime and help build safer communities.',
-
-  'Strong Families & Communities',
-  'Strong Communities Start With Strong Foundations',
-  'Stable families and connected communities play an important role in creating environments where people can thrive and neighborhoods can flourish.',
-  'Better understanding the connection between family stability, community strength, and public safety—and advancing solutions that help strengthen those foundations.',
 
   /* Sections 6 and 7. */
   'Voices of Safer Communities',

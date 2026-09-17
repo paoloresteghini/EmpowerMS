@@ -143,7 +143,7 @@ const CARDS = [
     label: 'Economic Opportunity',
     head: 'Mississippi Should Be a Place Where Opportunity Grows',
     body: 'When businesses and entrepreneurs can grow, they create jobs and more opportunities for Mississippians to succeed.',
-    toward: 'Creating an environment where businesses can thrive, jobs can grow, and more people can build a better future through work.',
+    toward: 'Creating a tax and regulatory environment where businesses can thrive, jobs can grow, and more people can build a better future through work.',
   },
 ];
 

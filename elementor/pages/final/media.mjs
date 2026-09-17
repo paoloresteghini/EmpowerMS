@@ -390,6 +390,35 @@ export const PHOTOS = {
     id: 20731,
     url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/welding-lesson-54.jpg',
   },
+  /* 2026-09-17, Empower's policy team round. Three photographs Kienna sent as
+     Drive links, imported through elementor/import-photography.mjs with their
+     alt at creation, ids and urls read back off the install rather than typed.
+
+     `father-teaching-bike-wide` IS THE SAME PHOTOGRAPH AS `father-teaching-bike`
+     (20727) ABOVE, AND THAT IS DELIBERATE rather than a duplicate import. Round
+     two placed that picture on the homepage in a PORTRAIT slot and it was cut
+     748x1200; the EPIC research page's area slot is 710x532 landscape, so a
+     portrait file there would be cropped to a strip by object-fit. This is a
+     second crop of the same Drive original (1piBnK2...), which is the shape
+     `hands-with-product` / `hands-with-product-sq` already established. Kienna
+     asked for the picture in both places; it is the only photograph used twice
+     in the build, and that is worth knowing before either use is changed.
+
+     The three alt sentences are this session's draft, not Empower's. They are
+     on the sign-off list with `advocates-event-conversation` (20735) and
+     elementor/story-alt.json's twenty-seven. */
+  'colleagues-in-discussion': {
+    id: 20736,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/colleagues-in-discussion.jpg',
+  },
+  'construction-crew-scaffolding': {
+    id: 20737,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/construction-crew-scaffolding.jpg',
+  },
+  'father-teaching-bike-wide': {
+    id: 20738,
+    url: 'https://empv2.wpenginepowered.com/wp-content/uploads/2026/09/father-teaching-bike-wide.jpg',
+  },
 };
 
 /* Reads like `photo('father-children-field')` at the point of use, and throws

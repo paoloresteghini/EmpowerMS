@@ -1,7 +1,7 @@
 import { container, text } from '../../factory.mjs';
 
 /* Source of truth: dist/safety.html, the <section class="sol-grid"> block
-   (lines 268-308) and the comment above it (262-267). Every class, string and
+   (lines 283-323) and the comment above it (277-282). Every class, string and
    attribute below is read from that file, not typed from memory.
 
    THIS IS THE SECTION THE UNIT'S TWO EXCEPTIONS LIVE IN, and it is built so
@@ -83,15 +83,26 @@ const LEDE = 'Safe communities don’t happen through one solution alone. They r
 const INTRO = 'We’re advancing research and practical solutions that help make Mississippi communities '
   + 'safer and stronger.';
 
-/* Verbatim from dist/safety.html:279-306, in source order. `&amp;` is the
+/* Verbatim from dist/safety.html:294-320, in source order. `&amp;` is the
    source's own escaping and is reproduced rather than resolved: census() keys
    on the element's rendered text, which is the same either way, but the
    markup this build writes should be the markup the build wrote. */
 const CARDS = [
   {
+    label: 'Strong Families &amp; Communities',
+    head: 'Strong Communities Start With Strong Foundations',
+    body: 'Stable families and connected communities play an important role in creating environments where people can thrive and neighborhoods can flourish.',
+    /* The em dash below is SOURCE COPY, reproduced byte for byte from
+       dist/safety.html:298. This repository's rule against em dashes governs
+       what this build writes, not what an already approved page says; the same
+       distinction capitol-a/03-library.mjs note 5 makes about its own
+       data-cms-note. */
+    toward: 'Demonstrating the connection between family stability, community strength, and public safety—and advancing solutions that help strengthen those foundations.',
+  },
+  {
     label: 'Crime Prevention &amp; Public Safety',
-    head: 'Safety Starts With Solutions That Work',
-    body: 'Reducing crime requires understanding where and why it happens and focusing resources on strategies that make communities safer.',
+    head: 'Safety Requires Solutions That Work',
+    body: 'Reducing crime requires understanding where and why it happens, exploring what has worked elsewhere, and focusing resources on strategies that make communities safer.',
     toward: 'Using research, data, and partnerships with law enforcement and community leaders to advance effective approaches to crime reduction.',
   },
   {
@@ -103,19 +114,8 @@ const CARDS = [
   {
     label: 'Second Chances &amp; Reentry',
     head: 'A Second Chance Should Lead Somewhere',
-    body: 'Most people who enter prison will eventually return home. Successful reentry helps people find work, rebuild their lives, and become contributing members of their communities.',
+    body: 'Almost every person who enters prison will eventually return home. Successful reentry helps people find work, rebuild their lives, and become contributing members of their communities.',
     toward: 'Expanding pathways to employment and successful reentry that reduce repeat crime and help build safer communities.',
-  },
-  {
-    label: 'Strong Families &amp; Communities',
-    head: 'Strong Communities Start With Strong Foundations',
-    body: 'Stable families and connected communities play an important role in creating environments where people can thrive and neighborhoods can flourish.',
-    /* The em dash below is SOURCE COPY, reproduced byte for byte from
-       dist/safety.html:304. This repository's rule against em dashes governs
-       what this build writes, not what an already approved page says; the same
-       distinction capitol-a/03-library.mjs note 5 makes about its own
-       data-cms-note. */
-    toward: 'Better understanding the connection between family stability, community strength, and public safety—and advancing solutions that help strengthen those foundations.',
   },
 ];
 

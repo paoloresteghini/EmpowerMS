@@ -1,13 +1,22 @@
 /* work's imagery, as it exists in the install's media library.
  *
- * TWO photographs, both already on the install, and NOTHING WAS IMPORTED for
- * this page. Both ids are re-exported from the map that first recorded them
- * rather than retyped, for the reason elementor/pages/final/media.mjs gives in
- * its own header ("An id typed at each point of use is the same install fact
- * written five times, and when one copy is wrong the page renders somebody
- * else's photograph while every structural test still passes").
+ * FIVE photographs, all already on the install, and NOTHING WAS IMPORTED BY
+ * THIS FILE (construction-crew-scaffolding was imported on 2026-09-17 through
+ * elementor/import-photography.mjs, which is where every photograph enters the
+ * library). Every id is re-exported from the map that first recorded it rather
+ * than retyped, for the reason elementor/pages/final/media.mjs gives in its own
+ * header ("An id typed at each point of use is the same install fact written
+ * five times, and when one copy is wrong the page renders somebody else's
+ * photograph while every structural test still passes").
  *
- * THIS PAGE'S TWO ARE NOT `safety`'s TWO, which is the whole reason this file
+ * THE COUNT ABOVE SAID "TWO" UNTIL 2026-09-17 AND HAD BEEN WRONG SINCE THE
+ * 2026-09-03 photography round, which added three entries without touching the
+ * sentence that counts them. The same decay is recorded in epic-a/media.mjs,
+ * whose header said FIVE against a map of nine. No test reads a comment, so
+ * neither failed; both are corrected here rather than left, and the pattern is
+ * worth knowing before trusting any other count in these headers.
+ *
+ * THIS PAGE'S ARE NOT `safety`'s, which is the whole reason this file
  * exists rather than being imported from there: `safety` uses
  * grandparents-grandchild (20583) in the problem section and
  * father-children-field (20579) in the stories band; this page uses
@@ -80,7 +89,11 @@ const PHOTOS = {
   'girl-writing-bw': FINAL_PHOTOS['girl-writing-bw'],
   'worker-workshop-bw': FINAL_PHOTOS['worker-workshop-bw'],
   'worker-labelling-wide': FINAL_PHOTOS['worker-labelling-wide'],
-  'worker-sorting-table': FINAL_PHOTOS['worker-sorting-table'],
+  /* 2026-09-17: Empower's policy team replaced the problem-section photograph
+     with a construction crew. `worker-sorting-table` (20689) is gone from THIS
+     map because this page no longer uses it; it stays in final/media.mjs,
+     which amb-a still reads. */
+  'construction-crew-scaffolding': FINAL_PHOTOS['construction-crew-scaffolding'],
   'apprentice-at-the-machine-wide': FINAL_PHOTOS['apprentice-at-the-machine-wide'],
 };
 

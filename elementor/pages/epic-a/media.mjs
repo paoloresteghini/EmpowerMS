@@ -1,12 +1,29 @@
 /* epic-a's imagery, as it exists in the install's media library.
  *
- * FIVE images: four photographs already on the install, and ONE FILE THAT WAS
- * IMPORTED FOR THIS TASK. Every already-present id is re-exported from the map
- * that first recorded it rather than retyped, for the reason
- * elementor/pages/final/media.mjs gives in its own header ("An id typed at each
- * point of use is the same install fact written five times, and when one copy is
- * wrong the page renders somebody else's photograph while every structural test
- * still passes").
+ * NINE images. Every already-present id is re-exported from the map that first
+ * recorded it rather than retyped, for the reason elementor/pages/final/media.mjs
+ * gives in its own header ("An id typed at each point of use is the same install
+ * fact written five times, and when one copy is wrong the page renders somebody
+ * else's photograph while every structural test still passes").
+ *
+ * THE COUNT IN THIS SENTENCE SAID "FIVE" UNTIL 2026-09-17 AND HAD BEEN WRONG
+ * SINCE 2026-09-03, when the photography round added warehouse-worker-aisle-43
+ * and teacher-smartboard without touching it. Nothing failed, because no test
+ * reads a comment. Recorded rather than quietly corrected: a count written in
+ * prose beside a list decays every time the list changes, and this file's
+ * headers carry several more of them.
+ *
+ * TWO IMPORTED 2026-09-17, Empower's policy team round: colleagues-in-discussion
+ * (20736) for the Meaningful Work area and father-teaching-bike-wide (20738) for
+ * Safe Communities, replacing hands-with-product and advocates-outside-capitol.
+ * UNLIKE THE FOUR BELOW, THEIR ALT DOES NOT CONFLICT WITH THIS PAGE'S STATIC
+ * ALT, and cannot: the sentence in dist/epic-a.html IS the sentence passed to
+ * `wp media import --alt`, in the same session. Both sentences are this
+ * session's draft and are on the sign-off list, which is a different thing from
+ * a conflict and is tracked with advocates-event-conversation (20735).
+ *
+ * ONE FILE WAS IMPORTED FOR THE ORIGINAL TASK, and the note below is about
+ * that one.
  *
  * THE IMPORT: epic-logo (20604), and it needs no alt text.
  *
@@ -113,8 +130,12 @@ const PHOTOS = {
   },
   'warehouse-worker-aisle-43': FINAL_PHOTOS['warehouse-worker-aisle-43'],
   'teacher-smartboard': FINAL_PHOTOS['teacher-smartboard'],
-  'hands-with-product': FINAL_PHOTOS['hands-with-product'],
-  'advocates-outside-capitol': FINAL_PHOTOS['advocates-outside-capitol'],
+  /* 2026-09-17: Empower's policy team replaced the Meaningful Work and Safe
+     Communities area photographs. The two they replace stay in final/media.mjs
+     (amb-a and the homepage still read them) and are gone from here, which is
+     the map that records what THIS page uses. */
+  'colleagues-in-discussion': FINAL_PHOTOS['colleagues-in-discussion'],
+  'father-teaching-bike-wide': FINAL_PHOTOS['father-teaching-bike-wide'],
 };
 
 /* Same shape and same reason as final/media.mjs's own photo(): throws on an

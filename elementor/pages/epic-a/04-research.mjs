@@ -190,13 +190,13 @@ const AREAS = [
   {
     id: 'area-work',
     area: 'work',
-    photo: 'hands-with-product',
+    photo: 'colleagues-in-discussion',
     name: 'Meaningful Work',
   },
   {
     id: 'area-safety',
     area: 'safety',
-    photo: 'advocates-outside-capitol',
+    photo: 'father-teaching-bike-wide',
     name: 'Safe Communities',
   },
 ];

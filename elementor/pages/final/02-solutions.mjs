@@ -53,7 +53,7 @@ const STEPS = [
   ['02', 'Conduct research', 'We research what works — here in Mississippi and in states that have already moved.'],
   ['03', 'Craft policy solution', 'We turn that research into a practical solution that can pass and can work.'],
   ['04', 'Advocate for change', 'We partner with communities and leaders to build support and move the idea forward.'],
-  ['05', 'Policy implementation', 'We stay with it through implementation, then measure what changed for families.'],
+  ['05', 'Support policy implementation', 'We stay with it through implementation, then measure what changed for families.'],
 ];
 
 const stepMarkup = ([num, title, body]) =>

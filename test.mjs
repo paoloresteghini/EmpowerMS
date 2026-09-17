@@ -4435,13 +4435,46 @@ test('both All Content readings are titled All Content, not Commentary', () => {
 test('neither All Content reading ships a filter that needs a script', () => {
   /* The filtering is :has() over real inputs, and both stylesheets gate the
      controls behind an @supports test so that a browser without :has() gets the
-     full unfiltered list rather than a dead panel. */
+     full unfiltered list rather than a dead panel.
+
+     content-a GAINED ONE SCRIPT ON 2026-09-17 and the invariant this test is
+     named for is UNCHANGED, which is why the allowance is written as an exact
+     list per page rather than as a relaxation of the assertion. The filter
+     still works with no JavaScript at all. js/content-filter.js only reads
+     ?type= and ?topic= off the query string and ticks the matching chips, so
+     that the three solution pages' "See all <issue> research" buttons land on
+     that issue's research instead of the top of the page. Without it the bar
+     keeps its authored "All" selection and the page is the one it always was.
+
+     content-b keeps EXACTLY the three shared modules, because it is the
+     unpicked reading and nothing should quietly arrive on it. Asserting the
+     two pages separately is what stops "content-a may load a fourth script"
+     decaying into "either page may load anything". */
+  const SHARED_MODULES = ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'];
+  const EXPECTED_SCRIPTS = {
+    'dist/content-a.html': [...SHARED_MODULES, '../js/content-filter.js'],
+    'dist/content-b.html': SHARED_MODULES,
+  };
   for (const { out, html } of CONTENTPAGES) {
     const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map(m => m[1]);
-    assert.deepEqual(scripts, ['../js/nav.js', '../js/reveal.js', '../js/dropdown.js'],
-      `${out} loads something beyond the three shared behaviour modules: ${scripts.join(', ')}`);
+    const expected = EXPECTED_SCRIPTS[out];
+    assert.ok(expected, `${out} has no expected script list registered in this test`);
+    assert.deepEqual(scripts, expected,
+      `${out} does not load exactly the scripts registered for it: ${scripts.join(', ')}`);
     assert.match(html, /<form class="c(ad-controls|wa-choose__form)"/,
       `${out}'s filter is not wrapped in a form`);
+  }
+
+  /* THE INVARIANT ITSELF, asserted rather than implied by the list above: no
+     rule that does the filtering may depend on a class or attribute a script
+     writes. css/content-a.css keys every filter rule off `:checked`, and
+     js/content-filter.js sets `.checked` and nothing else, so the stylesheet
+     cannot tell the difference between the script and a click. If that script
+     ever starts writing a hook of its own, this goes red. */
+  const filterScript = readFileSync('js/content-filter.js', 'utf8');
+  for (const forbidden of ['classList.add', 'setAttribute', 'dataset.']) {
+    assert.ok(!filterScript.includes(forbidden),
+      `js/content-filter.js uses ${forbidden}, so the filter has stopped being pure CSS over :checked`);
   }
   for (const file of ['css/content-a.css', 'css/content-b.css']) {
     const css = readFileSync(file, 'utf8');

@@ -541,9 +541,24 @@ const EMPOWER_SCRIPTS_PRIORITY = 20;
 
 /**
  * Page scripts beyond the shared js/nav.js and js/reveal.js pair, keyed by
- * page slug. Currently unused: js/dropdown.js moved to the unconditional block
+ * page slug. js/dropdown.js is NOT here: it moved to the unconditional block
  * when the header became a site-wide theme part, since css/header-2.css and
  * js/dropdown.js ship together or the panels never close.
+ *
+ * ONE ENTRY, ADDED 2026-09-17: js/content-filter.js on 'all-content'. It reads
+ * ?type= and ?topic= off the query string and ticks the matching chips in the
+ * All Content filter bar, which is what lets the three solution pages' "See all
+ * <issue> research" buttons land on that issue's research rather than at the
+ * top of the page. It is keyed to this one slug because it queries
+ * `.cad-type` / `.cad-topic` radios that exist on no other page, and it is
+ * progressive enhancement: without it the bar keeps its authored "All"
+ * selection and the reader lands where that button used to take them.
+ *
+ * This function was documented as "currently unused" for as long as it was
+ * empty, with the note below explaining why it was kept anyway. That bet paid:
+ * the route existed when a per-page script was finally needed, and
+ * empower_module_script_handles() picked the new handle up with no second list
+ * to remember to edit.
  *
  * js/megamenu.js is not routed through this mechanism and, checked against
  * the current build, cannot be live today: it binds the header markup in
@@ -559,7 +574,9 @@ const EMPOWER_SCRIPTS_PRIORITY = 20;
  * never silently regress to loading a script as classic.
  */
 function empower_page_scripts() {
-	return array();
+	return array(
+		'all-content' => array( 'content-filter' ),
+	);
 }
 
 /**

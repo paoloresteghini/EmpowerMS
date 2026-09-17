@@ -98,7 +98,7 @@ const LEDE = 'Explore the latest research, ideas, and policies shaping Mississip
 
 /* Verbatim from dist/work.html:379. */
 const MORE = '<p class="sol-latest__more">'
-  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest">See all workforce research</a>'
+  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest?type=research&amp;topic=work">See all workforce research</a>'
   + '</p>';
 
 export function section() {

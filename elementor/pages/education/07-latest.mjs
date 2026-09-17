@@ -108,7 +108,7 @@ const LEDE = 'Stay up to date on the ideas, policies, and conversations shaping 
 
 /* Verbatim from dist/education.html:384. */
 const MORE = '<p class="sol-latest__more">'
-  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest">See all education research</a>'
+  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest?type=research&amp;topic=education">See all education research</a>'
   + '</p>';
 
 export function section() {

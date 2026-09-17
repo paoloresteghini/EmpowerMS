@@ -12,20 +12,31 @@
  *     a difference from round one, where the address and the social URLs made
  *     it mandatory, and it is stated so the omission reads as a decision.
  *
- *   - THE "SEE ALL <ISSUE> RESEARCH" BUTTONS are the largest item in Kienna's
- *     email and are deliberately NOT here. They currently resolve through
- *     elementor/links.mjs to content-a with no fragment, which lands a reader
- *     at the top of All Content rather than at that issue's research. The fix
- *     agreed on 2026-09-17 is a label entry per button plus a small script that
- *     pre-checks the type and topic radios from the query string, and it ships
- *     with the Loop Grid work in the next round rather than being half-done in
- *     this one.
+ *   - THE "LATEST ON <ISSUE>" AND EPIC "MOST RECENT REPORT" BLOCKS need nothing,
+ *     and this file's first version said they were hand-picked placeholders due
+ *     to become queries. THAT WAS WRONG. They were converted on 2026-09-10/09-11
+ *     and run as [empower_solution_latest] and [empower_epic_latest_report],
+ *     backed by wp/empowerms-child/inc/solution-latest.php. The claim came from
+ *     reading the static build's own 07-latest.html, which hard-codes example rows
+ *     because the static build has no database to query. Check the rendered
+ *     page, not the static build.
  *
- *   - THE "LATEST ON <ISSUE>" AND EPIC "MOST RECENT REPORT" BLOCKS are static
- *     placeholders carrying hand-picked posts, and the oldest of them is dated
- *     January 2023 under a label that says "Most recent report". Agreed
- *     2026-09-17 that they become queries; that is the next round's work and is
- *     not attempted here.
+ * THE "SEE ALL <ISSUE> RESEARCH" BUTTONS SHIP HERE, added 2026-09-17 after the
+ * above. They resolved through elementor/links.mjs to content-a with no
+ * fragment, landing a reader at the top of All Content rather than at that
+ * issue's research; EPIC's equivalent worked only because its label is in
+ * BY_LABEL. The fix needed NO change to links.mjs at all: resolveHref() already
+ * carries a source href's query string through untouched (it is what give-c's
+ * gift tiles depend on), so the query lives on the button's own href and
+ * /latest?type=research&topic=safety resolves to
+ * /all-content/?type=research&topic=safety by the existing rule.
+ *
+ * js/content-filter.js reads those two values and ticks the matching radios.
+ * It is registered in empower_page_scripts() against the 'all-content' slug,
+ * which is the per-page script route functions.php has carried unused since
+ * the header became a theme part. Progressive enhancement: without it the bar
+ * keeps its authored "All" selection and the reader lands where the button used
+ * to take them. Both files travel through syncTheme() below.
  *
  * THE THREE PHOTOGRAPHS WERE IMPORTED BEFORE THIS SCRIPT EXISTS, through
  * elementor/import-photography.mjs, which is the only route by which a
@@ -60,6 +71,7 @@ import { POST_ID as FINAL_ID, sections as finalSections } from './pages/final/pa
 import { POST_ID as WORK_ID, sections as workSections } from './pages/work/page.mjs';
 import { POST_ID as SAFETY_ID, sections as safetySections } from './pages/safety/page.mjs';
 import { POST_ID as EPIC_ID, sections as epicSections } from './pages/epic-a/page.mjs';
+import { POST_ID as EDUCATION_ID, sections as educationSections } from './pages/education/page.mjs';
 
 /* Each page, with the one sentence that says why it is in this round. A page
    with no reason here is a page nobody meant to redeploy, and deployPage()
@@ -73,6 +85,8 @@ const PAGES = [
     'safe communities: Strong Families moves to first, one heading, one inserted clause and two rewritten commitments'],
   [EPIC_ID, epicSections,
     'EPIC: the Meaningful Work and Safe Communities area photographs'],
+  [EDUCATION_ID, educationSections,
+    'quality education: the research button only, which is why this page is in the round at all'],
 ];
 
 export function parseArgs(argv) {
@@ -115,6 +129,8 @@ export async function main(argv = process.argv.slice(2)) {
   console.error('  curl -s https://empv2.wpenginepowered.com/safe-communities/ | grep -c "exploring what has worked elsewhere"');
   console.error('  curl -s https://empv2.wpenginepowered.com/meaningful-work/ | grep -o "construction-crew-scaffolding[^\\"]*"');
   console.error('  curl -s https://empv2.wpenginepowered.com/epic/ | grep -o "colleagues-in-discussion[^\\"]*"');
+  console.error('  curl -s https://empv2.wpenginepowered.com/safe-communities/ | grep -o "all-content/?type=research[^\\"]*"');
+  console.error('  curl -s https://empv2.wpenginepowered.com/all-content/ | grep -c content-filter.js');
   return 0;
 }
 

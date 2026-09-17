@@ -91,7 +91,7 @@ const LEDE = 'Explore the latest research, ideas, and policies shaping public sa
 
 /* Verbatim from dist/safety.html:368. */
 const MORE = '<p class="sol-latest__more">'
-  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest">See all public safety research</a>'
+  + '<a class="em-btn em-btn--inverse-outline em-btn--md" href="/latest?type=research&amp;topic=safety">See all public safety research</a>'
   + '</p>';
 
 export function section() {
